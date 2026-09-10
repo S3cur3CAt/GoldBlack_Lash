@@ -196,11 +196,11 @@ export const serviceCategories: Array<ServiceCategory> = [
         id: 'limpieza-facial',
         name: 'Limpieza facial profunda',
         description:
-          'Una limpieza a fondo que deja la piel respirando: extrae los puntos negros y las impurezas, retira las células muertas, hidrata en profundidad y termina con luz LED para un acabado luminoso. Sales con la piel limpia, suave y descansada desde la primera sesión.',
+          'Una limpieza a fondo que deja la piel respirando: extrae los puntos negros y las impurezas, retira las células muertas e hidrata en profundidad. Sales con la piel limpia, suave y descansada desde la primera sesión.',
         duration: '1 h',
         price: '30 €',
         image: '/api/images/limpieza-facial',
-        includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda y luminosidad', 'Acabado suave con luz LED'],
+        includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda y luminosidad', 'Piel suave y descansada'],
       },
     ],
   },
