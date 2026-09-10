@@ -258,7 +258,6 @@ export function Footer() {
             © {new Date().getFullYear()} {business.name}.
             Todos los derechos reservados.
           </p>
-          <p>Hecho con calma, cuidado y detalle.</p>
         </div>
       </div>
     </footer>
