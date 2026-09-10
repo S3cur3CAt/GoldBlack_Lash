@@ -106,16 +106,16 @@ function Hero() {
 
           <div className="hero-center">
             <StudioVisual
-              src="/api/images/pieza-05"
-              alt="Detalle de lifting natural con efecto apertura"
+              src="/api/images/pieza-04"
+              alt="Detalle de un diseño de pestañas híbridas"
               priority
             />
           </div>
 
           <div className="hero-side hero-side-right">
             <StudioVisual
-              src="/api/images/pieza-04"
-              alt="Detalle de un diseño de pestañas híbridas"
+              src="/api/images/pieza-05"
+              alt="Detalle de lifting natural con efecto apertura"
             />
           </div>
 
