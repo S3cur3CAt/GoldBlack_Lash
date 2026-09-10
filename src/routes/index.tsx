@@ -41,7 +41,7 @@ function Home() {
 function Hero() {
   return (
     <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      <div className="wrap pt-12 pb-8 text-center md:pt-18 md:pb-12">
+      <div className="wrap pt-9 pb-7 text-center sm:pt-12 sm:pb-8 md:pt-18 md:pb-12">
         <div className="reveal-in">
           <p className="eyebrow justify-center">
             {business.city} · Estudio de pestañas
@@ -63,7 +63,7 @@ function Hero() {
               href={whatsappLink()}
               target="_blank"
               rel="noreferrer"
-              className="button button-dark"
+              className="button button-dark sm:w-auto"
             >
               Reserva tu momento
               <span aria-hidden="true">↗</span>
@@ -71,7 +71,7 @@ function Hero() {
 
             <Link
               to="/servicios"
-              className="button bg-white/70"
+              className="button bg-white/70 sm:w-auto"
             >
               Descubre tu efecto
             </Link>
@@ -513,7 +513,7 @@ function BookingSection() {
               qué efecto elegir, lo descubrimos juntas.
             </p>
 
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mx-auto mt-8 flex w-full max-w-md flex-col justify-center gap-3 sm:flex-row">
               <a
                 href={whatsappLink()}
                 target="_blank"

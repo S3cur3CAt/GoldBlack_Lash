@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
+      className="sticky top-0 z-50 border-b border-line bg-paper/95 backdrop-blur-xl"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && open) {
           setOpen(false)
@@ -47,7 +47,7 @@ export function Header() {
         }
       }}
     >
-      <div className="wrap flex h-20 items-center justify-between gap-5">
+      <div className="wrap flex h-20 items-center justify-between gap-3 sm:h-28">
         <Link
           to="/"
           onClick={() => setOpen(false)}
@@ -55,21 +55,12 @@ export function Header() {
           className="flex items-center gap-3"
         >
           <img
-            src="/goldblack_logo.png"
-            alt={`${business.name} — logotipo`}
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-full object-cover"
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
+            alt="GoldBlack Tienda de Pestañas — logotipo"
+            width={220}
+            height={220}
+            className="relative z-10 h-20 w-20 rounded-full object-cover sm:h-28 sm:w-28"
           />
-
-          <span>
-            <span className="block font-display text-2xl leading-none tracking-tight">
-              GoldBlack
-            </span>
-            <span className="mt-1.5 block text-[0.53rem] font-semibold tracking-[0.3em] text-muted uppercase">
-              Lash & beauty studio
-            </span>
-          </span>
         </Link>
 
         <nav
@@ -105,7 +96,7 @@ export function Header() {
           aria-expanded={open}
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-11 items-center gap-3 rounded-full border border-line bg-white px-4 text-xs font-semibold lg:hidden"
+          className="flex min-h-11 items-center gap-3 rounded-xl border border-line bg-surface px-4 text-xs font-semibold lg:hidden"
         >
           {open ? 'Cerrar' : 'Menú'}
           <span aria-hidden="true" className="text-xl text-rose">
@@ -118,7 +109,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className="absolute inset-x-0 top-full max-h-[calc(100dvh-80px)] overflow-y-auto rounded-b-[2rem] border-b border-line bg-paper shadow-panel lg:hidden"
+            className="absolute inset-x-0 top-full max-h-[calc(100dvh-5rem)] overflow-y-auto rounded-b-[1.75rem] border-b border-line bg-paper shadow-panel sm:max-h-[calc(100dvh-5rem)] lg:hidden"
         >
           <div className="wrap py-5">
             {tabs.map((tab) => (
@@ -160,13 +151,13 @@ export function Footer() {
       <div className="wrap pt-14 pb-7 md:pt-20">
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
-            <p className="font-display text-4xl tracking-tight">
-              GoldBlack
-            </p>
-
-            <p className="mt-3 text-[0.6rem] tracking-[0.25em] text-white/60 uppercase">
-              Lash & beauty studio
-            </p>
+            <img
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
+              alt="GoldBlack Tienda de Pestañas — logotipo"
+              width={220}
+              height={220}
+              className="h-28 w-56 rounded-xl object-contain object-left"
+            />
 
             <p className="mt-6 max-w-xs text-sm leading-7 text-white/70">
               Un pequeño momento para ti.
