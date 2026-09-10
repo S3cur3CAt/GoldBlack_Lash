@@ -39,7 +39,7 @@ export function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
+      className="sticky top-0 z-50 border-b border-line bg-paper/95 backdrop-blur-xl"
       onKeyDown={(event) => {
         if (event.key === 'Escape' && open) {
           setOpen(false)
@@ -105,7 +105,7 @@ export function Header() {
           aria-expanded={open}
           aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-11 items-center gap-3 rounded-full border border-line bg-white px-4 text-xs font-semibold lg:hidden"
+          className="flex min-h-11 items-center gap-3 rounded-xl border border-line bg-surface px-4 text-xs font-semibold lg:hidden"
         >
           {open ? 'Cerrar' : 'Menú'}
           <span aria-hidden="true" className="text-xl text-rose">

@@ -20,7 +20,7 @@ export function PageHero({
   children?: ReactNode
 }) {
   return (
-    <section className="relative overflow-hidden rounded-b-[3rem] bg-blush/70 md:rounded-b-[5rem]">
+    <section className="relative overflow-hidden border-b border-line bg-blush/70">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute -top-24 -right-20 h-80 w-80 rounded-full border border-rose/10"
@@ -41,7 +41,7 @@ export function PageHero({
 
             {crumbs.map((crumb) => (
               <li key={crumb.label} className="flex items-center gap-3">
-                <span aria-hidden="true">·</span>
+                <span aria-hidden="true" className="text-rose">✦</span>
 
                 {crumb.to ? (
                   <Link to={crumb.to} className="hover:text-rose">
