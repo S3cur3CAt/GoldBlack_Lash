@@ -6,7 +6,6 @@ import { business, whatsappLink } from '#/data/site'
 export const tabs = [
   { to: '/', label: 'Inicio' },
   { to: '/servicios', label: 'Servicios' },
-  { to: '/probador', label: 'Probador' },
   { to: '/galeria', label: 'Resultados' },
   { to: '/sobre-mi', label: 'El estudio' },
   { to: '/contacto', label: 'Contacto' },

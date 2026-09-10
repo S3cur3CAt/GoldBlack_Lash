@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as GaleriaRouteImport } from './routes/galeria'
-import { Route as ProbadorRouteImport } from './routes/probador'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 import { Route as ApiImagesKeyRouteImport } from './routes/api.images.$key'
@@ -30,11 +29,6 @@ const ContactoRoute = ContactoRouteImport.update({
 const GaleriaRoute = GaleriaRouteImport.update({
   id: '/galeria',
   path: '/galeria',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProbadorRoute = ProbadorRouteImport.update({
-  id: '/probador',
-  path: '/probador',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServiciosRoute = ServiciosRouteImport.update({
@@ -57,7 +51,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
-  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
@@ -66,7 +59,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
-  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
@@ -76,7 +68,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
-  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
@@ -87,7 +78,6 @@ export interface FileRouteTypes {
     | '/'
     | '/contacto'
     | '/galeria'
-    | '/probador'
     | '/servicios'
     | '/sobre-mi'
     | '/api/images/$key'
@@ -96,7 +86,6 @@ export interface FileRouteTypes {
     | '/'
     | '/contacto'
     | '/galeria'
-    | '/probador'
     | '/servicios'
     | '/sobre-mi'
     | '/api/images/$key'
@@ -105,7 +94,6 @@ export interface FileRouteTypes {
     | '/'
     | '/contacto'
     | '/galeria'
-    | '/probador'
     | '/servicios'
     | '/sobre-mi'
     | '/api/images/$key'
@@ -115,7 +103,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactoRoute: typeof ContactoRoute
   GaleriaRoute: typeof GaleriaRoute
-  ProbadorRoute: typeof ProbadorRoute
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
   ApiImagesKeyRoute: typeof ApiImagesKeyRoute
@@ -142,13 +129,6 @@ declare module '@tanstack/react-router' {
       path: '/galeria'
       fullPath: '/galeria'
       preLoaderRoute: typeof GaleriaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/probador': {
-      id: '/probador'
-      path: '/probador'
-      fullPath: '/probador'
-      preLoaderRoute: typeof ProbadorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/servicios': {
@@ -179,7 +159,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactoRoute: ContactoRoute,
   GaleriaRoute: GaleriaRoute,
-  ProbadorRoute: ProbadorRoute,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
   ApiImagesKeyRoute: ApiImagesKeyRoute,
