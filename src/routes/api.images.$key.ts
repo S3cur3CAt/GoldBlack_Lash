@@ -7,9 +7,6 @@ import { fetchImageFromNeon, isValidImageKey } from '../server/images.server'
 // Se eligio server route en vez de server/api de Nitro porque el plugin
 // nitro/vite en este proyecto no escanea server/ (verificado en .output).
 export const Route = createFileRoute('/api/images/$key')({
-  // @ts-expect-error: la prop `server.handlers` la aporta TanStack Start en
-  // runtime (server routes); los tipos del monorepo no la exponen a tsc en
-  // esta combinacion de versiones, pero Vite/Nitro la sirven igual.
   server: {
     handlers: {
       GET: async ({ params }: { params: { key: string } }) => {

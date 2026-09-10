@@ -18,6 +18,9 @@
 
   --shadow-panel: 0 24px 70px -28px rgb(93 49 59 / 28%);
   --shadow-soft: 0 14px 42px -22px rgb(93 49 59 / 18%);
+  --shadow-glass: 0 20px 60px -24px rgb(93 49 59 / 25%);
+  --shadow-card-hover: 0 32px 80px -28px rgb(93 49 59 / 38%);
+  --shadow-glow: 0 12px 40px -12px rgb(182 111 121 / 55%);
 }
 
 @layer base {
@@ -29,10 +32,54 @@
 
   body {
     margin: 0;
-    background: var(--color-paper);
+    /* Base aurora: el cristal necesita color detrás para refractar. */
+    background:
+      radial-gradient(
+        1200px 600px at 85% -5%,
+        rgb(237 196 213 / 55%),
+        transparent 60%
+      ),
+      radial-gradient(
+        1000px 700px at -10% 20%,
+        rgb(247 226 225 / 70%),
+        transparent 60%
+      ),
+      radial-gradient(
+        900px 900px at 110% 60%,
+        rgb(241 232 227 / 80%),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #fdf4f2 0%, #f9ebee 45%, #f4e6ef 100%);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Orbes acrílicos flotantes detrás de todo el contenido. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -10%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        38rem 38rem at 12% 8%,
+        rgb(217 168 173 / 35%),
+        transparent 65%
+      ),
+      radial-gradient(
+        42rem 42rem at 88% 18%,
+        rgb(182 111 121 / 22%),
+        transparent 65%
+      ),
+      radial-gradient(
+        40rem 40rem at 50% 100%,
+        rgb(63 41 50 / 12%),
+        transparent 65%
+      );
+    animation: aurora-drift 22s ease-in-out infinite alternate;
   }
 
   h1,
@@ -65,8 +112,8 @@
   }
 
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-ink);
+    background: var(--color-rose);
+    color: white;
   }
 
   :focus-visible {
@@ -85,8 +132,9 @@
   }
 
   dialog::backdrop {
-    background: rgb(52 31 46 / 65%);
-    backdrop-filter: blur(10px);
+    background: rgb(52 31 46 / 55%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
   }
 
   ::-webkit-scrollbar {
@@ -95,13 +143,12 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--color-paper);
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    border: 2px solid var(--color-paper);
     border-radius: 999px;
-    background: #c6a2b2;
+    background: linear-gradient(180deg, #d9a8ad, #b66f79);
   }
 }
 
@@ -115,16 +162,31 @@
     padding-block: clamp(3.75rem, 8vw, 7rem);
   }
 
+  /* Etiqueta superior en pastilla de cristal. */
   .eyebrow {
     display: flex;
     align-items: center;
     gap: 0.65rem;
+    width: fit-content;
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: 999px;
+    padding: 0.45rem 0.95rem;
+    background: rgb(255 255 255 / 55%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 85%),
+      0 8px 20px -12px rgb(93 49 59 / 25%);
+    color: var(--color-rose);
     font-size: 0.65rem;
     font-weight: 700;
     line-height: 1.7;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--color-rose);
+  }
+
+  .eyebrow.justify-center {
+    margin-inline: auto;
   }
 
   .eyebrow::before {
@@ -134,6 +196,7 @@
     flex-shrink: 0;
     border-radius: 50%;
     background: currentColor;
+    box-shadow: 0 0 10px 2px rgb(182 111 121 / 55%);
   }
 
   .section-title {
@@ -149,16 +212,24 @@
     line-height: 1.95;
   }
 
+  /* Botones píldora con brillo acrílico. */
   .button {
+    position: relative;
     display: inline-flex;
     min-height: 52px;
     align-items: center;
     justify-content: center;
     gap: 1rem;
-    border: 1px solid var(--color-line);
-    border-radius: 0.9rem;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 70%);
+    border-radius: 999px;
     padding: 0.95rem 1.65rem;
-    background: transparent;
+    background: rgb(255 255 255 / 55%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(150%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 85%),
+      var(--shadow-soft);
     color: var(--color-ink);
     font-size: 0.78rem;
     font-weight: 700;
@@ -171,38 +242,61 @@
       color 200ms ease;
   }
 
+  /* Reflejo que barre el botón al pasar el cursor. */
+  .button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgb(255 255 255 / 45%) 50%,
+      transparent 60%
+    );
+    transition: transform 600ms ease;
+    pointer-events: none;
+  }
+
   .button:hover {
     transform: translateY(-3px);
-    background: var(--color-blush);
-    box-shadow: var(--shadow-soft);
+    background: rgb(255 255 255 / 75%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 90%),
+      var(--shadow-glass);
+  }
+
+  .button:hover::after {
+    transform: translateX(120%);
   }
 
   .button-dark {
-    border-color: var(--color-plum);
-    background: var(--color-plum);
+    border-color: transparent;
+    background: linear-gradient(135deg, #4a3040 0%, var(--color-rose) 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 25%),
+      var(--shadow-glow);
     color: white;
-    box-shadow: 0 10px 24px -14px rgb(69 44 61 / 65%);
   }
 
   .button-dark:hover {
-    border-color: var(--color-rose);
-    background: var(--color-rose);
+    background: linear-gradient(135deg, #553646 0%, #c6828c 100%);
     color: white;
   }
 
   .button-accent {
     border-color: transparent;
-    background: var(--color-accent);
+    background: linear-gradient(135deg, var(--color-accent), #edc4d5);
     color: var(--color-plum);
   }
 
   .button-accent:hover {
-    background: #edc4d5;
+    background: linear-gradient(135deg, #e2b3bb, #f2ccd9);
   }
 
   .button-light {
-    border-color: white;
-    background: white;
+    border-color: rgb(255 255 255 / 60%);
+    background: rgb(255 255 255 / 85%);
     color: var(--color-plum);
   }
 
@@ -214,50 +308,68 @@
     color: var(--color-rose);
     font-size: 0.8rem;
     font-weight: 700;
-    transition: gap 200ms ease;
+    transition:
+      gap 200ms ease,
+      color 200ms ease;
   }
 
   .text-link:hover {
     gap: 1.2rem;
+    color: var(--color-plum);
   }
 
   .nav-link {
-    border-radius: 0.8rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
     padding: 0.7rem 1rem;
     color: var(--color-muted);
     font-size: 0.75rem;
     font-weight: 600;
     transition:
       background-color 200ms ease,
-      color 200ms ease;
+      color 200ms ease,
+      box-shadow 200ms ease;
   }
 
-  .nav-link:hover,
-  .nav-link[data-status='active'] {
-    background: var(--color-blush);
+  .nav-link:hover {
+    background: rgb(255 255 255 / 70%);
     color: var(--color-plum);
+  }
+
+  .nav-link[data-status='active'] {
+    border-color: transparent;
+    background: linear-gradient(135deg, #4a3040 0%, var(--color-rose) 100%);
+    box-shadow: var(--shadow-glow);
+    color: white;
   }
 
   .category-tab {
     display: block;
-    border: 1px solid transparent;
+    border: 1px solid rgb(255 255 255 / 65%);
     border-radius: 999px;
     padding: 0.75rem 1.1rem;
+    background: rgb(255 255 255 / 50%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    backdrop-filter: blur(10px) saturate(150%);
     color: var(--color-muted);
     font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
     transition:
       background-color 180ms ease,
-      color 180ms ease;
+      color 180ms ease,
+      box-shadow 180ms ease;
   }
 
   .category-tab:hover {
-    background: var(--color-blush);
+    background: rgb(255 255 255 / 75%);
+    color: var(--color-plum);
   }
 
   .category-tab.is-active {
-    background: var(--color-plum);
+    border-color: transparent;
+    background: linear-gradient(135deg, #4a3040 0%, var(--color-rose) 100%);
+    box-shadow: var(--shadow-glow);
     color: white;
   }
 
@@ -265,15 +377,18 @@
     display: block;
     width: 100%;
     margin-top: 0.65rem;
-    border: 1px solid var(--color-line);
+    border: 1px solid rgb(255 255 255 / 70%);
     border-radius: 1rem;
     padding: 1rem;
-    background: var(--color-paper);
+    background: rgb(255 255 255 / 60%);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     color: var(--color-ink);
     font-size: 0.85rem;
     transition:
       background-color 180ms ease,
-      border-color 180ms ease;
+      border-color 180ms ease,
+      box-shadow 180ms ease;
   }
 
   .field::placeholder {
@@ -282,7 +397,8 @@
 
   .field:focus {
     border-color: var(--color-rose);
-    background: white;
+    background: rgb(255 255 255 / 85%);
+    box-shadow: 0 0 0 4px rgb(182 111 121 / 15%);
   }
 
   .field-label {
@@ -298,6 +414,28 @@
 
   .footer-link:hover {
     color: white;
+  }
+
+  /* Línea de brillo superior del pie oscuro. */
+  footer {
+    position: relative;
+    box-shadow: 0 -20px 60px -30px rgb(63 41 50 / 50%);
+  }
+
+  footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 10%;
+    left: 10%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 40%),
+      transparent
+    );
+    pointer-events: none;
   }
 
   .skip-link {
@@ -316,11 +454,45 @@
     transform: translateY(0);
   }
 
-  /* Portada */
+  /* Portada sobre la aurora. */
   .beauty-hero {
     position: relative;
     overflow: hidden;
-    background: var(--color-paper);
+    background: transparent;
+  }
+
+  .beauty-hero::before,
+  .beauty-hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .beauty-hero::before {
+    top: -8rem;
+    right: -6rem;
+    width: 26rem;
+    aspect-ratio: 1;
+    background: radial-gradient(
+      closest-side,
+      rgb(217 168 173 / 45%),
+      transparent
+    );
+    filter: blur(40px);
+  }
+
+  .beauty-hero::after {
+    bottom: -10rem;
+    left: -7rem;
+    width: 30rem;
+    aspect-ratio: 1;
+    background: radial-gradient(
+      closest-side,
+      rgb(182 111 121 / 30%),
+      transparent
+    );
+    filter: blur(50px);
   }
 
   .hero-title {
@@ -332,7 +504,10 @@
 
   .hero-title em {
     font-weight: 400;
-    color: var(--color-rose);
+    background: linear-gradient(120deg, var(--color-rose), #7c4a5e);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .hero-gallery {
@@ -348,9 +523,12 @@
 
   .hero-side {
     overflow: hidden;
-    border: 6px solid white;
+    border: 6px solid rgb(255 255 255 / 80%);
     border-radius: 9rem 9rem 3rem 3rem;
-    box-shadow: var(--shadow-panel);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 50%),
+      0 30px 80px -30px rgb(182 111 121 / 50%),
+      var(--shadow-panel);
   }
 
   .hero-side-left {
@@ -363,9 +541,12 @@
 
   .hero-center {
     overflow: hidden;
-    border: 8px solid white;
+    border: 8px solid rgb(255 255 255 / 85%);
     border-radius: 12rem 12rem 4rem 4rem;
-    box-shadow: var(--shadow-panel);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 55%),
+      0 36px 90px -30px rgb(182 111 121 / 55%),
+      var(--shadow-panel);
   }
 
   .floating-note {
@@ -374,12 +555,15 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    border: 1px solid rgb(255 255 255 / 90%);
+    border: 1px solid rgb(255 255 255 / 70%);
     border-radius: 1.3rem;
     padding: 1rem 1.25rem;
-    background: rgb(255 255 255 / 94%);
-    box-shadow: var(--shadow-panel);
-    backdrop-filter: blur(12px);
+    background: rgb(255 255 255 / 55%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(16px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 85%),
+      var(--shadow-glass);
   }
 
   .note-left {
@@ -404,6 +588,20 @@
     border-radius: 1.25rem;
     background: var(--color-lilac);
     color: var(--color-rose);
+  }
+
+  /* Reflejo de cristal sobre la imagen. */
+  .studio-visual::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 26%),
+      transparent 38%
+    );
+    pointer-events: none;
   }
 
   .studio-visual-image {
@@ -431,6 +629,12 @@
     bottom: 1.5rem;
     left: 1.2rem;
     z-index: 2;
+    border: 1px solid rgb(255 255 255 / 65%);
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    background: rgb(255 255 255 / 55%);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     text-align: center;
     font-size: 0.6rem;
     font-weight: 700;
@@ -446,30 +650,45 @@
     display: none;
   }
 
+  /* Tarjeta de cristal esmerilado. */
   .beauty-card {
     position: relative;
     display: flex;
     height: 100%;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--color-line);
-    border-radius: 1.25rem;
-    background: var(--color-surface);
-    box-shadow: var(--shadow-soft);
+    border: 1px solid rgb(255 255 255 / 65%);
+    border-radius: 1.75rem;
+    background: linear-gradient(
+      150deg,
+      rgb(255 255 255 / 72%),
+      rgb(255 255 255 / 38%)
+    );
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 85%),
+      var(--shadow-glass);
     transition:
       transform 250ms ease,
-      box-shadow 250ms ease;
+      box-shadow 250ms ease,
+      border-color 250ms ease;
   }
 
   .beauty-card:hover {
     transform: translateY(-7px);
-    box-shadow: var(--shadow-panel);
+    border-color: rgb(255 255 255 / 85%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 90%),
+      var(--shadow-card-hover);
   }
 
   .beauty-card-visual {
     margin: 0.75rem;
     overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 60%);
     border-radius: 1.5rem;
+    box-shadow: var(--shadow-soft);
   }
 
   .beauty-card-visual .studio-visual {
@@ -478,39 +697,69 @@
   }
 
   .soft-panel {
-    border: 1px solid var(--color-line);
-    border-radius: 2.5rem;
-    background: white;
-    box-shadow: var(--shadow-soft);
+    border: 1px solid rgb(255 255 255 / 65%);
+    border-radius: 2rem;
+    background: linear-gradient(
+      150deg,
+      rgb(255 255 255 / 68%),
+      rgb(255 255 255 / 42%)
+    );
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    backdrop-filter: blur(20px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 85%),
+      var(--shadow-glass);
   }
 
+  /* Panel oscuro: cristal ahumado con orbes de luz. */
   .booking-panel {
     position: relative;
     overflow: hidden;
-    border-radius: 1.5rem;
-    background: var(--color-plum);
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: 2rem;
+    background: linear-gradient(
+      140deg,
+      rgb(58 36 46 / 94%),
+      rgb(120 66 88 / 90%)
+    );
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 18%),
+      0 40px 90px -30px rgb(63 41 50 / 55%);
     color: white;
   }
 
   .booking-panel::before,
   .booking-panel::after {
     position: absolute;
-    width: 22rem;
     aspect-ratio: 1;
-    border: 1px solid rgb(255 255 255 / 12%);
     border-radius: 50%;
     content: '';
     pointer-events: none;
+    filter: blur(50px);
   }
 
   .booking-panel::before {
     top: -12rem;
     right: -5rem;
+    width: 22rem;
+    background: radial-gradient(
+      closest-side,
+      rgb(217 168 173 / 55%),
+      transparent
+    );
   }
 
   .booking-panel::after {
     bottom: -15rem;
     left: -3rem;
+    width: 22rem;
+    background: radial-gradient(
+      closest-side,
+      rgb(182 111 121 / 45%),
+      transparent
+    );
   }
 
   .reveal-in {
@@ -544,6 +793,15 @@
   }
   50% {
     translate: 0 -8px;
+  }
+}
+
+@keyframes aurora-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 2%, 0) scale(1.06);
   }
 }
 
@@ -619,7 +877,7 @@
 
   .soft-panel,
   .booking-panel {
-    border-radius: 1.25rem;
+    border-radius: 1.5rem;
   }
 }
 
