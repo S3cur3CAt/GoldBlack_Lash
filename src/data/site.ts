@@ -177,12 +177,14 @@ export type GalleryPiece = {
   technique: string
   detail: string
   image: string
+  /** Precio orientativo que se muestra al pedir el diseño por WhatsApp. */
+  price?: string
 }
 
 export const galleryPieces: Array<GalleryPiece> = [
-  { id: 'pieza-01', title: 'Efecto 4D', technique: 'Volumen 4D', detail: 'Abanicos 4D hechos a mano', image: '/api/images/pieza-01' },
-  { id: 'pieza-02', title: 'Efecto 5D', technique: 'Volumen 5D', detail: 'Abanicos 5D hechos a mano', image: '/api/images/pieza-02' },
-  { id: 'pieza-03', title: 'Efecto 6D', technique: 'Volumen 6D', detail: 'Abanicos 6D hechos a mano', image: '/api/images/pieza-03' },
-  { id: 'pieza-04', title: 'Fibras tecnológicas', technique: 'Fibras tecnológicas 3D', detail: 'Efecto 3D de alta definición', image: '/api/images/pieza-04' },
-  { id: 'pieza-05', title: 'Volumen ruso', technique: 'Volumen ruso', detail: 'Densidad y negro intenso', image: '/api/images/pieza-05' },
+  { id: 'pieza-01', title: 'Efecto 4D', technique: 'Volumen 4D', detail: 'Abanicos 4D hechos a mano', image: '/api/images/pieza-01', price: '27 €' },
+  { id: 'pieza-02', title: 'Efecto 5D', technique: 'Volumen 5D', detail: 'Abanicos 5D hechos a mano', image: '/api/images/pieza-02', price: '27 €' },
+  { id: 'pieza-03', title: 'Efecto 6D', technique: 'Volumen 6D', detail: 'Abanicos 6D hechos a mano', image: '/api/images/pieza-03', price: '27 €' },
+  { id: 'pieza-04', title: 'Fibras tecnológicas', technique: 'Fibras tecnológicas 3D', detail: 'Efecto 3D de alta definición', image: '/api/images/pieza-04', price: '27 €' },
+  { id: 'pieza-05', title: 'Volumen ruso', technique: 'Volumen ruso', detail: 'Densidad y negro intenso', image: '/api/images/pieza-05', price: '30 €' },
 ]

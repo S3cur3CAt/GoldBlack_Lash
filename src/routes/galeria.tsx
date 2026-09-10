@@ -362,7 +362,16 @@ function Lightbox({
 
             <a
               href={whatsappLink(
-                `¡Hola! Me gusta el diseño "${piece.title}" (${piece.technique}). ¿Podemos adaptarlo a mi mirada?`,
+                [
+                  `✨ *Me gusta este diseño — ${business.name}* ✨`,
+                  '———————————',
+                  `💫 *Diseño:* ${piece.title} (${piece.technique}${piece.price ? ` · ${piece.price}` : ''})`,
+                  `👁️ *Referencia:* ${piece.detail}`,
+                  '———————————',
+                  '👤 *Nombre:*',
+                  '📞 *Teléfono:*',
+                  `🌐 ${business.siteUrl}`,
+                ].join('\n'),
               )}
               target="_blank"
               rel="noreferrer"
