@@ -152,7 +152,7 @@ export const whyUs = [
 export const faqs = [
   {
     q: '¿Cuánto duran las extensiones?',
-    a: 'Duran de 3 semanas a 1 mes. Con el relleno en ese periodo, el diseño se mantiene indefinidamente. La pestaña natural crece y se cae de forma continua, por eso el mantenimiento es la clave para que siempre se vea perfecto.',
+    a: 'Duran de 3 semanas a 1 mes. La pestaña natural crece y se cae de forma continua, por eso el mantenimiento es la clave para que siempre se vea perfecto.',
   },
   {
     q: '¿Duele o molesta el procedimiento?',
@@ -160,7 +160,7 @@ export const faqs = [
   },
   {
     q: '¿Qué pasa si tengo las pestañas muy cortas?',
-    a: 'Se puede trabajar igual. En esos casos el volumen ruso es la mejor opción porque aporta densidad sin cargar, y las longitudes se ajustan a lo que aguanta tu pestaña natural.',
+    a: 'Se puede trabajar igual. Las longitudes se ajustan a lo que aguanta tu pestaña natural.',
   },
   {
     q: '¿Cómo cuido el set en casa?',
