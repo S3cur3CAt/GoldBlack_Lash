@@ -46,7 +46,6 @@ function Hero() {
         autoPlay
         loop
         muted
-        defaultMuted
         playsInline
         preload="auto"
         aria-hidden="true"
@@ -404,7 +403,7 @@ function GalleryPreview() {
                 index % 2 === 1 ? 'mt-8' : ''
               }`}
             >
-              <div className="overflow-hidden rounded-[2rem] bg-blush">
+              <div className="overflow-hidden rounded-4xl bg-blush">
                 <StudioVisual
                   src={piece.image}
                   alt={piece.title}
