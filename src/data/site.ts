@@ -185,6 +185,6 @@ export const galleryPieces: Array<GalleryPiece> = [
   { id: 'pieza-01', title: 'Volumen 4D', technique: 'Volumen 4D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-01', price: '27 €' },
   { id: 'pieza-02', title: 'Volumen 5D', technique: 'Volumen 5D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-02', price: '27 €' },
   { id: 'pieza-03', title: 'Volumen 6D', technique: 'Volumen 6D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-03', price: '27 €' },
-  { id: 'pieza-04', title: 'Fibras tecnológicas', technique: 'Fibras tecnológicas 3D', detail: 'Efecto 3D de alta definición', image: '/api/images/pieza-04', price: '27 €' },
+  { id: 'pieza-04', title: 'Volumen 3D', technique: 'Volumen 3D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-04', price: '27 €' },
   { id: 'pieza-05', title: 'Volumen ruso', technique: 'Volumen ruso', detail: 'Densidad y negro intenso', image: '/api/images/pieza-05', price: '30 €' },
 ]
