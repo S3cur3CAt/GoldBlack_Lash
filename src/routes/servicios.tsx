@@ -114,7 +114,7 @@ function Servicios() {
 
       <nav
         aria-label="Categorías de servicios"
-        className="sticky top-20 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
+        className="sticky top-20 sm:top-28 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
       >
         <ul className="wrap flex gap-2 overflow-x-auto py-3">
           {serviceCategories.map((category) => (

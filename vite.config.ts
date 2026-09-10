@@ -49,9 +49,31 @@ function neonImagesDev(): Plugin {
             res.end(JSON.stringify({ error: 'Imagen no encontrada' }))
             return
           }
+          const range = req.headers.range
+          if (range && hit.data) {
+            const rangeMatch = range.match(/bytes=(\d+)-(\d*)/)
+            if (rangeMatch) {
+              const total = hit.data.length
+              const start = parseInt(rangeMatch[1], 10)
+              const end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : total - 1
+              if (start < total) {
+                const chunk = hit.data.subarray(start, end + 1)
+                res.statusCode = 206
+                res.setHeader('Content-Type', hit.mime)
+                res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`)
+                res.setHeader('Accept-Ranges', 'bytes')
+                res.setHeader('Content-Length', String(chunk.length))
+                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+                res.end(chunk)
+                return
+              }
+            }
+          }
+
           res.statusCode = 200
           res.setHeader('Content-Type', hit.mime)
           res.setHeader('Content-Length', String(hit.data.length))
+          res.setHeader('Accept-Ranges', 'bytes')
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
           res.end(hit.data)
         } catch (error) {

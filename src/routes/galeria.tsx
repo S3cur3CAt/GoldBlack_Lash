@@ -67,7 +67,7 @@ function Galeria() {
         crumbs={[{ label: 'Galería' }]}
       />
 
-      <div className="sticky top-20 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl">
+      <div className="sticky top-20 sm:top-28 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl">
         <ul
           aria-label="Filtrar diseños por técnica"
           className="wrap flex gap-2 overflow-x-auto py-3"

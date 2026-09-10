@@ -41,7 +41,25 @@ function Home() {
 function Hero() {
   return (
     <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      <div className="wrap pt-9 pb-7 text-center sm:pt-12 sm:pb-8 md:pt-18 md:pb-12">
+      {/* Video de fondo subido y servido desde Neon Postgres */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        className="hero-video-bg"
+      >
+        <source src="/api/images/hero-video" type="video/mp4" />
+        <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
+
+      {/* Velo estético de luminosidad para legibilidad y elegancia */}
+      <div className="hero-video-overlay" aria-hidden="true" />
+
+      <div className="wrap relative z-10 pt-9 pb-7 text-center sm:pt-12 sm:pb-8 md:pt-18 md:pb-12">
         <div className="reveal-in">
           <p className="eyebrow justify-center">
             {business.city} · Estudio de pestañas
