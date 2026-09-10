@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
+import { StudioVisual } from '#/components/StudioVisual'
 import {
   business,
   faqs,
@@ -244,6 +245,16 @@ function ServiceCard({ service }: { service: Service }) {
           <span aria-hidden="true">♡</span>
           Favorito del estudio
         </p>
+      ) : null}
+
+      {service.image ? (
+        <div className="beauty-card-visual mt-0 mb-6">
+          <StudioVisual
+            src={service.image}
+            alt={`Máquina de ${service.name.toLowerCase()}`}
+            label=""
+          />
+        </div>
       ) : null}
 
       <div className="flex flex-wrap items-start justify-between gap-5">

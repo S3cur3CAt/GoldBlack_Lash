@@ -34,6 +34,7 @@ const files = [
   { key: 'pieza-03', path: join(root, 'public', 'galeria', 'pieza-03.jpg'), mime: 'image/jpeg' },
   { key: 'pieza-04', path: join(root, 'public', 'galeria', 'pieza-04.jpg'), mime: 'image/jpeg' },
   { key: 'pieza-05', path: join(root, 'public', 'galeria', 'pieza-05.jpg'), mime: 'image/jpeg' },
+  { key: 'limpieza-facial', path: join(root, 'public', 'galeria', 'limpieza-facial.avif'), mime: 'image/avif' },
   { key: 'logo', path: join(root, 'public', 'goldblack_logo.png'), mime: 'image/png' },
   { key: 'promo-qr', path: join(root, 'public', 'promo-qr.png'), mime: 'image/png' },
 ]

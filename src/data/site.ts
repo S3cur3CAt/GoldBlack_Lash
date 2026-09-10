@@ -47,6 +47,8 @@ export type Service = {
   price: string
   /** Se resalta en la tarjeta de precios. */
   featured?: boolean
+  /** Foto opcional que se muestra en la tarjeta del servicio. */
+  image?: string
   includes: Array<string>
 }
 
@@ -189,6 +191,16 @@ export const serviceCategories: Array<ServiceCategory> = [
         duration: '30 min',
         price: '15 €',
         includes: ['Crema disolvente suave', 'Limpieza final', 'Diagnóstico de la pestaña'],
+      },
+      {
+        id: 'limpieza-facial',
+        name: 'Limpieza facial profunda',
+        description:
+          'Higiene profunda con máquina profesional: extrae impurezas, hidrata y devuelve la luminosidad a tu piel.',
+        duration: '1 h',
+        price: '30 €',
+        image: '/api/images/limpieza-facial',
+        includes: ['Máquina de limpieza profesional', 'Extracción e hidratación', 'Piel luminosa y suave'],
       },
     ],
   },
