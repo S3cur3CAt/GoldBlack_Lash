@@ -556,10 +556,11 @@
 
   .hero-title em {
     font-weight: 400;
-    background: linear-gradient(120deg, var(--color-rose), #7c4a5e);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    font-style: italic;
+    color: #be4d6c;
+    background: none;
+    -webkit-text-fill-color: #be4d6c;
+    text-shadow: none;
   }
 
   .hero-gallery {
