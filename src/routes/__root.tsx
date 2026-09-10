@@ -52,7 +52,7 @@ export const Route = createRootRoute({
       },
       {
         property: 'og:image',
-        content: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png',
+        content: '/api/images/logo',
       },
       {
         property: 'og:image:alt',
@@ -67,7 +67,7 @@ export const Route = createRootRoute({
       {
         rel: 'icon',
         type: 'image/png',
-        href: '/goldblack_logo.png',
+        href: '/api/images/logo',
       },
       {
         rel: 'preconnect',

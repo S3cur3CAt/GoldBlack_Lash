@@ -236,7 +236,7 @@ export const faqs = [
   },
 ] as const
 
-/** Casos de estudio de la galería. Las imágenes se añaden en `public/galeria/`. */
+/** Casos de estudio de la galería. Las imágenes se sirven desde Neon (`/api/images/*`). */
 export type GalleryPiece = {
   id: string
   title: string
@@ -246,13 +246,13 @@ export type GalleryPiece = {
 }
 
 export const galleryPieces: Array<GalleryPiece> = [
-  { id: 'pieza-01', title: 'Mirada natural', technique: 'Clásicas', detail: 'Curvatura C, 9-11 mm', image: '/galeria/pieza-01.png' },
-  { id: 'pieza-02', title: 'Ojo de gato', technique: 'Volumen ruso', detail: 'Abanicos 4D, efecto lifting', image: '/galeria/pieza-02.png' },
-  { id: 'pieza-03', title: 'Densidad total', technique: 'Mega volumen', detail: 'Abanicos 8D, 10-13 mm', image: '/galeria/pieza-03.png' },
-  { id: 'pieza-04', title: 'Textura suave', technique: 'Híbridas', detail: 'Mix clásica y 3D', image: '/galeria/pieza-04.png' },
-  { id: 'pieza-05', title: 'Lifting natural', technique: 'Lifting + tinte', detail: 'Curvatura L, efecto apertura', image: '/galeria/pieza-05.png' },
-  { id: 'pieza-06', title: 'Efecto muñeca', technique: 'Volumen ruso', detail: 'Curvatura D, cola alargada', image: '/galeria/pieza-06.png' },
-  { id: 'pieza-07', title: 'Piel sensible', technique: 'Clásicas', detail: 'Adhesivo de baja emanación', image: '/galeria/pieza-07.png' },
-  { id: 'pieza-08', title: 'Novia', technique: 'Híbridas', detail: 'Diseño escalonado simétrico', image: '/galeria/pieza-08.png' },
-  { id: 'pieza-09', title: 'Mirada abierta', technique: 'Efecto L', detail: 'Longitudes 8-12 mm', image: '/galeria/pieza-09.png' },
+  { id: 'pieza-01', title: 'Mirada natural', technique: 'Clásicas', detail: 'Curvatura C, 9-11 mm', image: '/api/images/pieza-01' },
+  { id: 'pieza-02', title: 'Ojo de gato', technique: 'Volumen ruso', detail: 'Abanicos 4D, efecto lifting', image: '/api/images/pieza-02' },
+  { id: 'pieza-03', title: 'Densidad total', technique: 'Mega volumen', detail: 'Abanicos 8D, 10-13 mm', image: '/api/images/pieza-03' },
+  { id: 'pieza-04', title: 'Textura suave', technique: 'Híbridas', detail: 'Mix clásica y 3D', image: '/api/images/pieza-04' },
+  { id: 'pieza-05', title: 'Lifting natural', technique: 'Lifting + tinte', detail: 'Curvatura L, efecto apertura', image: '/api/images/pieza-05' },
+  { id: 'pieza-06', title: 'Efecto muñeca', technique: 'Volumen ruso', detail: 'Curvatura D, cola alargada', image: '/api/images/pieza-06' },
+  { id: 'pieza-07', title: 'Piel sensible', technique: 'Clásicas', detail: 'Adhesivo de baja emanación', image: '/api/images/pieza-07' },
+  { id: 'pieza-08', title: 'Novia', technique: 'Híbridas', detail: 'Diseño escalonado simétrico', image: '/api/images/pieza-08' },
+  { id: 'pieza-09', title: 'Mirada abierta', technique: 'Efecto L', detail: 'Longitudes 8-12 mm', image: '/api/images/pieza-09' },
 ]

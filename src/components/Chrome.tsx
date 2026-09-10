@@ -54,13 +54,15 @@ export function Header() {
           aria-label={`${business.name}, ir al inicio`}
           className="flex items-center gap-3"
         >
-          <img
-            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
-            alt="GoldBlack Tienda de Pestañas — logotipo"
-            width={220}
-            height={220}
-            className="relative z-10 h-20 w-20 rounded-full object-cover sm:h-28 sm:w-28"
-          />
+          <span className="relative z-10 grid h-20 w-20 shrink-0 place-items-center sm:h-28 sm:w-28">
+            <img
+              src="/api/images/logo"
+              alt="GoldBlack Tienda de Pestañas — logotipo"
+              width={220}
+              height={220}
+              className="h-full w-full rounded-full object-cover"
+            />
+          </span>
         </Link>
 
         <nav
@@ -152,7 +154,7 @@ export function Footer() {
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
             <img
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
+              src="/api/images/logo"
               alt="GoldBlack Tienda de Pestañas — logotipo"
               width={220}
               height={220}

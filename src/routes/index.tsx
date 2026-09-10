@@ -81,14 +81,14 @@ function Hero() {
         <div className="hero-gallery reveal-in reveal-delay">
           <div className="hero-side hero-side-left">
             <StudioVisual
-              src="/galeria/pieza-01.png"
+              src="/api/images/pieza-01"
               alt="Detalle de un diseño de pestañas clásicas"
             />
           </div>
 
           <div className="hero-center">
             <StudioVisual
-              src="/galeria/pieza-05.png"
+              src="/api/images/pieza-05"
               alt="Detalle de lifting natural con efecto apertura"
               priority
             />
@@ -96,7 +96,7 @@ function Hero() {
 
           <div className="hero-side hero-side-right">
             <StudioVisual
-              src="/galeria/pieza-04.png"
+              src="/api/images/pieza-04"
               alt="Detalle de un diseño de pestañas híbridas"
             />
           </div>
@@ -160,9 +160,9 @@ function Hero() {
 
 function ServicesPreview() {
   const images: Record<string, string> = {
-    extensiones: '/galeria/pieza-02.png',
-    mantenimiento: '/galeria/pieza-04.png',
-    extras: '/galeria/pieza-05.png',
+    extensiones: '/api/images/pieza-02',
+    mantenimiento: '/api/images/pieza-04',
+    extras: '/api/images/pieza-05',
   }
 
   return (
@@ -287,7 +287,7 @@ function Experience() {
           <div className="relative mx-auto w-full max-w-md pb-9">
             <div className="overflow-hidden rounded-t-[12rem] rounded-b-[3rem] border-8 border-white shadow-panel">
               <StudioVisual
-                src="/galeria/pieza-06.png"
+                src="/api/images/pieza-06"
                 alt="Detalle de efecto muñeca en volumen ruso"
                 label=""
                 className="rounded-none!"
