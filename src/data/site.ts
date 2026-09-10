@@ -250,13 +250,9 @@ export type GalleryPiece = {
 }
 
 export const galleryPieces: Array<GalleryPiece> = [
-  { id: 'pieza-01', title: 'Mirada natural', technique: 'Clásicas', detail: 'Curvatura C, 9-11 mm', image: '/api/images/pieza-01' },
-  { id: 'pieza-02', title: 'Ojo de gato', technique: 'Volumen ruso', detail: 'Abanicos 4D, efecto lifting', image: '/api/images/pieza-02' },
-  { id: 'pieza-03', title: 'Densidad total', technique: 'Mega volumen', detail: 'Abanicos 8D, 10-13 mm', image: '/api/images/pieza-03' },
-  { id: 'pieza-04', title: 'Textura suave', technique: 'Híbridas', detail: 'Mix clásica y 3D', image: '/api/images/pieza-04' },
-  { id: 'pieza-05', title: 'Lifting natural', technique: 'Lifting + tinte', detail: 'Curvatura L, efecto apertura', image: '/api/images/pieza-05' },
-  { id: 'pieza-06', title: 'Efecto muñeca', technique: 'Volumen ruso', detail: 'Curvatura D, cola alargada', image: '/api/images/pieza-06' },
-  { id: 'pieza-07', title: 'Piel sensible', technique: 'Clásicas', detail: 'Adhesivo de baja emanación', image: '/api/images/pieza-07' },
-  { id: 'pieza-08', title: 'Novia', technique: 'Híbridas', detail: 'Diseño escalonado simétrico', image: '/api/images/pieza-08' },
-  { id: 'pieza-09', title: 'Mirada abierta', technique: 'Efecto L', detail: 'Longitudes 8-12 mm', image: '/api/images/pieza-09' },
+  { id: 'pieza-01', title: 'Efecto 4D', technique: 'Volumen 4D', detail: 'Abanicos 4D hechos a mano', image: '/api/images/pieza-01' },
+  { id: 'pieza-02', title: 'Efecto 5D', technique: 'Volumen 5D', detail: 'Abanicos 5D hechos a mano', image: '/api/images/pieza-02' },
+  { id: 'pieza-03', title: 'Efecto 6D', technique: 'Volumen 6D', detail: 'Abanicos 6D hechos a mano', image: '/api/images/pieza-03' },
+  { id: 'pieza-04', title: 'Fibras tecnológicas', technique: 'Fibras tecnológicas 3D', detail: 'Efecto 3D de alta definición', image: '/api/images/pieza-04' },
+  { id: 'pieza-05', title: 'Volumen ruso', technique: 'Volumen ruso', detail: 'Densidad y negro intenso', image: '/api/images/pieza-05' },
 ]

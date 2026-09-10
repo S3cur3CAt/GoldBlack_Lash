@@ -62,8 +62,8 @@ function SobreMi() {
           <div className="relative mx-auto w-full max-w-md pb-10">
             <div className="overflow-hidden rounded-t-[12rem] rounded-b-[3rem] border-8 border-white shadow-panel">
               <StudioVisual
-                src="/api/images/pieza-06"
-                alt="Detalle de efecto muñeca en volumen ruso"
+                src="/api/images/pieza-05"
+                alt="Detalle de volumen ruso"
                 label="Tu pequeño momento de calma"
                 className="rounded-none!"
               />

@@ -29,12 +29,13 @@ if (!url) {
 }
 
 const files = [
-  ...Array.from({ length: 9 }, (_, i) => {
-    const id = `pieza-0${i + 1}`
-    return { key: id, path: join(root, 'public', 'galeria', `${id}.png`) }
-  }),
-  { key: 'logo', path: join(root, 'public', 'goldblack_logo.png') },
-  { key: 'promo-qr', path: join(root, 'public', 'promo-qr.png') },
+  { key: 'pieza-01', path: join(root, 'public', 'galeria', 'pieza-01.jpg'), mime: 'image/jpeg' },
+  { key: 'pieza-02', path: join(root, 'public', 'galeria', 'pieza-02.jpg'), mime: 'image/jpeg' },
+  { key: 'pieza-03', path: join(root, 'public', 'galeria', 'pieza-03.jpg'), mime: 'image/jpeg' },
+  { key: 'pieza-04', path: join(root, 'public', 'galeria', 'pieza-04.jpg'), mime: 'image/jpeg' },
+  { key: 'pieza-05', path: join(root, 'public', 'galeria', 'pieza-05.jpg'), mime: 'image/jpeg' },
+  { key: 'logo', path: join(root, 'public', 'goldblack_logo.png'), mime: 'image/png' },
+  { key: 'promo-qr', path: join(root, 'public', 'promo-qr.png'), mime: 'image/png' },
 ]
 
 const sql = postgres(url, { ssl: 'require', prepare: false, max: 1, connect_timeout: 15 })
@@ -58,7 +59,7 @@ for (const f of files) {
   const data = readFileSync(f.path)
   await sql`
     INSERT INTO images (key, mime, data, size, updated_at)
-    VALUES (${f.key}, 'image/png', ${data}, ${data.length}, now())
+    VALUES (${f.key}, ${f.mime}, ${data}, ${data.length}, now())
     ON CONFLICT (key) DO UPDATE SET mime = EXCLUDED.mime, data = EXCLUDED.data, size = EXCLUDED.size, updated_at = now()
   `
   console.log(`OK ${f.key} (${data.length} bytes)`)
