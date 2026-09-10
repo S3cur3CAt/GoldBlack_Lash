@@ -52,7 +52,7 @@ export const Route = createRootRoute({
       },
       {
         property: 'og:image',
-        content: '/goldblack_logo.png',
+        content: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png',
       },
       {
         property: 'og:image:alt',

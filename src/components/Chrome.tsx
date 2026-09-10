@@ -55,21 +55,12 @@ export function Header() {
           className="flex items-center gap-3"
         >
           <img
-            src="/goldblack_logo.png"
-            alt={`${business.name} — logotipo`}
-            width={44}
-            height={44}
-            className="h-11 w-11 rounded-full object-cover"
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
+            alt="GoldBlack Tienda de Pestañas — logotipo"
+            width={220}
+            height={220}
+            className="h-16 w-16 rounded-full object-cover sm:h-[4.5rem] sm:w-[4.5rem]"
           />
-
-          <span>
-            <span className="block font-display text-2xl leading-none tracking-tight">
-              GoldBlack
-            </span>
-            <span className="mt-1.5 block text-[0.53rem] font-semibold tracking-[0.3em] text-muted uppercase">
-              Lash & beauty studio
-            </span>
-          </span>
         </Link>
 
         <nav
@@ -160,13 +151,13 @@ export function Footer() {
       <div className="wrap pt-14 pb-7 md:pt-20">
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
-            <p className="font-display text-4xl tracking-tight">
-              GoldBlack
-            </p>
-
-            <p className="mt-3 text-[0.6rem] tracking-[0.25em] text-white/60 uppercase">
-              Lash & beauty studio
-            </p>
+            <img
+              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-Lg9FzMrHkISIalG0e1euvkrg26YmEq.png"
+              alt="GoldBlack Tienda de Pestañas — logotipo"
+              width={220}
+              height={220}
+              className="h-24 w-48 object-contain object-left"
+            />
 
             <p className="mt-6 max-w-xs text-sm leading-7 text-white/70">
               Un pequeño momento para ti.
