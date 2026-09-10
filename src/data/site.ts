@@ -70,7 +70,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         description:
           'Una extensión por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
         duration: '1 h 30 min',
-        price: '45 €',
+        price: '27 €',
         includes: [
           'Efecto natural pelo a pelo',
           'Diseño según la forma del ojo',
@@ -83,7 +83,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         description:
           'Abanicos de 3 a 5 pestañas ultrafinas por pestaña natural. Densidad y negro intenso sin peso.',
         duration: '2 h',
-        price: '60 €',
+        price: '30 €',
         featured: true,
         includes: [
           'Abanicos hechos a mano',
@@ -97,7 +97,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         description:
           'Abanicos de 6 a 10 pestañas. Máxima densidad y efecto wow para ocasiones especiales.',
         duration: '2 h 30 min',
-        price: '75 €',
+        price: '27 €',
         includes: [
           'Máxima densidad',
           'Efecto alfombra o volumen extremo',
@@ -110,7 +110,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         description:
           'Mezcla de clásicas y volumen en un mismo ojo. Lo mejor de los dos mundos, con textura y movimiento.',
         duration: '2 h',
-        price: '55 €',
+        price: '27 €',
         includes: [
           'Textura desenfadada',
           'Punto de densidad a elección',
@@ -123,7 +123,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         description:
           'Longitudes escalonadas que abren la mirada y levantan la cola del ojo de forma visual.',
         duration: '2 h',
-        price: '65 €',
+        price: '27 €',
         includes: [
           'Mapa de longitudes escalonado',
           'Apertura y elevación visual',
