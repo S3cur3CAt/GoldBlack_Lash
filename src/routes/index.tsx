@@ -4,8 +4,6 @@ import { StudioVisual } from '#/components/StudioVisual'
 import {
   business,
   faqs,
-  galleryPieces,
-  serviceCategories,
   whatsappLink,
 } from '#/data/site'
 
@@ -31,7 +29,6 @@ function Home() {
       <Hero />
       <ServicesPreview />
       <Experience />
-      <GalleryPreview />
       <FaqSection />
       <BookingSection />
     </>
@@ -177,16 +174,6 @@ function Hero() {
 }
 
 function ServicesPreview() {
-  const images: Record<string, string> = {
-    extensiones: '/api/images/pieza-02',
-    extras: '/api/images/pieza-05',
-  }
-
-  const taglines: Record<string, string> = {
-    extensiones: 'Realza tu mirada',
-    extras: 'Un extra de cuidado',
-  }
-
   return (
     <section className="section">
       <div className="wrap">
@@ -206,67 +193,6 @@ function ServicesPreview() {
             desapercibido. Encontramos el efecto que mejor encaja contigo.
           </p>
         </header>
-
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {serviceCategories.map((category) => {
-            const service =
-              category.services.find((item) => item.featured) ??
-              category.services[0]
-
-            if (!service) return null
-
-            return (
-              <Link
-                key={category.id}
-                to="/servicios"
-                search={{ categoria: category.id }}
-                hash={category.id}
-                className="beauty-card group"
-              >
-                <div className="beauty-card-visual">
-                  <StudioVisual
-                    src={images[category.id]}
-                    alt={`Detalle de ${service.name}`}
-                    label={category.name}
-                  />
-                </div>
-
-                <div className="flex flex-1 flex-col px-7 pt-4 pb-7">
-                  <p className="text-[0.6rem] font-bold tracking-[0.15em] text-rose uppercase">
-                    {taglines[category.id] ?? 'Realza tu mirada'}
-                  </p>
-
-                  <h3 className="mt-3 font-display text-3xl leading-tight">
-                    {service.name}
-                  </h3>
-
-                  <p className="mt-4 flex-1 text-sm leading-7 text-muted">
-                    {service.description}
-                  </p>
-
-                  <div className="mt-6 flex items-center justify-between gap-4 border-t border-line pt-5">
-                    <div>
-                      <p className="font-display text-2xl">
-                        {service.price}
-                      </p>
-
-                      <p className="mt-1 text-[0.65rem] text-muted">
-                        {service.duration}
-                      </p>
-                    </div>
-
-                    <span
-                      aria-hidden="true"
-                      className="grid h-11 w-11 place-items-center rounded-full bg-blush text-rose transition-colors group-hover:bg-plum group-hover:text-white"
-                    >
-                      ↗
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
 
         <div className="mt-9 text-center">
           <Link to="/servicios" className="button">
@@ -368,80 +294,6 @@ function Experience() {
   )
 }
 
-function GalleryPreview() {
-  return (
-    <section className="section">
-      <div className="wrap">
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div>
-            <p className="eyebrow">
-              Un poquito de inspiración
-            </p>
-
-            <h2 className="section-title mt-5">
-              Miradas que
-              <br />
-              hablan por sí solas.
-            </h2>
-          </div>
-
-          <Link
-            to="/galeria"
-            className="text-link self-start sm:self-auto"
-          >
-            Explorar resultados
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-
-        <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {galleryPieces.slice(0, 4).map((piece, index) => (
-            <Link
-              key={piece.id}
-              to="/galeria"
-              className={`group min-w-0 ${
-                index % 2 === 1 ? 'mt-8' : ''
-              }`}
-            >
-              <div className="overflow-hidden rounded-4xl bg-blush">
-                <StudioVisual
-                  src={piece.image}
-                  alt={piece.title}
-                  label={piece.technique}
-                  className="transition-transform duration-500 group-hover:scale-[1.04]"
-                />
-              </div>
-
-              <h3 className="mt-4 font-display text-xl">
-                {piece.title}
-              </h3>
-
-              <p className="mt-1 text-[0.65rem] text-muted">
-                {piece.technique}
-              </p>
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-12 flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-5">
-          <p className="text-sm text-muted">
-            Más detalles, más inspiración y novedades.
-          </p>
-
-          <a
-            href={business.instagram}
-            target="_blank"
-            rel="noreferrer"
-            className="text-link"
-          >
-            {business.instagramHandle}
-            <span aria-hidden="true">↗</span>
-          </a>
-        </div>
-      </div>
-    </section>
-  )
-}
 
 function FaqSection() {
   return (

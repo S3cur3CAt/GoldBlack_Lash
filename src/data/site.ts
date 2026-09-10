@@ -105,7 +105,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         id: 'retirada',
         name: 'Retirada de extensiones',
         description:
-          'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural. Cuesta 5 € si te las pusiste en GoldBlack y 10 € si vienen de otro centro, porque primero revisamos el estado de tu pestaña.',
+          'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural. Retirada 5 € si te las pusiste en GoldBlack y 10 € si vienen de otro centro.',
         duration: '30 min',
         price: '5–10 €',
         includes: ['Crema disolvente suave', 'Sin daño a la pestaña natural', 'Revisión incluida'],
@@ -182,9 +182,9 @@ export type GalleryPiece = {
 }
 
 export const galleryPieces: Array<GalleryPiece> = [
-  { id: 'pieza-01', title: 'Efecto 4D', technique: 'Volumen 4D', detail: 'Abanicos 4D hechos a mano', image: '/api/images/pieza-01', price: '27 €' },
-  { id: 'pieza-02', title: 'Efecto 5D', technique: 'Volumen 5D', detail: 'Abanicos 5D hechos a mano', image: '/api/images/pieza-02', price: '27 €' },
-  { id: 'pieza-03', title: 'Efecto 6D', technique: 'Volumen 6D', detail: 'Abanicos 6D hechos a mano', image: '/api/images/pieza-03', price: '27 €' },
+  { id: 'pieza-01', title: 'Volumen 4D', technique: 'Volumen 4D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-01', price: '27 €' },
+  { id: 'pieza-02', title: 'Volumen 5D', technique: 'Volumen 5D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-02', price: '27 €' },
+  { id: 'pieza-03', title: 'Volumen 6D', technique: 'Volumen 6D', detail: 'Fibras Tecnológicas', image: '/api/images/pieza-03', price: '27 €' },
   { id: 'pieza-04', title: 'Fibras tecnológicas', technique: 'Fibras tecnológicas 3D', detail: 'Efecto 3D de alta definición', image: '/api/images/pieza-04', price: '27 €' },
   { id: 'pieza-05', title: 'Volumen ruso', technique: 'Volumen ruso', detail: 'Densidad y negro intenso', image: '/api/images/pieza-05', price: '30 €' },
 ]
