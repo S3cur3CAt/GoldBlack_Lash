@@ -21,6 +21,10 @@ export const business = {
   // TODO: sustituir por la URL real del perfil.
   instagram: 'https://instagram.com/goldblack_lash',
   instagramHandle: '@goldblack_lash',
+  // Ubicación real de la tienda (37.3415415, -5.9386880).
+  mapsUrl: 'https://maps.app.goo.gl/pTmcZcRxHETf7QJq7?g_st=iw',
+  mapsEmbed:
+    'https://maps.google.com/maps?q=37.3415415,-5.9386880&z=17&output=embed',
   hours: [
     { days: 'Lunes a viernes', time: '10:00 – 20:00' },
     { days: 'Sábado', time: '10:00 – 15:00' },

@@ -25,10 +25,6 @@ export const Route = createFileRoute('/contacto')({
 })
 
 function Contacto() {
-  const mapQuery = encodeURIComponent(
-    `${business.address}, ${business.postalCode} ${business.city}`,
-  )
-
   return (
     <>
       <PageHero
@@ -75,7 +71,7 @@ function Contacto() {
                 </address>
 
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                  href={business.mapsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="button button-dark mt-6"
@@ -88,7 +84,7 @@ function Contacto() {
               <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-soft">
                 <iframe
                   title={`Ubicación de ${business.name}`}
-                  src={`https://maps.google.com/maps?q=${mapQuery}&output=embed`}
+                  src={business.mapsEmbed}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   className="h-80 w-full border-0 md:h-96"
