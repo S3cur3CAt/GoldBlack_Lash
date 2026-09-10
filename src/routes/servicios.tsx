@@ -292,14 +292,14 @@ function ServiceCard({ service }: { service: Service }) {
         <a
           href={whatsappLink(
             [
-              `✨ *Me interesa este servicio — ${business.name}* ✨`,
-              '———————————',
-              `💫 *Servicio:* ${service.name} (${service.price})`,
-              `🕐 *Duración aprox.:* ${service.duration}`,
-              '———————————',
-              '👤 *Nombre:*',
-              '📞 *Teléfono:*',
-              `🌐 ${business.siteUrl}`,
+              `*Me interesa este servicio — ${business.name}*`,
+              '---------------------------',
+              `*Servicio:* ${service.name} (${service.price})`,
+              `*Duración aprox.:* ${service.duration}`,
+              '---------------------------',
+              '*Nombre:*',
+              '*Teléfono:*',
+              `${business.siteUrl}`,
             ].join('\n'),
           )}
           target="_blank"

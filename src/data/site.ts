@@ -35,7 +35,7 @@ export const business = {
 
 /** Enlace de WhatsApp con mensaje prerellenado para pedir cita. */
 export function whatsappLink(
-  message = '¡Hola! Me gustaría pedir cita en GoldBlack Lash 🖤✨',
+  message = '¡Hola! Me gustaría pedir cita en GoldBlack Lash',
 ) {
   return `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(message)}`
 }

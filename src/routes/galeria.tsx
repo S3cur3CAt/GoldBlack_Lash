@@ -363,14 +363,14 @@ function Lightbox({
             <a
               href={whatsappLink(
                 [
-                  `✨ *Me gusta este diseño — ${business.name}* ✨`,
-                  '———————————',
-                  `💫 *Diseño:* ${piece.title} (${piece.technique}${piece.price ? ` · ${piece.price}` : ''})`,
-                  `👁️ *Referencia:* ${piece.detail}`,
-                  '———————————',
-                  '👤 *Nombre:*',
-                  '📞 *Teléfono:*',
-                  `🌐 ${business.siteUrl}`,
+                  `*Me gusta este diseño — ${business.name}*`,
+                  '---------------------------',
+                  `*Diseño:* ${piece.title} (${piece.technique}${piece.price ? ` · ${piece.price}` : ''})`,
+                  `*Referencia:* ${piece.detail}`,
+                  '---------------------------',
+                  '*Nombre:*',
+                  '*Teléfono:*',
+                  `${business.siteUrl}`,
                 ].join('\n'),
               )}
               target="_blank"
