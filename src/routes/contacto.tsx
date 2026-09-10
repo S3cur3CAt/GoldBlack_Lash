@@ -258,19 +258,19 @@ function BookingForm() {
       .find((service) => service.name === form.servicio)?.price
 
     const message = [
-      `¡Hola! Quiero consultar una cita en ${business.name}.`,
-      '',
-      `Nombre: ${form.nombre.trim()}`,
-      `Teléfono: ${form.telefono.trim()}`,
-      `Servicio: ${form.servicio}${servicePrice ? ` (${servicePrice})` : ''}`,
+      `✨ *Nueva solicitud de cita — ${business.name}* ✨`,
+      '———————————',
+      `👤 *Nombre:* ${form.nombre.trim()}`,
+      `📞 *Teléfono:* ${form.telefono.trim()}`,
+      `💫 *Servicio:* ${form.servicio}${servicePrice ? ` (${servicePrice})` : ''}`,
       form.fecha.trim()
-        ? `Disponibilidad: ${form.fecha.trim()}`
+        ? `🕐 *Disponibilidad:* ${form.fecha.trim()}`
         : null,
       form.mensaje.trim()
-        ? `Comentarios: ${form.mensaje.trim()}`
+        ? `💬 *Comentarios:* ${form.mensaje.trim()}`
         : null,
-      '',
-      business.siteUrl,
+      '———————————',
+      `🌐 ${business.siteUrl}`,
     ]
       .filter((line): line is string => line !== null)
       .join('\n')
