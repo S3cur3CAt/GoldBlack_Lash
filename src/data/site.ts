@@ -11,9 +11,10 @@ export const business = {
   tagline: 'Estudio de extensiones de pestañas',
   claim: 'Belleza de autor, hecha a medida',
   // TODO: sustituir por el número real (formato internacional, sin + ni espacios).
-  whatsapp: '34662023435',
+  whatsapp: '34604187676',
   // TODO: sustituir por el teléfono real tal y como quieres que se muestre.
-  phoneDisplay: '+34 662 02 34 35',
+  phoneDisplay: '+34 604 18 76 76',
+  siteUrl: 'https://goldblacklash.vercel.app',
   email: 'hola@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
   city: 'Dos Hermanas (Sevilla)',

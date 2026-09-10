@@ -253,18 +253,24 @@ function BookingForm() {
       return
     }
 
+    const servicePrice = serviceCategories
+      .flatMap((category) => category.services)
+      .find((service) => service.name === form.servicio)?.price
+
     const message = [
       `¡Hola! Quiero consultar una cita en ${business.name}.`,
       '',
       `Nombre: ${form.nombre.trim()}`,
       `Teléfono: ${form.telefono.trim()}`,
-      `Servicio: ${form.servicio}`,
+      `Servicio: ${form.servicio}${servicePrice ? ` (${servicePrice})` : ''}`,
       form.fecha.trim()
         ? `Disponibilidad: ${form.fecha.trim()}`
         : null,
       form.mensaje.trim()
         ? `Comentarios: ${form.mensaje.trim()}`
         : null,
+      '',
+      business.siteUrl,
     ]
       .filter((line): line is string => line !== null)
       .join('\n')
