@@ -1,7 +1,8 @@
-// Handler Nitro para GET /api/images/:key (registrado en vite.config.ts).
-// Sirve las imagenes guardadas en Neon Postgres con cache inmutable.
+// Ruta Nitro por convencion: GET /api/images/:key (dev, build y prod).
+// Nitro escanea server/api/**/*.get.ts automaticamente, sin registrar nada
+// en vite.config.ts. Sirve las imagenes de Neon con cache inmutable.
 // Formato "web": Request/Response estandar.
-import { fetchImageFromNeon, isValidImageKey } from './images'
+import { fetchImageFromNeon, isValidImageKey } from '../../images'
 
 export default async (request: Request): Promise<Response> => {
   const pathname = new URL(request.url).pathname
