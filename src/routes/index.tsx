@@ -161,8 +161,12 @@ function Hero() {
 function ServicesPreview() {
   const images: Record<string, string> = {
     extensiones: '/api/images/pieza-02',
-    mantenimiento: '/api/images/pieza-04',
     extras: '/api/images/pieza-05',
+  }
+
+  const taglines: Record<string, string> = {
+    extensiones: 'Realza tu mirada',
+    extras: 'Un extra de cuidado',
   }
 
   return (
@@ -185,8 +189,8 @@ function ServicesPreview() {
           </p>
         </header>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {serviceCategories.map((category, index) => {
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {serviceCategories.map((category) => {
             const service =
               category.services.find((item) => item.featured) ??
               category.services[0]
@@ -211,11 +215,7 @@ function ServicesPreview() {
 
                 <div className="flex flex-1 flex-col px-7 pt-4 pb-7">
                   <p className="text-[0.6rem] font-bold tracking-[0.15em] text-rose uppercase">
-                    {index === 0
-                      ? 'Realza tu mirada'
-                      : index === 1
-                        ? 'Mantén tu efecto'
-                        : 'Un extra de cuidado'}
+                    {taglines[category.id] ?? 'Realza tu mirada'}
                   </p>
 
                   <h3 className="mt-3 font-display text-3xl leading-tight">

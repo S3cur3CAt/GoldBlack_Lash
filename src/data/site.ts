@@ -93,71 +93,6 @@ export const serviceCategories: Array<ServiceCategory> = [
           'Ideal para pestaña escasa',
         ],
       },
-      {
-        id: 'volumen-mega',
-        name: 'Mega volumen',
-        description:
-          'Abanicos de 6 a 10 pestañas. Máxima densidad y efecto wow para ocasiones especiales.',
-        duration: '2 h 30 min',
-        price: '27 €',
-        includes: [
-          'Máxima densidad',
-          'Efecto alfombra o volumen extremo',
-          'Relleno de 2 semanas incluido',
-        ],
-      },
-      {
-        id: 'hibridas',
-        name: 'Híbridas',
-        description:
-          'Mezcla de clásicas y volumen en un mismo ojo. Lo mejor de los dos mundos, con textura y movimiento.',
-        duration: '2 h',
-        price: '27 €',
-        includes: [
-          'Textura desenfadada',
-          'Punto de densidad a elección',
-          'Acabado con brillo',
-        ],
-      },
-      {
-        id: 'efecto-lifting',
-        name: 'Efecto lifting / L',
-        description:
-          'Longitudes escalonadas que abren la mirada y levantan la cola del ojo de forma visual.',
-        duration: '2 h',
-        price: '27 €',
-        includes: [
-          'Mapa de longitudes escalonado',
-          'Apertura y elevación visual',
-          'Perfecto para ojos caídos',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'mantenimiento',
-    name: 'Mantenimiento',
-    blurb:
-      'El relleno mantiene el diseño intacto. Recomendado cada 2 o 3 semanas según tu ciclo de crecimiento.',
-    services: [
-      {
-        id: 'relleno-2-semanas',
-        name: 'Relleno (hasta 3 semanas)',
-        description:
-          'Reposición de las pestañas crecidas o caídas para devolver el volumen original.',
-        duration: '1 h',
-        price: '35 €',
-        includes: ['Reposición pelo a pelo', 'Limpieza profunda', 'Revisión del diseño'],
-      },
-      {
-        id: 'relleno-4-semanas',
-        name: 'Relleno (4 a 5 semanas)',
-        description:
-          'Para ciclos más largos o cuando ya se ha perdido bastante densidad.',
-        duration: '1 h 30 min',
-        price: '45 €',
-        includes: ['Reposición completa', 'Retirada de pestañas crecidas', 'Reajuste del mapa'],
-      },
     ],
   },
   {
@@ -166,31 +101,13 @@ export const serviceCategories: Array<ServiceCategory> = [
     blurb: 'Servicios sueltos para cuidar tu pestaña natural o dar el paso a otro estilo.',
     services: [
       {
-        id: 'lifting',
-        name: 'Lifting de pestañas',
-        description:
-          'Curvatura y elevación de tu propia pestaña con nutrición y tinte opcional. Sin extensiones.',
-        duration: '1 h',
-        price: '40 €',
-        includes: ['Curvatura permanente', 'Nutrición con keratina', 'Tinte incluido'],
-      },
-      {
-        id: 'tinte',
-        name: 'Tinte y nutrición',
-        description:
-          'Color más profundo y tratamiento fortalecedor para pestañas naturales o poco pigmentadas.',
-        duration: '40 min',
-        price: '20 €',
-        includes: ['Tinte hipoalergénico', 'Baño de keratina', 'Efecto de mirada descansada'],
-      },
-      {
         id: 'retirada',
         name: 'Retirada de extensiones',
         description:
-          'Desmontaje con crema disolvente profesional, sin tirones ni daño a la pestaña natural.',
+          'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural. Cuesta 5 € si te las pusiste en GoldBlack y 10 € si vienen de otro centro, porque primero revisamos el estado de tu pestaña.',
         duration: '30 min',
-        price: '15 €',
-        includes: ['Crema disolvente suave', 'Limpieza final', 'Diagnóstico de la pestaña'],
+        price: '5–10 €',
+        includes: ['Crema disolvente suave', 'Sin daño a la pestaña natural', 'Revisión incluida'],
       },
       {
         id: 'limpieza-facial',
