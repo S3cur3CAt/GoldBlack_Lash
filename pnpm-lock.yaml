@@ -4,10 +4,16 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  uuid: ^11.1.1
+
 importers:
 
   .:
     dependencies:
+      '@deepar/beauty':
+        specifier: 1.1.0-beta
+        version: 1.1.0-beta
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.3.3(vite@8.2.2(@types/node@22.20.2)(jiti@2.7.0))
@@ -23,6 +29,9 @@ importers:
       '@tanstack/react-start':
         specifier: latest
         version: 1.168.51(crossws@0.4.12(srvx@1.0.4))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.8)(vite@8.2.2(@types/node@22.20.2)(jiti@2.7.0))
+      deepar:
+        specifier: ^5.6.22
+        version: 5.6.22
       nitro:
         specifier: 3.0.260903-beta
         version: 3.0.260903-beta
@@ -132,6 +141,9 @@ packages:
   '@babel/types@7.29.8':
     resolution: {integrity: sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==}
     engines: {node: '>=6.9.0'}
+
+  '@deepar/beauty@1.1.0-beta':
+    resolution: {integrity: sha512-54kmcS+by8qsygCHFRJKq5viLQJUbi6sbaWi003JL6Da8RqaWNb+xlc89qUmE4ZabW2orUFO5ShxM1fi73zWhw==}
 
   '@emnapi/core@1.11.3':
     resolution: {integrity: sha512-zLpS5asjEb7lq8jYLq37N6XKaE41DIexlY1rF/z4/tIl3wo13Sqm28fRyfIsKZD+NZ8mM5RoKkpW/rBcuoSZSg==}
@@ -854,6 +866,9 @@ packages:
       supports-color:
         optional: true
 
+  deepar@5.6.22:
+    resolution: {integrity: sha512-a/3lcCLA8oGcaAsdps86yYs4gYCvnoGId7KkKH3Ji9U6XMslIKTH7VNjWWkkuCt0A6ef1ecwFdVM6nMOE1ReoQ==}
+
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -894,6 +909,9 @@ packages:
 
   fetchdts@0.1.7:
     resolution: {integrity: sha512-YoZjBdafyLIop9lSxXVI33oLD5kN31q4Td+CasofLLYeLXRFeOsuOw0Uo+XNRi9PZlbfdlN2GmRtm4tCEQ9/KA==}
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
@@ -1336,6 +1354,10 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
+    hasBin: true
+
   vite@8.2.2:
     resolution: {integrity: sha512-cFKLV/PRgAUlIRm5WjMjJ86jrftzpqcgH+Us+DS8mI3CDNiH30Whrz8uHL3+MOLPAgqbMBAqWdAHAphOAM+z/Q==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -1529,6 +1551,11 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 7.29.7
       '@babel/helper-validator-identifier': 7.29.7
+
+  '@deepar/beauty@1.1.0-beta':
+    dependencies:
+      fflate: 0.8.3
+      uuid: 11.1.1
 
   '@emnapi/core@1.11.3':
     dependencies:
@@ -2231,6 +2258,8 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
+  deepar@5.6.22: {}
+
   detect-libc@2.1.2: {}
 
   diff@8.0.4: {}
@@ -2260,6 +2289,8 @@ snapshots:
       picomatch: 4.0.7
 
   fetchdts@0.1.7: {}
+
+  fflate@0.8.3: {}
 
   fsevents@2.3.3:
     optional: true
@@ -2610,6 +2641,8 @@ snapshots:
   use-sync-external-store@1.7.0(react@19.3.0):
     dependencies:
       react: 19.3.0
+
+  uuid@11.1.1: {}
 
   vite@8.2.2(@types/node@22.20.2)(jiti@2.7.0):
     dependencies:

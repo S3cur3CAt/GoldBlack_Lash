@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as GaleriaRouteImport } from './routes/galeria'
+import { Route as ProbadorRouteImport } from './routes/probador'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 
@@ -30,6 +31,11 @@ const GaleriaRoute = GaleriaRouteImport.update({
   path: '/galeria',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProbadorRoute = ProbadorRouteImport.update({
+  id: '/probador',
+  path: '/probador',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ServiciosRoute = ServiciosRouteImport.update({
   id: '/servicios',
   path: '/servicios',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
+  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
+  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
 }
@@ -60,21 +68,31 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/contacto': typeof ContactoRoute
   '/galeria': typeof GaleriaRoute
+  '/probador': typeof ProbadorRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/contacto' | '/galeria' | '/servicios' | '/sobre-mi'
+  fullPaths:
+    '/' | '/contacto' | '/galeria' | '/probador' | '/servicios' | '/sobre-mi'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/contacto' | '/galeria' | '/servicios' | '/sobre-mi'
-  id: '__root__' | '/' | '/contacto' | '/galeria' | '/servicios' | '/sobre-mi'
+  to: '/' | '/contacto' | '/galeria' | '/probador' | '/servicios' | '/sobre-mi'
+  id:
+    | '__root__'
+    | '/'
+    | '/contacto'
+    | '/galeria'
+    | '/probador'
+    | '/servicios'
+    | '/sobre-mi'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ContactoRoute: typeof ContactoRoute
   GaleriaRoute: typeof GaleriaRoute
+  ProbadorRoute: typeof ProbadorRoute
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
 }
@@ -102,6 +120,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GaleriaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/probador': {
+      id: '/probador'
+      path: '/probador'
+      fullPath: '/probador'
+      preLoaderRoute: typeof ProbadorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/servicios': {
       id: '/servicios'
       path: '/servicios'
@@ -123,6 +148,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ContactoRoute: ContactoRoute,
   GaleriaRoute: GaleriaRoute,
+  ProbadorRoute: ProbadorRoute,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
 }
