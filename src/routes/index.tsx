@@ -46,6 +46,7 @@ function Hero() {
         autoPlay
         loop
         muted
+        defaultMuted
         playsInline
         preload="auto"
         aria-hidden="true"
