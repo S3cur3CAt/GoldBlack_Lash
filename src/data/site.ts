@@ -196,11 +196,11 @@ export const serviceCategories: Array<ServiceCategory> = [
         id: 'limpieza-facial',
         name: 'Limpieza facial profunda',
         description:
-          'Higiene profunda con máquina profesional: extrae impurezas, hidrata y devuelve la luminosidad a tu piel.',
+          'Una limpieza a fondo que deja la piel respirando: extrae los puntos negros y las impurezas, retira las células muertas, hidrata en profundidad y termina con luz LED para un acabado luminoso. Sales con la piel limpia, suave y descansada desde la primera sesión.',
         duration: '1 h',
         price: '30 €',
         image: '/api/images/limpieza-facial',
-        includes: ['Máquina de limpieza profesional', 'Extracción e hidratación', 'Piel luminosa y suave'],
+        includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda y luminosidad', 'Acabado suave con luz LED'],
       },
     ],
   },
