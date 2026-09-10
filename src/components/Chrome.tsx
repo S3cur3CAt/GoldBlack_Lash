@@ -47,7 +47,7 @@ export function Header() {
         }
       }}
     >
-      <div className="wrap flex h-[4.5rem] items-center justify-between gap-3 sm:h-20">
+      <div className="wrap flex h-16 items-center justify-between gap-3 sm:h-20">
         <Link
           to="/"
           onClick={() => setOpen(false)}
@@ -59,7 +59,7 @@ export function Header() {
             alt="GoldBlack Tienda de Pestañas — logotipo"
             width={220}
             height={220}
-            className="h-[4.75rem] w-[4.75rem] rounded-full object-cover mix-blend-screen sm:h-24 sm:w-24"
+            className="h-16 w-16 rounded-full object-cover mix-blend-screen contrast-150 saturate-150 sm:h-20 sm:w-20"
           />
         </Link>
 
@@ -109,7 +109,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4.5rem)] overflow-y-auto rounded-b-[1.75rem] border-b border-line bg-paper shadow-panel sm:max-h-[calc(100dvh-5rem)] lg:hidden"
+            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-b-[1.75rem] border-b border-line bg-paper shadow-panel sm:max-h-[calc(100dvh-5rem)] lg:hidden"
         >
           <div className="wrap py-5">
             {tabs.map((tab) => (
