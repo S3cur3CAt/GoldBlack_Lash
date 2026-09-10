@@ -150,15 +150,11 @@ export const whyUs = [
 export const faqs = [
   {
     q: '¿Cuánto duran las extensiones?',
-    a: 'Con el relleno cada 2 o 3 semanas, el diseño se mantiene indefinidamente. La pestaña natural crece y se cae de forma continua, por eso el mantenimiento es la clave para que siempre se vea perfecto.',
+    a: 'Duran de 3 semanas a 1 mes. Con el relleno en ese periodo, el diseño se mantiene indefinidamente. La pestaña natural crece y se cae de forma continua, por eso el mantenimiento es la clave para que siempre se vea perfecto.',
   },
   {
     q: '¿Duele o molesta el procedimiento?',
     a: 'No. Es un servicio de ojos cerrados: se colocan parches de gel y muchas clientas se duermen durante la sesión. Si notas cualquier molestia, se retira y se ajusta en el momento.',
-  },
-  {
-    q: '¿Puedo llevar maquillaje o usar máscara?',
-    a: 'Maquillaje de ojos, sí, con cuidado. Máscara no: el aceite de la máscara degrada el adhesivo y acorta la vida del set. El tinte y el lifting ya dan el color y la curvatura que necesitas.',
   },
   {
     q: '¿Qué pasa si tengo las pestañas muy cortas?',
