@@ -60,7 +60,7 @@ export function Header() {
               alt="GoldBlack Tienda de Pestañas — logotipo"
               width={220}
               height={220}
-              className="h-full w-full rounded-full object-cover"
+              className="h-full w-full rounded-none object-cover"
             />
           </span>
         </Link>
@@ -158,7 +158,7 @@ export function Footer() {
               alt="GoldBlack Tienda de Pestañas — logotipo"
               width={220}
               height={220}
-              className="h-28 w-56 rounded-xl object-contain object-left"
+              className="h-28 w-56 rounded-none object-contain object-left"
             />
 
             <p className="mt-6 max-w-xs text-sm leading-7 text-white/70">
