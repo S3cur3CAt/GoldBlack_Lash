@@ -47,7 +47,7 @@ export function Header() {
         }
       }}
     >
-      <div className="wrap flex h-20 items-center justify-between gap-5">
+      <div className="wrap flex h-[4.5rem] items-center justify-between gap-3 sm:h-20">
         <Link
           to="/"
           onClick={() => setOpen(false)}
@@ -118,7 +118,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className="absolute inset-x-0 top-full max-h-[calc(100dvh-80px)] overflow-y-auto rounded-b-[2rem] border-b border-line bg-paper shadow-panel lg:hidden"
+            className="absolute inset-x-0 top-full max-h-[calc(100dvh-4.5rem)] overflow-y-auto rounded-b-[1.75rem] border-b border-line bg-paper shadow-panel sm:max-h-[calc(100dvh-5rem)] lg:hidden"
         >
           <div className="wrap py-5">
             {tabs.map((tab) => (
