@@ -36,14 +36,22 @@ function Home() {
   )
 }
 
+const heroVideos = [
+  { key: 'hero-video', file: 'hero-video.mp4' },
+  { key: 'hero-video-2', file: 'hero-video-2.mp4' },
+  { key: 'hero-video-3', file: 'hero-video-3.mp4' },
+]
+
 function Hero() {
   const [activeVideo, setActiveVideo] = useState(0)
   const video0Ref = useRef<HTMLVideoElement>(null)
   const video1Ref = useRef<HTMLVideoElement>(null)
+  const video2Ref = useRef<HTMLVideoElement>(null)
+  const videoRefs = [video0Ref, video1Ref, video2Ref]
 
   const handleEnded = (index: number) => {
-    const nextIndex = index === 0 ? 1 : 0
-    const nextVideo = nextIndex === 0 ? video0Ref.current : video1Ref.current
+    const nextIndex = (index + 1) % heroVideos.length
+    const nextVideo = videoRefs[nextIndex]?.current
     if (nextVideo) {
       nextVideo.currentTime = 0
       nextVideo.play().catch(() => {})
@@ -60,36 +68,24 @@ function Hero() {
   return (
     <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
       {/* Videos de fondo en bucle alternado (servidos desde Neon Postgres) */}
-      <video
-        ref={video0Ref}
-        autoPlay
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        tabIndex={-1}
-        onEnded={() => handleEnded(0)}
-        onError={() => handleEnded(0)}
-        className={`hero-video-bg ${activeVideo === 0 ? 'hero-video-active' : 'hero-video-inactive'}`}
-      >
-        <source src="/api/images/hero-video" type="video/mp4" />
-        <source src="/hero-video.mp4" type="video/mp4" />
-      </video>
-
-      <video
-        ref={video1Ref}
-        muted
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-        tabIndex={-1}
-        onEnded={() => handleEnded(1)}
-        onError={() => handleEnded(1)}
-        className={`hero-video-bg ${activeVideo === 1 ? 'hero-video-active' : 'hero-video-inactive'}`}
-      >
-        <source src="/api/images/hero-video-2" type="video/mp4" />
-        <source src="/hero-video-2.mp4" type="video/mp4" />
-      </video>
+      {heroVideos.map((vid, index) => (
+        <video
+          key={vid.key}
+          ref={videoRefs[index]}
+          autoPlay={index === 0}
+          muted
+          playsInline
+          preload={index === 0 ? 'auto' : 'metadata'}
+          aria-hidden="true"
+          tabIndex={-1}
+          onEnded={() => handleEnded(index)}
+          onError={() => handleEnded(index)}
+          className={`hero-video-bg ${activeVideo === index ? 'hero-video-active' : 'hero-video-inactive'}`}
+        >
+          <source src={`/api/images/${vid.key}`} type="video/mp4" />
+          <source src={`/${vid.file}`} type="video/mp4" />
+        </video>
+      ))}
 
       {/* Velo estético de luminosidad para legibilidad y elegancia */}
       <div className="hero-video-overlay" aria-hidden="true" />
