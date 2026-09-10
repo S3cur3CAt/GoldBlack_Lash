@@ -38,6 +38,7 @@ const files = [
   { key: 'logo', path: join(root, 'public', 'goldblack_logo.png'), mime: 'image/png' },
   { key: 'promo-qr', path: join(root, 'public', 'promo-qr.png'), mime: 'image/png' },
   { key: 'hero-video', path: join(root, 'public', 'hero-video.mp4'), mime: 'video/mp4' },
+  { key: 'hero-video-2', path: join(root, 'public', 'hero-video-2.mp4'), mime: 'video/mp4' },
 ]
 
 const sql = postgres(url, { ssl: 'require', prepare: false, max: 1, connect_timeout: 15 })

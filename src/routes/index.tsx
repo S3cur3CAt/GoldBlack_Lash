@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { useEffect, useRef, useState } from 'react'
 
 import { StudioVisual } from '#/components/StudioVisual'
 import {
@@ -36,21 +37,58 @@ function Home() {
 }
 
 function Hero() {
+  const [activeVideo, setActiveVideo] = useState(0)
+  const video0Ref = useRef<HTMLVideoElement>(null)
+  const video1Ref = useRef<HTMLVideoElement>(null)
+
+  const handleEnded = (index: number) => {
+    const nextIndex = index === 0 ? 1 : 0
+    const nextVideo = nextIndex === 0 ? video0Ref.current : video1Ref.current
+    if (nextVideo) {
+      nextVideo.currentTime = 0
+      nextVideo.play().catch(() => {})
+    }
+    setActiveVideo(nextIndex)
+  }
+
+  useEffect(() => {
+    if (video0Ref.current) {
+      video0Ref.current.play().catch(() => {})
+    }
+  }, [])
+
   return (
     <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      {/* Video de fondo subido y servido desde Neon Postgres */}
+      {/* Videos de fondo en bucle alternado (servidos desde Neon Postgres) */}
       <video
+        ref={video0Ref}
         autoPlay
-        loop
         muted
         playsInline
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        className="hero-video-bg"
+        onEnded={() => handleEnded(0)}
+        onError={() => handleEnded(0)}
+        className={`hero-video-bg ${activeVideo === 0 ? 'hero-video-active' : 'hero-video-inactive'}`}
       >
         <source src="/api/images/hero-video" type="video/mp4" />
         <source src="/hero-video.mp4" type="video/mp4" />
+      </video>
+
+      <video
+        ref={video1Ref}
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        onEnded={() => handleEnded(1)}
+        onError={() => handleEnded(1)}
+        className={`hero-video-bg ${activeVideo === 1 ? 'hero-video-active' : 'hero-video-inactive'}`}
+      >
+        <source src="/api/images/hero-video-2" type="video/mp4" />
+        <source src="/hero-video-2.mp4" type="video/mp4" />
       </video>
 
       {/* Velo estético de luminosidad para legibilidad y elegancia */}
