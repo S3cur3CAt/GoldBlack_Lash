@@ -291,7 +291,16 @@ function ServiceCard({ service }: { service: Service }) {
       <div className="mt-7 border-t border-rose/10 pt-6">
         <a
           href={whatsappLink(
-            `¡Hola! Me interesa el servicio de ${service.name} (${service.price}). ¿Qué disponibilidad tienes?`,
+            [
+              `✨ *Me interesa este servicio — ${business.name}* ✨`,
+              '———————————',
+              `💫 *Servicio:* ${service.name} (${service.price})`,
+              `🕐 *Duración aprox.:* ${service.duration}`,
+              '———————————',
+              '👤 *Nombre:*',
+              '📞 *Teléfono:*',
+              `🌐 ${business.siteUrl}`,
+            ].join('\n'),
           )}
           target="_blank"
           rel="noreferrer"
