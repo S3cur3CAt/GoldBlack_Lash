@@ -1,7 +1,7 @@
 // Acceso compartido a las imagenes guardadas en Neon Postgres (tabla images).
-// Lo usan la ruta Nitro (server/api/images/[key].get.ts, build/prod)
-// y el middleware de Vite (vite.config.ts, solo dev).
-// Las credenciales van en la variable de entorno DATABASE_URL.
+// Modulo SOLO-servidor (sufijo .server.ts): lo usan la server route
+// (src/routes/api.images.$key.ts, dev/build/prod) y el middleware de Vite
+// (vite.config.ts, solo dev). Las credenciales van en DATABASE_URL.
 export type StoredImage = {
   mime: string
   data: Buffer
@@ -28,9 +28,8 @@ async function getSql(): Promise<SqlTag> {
       if (!url) {
         throw new Error('Falta DATABASE_URL')
       }
-      // Import dinamico: evita meter el driver `postgres` en el grafo de
-      // la config de Vite/SSR en tiempo de evaluacion (era lo que dejaba
-      // al entorno "ssr" sin recargar y tumbaba `pnpm dev`).
+      // Import dinamico: evita meter el driver `postgres` en cualquier
+      // grafo de cliente por accidente.
       const { default: postgres } = await import('postgres')
       return postgres(url, {
         ssl: 'require',

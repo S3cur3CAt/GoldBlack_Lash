@@ -8,17 +8,17 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 /**
- * En `vite dev` el router de TanStack puede interceptar /api/* antes que las
- * rutas Nitro de server/, asi que este middleware (solo dev, registrado el
- * primero) sirve /api/images/:key desde Neon como fallback. En build/prod lo
- * sirve la ruta Nitro server/api/images/[key].get.ts (auto-escaneada).
+ * En `vite dev` la server route de TanStack (src/routes/api.images.$key.ts)
+ * tambien responde /api/images/:key, pero este middleware (solo dev,
+ * registrado el primero) la sirve desde Neon como fallback rapido sin pasar
+ * por el SSR. En build/prod la sirve la server route (auto-registrada).
  *
- * NOTA: sin import estatico de server/images.ts a proposito. El driver
- * `postgres` se carga con import dinamico SOLO cuando llega una peticion de
- * imagen, para no meter codigo Node en el grafo de evaluacion de la config
- * (eso dejaba al entorno "ssr" sin recargar: "Vite environment ssr is
- * unavailable"). Los errores de BD devuelven 500/404 JSON, nunca next(error),
- * para no envenenar el dev-server ni tumbar el SSR.
+ * NOTA: sin import estatico de src/server/images.server.ts a proposito. El
+ * driver `postgres` se carga con import dinamico SOLO cuando llega una
+ * peticion de imagen, para no meter codigo Node en el grafo de evaluacion
+ * de la config (eso dejaba al entorno "ssr" sin recargar: "Vite environment
+ * ssr is unavailable"). Los errores de BD devuelven 500/404 JSON, nunca
+ * next(error), para no envenenar el dev-server ni tumbar el SSR.
  */
 function neonImagesDev(): Plugin {
   return {
@@ -39,7 +39,9 @@ function neonImagesDev(): Plugin {
           }
           const key = match[1]
           // Carga perezosa: solo aqui se toca Neon/Driver.
-          const { fetchImageFromNeon } = await import('./server/images.ts')
+          const { fetchImageFromNeon } = await import(
+            './src/server/images.server.ts'
+          )
           const hit = await fetchImageFromNeon(key)
           if (!hit) {
             res.statusCode = 404
