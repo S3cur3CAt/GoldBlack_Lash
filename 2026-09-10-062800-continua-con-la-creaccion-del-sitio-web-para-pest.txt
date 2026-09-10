@@ -1,0 +1,1271 @@
+ ▐▛███▛█   Claude Code v2.1.267
+▝▜██████▀  Opus 5 · API Usage Billing
+  ▝▝ ▝▝    ~\Documents\GoldBlack_Lash
+
+
+❯ continua con la creaccion del sitio web para pestañas que estabas creando     
+
+● Voy a revisar el estado actual del proyecto para continuar donde quedó.
+
+  Thought for 1m 19s, read 7 files, listed 2 directories (ctrl+o to expand)
+
+● Entered plan mode
+  Claude is now exploring and designing an implementation approach.
+
+  Thought for 15s (ctrl+o to expand)
+
+● User answered Claude's questions:
+  ⎿  · ¿Cómo quieres que funcionen las pestañas del sitio? → URLs reales 
+     (recomendado)
+     · ¿Qué secciones quieres incluir? (elige todas las que apliquen) → 
+     Servicios + precios, Galería de trabajos, Sobre mí, Contacto + reservas
+     · ¿Qué paleta y ambiente visual? → Negro y dorado (recomendado)
+     · ¿En qué idioma va el sitio? → Solo español
+
+  Thought for 2m 0s (ctrl+o to expand)
+
+● Ya revisé el proyecto: es un scaffold de TanStack Start (React 19 + Tailwind
+  v4 + file-based routing) recién generado, sin nada construido todavía — solo
+  la página de bienvenida y un __root.tsx de plantilla. Tengo tu logo
+  (goldblack_logo.png) y el estilo que elegiste.
+
+  Nota: no encontré historial de una sesión anterior en este proyecto, así que
+  no había nada a medias que retomar — empiezo el sitio desde aquí con tus
+  respuestas.
+
+● Exited plan mode
+
+  Thought for 38s (ctrl+o to expand)
+
+● Perfecto. Empiezo por la base visual y los datos.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(src\styles.css)
+  ⎿  Added 107 lines, removed 9 lines
+        1 +@import 'tailwindcss';                                        
+        2  
+        2 -@import "tailwindcss";                                        
+        3 +@theme {                                                      
+        4 +  --color-ink: #050505;                                       
+        5 +  --color-coal: #0b0b0c;                                      
+        6 +  --color-graphite: #141416;                                  
+        7 +  --color-slate: #1d1d20;                                     
+        8 +  --color-gold-50: #fbf3dc;                                   
+        9 +  --color-gold-100: #f4e3b4;                                  
+       10 +  --color-gold-200: #e9cd86;                                  
+       11 +  --color-gold-300: #ddb660;                                  
+       12 +  --color-gold-400: #d4af37;                                  
+       13 +  --color-gold-500: #c19a2e;                                  
+       14 +  --color-gold-600: #9c7a22;                                  
+       15 +  --color-gold-700: #6f5615;                                  
+       16 +  --color-cream: #f6f2ea;                                     
+       17 +  --color-muted: #a29c92;                                     
+       18  
+        4 -* {                                                           
+        5 -  box-sizing: border-box;                                     
+       19 +  --font-display: 'Cormorant Garamond', 'Times New Roman', ser
+          +if;                                                           
+       20 +  --font-body: 'Jost', ui-sans-serif, system-ui, sans-serif;  
+       21 +                                                              
+       22 +  --shadow-gold: 0 18px 60px -20px rgb(212 175 55 / 0.45);    
+       23  }
+       24  
+        8 -html,                                                         
+        9 -body,                                                         
+       10 -#app {                                                        
+       11 -  min-height: 100%;                                           
+       25 +@layer base {                                                 
+       26 +  html {                                                      
+       27 +    scroll-behavior: smooth;                                  
+       28 +    -webkit-tap-highlight-color: transparent;                 
+       29 +  }                                                           
+       30 +                                                              
+       31 +  body {                                                      
+       32 +    margin: 0;                                                
+       33 +    background-color: var(--color-ink);                       
+       34 +    color: var(--color-cream);                                
+       35 +    font-family: var(--font-body);                            
+       36 +    -webkit-font-smoothing: antialiased;                      
+       37 +  }                                                           
+       38 +                                                              
+       39 +  ::selection {                                               
+       40 +    background-color: var(--color-gold-400);                  
+       41 +    color: var(--color-ink);                                  
+       42 +  }                                                           
+       43 +                                                              
+       44 +  ::-webkit-scrollbar {                                       
+       45 +    width: 10px;                                              
+       46 +  }                                                           
+       47 +                                                              
+       48 +  ::-webkit-scrollbar-track {                                 
+       49 +    background: var(--color-ink);                             
+       50 +  }                                                           
+       51 +                                                              
+       52 +  ::-webkit-scrollbar-thumb {                                 
+       53 +    background: var(--color-gold-700);                        
+       54 +    border-radius: 999px;                                     
+       55 +  }                                                           
+       56 +                                                              
+       57 +  ::-webkit-scrollbar-thumb:hover {                           
+       58 +    background: var(--color-gold-500);                        
+       59 +  }                                                           
+       60  }
+       61  
+       14 -body {                                                        
+       15 -  margin: 0;                                                  
+       62 +@layer components {                                           
+       63 +  /* Texto con degradado dorado, el sello visual de la marca. 
+          +*/                                                            
+       64 +  .text-gold-gradient {                                       
+       65 +    background-image: linear-gradient(                        
+       66 +      100deg,                                                 
+       67 +      #6f5615 0%,                                             
+       68 +      #d4af37 22%,                                            
+       69 +      #fbf3dc 48%,                                            
+       70 +      #d4af37 72%,                                            
+       71 +      #9c7a22 100%                                            
+       72 +    );                                                        
+       73 +    -webkit-background-clip: text;                            
+       74 +    background-clip: text;                                    
+       75 +    color: transparent;                                       
+       76 +  }                                                           
+       77 +                                                              
+       78 +  .border-gold-gradient {                                     
+       79 +    border: 1px solid transparent;                            
+       80 +    background:                                               
+       81 +      linear-gradient(var(--color-coal), var(--color-coal)) pa
+          +dding-box,                                                    
+       82 +      linear-gradient(135deg, #6f5615, #d4af37, #fbf3dc, #d4af
+          +37, #6f5615)                                                  
+       83 +        border-box;                                           
+       84 +  }                                                           
+       85 +                                                              
+       86 +  .ring-gold-glow {                                           
+       87 +    box-shadow:                                               
+       88 +      0 0 0 1px rgb(212 175 55 / 0.35),                       
+       89 +      0 0 40px -12px rgb(212 175 55 / 0.5);                   
+       90 +  }                                                           
+       91 +                                                              
+       92 +  /* Filete dorado fino usado como separador entre secciones. 
+          +*/                                                            
+       93 +  .rule-gold {                                                
+       94 +    height: 1px;                                              
+       95 +    background: linear-gradient(                              
+       96 +      90deg,                                                  
+       97 +      transparent,                                            
+       98 +      rgb(212 175 55 / 0.55),                                 
+       99 +      transparent                                             
+      100 +    );                                                        
+      101 +  }                                                           
+      102  }
+      103  
+      104 +@media (prefers-reduced-motion: reduce) {                     
+      105 +  html {                                                      
+      106 +    scroll-behavior: auto;                                    
+      107 +  }                                                           
+      108 +                                                              
+      109 +  *,                                                          
+      110 +  *::before,                                                  
+      111 +  *::after {                                                  
+      112 +    animation-duration: 0.01ms !important;                    
+      113 +    transition-duration: 0.01ms !important;                   
+      114 +  }                                                           
+      115 +}                                                             
+
+● Write(src\data\site.ts)
+  ⎿  Wrote 257 lines to src\data\site.ts
+       1 /**
+       2  * Datos del negocio y contenido del sitio.
+       3  *
+         zar textos,
+       5  * precios y datos de contacto: las páginas leen todo desde aquí
+         .
+       6  * Los valores marcados con `TODO` son provisionales.
+       8 
+       9 export const business = {
+      10   name: 'GoldBlack Lash',
+     … +295 lines (ctrl+o to expand)
+
+  Thought for 18s (ctrl+o to expand)
+
+● Ahora los componentes compartidos.
+
+● Write(src\components\Chrome.tsx)
+  ⎿  Wrote 235 lines to src\components\Chrome.tsx
+       1 import { Link } from '@tanstack/react-router'
+       2 import { useEffect, useState } from 'react'
+       3 
+       4 import { business, whatsappLink } from '#/data/site'
+       5 
+       6 /** Las pestañas de navegación del sitio, en orden. */
+       7 export const tabs = [
+       8   { to: '/', label: 'Inicio' },
+       9   { to: '/servicios', label: 'Servicios' },
+      10   { to: '/galeria', label: 'Galería' },
+     … +262 lines (ctrl+o to expand)
+
+● Write(src\components\PageHero.tsx)
+  ⎿  Wrote 73 lines to src\components\PageHero.tsx
+       1 import { Link } from '@tanstack/react-router'
+       2 import type { ReactNode } from 'react'
+       3 
+       5 
+       6 /**
+       7  * Cabecera de página interior: migas de pan, antetítulo y titul
+         ar dorado.
+         onada" aquí.
+       9  */
+      10 export function PageHero({
+     … +77 lines (ctrl+o to expand)
+
+  Thought for 16s (ctrl+o to expand)
+
+● Update(src\components\Chrome.tsx)
+  ⎿  Added 2 lines, removed 2 lines
+      72                to={tab.to}
+      73                activeOptions={{ exact: tab.to === '/' }}
+      74                className="group relative px-4 py-2 font-body tex
+          t-[0.7rem] tracking-[0.2em] uppercase transition-colors"
+      75 -              activeProps={{ className: 'text-gold-300' }}     
+      75 +              activeProps={{ className: 'is-active text-gold-30
+         +0 [&>span]:scale-x-100' }}                                     
+      76                inactiveProps={{ className: 'text-cream/60 hover:
+          text-cream' }}
+      77              >
+      78                {tab.label}
+      79 -              <span className="absolute inset-x-3 bottom-1 h-px
+         - origin-left scale-x-0 bg-gradient-to-r from-transparent via-go
+         -ld-400 to-transparent transition-transform duration-300 group-h
+         -over:scale-x-100 [.text-gold-300_&]:scale-x-100" />            
+      79 +              <span className="absolute inset-x-3 bottom-1 h-px
+         + origin-left scale-x-0 bg-gradient-to-r from-transparent via-go
+         +ld-400 to-transparent transition-transform duration-300 group-h
+         +over:scale-x-100" />                                           
+      80              </Link>
+      81            ))}
+      82            <a
+
+  Thought for 33s (ctrl+o to expand)
+
+● Write(src\routes\__root.tsx)
+  ⎿  Added 23 lines, removed 12 lines
+       2  import { TanStackRouterDevtoolsPanel } from '@tanstack/react-ro
+          uter-devtools'
+       3  import { TanStackDevtools } from '@tanstack/react-devtools'
+       4  
+       5 +import { Footer, Header } from '#/components/Chrome'           
+       6 +import { business } from '#/data/site'                         
+       7 +                                                               
+       8  import appCss from '../styles.css?url'
+       9  
+      10  export const Route = createRootRoute({
+      11    head: () => ({
+      12      meta: [
+      13 +      { charSet: 'utf-8' },                                    
+      14 +      { name: 'viewport', content: 'width=device-width, initial
+         +-scale=1' },                                                   
+      15 +      { title: `${business.name} — ${business.tagline}` },     
+      16        {
+      11 -        charSet: 'utf-8',                                      
+      17 +        name: 'description',                                   
+      18 +        content:                                               
+      19 +          'Estudio de extensiones de pestañas: clásicas, volume
+         +n ruso, híbridas, lifting y mantenimiento. Diseño personalizado
+         + y producto de grado profesional.',                            
+      20        },
+      13 -      {                                                        
+      14 -        name: 'viewport',                                      
+      15 -        content: 'width=device-width, initial-scale=1',        
+      16 -      },                                                       
+      17 -      {                                                        
+      18 -        title: 'TanStack Start Starter',                       
+      19 -      },                                                       
+      21 +      { name: 'theme-color', content: '#050505' },             
+      22 +      { property: 'og:type', content: 'website' },             
+      23 +      { property: 'og:site_name', content: business.name },    
+      24 +      { property: 'og:image', content: '/goldblack_logo.png' },
+      25      ],
+      26      links: [
+      27 +      { rel: 'stylesheet', href: appCss },                     
+      28 +      { rel: 'icon', type: 'image/png', href: '/goldblack_logo.
+         +png' },                                                        
+      29 +      { rel: 'preconnect', href: 'https://fonts.googleapis.com'
+         + },                                                            
+      30 +      { rel: 'preconnect', href: 'https://fonts.gstatic.com', c
+         +rossOrigin: 'anonymous' },                                     
+      31        {
+      32          rel: 'stylesheet',
+      24 -        href: appCss,                                          
+      33 +        href: 'https://fonts.googleapis.com/css2?family=Cormora
+         +nt+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost
+         +:wght@300;400;500&display=swap',                               
+      34        },
+      35      ],
+      36    }),
+     ...
+      39  
+      40  function RootDocument({ children }: { children: React.ReactNode
+           }) {
+      41    return (
+      33 -    <html lang="en">                                           
+      42 +    <html lang="es">                                           
+      43        <head>
+      44          <HeadContent />
+      45        </head>
+      37 -      <body>                                                   
+      38 -        {children}                                             
+      46 +      <body className="bg-ink text-cream">                     
+      47 +        <Header />                                             
+      48 +        <main>{children}</main>                                
+      49 +        <Footer />                                             
+      50          <TanStackDevtools
+      51            config={{
+      52              position: 'bottom-right',
+
+  Thought for 16s (ctrl+o to expand)
+
+● Write(src\routes\index.tsx)
+  ⎿  Added 264 lines, removed 8 lines
+        1 -import { createFileRoute } from '@tanstack/react-router'      
+        1 +import { Link, createFileRoute } from '@tanstack/react-router'
+        2  
+        3 -export const Route = createFileRoute('/')({ component: Home })
+        3 +import { PageHero } from '#/components/PageHero'              
+        4 +import { business, serviceCategories, whatsappLink, whyUs } fr
+          +om '#/data/site'                                              
+        5  
+        6 +export const Route = createFileRoute('/')({                   
+        7 +  component: Home,                                            
+        8 +  head: () => ({                                              
+        9 +    meta: [                                                   
+       10 +      { title: `${business.name} — ${business.tagline}` },    
+       11 +      {                                                       
+       12 +        name: 'description',                                  
+       13 +        content:                                              
+       14 +          'Extensiones de pestañas pelo a pelo en un estudio d
+          +e autor. Clásicas, volumen ruso, híbridas y mega volumen con d
+          +iseño personalizado. Pide tu cita por WhatsApp.',             
+       15 +      },                                                      
+       16 +    ],                                                        
+       17 +  }),                                                         
+       18 +})                                                            
+       19 +                                                              
+       20  function Home() {
+       21    return (
+        7 -    <div className="p-8">                                     
+        8 -      <h1 className="text-4xl font-bold">Welcome to TanStack S
+          -tart</h1>                                                     
+        9 -      <p className="mt-4 text-lg">                            
+       10 -        Edit <code>src/routes/index.tsx</code> to get started.
+       11 -      </p>                                                    
+       12 -    </div>                                                    
+       22 +    <>                                                        
+       23 +      <Hero />                                                
+       24 +      <ServicesPreview />                                     
+       25 +      <WhyUs />                                               
+       26 +      <FaqTeaser />                                           
+       27 +      <BookCta />                                             
+       28 +    </>                                                       
+       29    )
+       30  }
+       31 +                                                              
+       32 +function Hero() {                                             
+       33 +  return (                                                    
+       34 +    <section className="relative flex min-h-screen items-cente
+          +r overflow-hidden px-5 pt-28 pb-20">                          
+       35 +      {/* Fondo: retícula sutil + halo dorado */}             
+       36 +      <div aria-hidden className="pointer-events-none absolute
+          + inset-0">                                                    
+       37 +        <div className="absolute inset-0 bg-[radial-gradient(c
+          +ircle_at_50%_0%,rgba(212,175,55,0.16),transparent_60%)]" />   
+       38 +        <div className="absolute inset-0 bg-[linear-gradient(r
+          +gba(255,255,255,0.022)_1px,transparent_1px),linear-gradient(90
+          +deg,rgba(255,255,255,0.022)_1px,transparent_1px)] bg-[size:64p
+          +x_64px]" />                                                   
+       39 +        <div className="absolute inset-x-0 bottom-0 h-40 bg-gr
+          +adient-to-t from-ink to-transparent" />                       
+       40 +      </div>                                                  
+       41 +                                                              
+       42 +      <div className="relative mx-auto grid w-full max-w-6xl i
+          +tems-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">             
+       43 +        <div>                                                 
+       44 +          <p className="font-body text-[0.7rem] tracking-[0.45
+          +em] text-gold-300 uppercase">                                 
+       45 +            {business.city} · Cita previa                     
+       46 +          </p>                                                
+       47 +          <h1 className="mt-6 font-display text-5xl leading-[1
+          +.05] sm:text-6xl md:text-7xl">                                
+       48 +            <span className="text-gold-gradient">Pestañas</spa
+          +n>                                                            
+       49 +            <span className="block text-cream">que firman tu m
+          +irada</span>                                                  
+       50 +          </h1>                                               
+       51 +          <p className="mt-6 max-w-xl text-base text-cream/70 
+          +sm:text-lg">                                                  
+       52 +            Extensiones pelo a pelo, diseñadas a medida para l
+          +a forma de tu ojo. Técnica rusa,                              
+       53 +            producto profesional y un acabado que aguanta el d
+          +ía a día sin perder el efecto.                                
+       54 +          </p>                                                
+       55 +                                                              
+       56 +          <div className="mt-9 flex flex-wrap items-center gap
+          +-4">                                                          
+       57 +            <a                                                
+       58 +              href={whatsappLink()}                           
+       59 +              target="_blank"                                 
+       60 +              rel="noreferrer"                                
+       61 +              className="rounded-full bg-gradient-to-r from-go
+          +ld-600 via-gold-400 to-gold-600 px-8 py-3.5 font-body text-xs 
+          +tracking-[0.24em] text-ink uppercase shadow-gold transition-tr
+          +ansform hover:scale-[1.03]"                                   
+       62 +            >                                                 
+       63 +              Pedir cita                                      
+       64 +            </a>                                              
+       65 +            <Link                                             
+       66 +              to="/servicios"                                 
+       67 +              className="rounded-full border border-gold-400/4
+          +0 px-8 py-3.5 font-body text-xs tracking-[0.24em] text-gold-20
+          +0 uppercase transition-colors hover:bg-gold-400/10"           
+       68 +            >                                                 
+       69 +              Ver servicios                                   
+       70 +            </Link>                                           
+       71 +          </div>                                              
+       72 +                                                              
+       73 +          <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6
+          + border-t border-white/10 pt-8">                              
+       74 +            {[                                                
+       75 +              { k: '+8 años', v: 'de experiencia' },          
+       76 +              { k: '5 estilos', v: 'de extensión' },          
+       77 +              { k: '2-3 sem.', v: 'entre rellenos' },         
+       78 +            ].map((stat) => (                                 
+       79 +              <div key={stat.k}>                              
+       80 +                <dt className="font-display text-2xl text-gold
+          +-200 sm:text-3xl">{stat.k}</dt>                               
+       81 +                <dd className="mt-1 text-xs tracking-wide text
+          +-muted uppercase">{stat.v}</dd>                               
+       82 +              </div>                                          
+       83 +            ))}                                               
+       84 +          </dl>                                               
+       85 +        </div>                                                
+       86 +                                                              
+       87 +        <div className="relative mx-auto w-full max-w-sm">    
+       88 +          <div aria-hidden className="absolute -inset-6 rounde
+          +d-full bg-gold-400/10 blur-3xl" />                            
+       89 +          <img                                                
+       90 +            src="/goldblack_logo.png"                         
+       91 +            alt={`Logotipo de ${business.name}`}              
+       92 +            width={520}                                       
+       93 +            height={520}                                      
+       94 +            className="relative w-full rounded-full ring-1 rin
+          +g-gold-400/30"                                                
+       95 +          />                                                  
+       96 +        </div>                                                
+       97 +      </div>                                                  
+       98 +    </section>                                                
+       99 +  )                                                           
+      100 +}                                                             
+      101 +                                                              
+      102 +function ServicesPreview() {                                  
+      103 +  // Un servicio destacado por categoría, para la vista rápida
+          + del inicio.                                                  
+      104 +  const highlights = serviceCategories.map((category) => ({   
+      105 +    category,                                                 
+      106 +    service: category.services.find((s) => s.featured) ?? cate
+          +gory.services[0],                                             
+      107 +  }))                                                         
+      108 +                                                              
+      109 +  return (                                                    
+      110 +    <section className="border-t border-gold-400/15 bg-coal px
+          +-5 py-20">                                                    
+      111 +      <div className="mx-auto max-w-6xl">                     
+      112 +        <header className="max-w-2xl">                        
+      113 +          <p className="font-body text-[0.7rem] tracking-[0.42
+          +em] text-gold-300 uppercase">                                 
+      114 +            Carta de servicios                                
+      115 +          </p>                                                
+      116 +          <h2 className="mt-4 font-display text-3xl text-cream
+          + sm:text-4xl">                                                
+      117 +            Elige tu <span className="text-gold-gradient">efec
+          +to</span>                                                     
+      118 +          </h2>                                               
+      119 +          <p className="mt-4 text-cream/70">                  
+      120 +            Desde el acabado más discreto hasta el volumen más
+          + dramático. Todos los precios incluyen                        
+      121 +            diseño personalizado y asesoría de mantenimiento. 
+      122 +          </p>                                                
+      123 +        </header>                                             
+      124 +                                                              
+      125 +        <div className="mt-12 grid gap-6 md:grid-cols-3">     
+      126 +          {highlights.map(({ category, service }) => (        
+      127 +            <Link                                             
+      128 +              key={category.id}                               
+      129 +              to="/servicios"                                 
+      130 +              hash={category.id}                              
+      131 +              className="border-gold-gradient group flex flex-
+          +col rounded-2xl p-7 transition-all duration-300 hover:-transla
+          +te-y-1 hover:ring-gold-glow"                                  
+      132 +            >                                                 
+      133 +              <p className="font-body text-[0.65rem] tracking-
+          +[0.3em] text-gold-300 uppercase">                             
+      134 +                {category.name}                               
+      135 +              </p>                                            
+      136 +              <h3 className="mt-4 font-display text-2xl text-c
+          +ream">{service.name}</h3>                                     
+      137 +              <p className="mt-3 flex-1 text-sm leading-relaxe
+          +d text-cream/60">                                             
+      138 +                {service.description}                         
+      139 +              </p>                                            
+      140 +              <div className="mt-6 flex items-baseline justify
+          +-between border-t border-white/10 pt-4">                      
+      141 +                <span className="font-display text-2xl text-go
+          +ld-200">{service.price}</span>                                
+      142 +                <span className="text-xs tracking-wide text-mu
+          +ted uppercase">                                               
+      143 +                  {service.duration}                          
+      144 +                </span>                                       
+      145 +              </div>                                          
+      146 +            </Link>                                           
+      147 +          ))}                                                 
+      148 +        </div>                                                
+      149 +                                                              
+      150 +        <div className="mt-10 text-center">                   
+      151 +          <Link                                               
+      152 +            to="/servicios"                                   
+      153 +            className="inline-block rounded-full border border
+          +-gold-400/40 px-8 py-3 font-body text-xs tracking-[0.24em] tex
+          +t-gold-200 uppercase transition-colors hover:bg-gold-400 hover
+          +:text-ink"                                                    
+      154 +          >                                                   
+      155 +            Ver la carta completa                             
+      156 +          </Link>                                             
+      157 +        </div>                                                
+      158 +      </div>                                                  
+      159 +    </section>                                                
+      160 +  )                                                           
+      161 +}                                                             
+      162 +                                                              
+      163 +function WhyUs() {                                            
+      164 +  return (                                                    
+      165 +    <section className="px-5 py-20">                          
+      166 +      <div className="mx-auto max-w-6xl">                     
+      167 +        <header className="mx-auto max-w-2xl text-center">    
+      168 +          <p className="font-body text-[0.7rem] tracking-[0.42
+          +em] text-gold-300 uppercase">                                 
+      169 +            Por qué GoldBlack                                 
+      170 +          </p>                                                
+      171 +          <h2 className="mt-4 font-display text-3xl text-cream
+          + sm:text-4xl">                                                
+      172 +            Detalle, higiene y <span className="text-gold-grad
+          +ient">técnica</span>                                          
+      173 +          </h2>                                               
+      174 +        </header>                                             
+      175 +                                                              
+      176 +        <div className="mt-12 grid gap-x-10 gap-y-12 sm:grid-c
+          +ols-2">                                                       
+      177 +          {whyUs.map((item) => (                              
+      178 +            <div key={item.title} className="flex gap-5">     
+      179 +              <span aria-hidden className="mt-1 text-2xl text-
+          +gold-400">                                                    
+      180 +                {item.icon}                                   
+      181 +              </span>                                         
+      182 +              <div>                                           
+      183 +                <h3 className="font-display text-xl text-cream
+          +">{item.title}</h3>                                           
+      184 +                <p className="mt-2 text-sm leading-relaxed tex
+          +t-cream/65">{item.body}</p>                                   
+      185 +              </div>                                          
+      186 +            </div>                                            
+      187 +          ))}                                                 
+      188 +        </div>                                                
+      189 +      </div>                                                  
+      190 +    </section>                                                
+      191 +  )                                                           
+      192 +}                                                             
+      193 +                                                              
+      194 +function FaqTeaser() {                                        
+      195 +  return (                                                    
+      196 +    <section className="border-y border-gold-400/15 bg-coal px
+          +-5 py-20">                                                    
+      197 +      <div className="mx-auto grid max-w-6xl items-center gap-
+          +12 lg:grid-cols-2">                                           
+      198 +        <div>                                                 
+      199 +          <p className="font-body text-[0.7rem] tracking-[0.42
+          +em] text-gold-300 uppercase">                                 
+      200 +            Antes de tu primera cita                          
+      201 +          </p>                                                
+      202 +          <h2 className="mt-4 font-display text-3xl text-cream
+          + sm:text-4xl">                                                
+      203 +            Todo lo que <span className="text-gold-gradient">q
+          +uieres saber</span>                                           
+      204 +          </h2>                                               
+      205 +          <p className="mt-4 text-cream/70">                  
+      206 +            Duración, cuidados, contraindicaciones y cómo eleg
+          +ir el estilo que mejor te queda. Te lo                        
+      207 +            cuento sin tecnicismos en la página de servicios. 
+      208 +          </p>                                                
+      209 +          <Link                                               
+      210 +            to="/servicios"                                   
+      211 +            hash="faq"                                        
+      212 +            className="mt-7 inline-block font-body text-xs tra
+          +cking-[0.24em] text-gold-200 uppercase underline decoration-go
+          +ld-700 underline-offset-8 transition-colors hover:text-gold-10
+          +0"                                                            
+      213 +          >                                                   
+      214 +            Ver preguntas frecuentes                          
+      215 +          </Link>                                             
+      216 +        </div>                                                
+      217 +        <div className="border-gold-gradient rounded-3xl p-8">
+      218 +          <p className="font-display text-xl leading-relaxed t
+          +ext-cream/90 italic">                                         
+      219 +            «Antes de tocar una pestaña, estudio tu ojo. El ob
+          +jetivo no es que se note la extensión,                        
+      220 +            es que se note tu mirada.»                        
+      221 +          </p>                                                
+      222 +          <p className="mt-6 text-xs tracking-[0.3em] text-gol
+          +d-300 uppercase">                                             
+      223 +            {business.name}                                   
+      224 +          </p>                                                
+      225 +        </div>                                                
+      226 +      </div>                                                  
+      227 +    </section>                                                
+      228 +  )                                                           
+      229 +}                                                             
+      230 +                                                              
+      231 +function BookCta() {                                          
+      232 +  return (                                                    
+      233 +    <section className="px-5 py-24">                          
+      234 +      <div className="mx-auto max-w-3xl text-center">         
+      235 +        <PageHeroHeading />                                   
+      236 +        <p className="mt-5 text-cream/70">                    
+      237 +          Escríbeme por WhatsApp con la técnica que te interes
+          +a y te confirmo disponibilidad el mismo                       
+      238 +          día. Si no sabes cuál elegir, te asesoro yo.        
+      239 +        </p>                                                  
+      240 +        <div className="mt-9 flex flex-wrap justify-center gap
+          +-4">                                                          
+      241 +          <a                                                  
+      242 +            href={whatsappLink()}                             
+      243 +            target="_blank"                                   
+      244 +            rel="noreferrer"                                  
+      245 +            className="rounded-full bg-gradient-to-r from-gold
+          +-600 via-gold-400 to-gold-600 px-9 py-3.5 font-body text-xs tr
+          +acking-[0.24em] text-ink uppercase shadow-gold transition-tran
+          +sform hover:scale-[1.03]"                                     
+      246 +          >                                                   
+      247 +            Reservar por WhatsApp                             
+      248 +          </a>                                                
+      249 +          <Link                                               
+      250 +            to="/contacto"                                    
+      251 +            className="rounded-full border border-gold-400/40 
+          +px-9 py-3.5 font-body text-xs tracking-[0.24em] text-gold-200 
+          +uppercase transition-colors hover:bg-gold-400/10"             
+      252 +          >                                                   
+      253 +            Otros contactos                                   
+      254 +          </Link>                                             
+      255 +        </div>                                                
+      256 +      </div>                                                  
+      257 +    </section>                                                
+      258 +  )                                                           
+      259 +}                                                             
+      260 +                                                              
+      261 +function PageHeroHeading() {                                  
+      262 +  return (                                                    
+      263 +    <h2 className="font-display text-3xl text-cream sm:text-4x
+          +l">                                                           
+      264 +      Reserva tu <span className="text-gold-gradient">cita</sp
+          +an>                                                           
+      265 +    </h2>                                                     
+      266 +  )                                                           
+      267 +}                                                             
+      268 +                                                              
+      269 +// Reexportado para que las migas de pan de otras páginas pued
+          +an reutilizarlo.                                              
+      270 +export { PageHero as _PageHeroFallback }                      
+
+  Thought for 19s (ctrl+o to expand)
+
+● Update(src\routes\index.tsx)
+  ⎿  Removed 1 line
+      1  import { Link, createFileRoute } from '@tanstack/react-router'
+      2  
+      3 -import { PageHero } from '#/components/PageHero'                
+      3  import { business, serviceCategories, whatsappLink, whyUs } from
+          '#/data/site'
+      4  
+      5  export const Route = createFileRoute('/')({
+
+● Update(src\routes\index.tsx)  ⎿  Added 1 line, removed 1 line
+      34        {/* Fondo: retícula sutil + halo dorado */}
+      35        <div aria-hidden className="pointer-events-none absolute 
+          inset-0">
+      36          <div className="absolute inset-0 bg-[radial-gradient(ci
+          rcle_at_50%_0%,rgba(212,175,55,0.16),transparent_60%)]" />
+      37 -        <div className="absolute inset-0 bg-[linear-gradient(rg
+         -ba(255,255,255,0.022)_1px,transparent_1px),linear-gradient(90de
+         -g,rgba(255,255,255,0.022)_1px,transparent_1px)] bg-[size:64px_6
+         -4px]" />                                                       
+      37 +        <div className="absolute inset-0 bg-[linear-gradient(rg
+         +ba(255,255,255,0.022)_1px,transparent_1px),linear-gradient(90de
+         +g,rgba(255,255,255,0.022)_1px,transparent_1px)] bg-size-[64px_6
+         +4px]" />                                                       
+      38          <div className="absolute inset-x-0 bottom-0 h-40 bg-gra
+          dient-to-t from-ink to-transparent" />
+      39        </div>
+      40  
+
+● Update(src\routes\index.tsx)
+  ⎿  Added 3 lines, removed 1 line
+      231    return (
+      232      <section className="px-5 py-24">
+      233        <div className="mx-auto max-w-3xl text-center">
+      234 -        <PageHeroHeading />                                   
+      234 +        <h2 className="font-display text-3xl text-cream sm:tex
+          +t-4xl">                                                       
+      235 +          Reserva tu <span className="text-gold-gradient">cita
+          +</span>                                                       
+      236 +        </h2>                                                 
+      237          <p className="mt-5 text-cream/70">
+      238            Escríbeme por WhatsApp con la técnica que te interes
+           a y te confirmo disponibilidad el mismo
+      239            día. Si no sabes cuál elegir, te asesoro yo.
+
+● Update(src\routes\index.tsx)
+  ⎿  Removed 11 lines
+      258      </section>
+      259    )
+      260  }
+      261 -                                                              
+      262 -function PageHeroHeading() {                                  
+      263 -  return (                                                    
+      264 -    <h2 className="font-display text-3xl text-cream sm:text-4x
+          -l">                                                           
+      265 -      Reserva tu <span className="text-gold-gradient">cita</sp
+          -an>                                                           
+      266 -    </h2>                                                     
+      267 -  )                                                           
+      268 -}                                                             
+      269 -                                                              
+      270 -// Reexportado para que las migas de pan de otras páginas pued
+          -an reutilizarlo.                                              
+      271 -export { PageHero as _PageHeroFallback }                      
+
+  Thought for 14s (ctrl+o to expand)
+
+● Write(src\routes\servicios.tsx)
+  ⎿  Wrote 247 lines to src\routes\servicios.tsx
+       1 import { Link, createFileRoute } from '@tanstack/react-router'
+       2 import { useEffect, useState } from 'react'
+       3 
+       4 import { PageHero } from '#/components/PageHero'
+       5 import {
+       6   business,
+       7   faqs,
+       8   serviceCategories,
+       9   whatsappLink,
+      10   type Service,
+     … +291 lines (ctrl+o to expand)
+
+  Thought for 34s (ctrl+o to expand)
+
+● Update(src\routes\servicios.tsx)
+  ⎿  Added 1 line, removed 1 line
+       7    faqs,
+       8    serviceCategories,
+       9    whatsappLink,
+      10 -  type Service,                                                
+      10 +  type Service as ServiceItem,                                 
+      11    type ServiceCategory,
+      12  } from '#/data/site'
+      13  
+
+● Update(src\routes\servicios.tsx)
+  ⎿  Added 1 line, removed 1 line
+      133    )
+      134  }
+      135  
+      136 -function ServiceCard({ service, categoryName }: { service: Ser
+          -vice; categoryName: string }) {                               
+      136 +function ServiceCard({ service, categoryName }: { service: Ser
+          +viceItem; categoryName: string }) {                           
+      137    return (
+      138      <article
+      139        className={`relative flex flex-col rounded-2xl p-7 trans
+           ition-all duration-300 hover:-translate-y-1 ${
+
+● Ahora la galería, con filtros como sub-pestañas y visor.
+
+● Write(src\routes\galeria.tsx)
+  ⎿  Wrote 219 lines to src\routes\galeria.tsx
+       1 import { createFileRoute } from '@tanstack/react-router'
+       2 import { useEffect, useMemo, useState } from 'react'
+       3 
+       4 import { PageHero } from '#/components/PageHero'
+       5 import { business, galleryPieces, whatsappLink } from '#/data/si
+       6 
+       7 export const Route = createFileRoute('/galeria')({
+       8   component: Galeria,
+       9   head: () => ({
+      10     meta: [
+     … +248 lines (ctrl+o to expand)
+
+  Thought for 19s (ctrl+o to expand)
+
+● Write(src\routes\sobre-mi.tsx)
+  ⎿  Wrote 171 lines to src\routes\sobre-mi.tsx
+       1 import { Link, createFileRoute } from '@tanstack/react-router'
+       2 
+       3 import { Diamond, PageHero } from '#/components/PageHero'
+       4 import { business, whatsappLink, whyUs } from '#/data/site'
+       5 
+       6 export const Route = createFileRoute('/sobre-mi')({
+       7   component: SobreMi,
+       8   head: () => ({
+       9     meta: [
+      10       { title: `Sobre mí — ${business.name}` },
+     … +199 lines (ctrl+o to expand)
+
+  Thought for 16s (ctrl+o to expand)
+
+● Write(src\routes\contacto.tsx)
+  ⎿  Wrote 279 lines to src\routes\contacto.tsx
+       1 import { createFileRoute } from '@tanstack/react-router'
+       2 import { useState } from 'react'
+       3 
+       4 import { PageHero } from '#/components/PageHero'
+       5 import { business, serviceCategories, whatsappLink } from '#/dat
+       6 
+       7 export const Route = createFileRoute('/contacto')({
+       8   component: Contacto,
+       9   head: () => ({
+      10     meta: [
+     … +320 lines (ctrl+o to expand)
+
+● Ahora instalo dependencias y verifico que compila.
+
+  Thought for 4m 10s, ran 11 shell commands (ctrl+o to expand)
+
+● Write(README.md)
+  ⎿  Added 77 lines, removed 145 lines
+        1 -Welcome to your new TanStack Start app!                       
+        1 +# GoldBlack Lash — sitio web                                  
+        2  
+        3 -# Getting Started                                             
+        3 +Sitio del estudio de extensiones de pestañas **GoldBlack Lash*
+          +*. Construido con                                             
+        4 +[TanStack Start](https://tanstack.com/start) (React 19 + Vite)
+          + y                                                            
+        5 +[Tailwind CSS v4](https://tailwindcss.com/), con estética negr
+          +o y dorado.                                                   
+        6  
+        5 -To run this application:                                      
+        7 +## Arrancar                                                   
+        8  
+        9  ```bash
+       10  pnpm install
+        9 -pnpm dev                                                      
+       11 +pnpm dev        # http://localhost:3000                       
+       12  ```
+       13  
+       12 -# Building For Production                                     
+       14 +Otros comandos:                                               
+       15  
+       14 -To build this application for production:                     
+       15 -                                                              
+       16  ```bash
+       17 -pnpm build                                                    
+       17 +pnpm build      # build de producción (cliente + servidor)    
+       18 +pnpm preview    # sirve el build                              
+       19 +pnpm generate-routes   # regenera src/routeTree.gen.ts si toca
+          +s rutas a mano                                                
+       20  ```
+       21  
+       20 -## Styling                                                    
+       22 +## Pestañas del sitio                                         
+       23  
+       22 -This project uses [Tailwind CSS](https://tailwindcss.com/) for
+          - styling.                                                     
+       24 +Cada pestaña es una ruta real con su propia URL, título y meta
+          + descripción, para                                            
+       25 +que se pueda compartir y posicionar en buscadores.            
+       26  
+       24 -### Removing Tailwind CSS                                     
+       27 +| Pestaña   | Ruta         | Archivo                  |       
+       28 +| --------- | ------------ | ------------------------ |       
+       29 +| Inicio    | `/`          | `src/routes/index.tsx`   |       
+       30 +| Servicios | `/servicios` | `src/routes/servicios.tsx` |     
+       31 +| Galería   | `/galeria`   | `src/routes/galeria.tsx` |       
+       32 +| Sobre mí  | `/sobre-mi`  | `src/routes/sobre-mi.tsx` |      
+       33 +| Contacto  | `/contacto`  | `src/routes/contacto.tsx` |      
+       34  
+       26 -If you prefer not to use Tailwind CSS:                        
+       35 +### Sub-pestañas                                              
+       36  
+       28 -1. Remove the demo pages in `src/routes/demo/`                
+       29 -2. Replace the Tailwind import in `src/styles.css` with your o
+          -wn styles                                                     
+       30 -3. Remove `tailwindcss()` from the plugins array in `vite.conf
+          -ig.ts`                                                        
+       31 -4. Remove `@tailwindcss/vite` and `tailwindcss` from `package.
+          -json`                                                         
+       37 +Además del menú principal hay dos juegos de sub-pestañas dentr
+          +o de las páginas:                                             
+       38  
+       39 +- **Servicios** — filtros por categoría (Extensiones / Manteni
+          +miento / Extras).                                             
+       40 +  Actualizan la URL con `?categoria=<id>` y siguen el scroll c
+          +on un                                                         
+       41 +  `IntersectionObserver`, así que el enlace se puede compartir
+          +.                                                             
+       42 +- **Galería** — filtros por técnica (Clásicas, Volumen ruso, M
+          +ega volumen,                                                  
+       43 +  Híbridas, Lifting). Son estado local, sin ensuciar la URL.  
+       44  
+       45 +El orden de las pestañas del menú se define una sola vez en `t
+          +abs`                                                          
+       46 +(`src/components/Chrome.tsx`) y lo consumen tanto la cabecera 
+          +como el pie.                                                  
+       47  
+       35 -## Routing                                                    
+       48 +## Dónde editar el contenido                                  
+       49  
+       37 -This project uses [TanStack Router](https://tanstack.com/route
+          -r) with file-based routing. Routes are managed as files in `sr
+          -c/routes`.                                                    
+       50 +**Todo el texto vive en `src/data/site.ts`.** No hace falta to
+          +car componentes                                               
+       51 +para cambiar precios, servicios, horarios o datos de contacto:
+       52  
+       39 -### Adding A Route                                            
+       53 +- `business` — nombre, teléfono, WhatsApp, email, dirección, I
+          +nstagram y horario.                                           
+       54 +- `serviceCategories` — servicios agrupados por categoría, con
+          + precio, duración,                                            
+       55 +  descripción e inclusiones. La marca `featured: true` resalta
+          + una tarjeta.                                                 
+       56 +- `whyUs`, `faqs`, `galleryPieces` — bloques de ventajas, preg
+          +untas frecuentes y                                            
+       57 +  fichas de la galería.                                       
+       58  
+       41 -To add a new route to your application just add a new file in 
+          -the `./src/routes` directory.                                 
+       59 +> Los valores marcados `TODO` en ese archivo son **provisional
+          +es**: el número de                                            
+       60 +> WhatsApp, el teléfono, el email y la dirección son de ejempl
+          +o. Sustitúyelos                                               
+       61 +> antes de publicar.                                          
+       62  
+       43 -TanStack will automatically generate the content of the route 
+          -file for you.                                                 
+       63 +### Botón de WhatsApp                                         
+       64  
+       45 -Now that you have two routes you can use a `Link` component to
+          - navigate between them.                                       
+       65 +Todos los CTA de reserva usan `whatsappLink(mensaje)`, que abr
+          +e `wa.me` con el                                              
+       66 +texto ya escrito. Cada tarjeta de servicio manda su propio men
+          +saje con el nombre                                            
+       67 +y el precio ya incluidos.                                     
+       68  
+       47 -### Adding Links                                              
+       69 +## Galería: cómo añadir tus fotos                             
+       70  
+       49 -To use SPA (Single Page Application) navigation you will need 
+          -to import the `Link` component from `@tanstack/react-router`. 
+       71 +Las fichas de `galleryPieces` se renderizan como plantillas co
+          +n el logotipo de                                              
+       72 +fondo. Para poner fotos reales:                               
+       73  
+       51 -```tsx                                                        
+       52 -import { Link } from "@tanstack/react-router";                
+       53 -```                                                           
+       74 +1. Crea `public/galeria/` y guarda las imágenes como `<id>.jpg
+          +`                                                             
+       75 +   (por ejemplo `public/galeria/pieza-01.jpg`).               
+       76 +2. En `src/routes/galeria.tsx`, dentro de `GalleryTile`, susti
+          +tuye el bloque del                                            
+       77 +   marcador de posición por:                                  
+       78  
+       55 -Then anywhere in your JSX you can use it like so:             
+       79 +   ```tsx                                                     
+       80 +   <img src={`/galeria/${id}.jpg`} alt={title} className="aspe
+          +ct-[4/5] w-full object-cover" />                              
+       81 +   ```                                                        
+       82  
+       57 -```tsx                                                        
+       58 -<Link to="/about">About</Link>                                
+       59 -```                                                           
+       83 +3. Pasa `id` como prop desde `Galeria` (ya está disponible en 
+          +cada `piece`).                                                
+       84  
+       61 -This will create a link that will navigate to the `/about` rou
+          -te.                                                           
+       85 +Recomendado: 1000 × 1250 px (4:5), JPG por debajo de 200 KB.  
+       86  
+       63 -More information on the `Link` component can be found in the [
+          -Link documentation](https://tanstack.com/router/v1/docs/framew
+          -ork/react/api/router/linkComponent).                          
+       87 +## Estructura                                                 
+       88  
+       65 -### Using A Layout                                            
+       66 -                                                              
+       67 -In the File Based Routing setup the layout is located in `src/
+          -routes/__root.tsx`. Anything you add to the root route will ap
+          -pear in all the routes. The route content will appear in the J
+          -SX where you render `{children}` in the `shellComponent`.     
+       68 -                                                              
+       69 -Here is an example layout that includes a header:             
+       70 -                                                              
+       71 -```tsx                                                        
+       72 -import { HeadContent, Scripts, createRootRoute } from '@tansta
+          -ck/react-router'                                              
+       73 -                                                              
+       74 -export const Route = createRootRoute({                        
+       75 -  head: () => ({                                              
+       76 -    meta: [                                                   
+       77 -      { charSet: 'utf-8' },                                   
+       78 -      { name: 'viewport', content: 'width=device-width, initia
+          -l-scale=1' },                                                 
+       79 -      { title: 'My App' },                                    
+       80 -    ],                                                        
+       81 -  }),                                                         
+       82 -  shellComponent: ({ children }) => (                         
+       83 -    <html lang="en">                                          
+       84 -      <head>                                                  
+       85 -        <HeadContent />                                       
+       86 -      </head>                                                 
+       87 -      <body>                                                  
+       88 -        <header>                                              
+       89 -          <nav>                                               
+       90 -            <Link to="/">Home</Link>                          
+       91 -            <Link to="/about">About</Link>                    
+       92 -          </nav>                                              
+       93 -        </header>                                             
+       94 -        {children}                                            
+       95 -        <Scripts />                                           
+       96 -      </body>                                                 
+       97 -    </html>                                                   
+       98 -  ),                                                          
+       99 -})                                                            
+       89  ```
+      101 -                                                              
+      102 -More information on layouts can be found in the [Layouts docum
+          -entation](https://tanstack.com/router/latest/docs/framework/re
+          -act/guide/routing-concepts#layouts).                          
+      103 -                                                              
+      104 -## Server Functions                                           
+      105 -                                                              
+      106 -TanStack Start provides server functions that allow you to wri
+          -te server-side code that seamlessly integrates with your clien
+          -t components.                                                 
+      107 -                                                              
+      108 -```tsx                                                        
+      109 -import { createServerFn } from '@tanstack/react-start'        
+      110 -                                                              
+      111 -const getServerTime = createServerFn({                        
+      112 -  method: 'GET',                                              
+      113 -}).handler(async () => {                                      
+      114 -  return new Date().toISOString()                             
+      115 -})                                                            
+      116 -                                                              
+      117 -// Use in a component                                         
+      118 -function MyComponent() {                                      
+      119 -  const [time, setTime] = useState('')                        
+      120 -                                                              
+      121 -  useEffect(() => {                                           
+      122 -    getServerTime().then(setTime)                             
+      123 -  }, [])                                                      
+      124 -                                                              
+      125 -  return <div>Server time: {time}</div>                       
+      126 -}                                                             
+       90 +src/                                                          
+       91 +├── components/                                               
+       92 +│   ├── Chrome.tsx      # cabecera con pestañas, menú móvil y 
+          +pie                                                           
+       93 +│   └── PageHero.tsx    # cabecera de página interior + separa
+          +dor de rombo                                                  
+       94 +├── data/site.ts        # todo el contenido y los datos del ne
+          +gocio                                                         
+       95 +├── routes/             # una pestaña por archivo (file-based 
+          +routing)                                                      
+       96 +├── router.tsx                                                
+       97 +└── styles.css          # tema de Tailwind: paleta dorada, tip
+          +ografías, utilidades                                          
+       98  ```
+       99  
+      129 -## API Routes                                                 
+      100 +### Sistema de diseño                                         
+      101  
+      131 -You can create API routes by using the `server` property in yo
+          -ur route definitions:                                         
+      102 +En `src/styles.css`, bajo `@theme`, están los tokens de Tailwi
+          +nd v4:                                                        
+      103  
+      133 -```tsx                                                        
+      134 -import { createFileRoute } from '@tanstack/react-router'      
+      135 -import { json } from '@tanstack/react-start'                  
+      104 +- Colores: `ink`, `coal`, `graphite`, `slate`, `gold-50…700`, 
+          +`cream`, `muted`.                                             
+      105 +- Tipografías: `font-display` (Cormorant Garamond, serif) y `f
+          +ont-body` (Jost).                                             
+      106 +- Utilidades propias: `text-gold-gradient`, `border-gold-gradi
+          +ent`,                                                         
+      107 +  `ring-gold-glow` y `rule-gold`.                             
+      108  
+      137 -export const Route = createFileRoute('/api/hello')({          
+      138 -  server: {                                                   
+      139 -    handlers: {                                               
+      140 -      GET: () => json({ message: 'Hello, World!' }),          
+      141 -    },                                                        
+      142 -  },                                                          
+      143 -})                                                            
+      144 -```                                                           
+      109 +## Formulario de contacto                                     
+      110  
+      146 -## Data Fetching                                              
+      147 -                                                              
+      148 -There are multiple ways to fetch data in your application. You
+          - can use TanStack Query to fetch data from a server. But you c
+          -an also use the `loader` functionality built into TanStack Rou
+          -ter to load the data for a route before it's rendered.        
+      149 -                                                              
+      150 -For example:                                                  
+      151 -                                                              
+      152 -```tsx                                                        
+      153 -import { createFileRoute } from '@tanstack/react-router'      
+      154 -                                                              
+      155 -export const Route = createFileRoute('/people')({             
+      156 -  loader: async () => {                                       
+      157 -    const response = await fetch('https://swapi.dev/api/people
+          -')                                                            
+      158 -    return response.json()                                    
+      159 -  },                                                          
+      160 -  component: PeopleComponent,                                 
+      161 -})                                                            
+      162 -                                                              
+      163 -function PeopleComponent() {                                  
+      164 -  const data = Route.useLoaderData()                          
+      165 -  return (                                                    
+      166 -    <ul>                                                      
+      167 -      {data.results.map((person) => (                         
+      168 -        <li key={person.name}>{person.name}</li>              
+      169 -      ))}                                                     
+      170 -    </ul>                                                     
+      171 -  )                                                           
+      172 -}                                                             
+      173 -```                                                           
+      174 -                                                              
+      175 -Loaders simplify your data fetching logic dramatically. Check 
+          -out more information in the [Loader documentation](https://tan
+          -stack.com/router/latest/docs/framework/react/guide/data-loadin
+          -g#loader-parameters).                                         
+      176 -                                                              
+      177 -                                                              
+      178 -                                                              
+      179 -# Learn More                                                  
+      180 -                                                              
+      181 -You can learn more about all of the offerings from TanStack in
+          - the [TanStack documentation](https://tanstack.com).          
+      182 -                                                              
+      183 -For TanStack Start specific documentation, visit [TanStack Sta
+          -rt](https://tanstack.com/start).                              
+      111 +El formulario de `/contacto` no tiene backend: valida nombre y
+          + teléfono en el                                               
+      112 +cliente y compone el mensaje que abre en WhatsApp. No se guard
+          +a ningún dato.                                                
+      113 +Si más adelante quieres recibir las solicitudes por email, se 
+          +sustituye                                                     
+      114 +`handleSubmit` en `src/routes/contacto.tsx` por una server fun
+          +ction de TanStack                                             
+      115 +Start (`createServerFn`).                                     
+
+  Thought for 17s, ran 1 shell command, wrote 2 memories (ctrl+o to expand)
+
+● El sitio está construido y funcionando. El servidor de desarrollo sigue
+  corriendo en http://localhost:3000.
+
+  Lo que hay ahora
+
+  Cinco pestañas, cada una con URL propia (título y meta descripción
+  independientes):
+
+  ┌───────────┬────────────┬─────────────────────────────────────────────────┐
+  │  Pestaña  │    Ruta    │                    Contenido                    │
+  ├───────────┼────────────┼─────────────────────────────────────────────────┤
+  │ Inicio    │ /          │ Portada a pantalla completa con tu logo,        │
+  │           │            │ servicios destacados, ventajas y CTA de reserva │
+  ├───────────┼────────────┼─────────────────────────────────────────────────┤
+  │           │            │ Carta completa: 5 tipos de extensión, rellenos, │
+  │ Servicios │ /servicios │  lifting, tinte y retirada, con precios y       │
+  │           │            │ duración                                        │
+  ├───────────┼────────────┼─────────────────────────────────────────────────┤
+  │ Galería   │ /galeria   │ Cuadrícula tipo mosaico con visor ampliado y    │
+  │           │            │ navegación por teclado                          │
+  ├───────────┼────────────┼─────────────────────────────────────────────────┤
+  │ Sobre mí  │ /sobre-mi  │ Historia, certificaciones y protocolo de        │
+  │           │            │ higiene                                         │
+  ├───────────┼────────────┼─────────────────────────────────────────────────┤
+  │ Contacto  │ /contacto  │ Formulario de reserva, horario, mapa y datos    │
+  │           │            │ directos                                        │
+  └───────────┴────────────┴─────────────────────────────────────────────────┘
+
+  Sub-pestañas donde tienen sentido: en Servicios filtrar por categoría
+  (Extensiones / Mantenimiento / Extras) — el filtro se guarda en la URL
+  (?categoria=extras), así que puedes compartir el enlace directo; en Galería,
+  filtrar por técnica.
+
+  El estilo negro y dorado sale del logo: fondo #050505, degradados dorados con
+  el mismo brillo del emblema, Cormorant Garamond para titulares y Jost para el
+  cuerpo. Efectos como text-gold-gradient y border-gold-gradient están en
+  src/styles.css y se reutilizan en todo el sitio.
+
+  Dos cosas que debes revisar antes de publicar
+
+  1. Los datos de contacto son de ejemplo. WhatsApp, teléfono, email y dirección
+     están marcados con TODO en src/data/site.ts, que es el único archivo donde
+     vive todo el texto del sitio. Cámbialos ahí y se actualizan en las cinco
+     páginas, en el pie y en los mensajes de WhatsApp.
+  2. La galería usa fichas de plantilla (el logo como marca de agua) porque no
+     había fotos. Cuando las tengas: guárdalas en public/galeria/pieza-01.jpg,
+     etc., y el README explica el cambio de tres líneas para que aparezcan.
+
+  El README documenta la estructura, los tokens del tema y cómo añadir las
+  fotos.
+
+  Un apunte sobre el encargo original: no encontré ninguna sesión previa en este
+  proyecto — el directorio solo tenía el scaffold recién generado y tu logo,
+  sin nada a medias. Así que "continuar" en la práctica fue empezarlo, usando
+  las decisiones que elegiste (rutas reales, español, negro y dorado).
+
+✻ Crunched for 35m 24s · done 6:24 AM
+
+❯ quiero que lo subas en github en vercel                                       
+
+● API Error: 402 Budget pool quota has been exhausted. Please ask an 
+  administrator to increase the limit or select another budget pool. 
+  (request id: 20260910122657596288569d852vjJyXL9NU)
+
+✻ Worked for 2s · done 6:26 AM
+
+❯ quiero que lo subas en github en vercel                                       
+
+● API Error: 402 Budget pool quota has been exhausted. Please ask an 
+  administrator to increase the limit or select another budget pool. 
+  (request id: 20260910122707682957578zqwj9a4AeoIfX)
+
+✻ Cogitated for 2s · done 6:27 AM
+
+❯ quiero que lo subas en github en vercel                                       
+
+● API Error: 402 Budget pool quota has been exhausted. Please ask an 
+  administrator to increase the limit or select another budget pool. 
+  (request id: 20260910122718611069991jrq6xiTDRYzO8)
+
+✻ Cogitated for 2s · done 6:27 AM
+
+❯ quiero que lo subas en github en vercel                                       
+● API Error: 402 Budget pool quota has been exhausted. Please ask an 
+  administrator to increase the limit or select another budget pool. 
+  (request id: 20260910122738610691341dlsx6K8Wrtfgh)
+
+✻ Crunched for 2s · done 6:27 AM
