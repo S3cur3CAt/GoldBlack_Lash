@@ -43,6 +43,7 @@ export function whatsappLink(
 export type Service = {
   id: string
   name: string
+  badge?: string
   description: string
   duration: string
   price: string
@@ -69,9 +70,10 @@ export const serviceCategories: Array<ServiceCategory> = [
     services: [
       {
         id: 'clasicas',
-        name: 'Clásicas',
+        name: 'Volumen',
+        badge: '3D, 4D, 5D y 6D',
         description:
-          'Una extensión por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
+          'Varias extensiones por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
         duration: '1 h 30 min',
         price: '27 €',
         includes: [

@@ -368,7 +368,7 @@ function BookingForm() {
               <optgroup key={category.id} label={category.name}>
                 {category.services.map((service) => (
                   <option key={service.id} value={service.name}>
-                    {service.name} · {service.price}
+                    {service.name}{service.badge ? ` (${service.badge})` : ''} · {service.price}
                   </option>
                 ))}
               </optgroup>

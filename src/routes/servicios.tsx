@@ -259,9 +259,16 @@ function ServiceCard({ service }: { service: Service }) {
 
       <div className="flex flex-wrap items-start justify-between gap-5">
         <div className="max-w-sm">
-          <h3 className="font-display text-2xl leading-tight sm:text-3xl">
-            {service.name}
-          </h3>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h3 className="font-display text-2xl leading-tight sm:text-3xl">
+              {service.name}
+            </h3>
+            {service.badge ? (
+              <span className="rounded-full bg-blush px-3 py-1 text-[0.7rem] font-semibold tracking-wide text-plum border border-rose/15 shadow-soft">
+                {service.badge}
+              </span>
+            ) : null}
+          </div>
 
           <p className="mt-2 text-xs text-muted">
             Duración aproximada · {service.duration}
@@ -294,7 +301,7 @@ function ServiceCard({ service }: { service: Service }) {
             [
               `*Me interesa este servicio — ${business.name}*`,
               '---------------------------',
-              `*Servicio:* ${service.name} (${service.price})`,
+              `*Servicio:* ${service.name}${service.badge ? ` (${service.badge})` : ''} (${service.price})`,
               `*Duración aprox.:* ${service.duration}`,
               '---------------------------',
               '*Nombre:*',
