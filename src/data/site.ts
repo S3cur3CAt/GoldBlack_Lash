@@ -15,9 +15,9 @@ export const business = {
   // TODO: sustituir por el teléfono real tal y como quieres que se muestre.
   phoneDisplay: '+34 000 000 000',
   email: 'hola@goldblacklash.com',
-  address: 'Calle Ejemplo 00, Local 1',
-  city: 'Madrid',
-  postalCode: '28000',
+  address: 'Calle Numa, Montequinto',
+  city: 'Dos Hermanas (Sevilla)',
+  postalCode: '41089',
   // TODO: sustituir por la URL real del perfil.
   instagram: 'https://instagram.com/goldblack_lash',
   instagramHandle: '@goldblack_lash',
