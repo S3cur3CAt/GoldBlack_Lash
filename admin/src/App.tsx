@@ -36,6 +36,9 @@ import {
   syncGalleryItemWithVercel,
   deleteGalleryItemFromVercel,
   fetchLiveGalleryFromVercel,
+  fetchLiveAppointmentsFromVercel,
+  syncAppointmentWithVercel,
+  deleteAppointmentFromVercel,
 } from './services/storage'
 
 export const App: React.FC = () => {
@@ -62,18 +65,58 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     refreshAll()
-    // Fetch live services from Vercel / Neon Postgres
-    fetchLiveServicesFromVercel().then((live) => {
-      if (live && live.length > 0) {
-        setServices(live)
-      }
-    })
-    // Fetch live gallery from Vercel / Neon Postgres
-    fetchLiveGalleryFromVercel().then((live) => {
-      if (live && live.length > 0) {
-        setGallery(live)
-      }
-    })
+
+    // Sync appointments immediately and regularly
+    const syncAppointments = () => {
+      fetchLiveAppointmentsFromVercel()
+        .then((liveApts) => {
+          if (liveApts) {
+            setAppointments(liveApts)
+            setClients(getClients())
+          }
+        })
+        .catch(() => {})
+    }
+
+    // Initial sync
+    syncAppointments()
+
+    // Regular polling for online web bookings (every 10s)
+    const aptPolling = setInterval(syncAppointments, 10000)
+
+    // Sync on window focus (e.g. user returns to admin app)
+    window.addEventListener('focus', syncAppointments)
+
+    // Defer services and gallery network sync to let UI render first (faster perceived startup)
+    const deferTimer = setTimeout(() => {
+      // Fetch live services with 3s timeout so slow network doesn't block the app
+      const servicesController = new AbortController()
+      const servicesTimeout = setTimeout(() => servicesController.abort(), 3000)
+      fetchLiveServicesFromVercel()
+        .then((live) => {
+          clearTimeout(servicesTimeout)
+          if (live && live.length > 0) {
+            setServices(live)
+          }
+        })
+        .catch(() => {
+          clearTimeout(servicesTimeout)
+        })
+
+      // Fetch live gallery with 3s timeout
+      const galleryController = new AbortController()
+      const galleryTimeout = setTimeout(() => galleryController.abort(), 3000)
+      fetchLiveGalleryFromVercel()
+        .then((live) => {
+          clearTimeout(galleryTimeout)
+          if (live && live.length > 0) {
+            setGallery(live)
+          }
+        })
+        .catch(() => {
+          clearTimeout(galleryTimeout)
+        })
+    }, 1500)
 
     const handleSync = (e: any) => {
       if (e.detail) {
@@ -82,10 +125,15 @@ export const App: React.FC = () => {
       }
     }
     window.addEventListener('goldblack:sync', handleSync)
-    return () => window.removeEventListener('goldblack:sync', handleSync)
+    return () => {
+      clearTimeout(deferTimer)
+      clearInterval(aptPolling)
+      window.removeEventListener('focus', syncAppointments)
+      window.removeEventListener('goldblack:sync', handleSync)
+    }
   }, [])
 
-  // Appointment Actions
+  // Appointment Actions - Synchronized with Neon Postgres & Vercel API
   const handleSaveAppointment = (apt: Appointment) => {
     const existingIndex = appointments.findIndex((a) => a.id === apt.id)
     let updated: Appointment[]
@@ -117,24 +165,34 @@ export const App: React.FC = () => {
     }
     setAppointments(updated)
     saveAppointments(updated)
+    syncAppointmentWithVercel(apt)
   }
 
   const handleDeleteAppointment = (id: string) => {
     const updated = appointments.filter((a) => a.id !== id)
     setAppointments(updated)
     saveAppointments(updated)
+    deleteAppointmentFromVercel(id)
   }
 
   const handleUpdateStatus = (id: string, status: AppointmentStatus) => {
+    const targetApt = appointments.find((a) => a.id === id)
     const updated = appointments.map((a) => (a.id === id ? { ...a, status } : a))
     setAppointments(updated)
     saveAppointments(updated)
+    if (targetApt) {
+      syncAppointmentWithVercel({ ...targetApt, status })
+    }
   }
 
   const handleUpdatePayment = (id: string, paymentStatus: PaymentStatus) => {
+    const targetApt = appointments.find((a) => a.id === id)
     const updated = appointments.map((a) => (a.id === id ? { ...a, paymentStatus } : a))
     setAppointments(updated)
     saveAppointments(updated)
+    if (targetApt) {
+      syncAppointmentWithVercel({ ...targetApt, paymentStatus })
+    }
   }
 
   // Service Actions - Synchronized in real time with Vercel & Neon Postgres

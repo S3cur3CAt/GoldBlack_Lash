@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
+import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   faqs,
@@ -312,28 +313,16 @@ function ServiceCard({ service }: { service: Service }) {
       </ul>
 
       <div className="mt-7 border-t border-rose/10 pt-6">
-        <a
-          href={whatsappLink(
-            [
-              `*Me interesa este servicio — ${business.name}*`,
-              '---------------------------',
-              `*Servicio:* ${service.name}${service.badge ? ` (${service.badge})` : ''} (${service.price})`,
-              `*Duración aprox.:* ${service.duration}`,
-              '---------------------------',
-              '*Nombre:*',
-              '*Teléfono:*',
-              `${business.siteUrl}`,
-            ].join('\n'),
-          )}
-          target="_blank"
-          rel="noreferrer"
-          className={`button w-full sm:w-auto ${
+        <button
+          type="button"
+          onClick={() => openReservationModal({ serviceName: service.name, serviceId: service.id })}
+          className={`button w-full sm:w-auto cursor-pointer ${
             service.featured ? 'button-dark' : 'button-accent'
           }`}
         >
           Reservar este servicio
           <span aria-hidden="true">↗</span>
-        </a>
+        </button>
       </div>
     </article>
   )
@@ -471,15 +460,14 @@ function BookingCta() {
             que mejor encaja con tu mirada.
           </p>
 
-          <a
-            href={whatsappLink()}
-            target="_blank"
-            rel="noreferrer"
-            className="button button-light mt-7 focus-visible:outline-accent"
+          <button
+            type="button"
+            onClick={() => openReservationModal()}
+            className="button button-light mt-7 focus-visible:outline-accent cursor-pointer"
           >
             Quiero reservar mi momento
             <span aria-hidden="true">↗</span>
-          </a>
+          </button>
         </div>
       </div>
     </section>

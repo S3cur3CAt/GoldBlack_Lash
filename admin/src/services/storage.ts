@@ -513,6 +513,137 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
   }
 }
 
+/** Fetch latest appointments from Vercel API / Neon Postgres */
+export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] | null> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/appointments`, {
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+    if (!res.ok) return null
+    const remoteList = await res.json()
+    if (!Array.isArray(remoteList)) return null
+
+    // Get current local appointments
+    const local = getAppointments()
+    const map = new Map<string, Appointment>()
+
+    // First put local ones
+    for (const apt of local) {
+      map.set(apt.id, apt)
+    }
+
+    // Overlay / add remote ones
+    let hasNewAppointments = false
+    const currentClients = getClients()
+    let clientsUpdated = false
+    const clientsMap = new Map<string, Client>()
+    for (const c of currentClients) {
+      clientsMap.set(c.phone.replace(/\D/g, ''), c)
+    }
+
+    for (const r of remoteList) {
+      if (!map.has(r.id)) {
+        hasNewAppointments = true
+      }
+      map.set(r.id, {
+        id: r.id,
+        clientName: r.clientName,
+        clientPhone: r.clientPhone,
+        date: r.date,
+        time: r.time,
+        durationMinutes: r.durationMinutes || 90,
+        serviceId: r.serviceId || '',
+        serviceName: r.serviceName || 'Servicio de Pestañas',
+        price: r.price || 0,
+        status: r.status || 'pendiente',
+        paymentStatus: r.paymentStatus || 'pendiente',
+        curl: r.curl,
+        length: r.length,
+        style: r.style,
+        notes: r.notes,
+        createdAt: r.createdAt || new Date().toISOString(),
+      })
+
+      // Check if client is registered in CRM
+      const cleanPhone = (r.clientPhone || '').replace(/\D/g, '')
+      if (cleanPhone && !clientsMap.has(cleanPhone)) {
+        const newClient: Client = {
+          id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          name: r.clientName,
+          phone: r.clientPhone,
+          allergies: 'Ninguna conocida',
+          preferredStyle: r.style || 'Cat Eye (Ojo de Gato)',
+          preferredCurl: r.curl || 'D',
+          totalVisits: 1,
+          totalSpent: r.price || 0,
+          lastVisitDate: r.date,
+          notes: r.notes ? `Registrada desde reserva web: ${r.notes}` : 'Cliente creada automáticamente desde reserva web',
+          createdAt: r.date || new Date().toISOString().split('T')[0],
+        }
+        clientsMap.set(cleanPhone, newClient)
+        clientsUpdated = true
+      }
+    }
+
+    const merged = Array.from(map.values())
+    // Sort by date desc
+    merged.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time))
+
+    saveAppointments(merged)
+
+    if (clientsUpdated) {
+      saveClients(Array.from(clientsMap.values()))
+    }
+
+    if (hasNewAppointments) {
+      notifySyncEvent('synced', '✓ Nuevas reservas recibidas desde el sitio web')
+    }
+
+    return merged
+  } catch (e) {
+    console.warn('[Fetch Live Appointments Error]', e)
+    return null
+  }
+}
+
+/** Syncs a single appointment with Neon Postgres / Vercel API */
+export async function syncAppointmentWithVercel(appointment: Appointment): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/appointments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(appointment),
+    })
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      throw new Error(errData.error || `HTTP ${res.status}`)
+    }
+    notifySyncEvent('synced', `✓ Cita de ${appointment.clientName} sincronizada`)
+    return true
+  } catch (err: any) {
+    console.warn('[Appointment Sync Error]', err)
+    return false
+  }
+}
+
+/** Deletes an appointment from Neon Postgres / Vercel API */
+export async function deleteAppointmentFromVercel(id: string): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/appointments?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    notifySyncEvent('synced', `✓ Cita eliminada en tiempo real`)
+    return true
+  } catch (err: any) {
+    console.warn('[Appointment Sync Delete Error]', err)
+    return false
+  }
+}
+
 export function getServices(): AdminService[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SERVICES)

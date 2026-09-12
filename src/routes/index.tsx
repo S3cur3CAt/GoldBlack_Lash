@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { StudioVisual } from '#/components/StudioVisual'
+import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   faqs,
@@ -108,15 +109,14 @@ function Hero() {
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a
-              href={whatsappLink()}
-              target="_blank"
-              rel="noreferrer"
-              className="button button-dark sm:w-auto"
+            <button
+              type="button"
+              onClick={() => openReservationModal()}
+              className="button button-dark sm:w-auto cursor-pointer"
             >
               Reserva tu momento
               <span aria-hidden="true">↗</span>
-            </a>
+            </button>
 
             <Link
               to="/servicios"
@@ -418,15 +418,14 @@ function BookingSection() {
             </p>
 
           <div className="mx-auto mt-8 flex w-full max-w-md flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href={whatsappLink()}
-                target="_blank"
-                rel="noreferrer"
-                className="button button-light focus-visible:outline-accent"
+              <button
+                type="button"
+                onClick={() => openReservationModal()}
+                className="button button-light focus-visible:outline-accent cursor-pointer"
               >
-                Reservar por WhatsApp
+                Reserva tu momento
                 <span aria-hidden="true">↗</span>
-              </a>
+              </button>
 
               <Link
                 to="/contacto"

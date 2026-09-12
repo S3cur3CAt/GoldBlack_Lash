@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
+import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   galleryPieces as fallbackPieces,
@@ -458,26 +459,17 @@ function Lightbox({
               y valorar cómo adaptarlo a tu mirada.
             </p>
 
-            <a
-              href={whatsappLink(
-                [
-                  `*Me gusta este diseño — ${business.name}*`,
-                  '---------------------------',
-                  `*Diseño:* ${piece.title} (${piece.technique}${piece.price ? ` · ${piece.price}` : ''})`,
-                  `*Referencia:* ${piece.detail}`,
-                  '---------------------------',
-                  '*Nombre:*',
-                  '*Teléfono:*',
-                  `${business.siteUrl}`,
-                ].join('\n'),
-              )}
-              target="_blank"
-              rel="noreferrer"
-              className="button button-dark mt-7 w-full"
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                openReservationModal({ serviceName: piece.title })
+              }}
+              className="button button-dark mt-7 w-full cursor-pointer"
             >
-              Me gusta este efecto
+              Pedir cita con este estilo
               <span aria-hidden="true">♡</span>
-            </a>
+            </button>
           </div>
 
           <div className="flex justify-between gap-3 border-t border-line pt-5">

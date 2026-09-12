@@ -1,7 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
-import { business, whatsappLink } from '#/data/site'
+import { openReservationModal } from '#/components/ReservationModal'
+import { business } from '#/data/site'
 
 export const tabs = [
   { to: '/', label: 'Inicio' },
@@ -81,15 +82,14 @@ export function Header() {
           ))}
         </nav>
 
-        <a
-          href={whatsappLink()}
-          target="_blank"
-          rel="noreferrer"
-          className="button button-dark hidden lg:inline-flex"
+        <button
+          type="button"
+          onClick={() => openReservationModal()}
+          className="button button-dark hidden lg:inline-flex cursor-pointer"
         >
           Reserva tu momento
           <span aria-hidden="true">↗</span>
-        </a>
+        </button>
 
         <button
           ref={menuButton}
@@ -130,16 +130,17 @@ export function Header() {
               </Link>
             ))}
 
-            <a
-              href={whatsappLink()}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setOpen(false)}
-              className="button button-dark mt-5 mb-3 w-full"
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                openReservationModal()
+              }}
+              className="button button-dark mt-5 mb-3 w-full cursor-pointer"
             >
-              Pedir cita por WhatsApp
+              Reserva tu momento
               <span aria-hidden="true">↗</span>
-            </a>
+            </button>
           </div>
         </nav>
       ) : null}
@@ -242,14 +243,13 @@ export function Footer() {
               </li>
             </ul>
 
-            <a
-              href={whatsappLink()}
-              target="_blank"
-              rel="noreferrer"
-              className="button button-accent mt-7 focus-visible:outline-accent"
+            <button
+              type="button"
+              onClick={() => openReservationModal()}
+              className="button button-accent mt-7 focus-visible:outline-accent cursor-pointer"
             >
               Reservar cita ↗
-            </a>
+            </button>
           </div>
         </div>
 

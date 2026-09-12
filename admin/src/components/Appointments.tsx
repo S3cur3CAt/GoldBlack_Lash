@@ -25,6 +25,7 @@ import {
   createWhatsAppReminderUrl,
   createWhatsAppConfirmationUrl,
   createWhatsAppPreCareUrl,
+  fetchLiveAppointmentsFromVercel,
 } from '../services/storage'
 
 interface AppointmentsProps {
@@ -200,13 +201,25 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             Gestiona citas, envía recordatorios por WhatsApp y anota especificaciones de pestañas.
           </p>
         </div>
-        <button
-          onClick={handleNew}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow self-start sm:self-auto"
-        >
-          <IconPlus size={16} />
-          <span>Nueva Cita</span>
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => fetchLiveAppointmentsFromVercel()}
+            title="Sincronizar reservas con la web"
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#171722] hover:bg-[#202030] text-gray-300 hover:text-white border border-[#252535] text-xs font-semibold transition-all cursor-pointer"
+          >
+            <span>🔄</span>
+            <span>Sincronizar</span>
+          </button>
+
+          <button
+            onClick={handleNew}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"
+          >
+            <IconPlus size={16} />
+            <span>Nueva Cita</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -313,6 +326,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       <span className="text-xs font-mono text-gray-400 bg-[#1a1a26] px-2 py-0.5 rounded-md">
                         {apt.clientPhone}
                       </span>
+                      {/* Web Booking Badge */}
+                      {(apt.id.startsWith('apt-web') || apt.notes?.toLowerCase().includes('web')) && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                          <span>🌐</span> Web
+                        </span>
+                      )}
+
                       {/* Status Badge */}
                       <span
                         className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${

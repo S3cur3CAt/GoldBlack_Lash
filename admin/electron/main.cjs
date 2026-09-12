@@ -7,9 +7,9 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.goldblacklash.admin')
 }
 
-// Disable GPU acceleration if running on older hardware or virtualized environment (helpful for OS X El Capitan)
+// Optimize Chromium rendering for macOS Monterey
 if (process.platform === 'darwin') {
-  app.commandLine.appendSwitch('disable-color-correct-rendering')
+  app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 }
 
 let mainWindow = null
@@ -27,7 +27,7 @@ function createWindow() {
     backgroundColor: '#0a0a0d',
     title: 'GoldBlack Lash — Panel de Administración',
     icon: iconPath,
-    show: false,
+    show: true,
     frame: isMac,
     titleBarStyle: isMac ? 'hiddenInset' : undefined,
     trafficLightPosition: isMac ? { x: 14, y: 11 } : undefined,

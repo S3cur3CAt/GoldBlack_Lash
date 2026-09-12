@@ -1,6 +1,6 @@
 {
   "name": "goldblack-release-publisher",
-  "version": "0.0.8",
+  "version": "0.1.3",
   "description": "Gestor de Actualizaciones y Publicador de Releases para GoldBlack Lash",
   "author": "GoldBlack Lash <hola@goldblacklash.com>",
   "private": true,

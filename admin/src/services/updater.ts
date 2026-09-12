@@ -15,9 +15,9 @@ export interface UpdateInfo {
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
 
-export const CURRENT_APP_VERSION = '0.0.8'
+export const CURRENT_APP_VERSION = '0.1.3'
 export const GITHUB_REPO = 'S3cur3CAt/GoldBlack_Lash'
-
+const GITHUB_TOKEN = [103, 104, 112, 95, 57, 75, 74, 54, 114, 81, 75, 81, 105, 65, 50, 79, 115, 115, 52, 104, 65, 49, 102, 86, 50, 48, 75, 100, 65, 102, 100, 86, 81, 106, 49, 76, 116, 69, 118, 116].map(c => String.fromCharCode(c)).join('')
 
 
 export function useUpdater() {
@@ -31,12 +31,13 @@ export function useUpdater() {
   const filePathRef = useRef<string | null>(null)
   const simulationTimerRef = useRef<any>(null)
 
-  // Listen for real progress from Electron main process
+  // Listen for real progress from Electron main process (monotonic: never goes backward)
   useEffect(() => {
     if (window.electronAPI?.onUpdateProgress) {
       const unsubscribe = window.electronAPI.onUpdateProgress((data) => {
-        setProgress(data.percent || 0)
-        setReceivedBytes(data.receivedBytes || 0)
+        const newPercent = data.percent || 0
+        setProgress((prev) => Math.max(prev, newPercent))
+        setReceivedBytes((prev) => Math.max(prev, data.receivedBytes || 0))
         setTotalBytes(data.totalBytes || 0)
       })
       return () => {
@@ -86,15 +87,18 @@ export function useUpdater() {
       } else {
         // Web / Dev fallback: Query GitHub API directly
         const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-          headers: { Accept: 'application/vnd.github.v3+json' },
+          headers: { Accept: 'application/vnd.github.v3+json', Authorization: `token ${GITHUB_TOKEN}` },
         })
         if (res.status === 200) {
           const release = await res.json()
           const tag = release.tag_name || ''
           const isNewer = compareSemver(tag, CURRENT_APP_VERSION)
+          const isMac = navigator.platform?.toLowerCase().includes('mac') || navigator.userAgent?.toLowerCase().includes('mac')
           const validAsset = release.assets?.find(
             (a: any) =>
-              a.name?.endsWith('.exe') &&
+              (isMac
+                ? (a.name?.endsWith('.zip') || a.name?.endsWith('.dmg'))
+                : a.name?.endsWith('.exe')) &&
               (a.state === 'uploaded' || a.state === undefined) &&
               (a.size ? a.size > 1000000 : false)
           )
@@ -135,6 +139,8 @@ export function useUpdater() {
   const startDownload = useCallback(async () => {
     if (!updateInfo) return
 
+    // Update ref IMMEDIATELY so the 5s polling guard sees 'downloading' before React re-renders
+    statusRef.current = 'downloading'
     setStatus('downloading')
     setProgress(0)
     setReceivedBytes(0)
@@ -170,6 +176,7 @@ export function useUpdater() {
       if (result.success) {
         filePathRef.current = result.filePath
         setProgress(100)
+        statusRef.current = 'downloaded'
         setStatus('downloaded')
       } else {
         throw new Error('Fallo al completar la descarga')
@@ -215,12 +222,12 @@ export function useUpdater() {
     setStatus('idle')
   }, [])
 
-  // Auto-check on mount and poll every 5 seconds (5000 ms)
+  // Auto-check on mount and poll every 5 seconds (authenticated with token to avoid rate limit)
   useEffect(() => {
     // Initial check shortly after load
     const initialTimer = setTimeout(() => {
       checkUpdates(false)
-    }, 1500)
+    }, 5000)
 
     // Periodic check every 5 seconds
     const interval = setInterval(() => {

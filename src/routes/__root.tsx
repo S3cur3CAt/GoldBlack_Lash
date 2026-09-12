@@ -4,6 +4,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { ReactNode } from 'react'
 
 import { Footer, Header } from '#/components/Chrome'
+import { ReservationModal } from '#/components/ReservationModal'
 import { business } from '#/data/site'
 
 import appCss from '../styles.css?url'
@@ -106,6 +107,8 @@ function RootDocument({ children }: { children: ReactNode }) {
         </main>
 
         <Footer />
+
+        <ReservationModal />
 
         {import.meta.env.DEV ? (
           <TanStackDevtools

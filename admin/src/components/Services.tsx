@@ -189,7 +189,7 @@ export const Services: React.FC<ServicesProps> = ({
       featured: !!formData.featured,
       pinnedFirst: !!formData.pinnedFirst,
       active: formData.active !== false,
-      includes: formData.includes && formData.includes.length > 0 ? formData.includes : ['Atención exclusiva personalizada'],
+      includes: Array.isArray(formData.includes) ? formData.includes : [],
     }
 
     onSaveService(serviceToSave)
