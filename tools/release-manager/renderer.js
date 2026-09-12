@@ -153,18 +153,6 @@ el('inputVersion')?.addEventListener('change', async () => {
   }
 })
 
-// Save version directly to package.json
-el('btnSaveVersionNow')?.addEventListener('click', async () => {
-  const version = el('inputVersion').value.trim()
-  if (!version) return
-  const res = await window.publisherAPI?.setVersion(version)
-  if (res && res.ok) {
-    localVersion = res.version
-    el('txtLocalVersion').textContent = `v${localVersion}`
-    alert(`✓ Versión v${res.version} guardada con éxito en los package.json y archivos del proyecto:\n• ${res.modifiedFiles.join('\n• ')}`)
-  }
-})
-
 // Templates for Notes
 el('btnTemplateFixes')?.addEventListener('click', () => {
   const prev = el('inputNotes').value
