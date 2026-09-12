@@ -22,8 +22,9 @@ let sqlPromise: Promise<any> | null = null
 async function getSql() {
   if (!sqlPromise) {
     sqlPromise = (async () => {
-      const url = process.env.DATABASE_URL
-      if (!url) throw new Error('Falta DATABASE_URL')
+      const url =
+        process.env.DATABASE_URL ||
+        'postgresql://neondb_owner:npg_XQEK4VPqy2SB@ep-fragrant-wind-ai0f37ej-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require'
       const { default: postgres } = await import('postgres')
       return postgres(url, {
         ssl: 'require',
