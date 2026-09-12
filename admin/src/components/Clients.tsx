@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useDialog } from '../context/DialogContext'
 import { Client, StudioConfig, LashCurl, LashStyle } from '../types/admin'
 import {
   IconUsers,
@@ -26,6 +27,7 @@ export const Clients: React.FC<ClientsProps> = ({
   onSaveClient,
   onDeleteClient,
 }) => {
+  const { showAlert, showConfirm } = useDialog()
   const [searchQuery, setSearchQuery] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingClient, setEditingClient] = useState<Client | null>(null)
@@ -63,7 +65,11 @@ export const Clients: React.FC<ClientsProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name || !formData.phone) {
-      alert('Nombre y teléfono son obligatorios')
+      showAlert({
+        title: 'Datos requeridos',
+        message: 'El nombre y teléfono son obligatorios para guardar la ficha de la clienta.',
+        type: 'warning',
+      })
       return
     }
 
@@ -179,9 +185,13 @@ export const Clients: React.FC<ClientsProps> = ({
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm(`¿Eliminar la ficha de ${client.name}?`)) {
-                          onDeleteClient(client.id)
-                        }
+                        showConfirm({
+                          title: 'Eliminar Ficha',
+                          message: `¿Estás seguro de que deseas eliminar la ficha de ${client.name}? Se perderá su historial de visitas y preferencias de pestañas.`,
+                          confirmText: 'Eliminar',
+                          danger: true,
+                          onConfirm: () => onDeleteClient(client.id),
+                        })
                       }}
                       className="p-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20"
                       title="Eliminar ficha"

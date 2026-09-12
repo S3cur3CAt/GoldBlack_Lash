@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useDialog } from '../context/DialogContext'
 import {
   Appointment,
   AppointmentStatus,
@@ -53,6 +54,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   editingAppointment,
   setEditingAppointment,
 }) => {
+  const { showAlert, showConfirm } = useDialog()
   const [filterDate, setFilterDate] = useState<'all' | 'today' | 'tomorrow' | 'week'>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -122,7 +124,11 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.clientName || !formData.clientPhone) {
-      alert('Por favor introduce el nombre y teléfono de la clienta')
+      showAlert({
+        title: 'Datos requeridos',
+        message: 'Por favor introduce el nombre y teléfono de la clienta para agendar la cita.',
+        type: 'warning',
+      })
       return
     }
 
@@ -425,9 +431,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   {/* Delete Button */}
                   <button
                     onClick={() => {
-                      if (confirm(`¿Eliminar la cita de ${apt.clientName}?`)) {
-                        onDeleteAppointment(apt.id)
-                      }
+                      showConfirm({
+                        title: 'Eliminar Cita',
+                        message: `¿Estás seguro de que deseas eliminar la cita agendada de ${apt.clientName}?`,
+                        confirmText: 'Eliminar',
+                        danger: true,
+                        onConfirm: () => onDeleteAppointment(apt.id),
+                      })
                     }}
                     title="Eliminar cita"
                     className="p-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 transition-colors"

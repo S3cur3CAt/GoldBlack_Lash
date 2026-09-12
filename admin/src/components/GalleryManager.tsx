@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useDialog } from '../context/DialogContext'
 import { GalleryItem } from '../types/admin'
 import {
   IconImage,
@@ -19,6 +20,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   onSaveItem,
   onDeleteItem,
 }) => {
+  const { showAlert, showConfirm } = useDialog()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState('Volumen Ruso')
@@ -38,7 +40,11 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!previewUrl || !title) {
-      alert('Por favor selecciona una imagen y asigna un título')
+      showAlert({
+        title: 'Fotografía y título requeridos',
+        message: 'Por favor selecciona una imagen y asigna un título para agregarla al catálogo multimedia.',
+        type: 'warning',
+      })
       return
     }
 
@@ -111,9 +117,13 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => {
-                    if (confirm(`¿Eliminar foto "${item.title}"?`)) {
-                      onDeleteItem(item.id)
-                    }
+                    showConfirm({
+                      title: 'Eliminar Fotografía',
+                      message: `¿Estás seguro de que deseas eliminar la foto "${item.title}"?`,
+                      confirmText: 'Eliminar',
+                      danger: true,
+                      onConfirm: () => onDeleteItem(item.id),
+                    })
                   }}
                   className="p-2 rounded-xl bg-red-950/80 hover:bg-red-900 text-red-300 border border-red-500/40 transition-colors backdrop-blur-md"
                   title="Eliminar foto"

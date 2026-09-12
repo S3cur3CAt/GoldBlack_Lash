@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { AdminService } from '../types/admin'
+import { useDialog } from '../context/DialogContext'
 import {
   IconSparkles,
   IconPlus,
@@ -23,6 +24,7 @@ export const Services: React.FC<ServicesProps> = ({
   onSaveService,
   onDeleteService,
 }) => {
+  const { showAlert, showConfirm } = useDialog()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -38,6 +40,7 @@ export const Services: React.FC<ServicesProps> = ({
     badge: '',
     description: '',
     featured: false,
+    pinnedFirst: false,
     active: true,
     includes: ['Diseño personalizado', 'Sellado y baño de vitaminas'],
   })
@@ -81,7 +84,10 @@ export const Services: React.FC<ServicesProps> = ({
 
   const handleEdit = (service: AdminService) => {
     setEditingService(service)
-    setFormData(service)
+    setFormData({
+      ...service,
+      pinnedFirst: !!service.pinnedFirst,
+    })
     setIsCreatingCategory(false)
     setCustomCatInput('')
     setIsModalOpen(true)
@@ -101,6 +107,7 @@ export const Services: React.FC<ServicesProps> = ({
       badge: 'Nuevo',
       description: '',
       featured: false,
+      pinnedFirst: false,
       active: true,
       includes: ['Diseño anatómico de ojo', 'Cepillo de peinado de regalo'],
     })
@@ -125,7 +132,11 @@ export const Services: React.FC<ServicesProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name) {
-      alert('Por favor introduce el nombre del servicio')
+      showAlert({
+        title: 'Nombre requerido',
+        message: 'Por favor introduce el nombre del servicio para continuar.',
+        type: 'warning',
+      })
       return
     }
 
@@ -135,7 +146,11 @@ export const Services: React.FC<ServicesProps> = ({
     if (isCreatingCategory) {
       const trimmed = customCatInput.trim()
       if (!trimmed) {
-        alert('Por favor introduce el nombre de la nueva categoría')
+        showAlert({
+          title: 'Categoría requerida',
+          message: 'Por favor introduce el nombre de la nueva categoría.',
+          type: 'warning',
+        })
         return
       }
       finalCatName = trimmed
@@ -172,6 +187,7 @@ export const Services: React.FC<ServicesProps> = ({
       price: `${formData.priceNumber} €`,
       priceNumber: Number(formData.priceNumber) || 30,
       featured: !!formData.featured,
+      pinnedFirst: !!formData.pinnedFirst,
       active: formData.active !== false,
       includes: formData.includes && formData.includes.length > 0 ? formData.includes : ['Atención exclusiva personalizada'],
     }
@@ -180,7 +196,15 @@ export const Services: React.FC<ServicesProps> = ({
     setIsModalOpen(false)
   }
 
-  const filteredServices = services.filter((s) => {
+  const sortedServices = React.useMemo(() => {
+    return [...services].sort((a, b) => {
+      if (a.pinnedFirst && !b.pinnedFirst) return -1
+      if (!a.pinnedFirst && b.pinnedFirst) return 1
+      return 0
+    })
+  }, [services])
+
+  const filteredServices = sortedServices.filter((s) => {
     if (selectedCategory !== 'all' && s.categoryId !== selectedCategory) return false
     return true
   })
@@ -272,6 +296,11 @@ export const Services: React.FC<ServicesProps> = ({
                     {service.categoryName}
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
+                    {service.pinnedFirst && (
+                      <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm flex items-center gap-1">
+                        ⭐ 1º en la web
+                      </span>
+                    )}
                     {service.badge && (
                       <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30">
                         {service.badge}
@@ -337,9 +366,13 @@ export const Services: React.FC<ServicesProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      if (confirm(`¿Eliminar servicio "${service.name}"?`)) {
-                        onDeleteService(service.id)
-                      }
+                      showConfirm({
+                        title: 'Eliminar Servicio',
+                        message: `¿Estás seguro de que deseas eliminar permanentemente el servicio "${service.name}"? Esta acción se sincronizará con la base de datos y la web.`,
+                        confirmText: 'Eliminar',
+                        danger: true,
+                        onConfirm: () => onDeleteService(service.id),
+                      })
                     }}
                     className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 transition-colors"
                     title="Eliminar servicio"
@@ -372,6 +405,11 @@ export const Services: React.FC<ServicesProps> = ({
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-white text-xs">{service.name}</span>
+                      {service.pinnedFirst && (
+                        <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40 flex items-center gap-1 shadow-sm">
+                          ⭐ 1º en la web
+                        </span>
+                      )}
                       {service.featured && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
                           ★ Destacado
@@ -407,9 +445,13 @@ export const Services: React.FC<ServicesProps> = ({
                       </button>
                       <button
                         onClick={() => {
-                          if (confirm(`¿Eliminar servicio "${service.name}"?`)) {
-                            onDeleteService(service.id)
-                          }
+                          showConfirm({
+                            title: 'Eliminar Servicio',
+                            message: `¿Estás seguro de que deseas eliminar permanentemente el servicio "${service.name}"? Esta acción se sincronizará con la base de datos y la web.`,
+                            confirmText: 'Eliminar',
+                            danger: true,
+                            onConfirm: () => onDeleteService(service.id),
+                          })
                         }}
                         className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 transition-colors"
                         title="Eliminar"
@@ -604,8 +646,8 @@ export const Services: React.FC<ServicesProps> = ({
               </div>
 
               {/* Toggles */}
-              <div className="flex items-center gap-6 pt-2">
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-300">
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-300 hover:text-white transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.featured}
@@ -615,7 +657,19 @@ export const Services: React.FC<ServicesProps> = ({
                   <span>Destacar en tarjeta dorada</span>
                 </label>
 
-                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-300">
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-gold-400 font-semibold hover:text-gold-300 transition-colors bg-gold-950/30 border border-gold-500/40 px-3 py-1.5 rounded-xl">
+                  <input
+                    type="checkbox"
+                    checked={formData.pinnedFirst}
+                    onChange={(e) => setFormData({ ...formData, pinnedFirst: e.target.checked })}
+                    className="rounded text-gold-500 focus:ring-0"
+                  />
+                  <span className="flex items-center gap-1">
+                    <span>⭐</span> Posicionar como primer servicio de toda la página
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-300 hover:text-white transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.active}

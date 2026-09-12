@@ -130,13 +130,20 @@ export const App: React.FC = () => {
 
   // Service Actions - Synchronized in real time with Vercel & Neon Postgres
   const handleSaveService = async (service: AdminService) => {
-    const existingIndex = services.findIndex((s) => s.id === service.id)
     let updated: AdminService[]
-    if (existingIndex >= 0) {
-      updated = [...services]
-      updated[existingIndex] = service
+    if (service.pinnedFirst) {
+      // Put at the very beginning of the whole page
+      const withoutCurrent = services.filter((s) => s.id !== service.id)
+      const unpinnedOthers = withoutCurrent.map((s) => ({ ...s, pinnedFirst: false }))
+      updated = [service, ...unpinnedOthers]
     } else {
-      updated = [...services, service]
+      const existingIndex = services.findIndex((s) => s.id === service.id)
+      if (existingIndex >= 0) {
+        updated = [...services]
+        updated[existingIndex] = service
+      } else {
+        updated = [...services, service]
+      }
     }
     setServices(updated)
     saveServices(updated)

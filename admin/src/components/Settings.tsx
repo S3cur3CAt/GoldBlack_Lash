@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useDialog } from '../context/DialogContext'
 import { StudioConfig } from '../types/admin'
 import {
   IconSettings,
@@ -21,6 +22,7 @@ export const Settings: React.FC<SettingsProps> = ({
   onSaveConfig,
   onRefreshAllData,
 }) => {
+  const { showAlert } = useDialog()
   const [formData, setFormData] = useState<StudioConfig>(config)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [importStatus, setImportStatus] = useState<string | null>(null)
@@ -275,12 +277,24 @@ export const Settings: React.FC<SettingsProps> = ({
                   try {
                     const res = await fetch(`${url}/api/services`)
                     if (res.ok) {
-                      alert('✓ Conexión exitosa con Vercel y Neon Postgres. Los servicios están sincronizados en tiempo real.')
+                      showAlert({
+                        title: 'Conexión Exitosa',
+                        message: '✓ Conexión en tiempo real establecida con Vercel y Neon Postgres. Los servicios están sincronizados.',
+                        type: 'success',
+                      })
                     } else {
-                      alert(`Respuesta del servidor: HTTP ${res.status}`)
+                      showAlert({
+                        title: 'Respuesta del Servidor',
+                        message: `El servidor respondió con código HTTP ${res.status}. Verifica que el endpoint esté activo.`,
+                        type: 'warning',
+                      })
                     }
                   } catch (e: any) {
-                    alert(`No se pudo conectar con ${url}: ${e.message}`)
+                    showAlert({
+                      title: 'Error de Conexión',
+                      message: `No se pudo conectar con ${url}: ${e.message}`,
+                      type: 'error',
+                    })
                   }
                 }}
                 className="px-4 py-2 rounded-xl bg-[#252538] hover:bg-[#303048] text-xs font-semibold text-gray-200 border border-gray-700/50"

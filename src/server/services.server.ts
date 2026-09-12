@@ -11,6 +11,7 @@ export interface DbServiceRecord {
   price: string
   price_number: number
   featured: boolean
+  pinnedFirst?: boolean
   active: boolean
   includes: string[]
   sort_order?: number
@@ -42,7 +43,7 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
   try {
     const client = await getSql()
     const rows = await client`
-      SELECT id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, updated_at
+      SELECT id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
       FROM studio_services
       ORDER BY sort_order ASC, id ASC
     `
@@ -60,6 +61,7 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
       price: r.price,
       price_number: r.price_number,
       featured: r.featured,
+      pinnedFirst: r.sort_order === 0,
       active: r.active,
       includes: Array.isArray(r.includes) ? r.includes : typeof r.includes === 'string' ? JSON.parse(r.includes) : [],
       updated_at: r.updated_at,
@@ -81,21 +83,31 @@ export async function saveServiceToDb(service: {
   price: string
   priceNumber?: number
   featured?: boolean
+  pinnedFirst?: boolean
   active?: boolean
   includes?: string[]
 }): Promise<boolean> {
   const client = await getSql()
   const priceNum = service.priceNumber ?? (parseInt(service.price.replace(/\D/g, ''), 10) || 0)
   const includesJson = JSON.stringify(service.includes || [])
+  const sortOrder = service.pinnedFirst ? 0 : 100
+
+  if (service.pinnedFirst) {
+    try {
+      await client`UPDATE studio_services SET sort_order = 100 WHERE sort_order <= 0 AND id != ${service.id}`
+    } catch (err) {
+      console.warn('Could not reset sort_order on existing records:', err)
+    }
+  }
 
   await client`
     INSERT INTO studio_services (
-      id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, updated_at
+      id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
     ) VALUES (
       ${service.id}, ${service.categoryId}, ${service.categoryName}, ${service.name},
       ${service.badge || null}, ${service.description}, ${service.duration},
       ${service.price}, ${priceNum}, ${!!service.featured}, ${service.active !== false},
-      ${includesJson}::jsonb, now()
+      ${includesJson}::jsonb, ${sortOrder}, now()
     )
     ON CONFLICT (id) DO UPDATE SET
       category_id = EXCLUDED.category_id,
@@ -109,6 +121,7 @@ export async function saveServiceToDb(service: {
       featured = EXCLUDED.featured,
       active = EXCLUDED.active,
       includes = EXCLUDED.includes,
+      sort_order = EXCLUDED.sort_order,
       updated_at = now()
   `
   return true

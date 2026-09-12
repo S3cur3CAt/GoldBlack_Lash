@@ -49,6 +49,7 @@ export interface AdminService {
   price: string
   priceNumber: number
   featured?: boolean
+  pinnedFirst?: boolean
   active: boolean
   includes: string[]
 }
