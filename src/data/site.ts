@@ -12,7 +12,7 @@ export const business = {
   claim: 'Belleza de autor, hecha a medida',
   phoneDisplay: '+34 604 18 76 76',
   phoneClean: '34604187676',
-  siteUrl: 'https://goldblacklash.vercel.app',
+  siteUrl: 'https://goldblacklash.com',
   email: 'hola@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
   city: 'Dos Hermanas (Sevilla)',

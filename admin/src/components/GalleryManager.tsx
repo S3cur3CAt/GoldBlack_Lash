@@ -536,8 +536,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   alt={item.title}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
-                    if (item.key && !target.src.includes('goldblacklash.vercel.app')) {
-                      target.src = `https://goldblacklash.vercel.app/api/images/${item.key}`
+                    if (item.key && !target.src.includes('goldblacklash.com')) {
+                      target.src = `https://goldblacklash.com/api/images/${item.key}`
                     } else {
                       target.style.display = 'none'
                     }
@@ -883,8 +883,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                         alt="Preview"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          if (editingItem?.key && !target.src.includes('goldblacklash.vercel.app')) {
-                            target.src = `https://goldblacklash.vercel.app/api/images/${editingItem.key}`
+                          if (editingItem?.key && !target.src.includes('goldblacklash.com')) {
+                            target.src = `https://goldblacklash.com/api/images/${editingItem.key}`
                           }
                         }}
                         className="w-full h-full object-cover"

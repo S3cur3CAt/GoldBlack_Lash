@@ -147,7 +147,7 @@ function createApplicationMenu() {
         {
           label: 'Sitio Web Oficial',
           click: async () => {
-            await shell.openExternal('https://goldblacklash.vercel.app')
+            await shell.openExternal('https://goldblacklash.com')
           },
         },
         {

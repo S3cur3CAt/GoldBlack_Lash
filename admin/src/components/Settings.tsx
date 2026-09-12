@@ -444,15 +444,15 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                defaultValue={localStorage.getItem('goldblack_admin_api_url') || 'https://goldblacklash.vercel.app'}
+                defaultValue={localStorage.getItem('goldblack_admin_api_url') || 'https://goldblacklash.com'}
                 onChange={(e) => localStorage.setItem('goldblack_admin_api_url', e.target.value.trim())}
-                placeholder="https://goldblacklash.vercel.app"
+                placeholder="https://goldblacklash.com"
                 className="flex-1 px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white font-mono"
               />
               <button
                 type="button"
                 onClick={async () => {
-                  const url = localStorage.getItem('goldblack_admin_api_url') || 'https://goldblacklash.vercel.app'
+                  const url = localStorage.getItem('goldblack_admin_api_url') || 'https://goldblacklash.com'
                   try {
                     const res = await fetch(`${url}/api/services`)
                     if (res.ok) {

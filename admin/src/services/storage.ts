@@ -298,7 +298,7 @@ export function getApiBaseUrl(): string {
       return 'http://localhost:3000'
     }
   } catch (e) {}
-  return 'https://goldblacklash.vercel.app'
+  return 'https://goldblacklash.com'
 }
 
 export function setApiBaseUrl(url: string): void {
