@@ -15,7 +15,7 @@ export interface UpdateInfo {
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
 
-export const CURRENT_APP_VERSION = '0.0.7'
+export const CURRENT_APP_VERSION = '0.0.8'
 export const GITHUB_REPO = 'S3cur3CAt/GoldBlack_Lash'
 
 

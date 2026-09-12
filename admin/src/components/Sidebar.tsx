@@ -261,12 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Footer Version: automatic background polling every 5s */}
-        <div className="p-3.5 flex justify-between items-center text-gray-500 border-t border-[#1c1c26]/60">
-          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 select-none">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse"></span>
-            <span className="tracking-wider uppercase text-[9px] text-gray-400 font-medium">Auto-sync</span>
-          </div>
-
+        <div className="p-3.5 flex justify-end items-center text-gray-500 border-t border-[#1c1c26]/60">
           <span
             title={`Versión instalada: v${CURRENT_APP_VERSION} (Búsqueda automática cada 5 segundos)`}
             className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-[#1e1e2c] text-gold-400 border border-[#2b2b3d] select-none shadow-sm font-semibold"
