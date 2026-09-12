@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron')
 const path = require('path')
+const { setupUpdaterIPC } = require('./updater.cjs')
 
 // Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
 if (process.platform === 'win32') {
@@ -56,6 +57,9 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
   })
+
+  // Initialize auto-updater IPC
+  setupUpdaterIPC(mainWindow)
 
   // Open external links (like WhatsApp wa.me links, Instagram, Maps) in user's default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

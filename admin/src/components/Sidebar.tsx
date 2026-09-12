@@ -7,7 +7,12 @@ import {
   IconUsers,
   IconImage,
   IconSettings,
+  IconDownload,
+  IconRefreshCw,
+  IconCheck,
+  IconX,
 } from './Icons'
+import { useUpdater, CURRENT_APP_VERSION, formatBytes } from '../services/updater'
 
 export type TabId = 'dashboard' | 'appointments' | 'services' | 'clients' | 'gallery' | 'settings'
 
@@ -24,6 +29,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingAppointmentsCount,
   clientsRecallCount,
 }) => {
+  const {
+    status,
+    updateInfo,
+    progress,
+    receivedBytes,
+    totalBytes,
+    errorMessage,
+    checkUpdates,
+    startDownload,
+    applyAndRestart,
+    simulateUpdate,
+    dismiss,
+  } = useUpdater()
   const menuItems = [
     {
       id: 'dashboard' as TabId,
@@ -142,11 +160,132 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Version in Bottom Right Corner */}
-      <div className="p-3.5 flex justify-end items-center">
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400">
-          v1.0.0
-        </span>
+      {/* Footer Area: Update Widget & Version */}
+      <div className="flex flex-col justify-end w-full">
+        {/* If update is available / downloading / downloaded / error */}
+        {(status === 'available' || status === 'downloading' || status === 'downloaded' || status === 'error') && (
+          <div className="mx-3 mb-2 p-3.5 rounded-2xl bg-gradient-to-b from-[#161622] to-[#0e0e16] border border-gold-500/30 shadow-xl flex flex-col items-center text-center space-y-2.5 transition-all">
+            {/* Header info */}
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-gold-400"></span>
+                </span>
+                <span className="text-[11px] font-bold text-gold-300">
+                  {status === 'downloaded' ? 'Actualización lista' : `Nueva versión ${updateInfo?.latestVersion || ''}`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={dismiss}
+                className="text-gray-500 hover:text-gray-300 p-0.5 rounded transition-colors cursor-pointer"
+                title="Ocultar aviso"
+              >
+                <IconX size={12} />
+              </button>
+            </div>
+
+            {/* State: Available -> Button "Actualizar" */}
+            {status === 'available' && (
+              <div className="w-full space-y-2">
+                <p className="text-[10.5px] text-gray-400 leading-tight line-clamp-2 text-left">
+                  {updateInfo?.notes ? updateInfo.notes.slice(0, 75) + '...' : 'Mejoras y nuevas funciones disponibles en GitHub.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={startDownload}
+                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <IconDownload size={13} />
+                  Actualizar
+                </button>
+              </div>
+            )}
+
+            {/* State: Downloading -> Progress bar */}
+            {status === 'downloading' && (
+              <div className="w-full space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <IconRefreshCw size={10} className="animate-spin text-gold-400" />
+                    Descargando...
+                  </span>
+                  <span className="font-mono font-bold text-gold-300">{progress}%</span>
+                </div>
+                {/* Progress bar container with rounded corners */}
+                <div className="w-full h-2 rounded-full bg-[#1e1e2c] overflow-hidden border border-[#2b2b3d] p-[1px]">
+                  <div
+                    className="h-full bg-gradient-to-r from-gold-500 via-amber-400 to-gold-300 rounded-full transition-all duration-200 shadow-gold-glow"
+                    style={{ width: `${Math.max(progress, 4)}%` }}
+                  />
+                </div>
+                {totalBytes > 0 && (
+                  <div className="text-[9.5px] text-gray-500 font-mono text-right">
+                    {formatBytes(receivedBytes)} / {formatBytes(totalBytes)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* State: Downloaded -> Button "Reiniciar aplicación" */}
+            {status === 'downloaded' && (
+              <div className="w-full space-y-2">
+                <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-400 font-semibold">
+                  <IconCheck size={13} className="text-emerald-400" />
+                  <span>Descarga completada</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={applyAndRestart}
+                  className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-bold text-xs uppercase tracking-wider shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <IconRefreshCw size={13} />
+                  Reiniciar aplicación
+                </button>
+              </div>
+            )}
+
+            {/* State: Error */}
+            {status === 'error' && (
+              <div className="w-full space-y-1.5">
+                <p className="text-[10px] text-red-400">{errorMessage || 'Error en la descarga'}</p>
+                <button
+                  type="button"
+                  onClick={startDownload}
+                  className="text-[10px] text-gold-400 hover:underline cursor-pointer"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer Version: keep v1.0.0 in bottom right, with manual check on click or simulate */}
+        <div className="p-3.5 flex justify-between items-center text-gray-500">
+          <button
+            type="button"
+            onClick={() => checkUpdates(true)}
+            disabled={status === 'checking' || status === 'downloading'}
+            className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gold-400 transition-colors cursor-pointer group"
+            title="Comprobar actualizaciones en GitHub"
+          >
+            <IconRefreshCw
+              size={11}
+              className={`group-hover:rotate-180 transition-transform duration-500 ${status === 'checking' ? 'animate-spin text-gold-400' : ''}`}
+            />
+            <span>{status === 'checking' ? 'Buscando...' : 'Buscar updates'}</span>
+          </button>
+
+          <span
+            onDoubleClick={() => simulateUpdate('v1.0.1')}
+            title="Versión actual (Doble clic para probar simulación de update)"
+            className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400 cursor-pointer select-none"
+          >
+            v{CURRENT_APP_VERSION}
+          </span>
+        </div>
       </div>
     </aside>
   )
