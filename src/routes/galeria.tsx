@@ -1,16 +1,41 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import {
   business,
-  galleryPieces,
+  galleryPieces as fallbackPieces,
   whatsappLink,
   type GalleryPiece,
 } from '#/data/site'
 
+const fetchLiveGallery = createServerFn({ method: 'GET' }).handler(async () => {
+  const { fetchGalleryFromDb } = await import('../server/gallery.server')
+  const dbItems = await fetchGalleryFromDb()
+  return dbItems.map((item) => ({
+    id: item.key || item.id,
+    title: item.title,
+    technique: item.category,
+    detail: item.detail || '',
+    image: item.image_url,
+    price: item.price,
+    badge: item.badge,
+    featured: item.featured,
+    elements: item.elements || [],
+  }))
+})
+
 export const Route = createFileRoute('/galeria')({
+  loader: async () => {
+    try {
+      const live = await fetchLiveGallery()
+      return live && live.length > 0 ? live : fallbackPieces
+    } catch {
+      return fallbackPieces
+    }
+  },
   component: Galeria,
   head: () => ({
     meta: [
@@ -27,12 +52,13 @@ export const Route = createFileRoute('/galeria')({
 })
 
 function Galeria() {
+  const loaderPieces = Route.useLoaderData() || fallbackPieces
   const techniques = useMemo(
     () => [
       'Todas',
-      ...new Set(galleryPieces.map((piece) => piece.technique)),
+      ...new Set(loaderPieces.map((piece: any) => piece.technique)),
     ],
-    [],
+    [loaderPieces],
   )
 
   const [filter, setFilter] = useState('Todas')
@@ -41,9 +67,9 @@ function Galeria() {
   const pieces = useMemo(
     () =>
       filter === 'Todas'
-        ? galleryPieces
-        : galleryPieces.filter((piece) => piece.technique === filter),
-    [filter],
+        ? loaderPieces
+        : loaderPieces.filter((piece: any) => piece.technique === filter),
+    [filter, loaderPieces],
   )
 
   const current = openIndex === null ? undefined : pieces[openIndex]
@@ -230,12 +256,33 @@ function GalleryTile({
       </div>
 
       <div className="px-3 pt-5 pb-4">
-        <h2 className="font-display text-2xl">
-          {piece.title}
-        </h2>
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-2xl">
+            {piece.title}
+          </h2>
+          {piece.price && (
+            <span className="font-display text-lg font-bold text-rose shrink-0">
+              {piece.price}
+            </span>
+          )}
+        </div>
         <p className="mt-2 text-xs leading-6 text-muted">
           {piece.detail}
         </p>
+
+        {piece.elements && piece.elements.length > 0 && (
+          <div className="mt-3.5 flex flex-wrap gap-1.5">
+            {piece.elements.map((el, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-0.5 text-[0.65rem] font-medium text-plum"
+              >
+                <span>♡</span>
+                <span>{el}</span>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </button>
   )
@@ -344,16 +391,37 @@ function Lightbox({
           <div className="py-8 md:my-auto">
             <p className="eyebrow">{piece.technique}</p>
 
-            <h2
-              id="gallery-dialog-title"
-              className="mt-5 font-display text-4xl leading-tight"
-            >
-              {piece.title}
-            </h2>
+            <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
+              <h2
+                id="gallery-dialog-title"
+                className="font-display text-4xl leading-tight"
+              >
+                {piece.title}
+              </h2>
+              {piece.price && (
+                <span className="font-display text-2xl font-bold text-rose">
+                  {piece.price}
+                </span>
+              )}
+            </div>
 
             <p id="gallery-dialog-detail" className="body-copy mt-4">
               {piece.detail}
             </p>
+
+            {piece.elements && piece.elements.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {piece.elements.map((el, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 text-xs font-medium text-plum"
+                  >
+                    <span>♡</span>
+                    <span>{el}</span>
+                  </span>
+                ))}
+              </div>
+            )}
 
             <p className="mt-5 text-sm leading-7 text-muted">
               ¿Te gusta este estilo? Podemos tomarlo como referencia

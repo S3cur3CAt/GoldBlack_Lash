@@ -33,6 +33,9 @@ import {
   syncServiceWithVercel,
   deleteServiceFromVercel,
   fetchLiveServicesFromVercel,
+  syncGalleryItemWithVercel,
+  deleteGalleryItemFromVercel,
+  fetchLiveGalleryFromVercel,
 } from './services/storage'
 
 export const App: React.FC = () => {
@@ -63,6 +66,12 @@ export const App: React.FC = () => {
     fetchLiveServicesFromVercel().then((live) => {
       if (live && live.length > 0) {
         setServices(live)
+      }
+    })
+    // Fetch live gallery from Vercel / Neon Postgres
+    fetchLiveGalleryFromVercel().then((live) => {
+      if (live && live.length > 0) {
+        setGallery(live)
       }
     })
 
@@ -179,8 +188,8 @@ export const App: React.FC = () => {
     saveClients(updated)
   }
 
-  // Gallery Actions
-  const handleSaveGalleryItem = (item: GalleryItem) => {
+  // Gallery Actions - Synchronized in real time with Vercel & Neon Postgres
+  const handleSaveGalleryItem = async (item: GalleryItem) => {
     const existingIndex = gallery.findIndex((g) => g.id === item.id)
     let updated: GalleryItem[]
     if (existingIndex >= 0) {
@@ -191,12 +200,22 @@ export const App: React.FC = () => {
     }
     setGallery(updated)
     saveGalleryItems(updated)
+
+    // Sync to Vercel API & Neon Postgres
+    const ok = await syncGalleryItemWithVercel(item)
+    if (ok && item.url) {
+      // Update with the remote image url if converted
+      const reIndexed = updated.map((g) => (g.id === item.id ? { ...g, url: item.url } : g))
+      setGallery(reIndexed)
+      saveGalleryItems(reIndexed)
+    }
   }
 
-  const handleDeleteGalleryItem = (id: string) => {
+  const handleDeleteGalleryItem = async (id: string) => {
     const updated = gallery.filter((g) => g.id !== id)
     setGallery(updated)
     saveGalleryItems(updated)
+    await deleteGalleryItemFromVercel(id)
   }
 
   // Config Action

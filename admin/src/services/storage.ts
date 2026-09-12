@@ -326,6 +326,84 @@ export async function deleteServiceFromVercel(id: string): Promise<boolean> {
   }
 }
 
+/** Syncs a single gallery item with Neon Postgres / Vercel API */
+export async function syncGalleryItemWithVercel(item: GalleryItem): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  notifySyncEvent('syncing', `Publicando foto "${item.title}" en el sitio web...`)
+  try {
+    const res = await fetch(`${baseUrl}/api/gallery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    })
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      throw new Error(errData.error || `HTTP ${res.status}`)
+    }
+    const data = await res.json().catch(() => ({}))
+    if (data.item?.image_url) {
+      item.url = data.item.image_url
+    }
+    notifySyncEvent('synced', `✓ Foto "${item.title}" añadida en tiempo real en el sitio web`)
+    return true
+  } catch (err: any) {
+    console.warn('[Gallery Sync Error]', err)
+    notifySyncEvent('error', `Guardado local. (Sincronización web: ${err.message})`)
+    return false
+  }
+}
+
+/** Deletes a gallery item from Neon Postgres / Vercel API */
+export async function deleteGalleryItemFromVercel(id: string): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  notifySyncEvent('syncing', `Eliminando foto del sitio web...`)
+  try {
+    const res = await fetch(`${baseUrl}/api/gallery?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    notifySyncEvent('synced', `✓ Foto eliminada en tiempo real del sitio web`)
+    return true
+  } catch (err: any) {
+    console.warn('[Gallery Delete Error]', err)
+    notifySyncEvent('error', `Eliminado local. (Vercel: ${err.message})`)
+    return false
+  }
+}
+
+/** Fetch latest gallery items from Vercel API / Neon Postgres */
+export async function fetchLiveGalleryFromVercel(): Promise<GalleryItem[] | null> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/gallery`, {
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (Array.isArray(data) && data.length > 0) {
+      const mapped: GalleryItem[] = data.map((d: any) => ({
+        id: d.id,
+        key: d.key,
+        title: d.title,
+        category: d.category,
+        detail: d.detail,
+        price: d.price,
+        badge: d.badge,
+        featured: !!d.featured,
+        elements: d.elements || [],
+        url: d.image_url || d.url,
+        updatedAt: d.updated_at ? d.updated_at.split('T')[0] : new Date().toISOString().split('T')[0],
+      }))
+      saveGalleryItems(mapped)
+      return mapped
+    }
+    return null
+  } catch (e) {
+    console.warn('[Fetch Live Gallery Error]', e)
+    return null
+  }
+}
+
 /** Fetch latest services from Vercel API / Neon Postgres */
 export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | null> {
   const baseUrl = getApiBaseUrl()

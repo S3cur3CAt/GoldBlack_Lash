@@ -14,6 +14,7 @@ import { Route as ContactoRouteImport } from './routes/contacto'
 import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
+import { Route as ApiGalleryRouteImport } from './routes/api.gallery'
 import { Route as ApiServicesRouteImport } from './routes/api.services'
 import { Route as ApiImagesKeyRouteImport } from './routes/api.images.$key'
 
@@ -42,6 +43,11 @@ const SobreMiRoute = SobreMiRouteImport.update({
   path: '/sobre-mi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGalleryRoute = ApiGalleryRouteImport.update({
+  id: '/api/gallery',
+  path: '/api/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiServicesRoute = ApiServicesRouteImport.update({
   id: '/api/services',
   path: '/api/services',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/galeria': typeof GaleriaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/api/gallery': typeof ApiGalleryRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/galeria': typeof GaleriaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/api/gallery': typeof ApiGalleryRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/galeria': typeof GaleriaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/api/gallery': typeof ApiGalleryRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/galeria'
     | '/servicios'
     | '/sobre-mi'
+    | '/api/gallery'
     | '/api/services'
     | '/api/images/$key'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/galeria'
     | '/servicios'
     | '/sobre-mi'
+    | '/api/gallery'
     | '/api/services'
     | '/api/images/$key'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/galeria'
     | '/servicios'
     | '/sobre-mi'
+    | '/api/gallery'
     | '/api/services'
     | '/api/images/$key'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   GaleriaRoute: typeof GaleriaRoute
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
+  ApiGalleryRoute: typeof ApiGalleryRoute
   ApiServicesRoute: typeof ApiServicesRoute
   ApiImagesKeyRoute: typeof ApiImagesKeyRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SobreMiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/gallery': {
+      id: '/api/gallery'
+      path: '/api/gallery'
+      fullPath: '/api/gallery'
+      preLoaderRoute: typeof ApiGalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/services': {
       id: '/api/services'
       path: '/api/services'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   GaleriaRoute: GaleriaRoute,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
+  ApiGalleryRoute: ApiGalleryRoute,
   ApiServicesRoute: ApiServicesRoute,
   ApiImagesKeyRoute: ApiImagesKeyRoute,
 }

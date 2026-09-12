@@ -168,7 +168,6 @@ export const faqs = [
   },
 ] as const
 
-/** Casos de estudio de la galería. Las imágenes se sirven desde Neon (`/api/images/*`). */
 export type GalleryPiece = {
   id: string
   title: string
@@ -177,6 +176,9 @@ export type GalleryPiece = {
   image: string
   /** Precio orientativo que se muestra al pedir el diseño por WhatsApp. */
   price?: string
+  badge?: string
+  featured?: boolean
+  elements?: string[]
 }
 
 export const galleryPieces: Array<GalleryPiece> = [
