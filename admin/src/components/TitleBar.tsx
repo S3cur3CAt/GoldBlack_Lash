@@ -55,23 +55,14 @@ export const TitleBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Middle status & drag filler */}
-      <div className="flex-1 flex items-center justify-center">
-        <span className="text-[10px] tracking-widest text-gold-400/60 font-mono hidden md:inline">
-          ESTUDIO MONTEQUINTO · SEVILLA
-        </span>
-      </div>
+      {/* Middle drag filler */}
+      <div className="flex-1 h-full" />
 
       {/* Right controls */}
       <div
         className="flex items-center h-full"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
-        {/* Sync Status Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1 text-[11px] text-gray-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="hidden lg:inline text-gray-400 text-[11px]">Sincronizado</span>
-        </div>
 
         {/* Windows Custom Window Controls (rendered when on Windows or when running Electron) */}
         {!isMac && isElectron && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { IconPlus, IconClock, IconWhatsApp } from './Icons'
+import { IconPlus, IconClock } from './Icons'
 import { StudioConfig } from '../types/admin'
 
 interface HeaderProps {
@@ -52,29 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
         <p className="text-xs text-muted">{subtitle}</p>
       </div>
 
-      {/* Right controls: Live Time, Studio WhatsApp & New Appointment CTA */}
+      {/* Right controls: New Appointment CTA & Live Time */}
       <div className="flex items-center gap-4">
-        {/* Live Date and Clock */}
-        <div className="hidden lg:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#232330] text-xs">
-          <IconClock size={16} className="text-gold-400" />
-          <div className="text-right">
-            <div className="font-mono font-bold text-gray-200">{currentTime}</div>
-            <div className="text-[10px] text-gray-500 capitalize">{currentDate}</div>
-          </div>
-        </div>
-
-        {/* WhatsApp Direct Studio Chat */}
-        <a
-          href={`https://wa.me/${config.whatsapp}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          title={`WhatsApp oficial del estudio: ${config.phoneDisplay}`}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all duration-200 shadow-sm"
-        >
-          <IconWhatsApp size={16} />
-          <span className="hidden sm:inline">WhatsApp Estudio</span>
-        </a>
-
         {/* Primary CTA: Nueva Cita */}
         <button
           onClick={onNewAppointment}
@@ -83,6 +62,15 @@ export const Header: React.FC<HeaderProps> = ({
           <IconPlus size={16} className="stroke-[2.5]" />
           <span>Nueva Cita</span>
         </button>
+
+        {/* Live Date and Clock */}
+        <div className="hidden lg:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#232330] text-xs">
+          <IconClock size={16} className="text-gold-400" />
+          <div className="text-right">
+            <div className="font-mono font-bold text-gray-200">{currentTime}</div>
+            <div className="text-[10px] text-gray-500 capitalize">{currentDate}</div>
+          </div>
+        </div>
       </div>
     </header>
   )

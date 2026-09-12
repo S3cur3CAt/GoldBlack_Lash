@@ -153,21 +153,6 @@ export const Services: React.FC<ServicesProps> = ({
         </button>
       </div>
 
-      {/* Real-Time Sync Status Banner */}
-      <div className="p-3.5 px-4 rounded-xl bg-[#14141e] border border-emerald-500/20 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <p className="text-gray-300">
-            <strong className="text-white font-semibold">Sincronización en Tiempo Real Activa: </strong>
-            Al editar o crear un servicio aquí, el precio se actualiza inmediatamente en{' '}
-            <span className="text-gold-300 font-medium">goldblacklash.vercel.app</span> sin esperas.
-          </p>
-        </div>
-        <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30 shrink-0">
-          ● Neon DB Live
-        </span>
-      </div>
-
       {/* Filter and View Mode Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Category Filter Pills */}

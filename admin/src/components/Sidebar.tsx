@@ -97,11 +97,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </p>
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#14141d] border border-[#232332]">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-xs text-gray-300 font-medium">Estudio Montequinto</span>
-            <span className="text-[10px] text-gold-400/80 ml-auto font-mono">SEVILLA</span>
-          </div>
         </div>
 
         {/* Navigation */}
@@ -148,14 +143,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="p-4 m-3 rounded-xl bg-[#111118] border border-[#20202c]">
-        <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
-          <span className="font-semibold text-gray-300">App de Escritorio</span>
-          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1e1e2c] text-gold-400">v1.0.0</span>
-        </div>
-        <p className="text-[11px] text-gray-500 leading-snug">
-          Compatible con macOS El Capitan (10.11+) y Windows 11.
-        </p>
+      <div className="p-3 m-3 rounded-xl bg-[#111118] border border-[#20202c] flex items-center justify-center">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400">v1.0.0</span>
       </div>
     </aside>
   )
