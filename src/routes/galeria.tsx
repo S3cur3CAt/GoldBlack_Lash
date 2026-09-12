@@ -130,7 +130,7 @@ function Galeria() {
           className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
         >
           {techniques.map((technique) => (
-            <li key={technique} className="flex-shrink-0">
+            <li key={technique} className="shrink-0">
               <button
                 type="button"
                 aria-pressed={filter === technique}
@@ -140,8 +140,8 @@ function Galeria() {
                 }}
                 className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   filter === technique
-                    ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
-                    : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                    ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
+                    : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
                 }`}
               >
                 {technique}
@@ -183,7 +183,7 @@ function Galeria() {
           </div>
 
           {!pieces.length ? (
-            <div className="rounded-[2rem] border border-line bg-white px-6 py-14 text-center">
+            <div className="rounded-4xl border border-line bg-white px-6 py-14 text-center">
               <span aria-hidden="true" className="text-3xl text-rose">
                 ✧
               </span>
@@ -266,9 +266,9 @@ function GalleryTile({
       aria-haspopup="dialog"
       aria-label={`Ver ${piece.title}, ${piece.technique}`}
       onClick={onOpen}
-      className="group min-w-0 rounded-[2rem] border border-line bg-white p-3 text-left shadow-soft transition-transform duration-300 hover:-translate-y-1"
+      className="group min-w-0 rounded-4xl border border-line bg-white p-3 text-left shadow-soft transition-transform duration-300 hover:-translate-y-1"
     >
-      <div className="relative overflow-hidden rounded-[1.5rem]">
+      <div className="relative overflow-hidden rounded-3xl">
         <StudioVisual
           src={piece.image}
           alt={piece.title}
@@ -387,7 +387,7 @@ function Lightbox({
           onPrevious()
         }
       }}
-      className="fixed inset-0 m-auto w-full max-w-4xl overflow-y-auto rounded-[2rem] border border-line bg-paper p-0 text-ink shadow-panel"
+      className="fixed inset-0 m-auto w-full max-w-4xl overflow-y-auto rounded-4xl border border-line bg-paper p-0 text-ink shadow-panel"
     >
       <div className="grid md:grid-cols-2">
         <div className="p-3 md:p-4">

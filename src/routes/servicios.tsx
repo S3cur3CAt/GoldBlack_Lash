@@ -135,7 +135,7 @@ function Servicios() {
           className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
         >
           {categories.map((category) => (
-            <li key={category.id} className="flex-shrink-0">
+            <li key={category.id} className="shrink-0">
               <Link
                 to="/servicios"
                 search={{ categoria: category.id }}
@@ -145,8 +145,8 @@ function Servicios() {
                 }
                 className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
                   visible === category.id
-                    ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
-                    : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                    ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
+                    : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
                 }`}
               >
                 {category.name}
@@ -154,7 +154,7 @@ function Servicios() {
             </li>
           ))}
 
-          <li className="flex-shrink-0">
+          <li className="shrink-0">
             <Link
               to="/servicios"
               search={{}}
@@ -162,8 +162,8 @@ function Servicios() {
               aria-current={visible === 'faq' ? 'location' : undefined}
               className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
                 visible === 'faq'
-                  ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
-                  : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                  ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
+                  : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
               }`}
             >
               Preguntas frecuentes

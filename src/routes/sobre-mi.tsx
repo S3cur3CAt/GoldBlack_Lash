@@ -145,7 +145,7 @@ function SobreMi() {
               {values.map((value) => (
                 <article
                   key={value.title}
-                  className="rounded-[2rem] border border-white bg-white/90 p-7 shadow-soft"
+                  className="rounded-4xl border border-white bg-white/90 p-7 shadow-soft"
                 >
                   <span
                     aria-hidden="true"
