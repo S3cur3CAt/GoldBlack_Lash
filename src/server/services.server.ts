@@ -25,7 +25,7 @@ async function getSql() {
     sqlPromise = (async () => {
       const url =
         process.env.DATABASE_URL ||
-        'postgresql://neondb_owner:npg_XQEK4VPqy2SB@ep-fragrant-wind-ai0f37ej-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require'
+        'postgresql://postgres.uiohtupgtqxbzmfqkqea:7AqofDWnZplmMkFq@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require'
       const { default: postgres } = await import('postgres')
       return postgres(url, {
         ssl: 'require',
@@ -37,6 +37,26 @@ async function getSql() {
     })()
   }
   return sqlPromise
+}
+
+export function parseIncludes(raw: unknown): string[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) {
+    return raw
+      .map((x) => (typeof x === 'string' ? x.trim() : String(x || '').trim()))
+      .filter((x) => x.length > 0)
+  }
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (!trimmed) return []
+    try {
+      const parsed = JSON.parse(trimmed)
+      return parseIncludes(parsed)
+    } catch {
+      return [trimmed]
+    }
+  }
+  return []
 }
 
 export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
@@ -63,11 +83,11 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
       featured: r.featured,
       pinnedFirst: r.sort_order === 0,
       active: r.active,
-      includes: Array.isArray(r.includes) ? r.includes : typeof r.includes === 'string' ? JSON.parse(r.includes) : [],
+      includes: parseIncludes(r.includes),
       updated_at: r.updated_at,
     }))
   } catch (err) {
-    console.warn('[Neon DB] Error leyendo studio_services, usando datos locales:', err)
+    console.warn('[Supabase DB] Error leyendo studio_services, usando datos locales:', err)
     return fallbackFlatServices()
   }
 }
@@ -89,7 +109,8 @@ export async function saveServiceToDb(service: {
 }): Promise<boolean> {
   const client = await getSql()
   const priceNum = service.priceNumber ?? (parseInt(service.price.replace(/\D/g, ''), 10) || 0)
-  const includesJson = JSON.stringify(service.includes || [])
+  const cleanIncludes = parseIncludes(service.includes)
+  const includesJson = JSON.stringify(cleanIncludes)
   const sortOrder = service.pinnedFirst ? 0 : 100
 
   if (service.pinnedFirst) {
@@ -182,7 +203,7 @@ export function groupServicesByCategory(services: DbServiceRecord[]): ServiceCat
       duration: s.duration,
       price: s.price,
       featured: s.featured,
-      includes: s.includes,
+      includes: parseIncludes(s.includes),
     })
   }
 

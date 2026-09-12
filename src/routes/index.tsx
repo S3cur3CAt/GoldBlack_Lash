@@ -68,7 +68,7 @@ function Hero() {
 
   return (
     <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      {/* Videos de fondo en bucle alternado (servidos desde Neon Postgres) */}
+      {/* Videos de fondo en bucle alternado (servidos desde Supabase) */}
       {heroVideos.map((vid, index) => (
         <video
           key={vid.key}

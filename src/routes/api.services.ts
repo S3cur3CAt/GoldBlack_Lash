@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/services')({
           }
           await saveServiceToDb(body)
           return Response.json(
-            { ok: true, message: 'Servicio guardado en tiempo real en Neon Postgres' },
+            { ok: true, message: 'Servicio guardado en tiempo real en Supabase' },
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
@@ -50,7 +50,7 @@ export const Route = createFileRoute('/api/services')({
           }
           await deleteServiceFromDb(id)
           return Response.json(
-            { ok: true, message: 'Servicio eliminado de Neon Postgres' },
+            { ok: true, message: 'Servicio eliminado de Supabase' },
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',

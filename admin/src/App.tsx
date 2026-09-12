@@ -279,7 +279,7 @@ export const App: React.FC = () => {
     }
   }, [])
 
-  // Appointment Actions - Synchronized with Neon Postgres & Vercel API
+  // Appointment Actions - Synchronized with Supabase Postgres & Vercel API
   const handleSaveAppointment = (apt: Appointment) => {
     const existingIndex = appointments.findIndex((a) => a.id === apt.id)
     let updated: Appointment[]
@@ -354,7 +354,7 @@ export const App: React.FC = () => {
     }
   }
 
-  // Service Actions - Synchronized in real time with Vercel & Neon Postgres
+  // Service Actions - Synchronized in real time with Vercel & Supabase Postgres
   const handleSaveService = async (service: AdminService) => {
     let updated: AdminService[]
     if (service.pinnedFirst) {
@@ -373,7 +373,7 @@ export const App: React.FC = () => {
     }
     setServices(updated)
     saveServices(updated)
-    // Send in real time to Vercel API & Neon Postgres
+    // Send in real time to Vercel API & Supabase Postgres
     await syncServiceWithVercel(service)
   }
 
@@ -381,7 +381,7 @@ export const App: React.FC = () => {
     const updated = services.filter((s) => s.id !== id)
     setServices(updated)
     saveServices(updated)
-    // Delete in real time from Vercel API & Neon Postgres
+    // Delete in real time from Vercel API & Supabase Postgres
     await deleteServiceFromVercel(id)
   }
 
@@ -405,7 +405,7 @@ export const App: React.FC = () => {
     saveClients(updated)
   }
 
-  // Gallery Actions - Synchronized in real time with Vercel & Neon Postgres
+  // Gallery Actions - Synchronized in real time with Vercel & Supabase Postgres
   const handleSaveGalleryItem = async (item: GalleryItem) => {
     const existingIndex = gallery.findIndex((g) => g.id === item.id)
     let updated: GalleryItem[]
@@ -418,7 +418,7 @@ export const App: React.FC = () => {
     setGallery(updated)
     saveGalleryItems(updated)
 
-    // Sync to Vercel API & Neon Postgres
+    // Sync to Vercel API & Supabase Postgres
     const ok = await syncGalleryItemWithVercel(item)
     if (ok && item.url) {
       // Update with the remote image url if converted

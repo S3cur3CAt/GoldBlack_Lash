@@ -10,7 +10,7 @@ import tailwindcss from '@tailwindcss/vite'
 /**
  * En `vite dev` la server route de TanStack (src/routes/api.images.$key.ts)
  * tambien responde /api/images/:key, pero este middleware (solo dev,
- * registrado el primero) la sirve desde Neon como fallback rapido sin pasar
+ * registrado el primero) la sirve desde Supabase como fallback rapido sin pasar
  * por el SSR. En build/prod la sirve la server route (auto-registrada).
  *
  * NOTA: sin import estatico de src/server/images.server.ts a proposito. El
@@ -20,9 +20,9 @@ import tailwindcss from '@tailwindcss/vite'
  * ssr is unavailable"). Los errores de BD devuelven 500/404 JSON, nunca
  * next(error), para no envenenar el dev-server ni tumbar el SSR.
  */
-function neonImagesDev(): Plugin {
+function supabaseImagesDev(): Plugin {
   return {
-    name: 'neon-images-dev',
+    name: 'supabase-images-dev',
     apply: 'serve',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
@@ -38,11 +38,11 @@ function neonImagesDev(): Plugin {
             return
           }
           const key = match[1]
-          // Carga perezosa: solo aqui se toca Neon/Driver.
-          const { fetchImageFromNeon } = await import(
+          // Carga perezosa: solo aqui se toca Supabase/Driver.
+          const { fetchImageFromSupabase } = await import(
             './src/server/images.server.ts'
           )
-          const hit = await fetchImageFromNeon(key)
+          const hit = await fetchImageFromSupabase(key)
           if (!hit) {
             res.statusCode = 404
             res.setHeader('Content-Type', 'application/json')
@@ -76,15 +76,10 @@ function neonImagesDev(): Plugin {
           res.setHeader('Accept-Ranges', 'bytes')
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
           res.end(hit.data)
-        } catch (error) {
-          // Nunca romper el dev-server/SSR por un fallo de imagenes.
-          try {
-            res.statusCode = 500
-            res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ error: 'Error de imagen' }))
-          } catch {
-            next()
-          }
+        } catch {
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ error: 'Error de base de datos' }))
         }
       })
     },
@@ -94,7 +89,7 @@ function neonImagesDev(): Plugin {
 const config = defineConfig(({ command }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
-    neonImagesDev(),
+    supabaseImagesDev(),
     devtools(),
     tailwindcss(),
     tanstackStart(),
@@ -102,7 +97,7 @@ const config = defineConfig(({ command }) => ({
     // no logra inicializar el entorno "ssr" y toda pagina responde 503
     // "Vite environment ssr is unavailable", incluso sin nuestro codigo).
     // En `vite dev` (serve) el SSR lo sirve TanStack Start directamente y las
-    // imagenes las sirve neonImagesDev(); Nitro solo se usa en build/preview/
+    // imagenes las sirve supabaseImagesDev(); Nitro solo se usa en build/preview/
     // produccion, donde funciona bien (verificado con `pnpm build`).
     ...(command === 'serve' ? [] : [nitro()]),
     viteReact(),

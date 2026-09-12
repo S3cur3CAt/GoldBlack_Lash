@@ -301,16 +301,33 @@ function ServiceCard({ service }: { service: Service }) {
         {service.description}
       </p>
 
-      <ul className="mt-5 space-y-2.5">
-        {service.includes.map((item) => (
-          <li key={item} className="flex gap-3 text-xs leading-6">
-            <span aria-hidden="true" className="text-rose">
-              ✓
-            </span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
+      {(() => {
+        let inclusions: string[] = []
+        if (Array.isArray(service.includes)) {
+          inclusions = service.includes
+        } else if (typeof service.includes === 'string') {
+          try {
+            let p = JSON.parse(service.includes)
+            while (typeof p === 'string') {
+              p = JSON.parse(p)
+            }
+            if (Array.isArray(p)) inclusions = p
+          } catch {}
+        }
+        if (!inclusions || inclusions.length === 0) return null
+        return (
+          <ul className="mt-5 space-y-2.5">
+            {inclusions.map((item) => (
+              <li key={item} className="flex gap-3 text-xs leading-6">
+                <span aria-hidden="true" className="text-rose">
+                  ✓
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        )
+      })()}
 
       <div className="mt-7 border-t border-rose/10 pt-6">
         <button

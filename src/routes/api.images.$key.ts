@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { fetchImageFromNeon, isValidImageKey } from '../server/images.server'
+import { fetchImageFromSupabase, isValidImageKey } from '../server/images.server'
 
 // Server route TanStack Start: GET /api/images/:key (dev, build y prod,
-// incluida Vercel). Sirve las imagenes de Neon con cache inmutable.
+// incluida Vercel). Sirve las imagenes de Supabase con cache inmutable.
 // Se eligio server route en vez de server/api de Nitro porque el plugin
 // nitro/vite en este proyecto no escanea server/ (verificado en .output).
 export const Route = createFileRoute('/api/images/$key')({
@@ -23,7 +23,7 @@ export const Route = createFileRoute('/api/images/$key')({
 
         let hit
         try {
-          hit = await fetchImageFromNeon(key)
+          hit = await fetchImageFromSupabase(key)
         } catch {
           return Response.json(
             { error: 'Error de base de datos' },

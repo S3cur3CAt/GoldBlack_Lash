@@ -1,4 +1,4 @@
-// Acceso compartido a las imagenes guardadas en Neon Postgres (tabla images).
+// Acceso compartido a las imagenes guardadas en Supabase Postgres (tabla images / storage).
 // Modulo SOLO-servidor (sufijo .server.ts): lo usan la server route
 // (src/routes/api.images.$key.ts, dev/build/prod) y el middleware de Vite
 // (vite.config.ts, solo dev). Las credenciales van en DATABASE_URL.
@@ -24,10 +24,9 @@ let sqlPromise: Promise<SqlTag> | null = null
 async function getSql(): Promise<SqlTag> {
   if (!sqlPromise) {
     sqlPromise = (async () => {
-      const url = process.env.DATABASE_URL
-      if (!url) {
-        throw new Error('Falta DATABASE_URL')
-      }
+      const url =
+        process.env.DATABASE_URL ||
+        'postgresql://postgres.uiohtupgtqxbzmfqkqea:7AqofDWnZplmMkFq@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require'
       // Import dinamico: evita meter el driver `postgres` en cualquier
       // grafo de cliente por accidente.
       const { default: postgres } = await import('postgres')
@@ -44,11 +43,11 @@ async function getSql(): Promise<SqlTag> {
 }
 
 /** Devuelve la imagen o null si no existe. Lanza si falta DATABASE_URL o falla la BD. */
-export async function fetchImageFromNeon(key: string): Promise<StoredImage | null> {
+export async function fetchImageFromSupabase(key: string): Promise<StoredImage | null> {
   const client = await getSql()
   // Timeout de seguridad: nunca dejar una peticion colgada mas de 10 s.
   const timeout = new Promise<never>((_, reject) => {
-    const t = setTimeout(() => reject(new Error('Timeout Neon')), 10_000)
+    const t = setTimeout(() => reject(new Error('Timeout Supabase')), 10_000)
     // oxlint-disable-next-line no-explicit-any
     ;(t as any).unref?.()
   })

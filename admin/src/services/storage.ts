@@ -360,7 +360,7 @@ export function notifySyncEvent(status: SyncStatus, message: string) {
   }
 }
 
-/** Syncs a single service with Neon Postgres / Vercel API */
+/** Syncs a single service with Supabase / Vercel API */
 export async function syncServiceWithVercel(service: AdminService): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   notifySyncEvent('syncing', `Sincronizando ${service.name} con Vercel...`)
@@ -383,7 +383,7 @@ export async function syncServiceWithVercel(service: AdminService): Promise<bool
   }
 }
 
-/** Deletes a service from Neon Postgres / Vercel API */
+/** Deletes a service from Supabase / Vercel API */
 export async function deleteServiceFromVercel(id: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   notifySyncEvent('syncing', `Eliminando servicio en Vercel...`)
@@ -401,7 +401,7 @@ export async function deleteServiceFromVercel(id: string): Promise<boolean> {
   }
 }
 
-/** Syncs a single gallery item with Neon Postgres / Vercel API */
+/** Syncs a single gallery item with Supabase / Vercel API */
 export async function syncGalleryItemWithVercel(item: GalleryItem): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   notifySyncEvent('syncing', `Publicando foto "${item.title}" en el sitio web...`)
@@ -428,7 +428,7 @@ export async function syncGalleryItemWithVercel(item: GalleryItem): Promise<bool
   }
 }
 
-/** Deletes a gallery item from Neon Postgres / Vercel API */
+/** Deletes a gallery item from Supabase / Vercel API */
 export async function deleteGalleryItemFromVercel(id: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   notifySyncEvent('syncing', `Eliminando foto del sitio web...`)
@@ -446,7 +446,7 @@ export async function deleteGalleryItemFromVercel(id: string): Promise<boolean> 
   }
 }
 
-/** Fetch latest gallery items from Vercel API / Neon Postgres */
+/** Fetch latest gallery items from Vercel API / Supabase */
 export async function fetchLiveGalleryFromVercel(): Promise<GalleryItem[] | null> {
   const baseUrl = getApiBaseUrl()
   try {
@@ -479,7 +479,7 @@ export async function fetchLiveGalleryFromVercel(): Promise<GalleryItem[] | null
   }
 }
 
-/** Fetch latest services from Vercel API / Neon Postgres */
+/** Fetch latest services from Vercel API / Supabase */
 export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | null> {
   const baseUrl = getApiBaseUrl()
   try {
@@ -500,9 +500,19 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
         price: d.price,
         priceNumber: d.price_number || d.priceNumber || 0,
         featured: !!d.featured,
-        active: d.active !== false,
-        includes: d.includes || [],
-      }))
+        includes: Array.isArray(d.includes)
+          ? d.includes
+          : typeof d.includes === 'string'
+          ? (() => {
+              try {
+                let p = JSON.parse(d.includes)
+                while (typeof p === 'string') p = JSON.parse(p)
+                return Array.isArray(p) ? p : []
+              } catch {
+                return []
+              }
+            })()
+          : [],
       saveServices(mapped)
       return mapped
     }
@@ -513,7 +523,7 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
   }
 }
 
-/** Fetch latest appointments from Vercel API / Neon Postgres */
+/** Fetch latest appointments from Vercel API / Supabase */
 export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] | null> {
   const baseUrl = getApiBaseUrl()
   try {
@@ -607,7 +617,7 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
   }
 }
 
-/** Syncs a single appointment with Neon Postgres / Vercel API */
+/** Syncs a single appointment with Supabase / Vercel API */
 export async function syncAppointmentWithVercel(appointment: Appointment): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   try {
@@ -628,7 +638,7 @@ export async function syncAppointmentWithVercel(appointment: Appointment): Promi
   }
 }
 
-/** Deletes an appointment from Neon Postgres / Vercel API */
+/** Deletes an appointment from Supabase / Vercel API */
 export async function deleteAppointmentFromVercel(id: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
   try {

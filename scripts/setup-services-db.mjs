@@ -30,7 +30,7 @@ if (!url) {
 
 const sql = postgres(url, { ssl: 'require', max: 1, connect_timeout: 10 })
 
-console.log('1. Creando tabla studio_services en Neon Postgres...')
+console.log('1. Creando tabla studio_services en Supabase Postgres...')
 await sql`
   CREATE TABLE IF NOT EXISTS studio_services (
     id TEXT PRIMARY KEY,

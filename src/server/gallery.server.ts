@@ -20,7 +20,7 @@ async function getSql() {
     sqlPromise = (async () => {
       const url =
         process.env.DATABASE_URL ||
-        'postgresql://neondb_owner:npg_XQEK4VPqy2SB@ep-fragrant-wind-ai0f37ej-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require'
+        'postgresql://postgres.uiohtupgtqxbzmfqkqea:7AqofDWnZplmMkFq@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require'
       const { default: postgres } = await import('postgres')
       return postgres(url, {
         ssl: 'require',
@@ -60,7 +60,7 @@ export async function fetchGalleryFromDb(): Promise<DbGalleryRecord[]> {
       updated_at: r.updated_at,
     }))
   } catch (err) {
-    console.warn('[Neon DB] Error leyendo studio_gallery, usando datos locales:', err)
+    console.warn('[Supabase DB] Error leyendo studio_gallery, usando datos locales:', err)
     return fallbackGalleryPieces()
   }
 }
@@ -85,7 +85,7 @@ export async function saveGalleryItemToDb(item: {
   if (!key) key = `custom-${Date.now()}`
   let finalImageUrl = item.image_url || item.url || `/api/images/${key}`
 
-  // Check if image is a base64 Data URL to store in `images` table in Neon
+  // Check if image is a base64 Data URL to store in `images` table in Supabase
   const rawData = item.image_data || item.url || ''
   if (rawData.startsWith('data:image/')) {
     try {
@@ -103,9 +103,28 @@ export async function saveGalleryItemToDb(item: {
             updated_at = now()
         `
         finalImageUrl = `/api/images/${key}`
+
+        // Sube tambien a Supabase Storage bucket studio-media
+        try {
+          const sbUrl = process.env.SUPABASE_URL || 'https://uiohtupgtqxbzmfqkqea.supabase.co'
+          const anon = process.env.SUPABASE_ANON_KEY || 'sb_publishable_EmVnt_9VUQnB2wrBt5U1LA_khOLHLCh'
+          const ext = mime.includes('png') ? 'png' : mime.includes('avif') ? 'avif' : 'jpg'
+          await fetch(`${sbUrl}/storage/v1/object/studio-media/${key}.${ext}`, {
+            method: 'POST',
+            headers: {
+              apikey: anon,
+              Authorization: `Bearer ${anon}`,
+              'Content-Type': mime,
+              'x-upsert': 'true',
+            },
+            body: buffer,
+          }).catch(() => {})
+        } catch (storageErr) {
+          console.warn('Aviso guardando en Supabase Storage:', storageErr)
+        }
       }
     } catch (e) {
-      console.warn('Error guardando imagen binaria en Neon:', e)
+      console.warn('Error guardando imagen binaria en Supabase:', e)
     }
   }
 

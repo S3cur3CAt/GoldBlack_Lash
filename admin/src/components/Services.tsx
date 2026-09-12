@@ -329,7 +329,7 @@ export const Services: React.FC<ServicesProps> = ({
                 </p>
 
                 {/* Inclusions as compact pills */}
-                {service.includes && service.includes.length > 0 && (
+                {Array.isArray(service.includes) && service.includes.length > 0 && (
                   <div className="mt-3 pt-2.5 border-t border-[#1e1e2c] flex flex-wrap gap-1">
                     {service.includes.map((inc, i) => (
                       <span

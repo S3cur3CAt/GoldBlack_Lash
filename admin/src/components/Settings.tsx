@@ -242,19 +242,19 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </form>
 
-      {/* Real-time Vercel & Neon Sync Section */}
+      {/* Real-time Vercel & Supabase Sync Section */}
       <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            Sincronización en Tiempo Real (Vercel & Neon Postgres)
+            Sincronización en Tiempo Real (Vercel & Supabase)
           </h4>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
             Conexión Activa
           </span>
         </div>
         <p className="text-xs text-gray-400">
-          Los precios y servicios editados en este panel se guardan directamente en tu base de datos de Neon Postgres y se reflejan de inmediato en la web de Vercel sin necesidad de esperar despliegues de GitHub.
+          Los precios, citas y fotografías editados en este panel se guardan directamente en tu base de datos y almacenamiento de Supabase y se reflejan de inmediato en la web sin necesidad de esperar despliegues de GitHub.
         </p>
 
         <div className="p-4 rounded-xl bg-[#161622] border border-[#262638] space-y-3">
@@ -279,7 +279,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     if (res.ok) {
                       showAlert({
                         title: 'Conexión Exitosa',
-                        message: '✓ Conexión en tiempo real establecida con Vercel y Neon Postgres. Los servicios están sincronizados.',
+                        message: '✓ Conexión en tiempo real establecida con Vercel y Supabase. Los servicios están sincronizados.',
                         type: 'success',
                       })
                     } else {

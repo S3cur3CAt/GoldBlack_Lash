@@ -29,7 +29,7 @@ export const Route = createFileRoute('/api/gallery')({
           }
           const result = await saveGalleryItemToDb(body)
           return Response.json(
-            { ok: true, message: 'Fotografía guardada en tiempo real en Neon Postgres', item: result.item },
+            { ok: true, message: 'Fotografía guardada en tiempo real en Supabase', item: result.item },
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
@@ -50,7 +50,7 @@ export const Route = createFileRoute('/api/gallery')({
           }
           await deleteGalleryItemFromDb(id)
           return Response.json(
-            { ok: true, message: 'Fotografía eliminada de Neon Postgres' },
+            { ok: true, message: 'Fotografía eliminada de Supabase' },
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',

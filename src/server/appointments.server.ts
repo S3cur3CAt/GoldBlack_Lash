@@ -25,7 +25,7 @@ async function getSql() {
     sqlPromise = (async () => {
       const url =
         process.env.DATABASE_URL ||
-        'postgresql://neondb_owner:npg_XQEK4VPqy2SB@ep-fragrant-wind-ai0f37ej-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require'
+        'postgresql://postgres.uiohtupgtqxbzmfqkqea:7AqofDWnZplmMkFq@aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require'
       const { default: postgres } = await import('postgres')
       const client = postgres(url, {
         ssl: 'require',
@@ -59,7 +59,7 @@ async function getSql() {
           )
         `
       } catch (err) {
-        console.warn('[Neon DB] Table check notice:', err)
+        console.warn('[Supabase DB] Table check notice:', err)
       }
 
       return client
@@ -97,7 +97,7 @@ export async function fetchAppointmentsFromDb() {
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     }))
   } catch (err) {
-    console.error('[Neon DB] Error leyendo studio_appointments:', err)
+    console.error('[Supabase DB] Error leyendo studio_appointments:', err)
     return []
   }
 }

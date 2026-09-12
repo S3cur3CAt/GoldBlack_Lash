@@ -185,7 +185,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
     if (selectedCategory === oldName) setSelectedCategory(trimmed)
     if (category === oldName) setCategory(trimmed)
 
-    // 3. Update all existing gallery items with this category & sync with Vercel / Neon DB
+    // 3. Update all existing gallery items with this category & sync with Vercel / Supabase DB
     let affectedCount = 0
     galleryItems.forEach((item) => {
       if (item.category === oldName) {
