@@ -188,13 +188,80 @@ ipcMain.handle('publisher:check-github', async (event, { token }) => {
   })
 })
 
-// Build Installer Live Execution
-ipcMain.handle('publisher:build-installer', async () => {
+// Automatically update version in project package.json and updater.ts
+function applyVersionToProject(newVersion) {
+  const clean = newVersion.replace(/^v/, '').trim()
+  if (!clean) return { ok: false, error: 'Versión vacía' }
+
+  const modifiedFiles = []
+
+  // 1. admin/package.json
+  const adminPkgPath = path.join(adminRoot, 'package.json')
+  if (fs.existsSync(adminPkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(adminPkgPath, 'utf8'))
+      pkg.version = clean
+      fs.writeFileSync(adminPkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8')
+      modifiedFiles.push('admin/package.json')
+    } catch (e) {
+      console.warn('Error actualizando admin/package.json:', e)
+    }
+  }
+
+  // 2. admin/src/services/updater.ts
+  const updaterPath = path.join(adminRoot, 'src', 'services', 'updater.ts')
+  if (fs.existsSync(updaterPath)) {
+    try {
+      let content = fs.readFileSync(updaterPath, 'utf8')
+      content = content.replace(
+        /export const CURRENT_APP_VERSION = ['"][^'"]+['"]/,
+        `export const CURRENT_APP_VERSION = '${clean}'`
+      )
+      fs.writeFileSync(updaterPath, content, 'utf8')
+      modifiedFiles.push('admin/src/services/updater.ts')
+    } catch (e) {
+      console.warn('Error actualizando updater.ts:', e)
+    }
+  }
+
+  // 3. tools/release-manager/package.json
+  const managerPkgPath = path.join(__dirname, 'package.json')
+  if (fs.existsSync(managerPkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(managerPkgPath, 'utf8'))
+      pkg.version = clean
+      fs.writeFileSync(managerPkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8')
+      modifiedFiles.push('tools/release-manager/package.json')
+    } catch (e) {}
+  }
+
+  // 4. Root package.json
+  const projectRoot = path.resolve(adminRoot, '..')
+  const rootPkgPath = path.join(projectRoot, 'package.json')
+  if (fs.existsSync(rootPkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(rootPkgPath, 'utf8'))
+      pkg.version = clean
+      fs.writeFileSync(rootPkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8')
+      modifiedFiles.push('package.json')
+    } catch (e) {}
+  }
+
+  return { ok: true, version: clean, modifiedFiles }
+}
+
+ipcMain.handle('publisher:set-version', (event, { version }) => {
+  return applyVersionToProject(version)
+})
+
+// Build Installer Execution
+function buildAdminInstaller() {
   return new Promise((resolve, reject) => {
     const scriptPath = path.join(adminRoot, 'scripts', 'build-win.mjs')
-    const child = spawn(process.execPath, [scriptPath], {
+    const child = spawn('node', [scriptPath], {
       cwd: adminRoot,
       env: { ...process.env, NODE_ENV: 'production' },
+      shell: true,
     })
 
     const sendLog = (line) => {
@@ -216,19 +283,52 @@ ipcMain.handle('publisher:build-installer', async () => {
 
     child.on('error', (err) => reject(err))
   })
+}
+
+ipcMain.handle('publisher:build-installer', async () => {
+  return await buildAdminInstaller()
 })
 
 // Publish Release to GitHub & Upload Binary Asset
 ipcMain.handle('publisher:publish-release', async (event, payload) => {
-  const { token, version, title, notes, isPrerelease, installerPath } = payload
+  const { token, version, title, notes, isPrerelease, autoBuild, installerPath: userInstallerPath } = payload
 
   if (!token) throw new Error('Se requiere un GitHub Personal Access Token con permisos repo.')
   if (!version) throw new Error('Se requiere especificar la versión (ej. 0.0.2).')
-  if (!installerPath || !fs.existsSync(installerPath)) {
-    throw new Error('El archivo instalador seleccionado no existe en disco.')
+
+  const cleanVersion = version.replace(/^v/, '').trim()
+  const cleanTag = `v${cleanVersion}`
+
+  // STEP 1: Automatically apply new version to admin/package.json, updater.ts, etc.
+  const syncResult = applyVersionToProject(cleanVersion)
+  console.log('[Publisher] Versión aplicada a packages.json:', syncResult)
+
+  let installerPath = userInstallerPath
+  const expectedInstallerName = `GoldBlack-Lash-Admin-Setup-${cleanVersion}.exe`
+  const expectedInstallerPath = path.join(distInstallersDir, expectedInstallerName)
+
+  // STEP 2: If autoBuild is requested OR if the expected installer for this version does not exist yet:
+  if (autoBuild || !installerPath || !fs.existsSync(installerPath) || (!fs.existsSync(expectedInstallerPath) && (!installerPath || !installerPath.includes(cleanVersion)))) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('publisher:upload-progress', {
+        step: 'compiling',
+        percent: 0,
+        message: `Compilando nuevo instalador para versión ${cleanVersion}...`,
+      })
+    }
+    await buildAdminInstaller()
+    installerPath = expectedInstallerPath
   }
 
-  const cleanTag = `v${version.replace(/^v/, '').trim()}`
+  // If still not found, check if expected installer exists now
+  if ((!installerPath || !fs.existsSync(installerPath)) && fs.existsSync(expectedInstallerPath)) {
+    installerPath = expectedInstallerPath
+  }
+
+  if (!installerPath || !fs.existsSync(installerPath)) {
+    throw new Error(`El archivo instalador ${expectedInstallerName} no se encontró tras compilar.`)
+  }
+
   const fileName = path.basename(installerPath)
   const fileStat = fs.statSync(installerPath)
 

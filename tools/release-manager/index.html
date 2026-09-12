@@ -208,6 +208,17 @@
         </div>
       </div>
 
+      <!-- Automatic package.json sync alert -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] bg-[#141420] px-3.5 py-2.5 rounded-xl border border-gold-500/20 text-gray-300">
+        <div class="flex items-center gap-1.5 text-gold-300">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Al presionar <strong>Publicar Actualización</strong>, esta versión se aplicará automáticamente a <strong>admin/package.json</strong> y archivos del proyecto.</span>
+        </div>
+        <button id="btnSaveVersionNow" type="button" class="text-gold-400 hover:text-gold-200 text-xs font-semibold hover:underline cursor-pointer shrink-0">
+          Guardar en package.json ahora
+        </button>
+      </div>
+
       <!-- Notes / Changelog -->
       <div class="space-y-1.5">
         <div class="flex items-center justify-between">
@@ -286,6 +297,10 @@
           <p class="text-xs text-gray-400 mt-0.5">
             Crea la Release oficial en GitHub y sube el instalador de Windows.
           </p>
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-300 hover:text-white transition-colors mt-2">
+            <input type="checkbox" id="checkAutoBuild" checked class="rounded text-gold-500 focus:ring-0 cursor-pointer" />
+            <span>Compilar instalador (.exe) automáticamente con la nueva versión antes de subir</span>
+          </label>
         </div>
 
         <button

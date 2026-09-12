@@ -126,6 +126,24 @@ el('btnBumpMinor')?.addEventListener('click', () => {
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
 })
 
+// Auto-sync title when version is typed
+el('inputVersion')?.addEventListener('input', () => {
+  const v = el('inputVersion').value.trim().replace(/^v/, '')
+  el('inputTitle').value = `GoldBlack Lash Admin v${v}`
+})
+
+// Save version directly to package.json
+el('btnSaveVersionNow')?.addEventListener('click', async () => {
+  const version = el('inputVersion').value.trim()
+  if (!version) return
+  const res = await window.publisherAPI?.setVersion(version)
+  if (res && res.ok) {
+    localVersion = res.version
+    el('txtLocalVersion').textContent = `v${localVersion}`
+    alert(`✓ Versión v${res.version} guardada con éxito en los package.json y archivos del proyecto:\n• ${res.modifiedFiles.join('\n• ')}`)
+  }
+})
+
 // Templates for Notes
 el('btnTemplateFixes')?.addEventListener('click', () => {
   const prev = el('inputNotes').value
@@ -253,9 +271,10 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
     return
   }
 
+  const autoBuild = el('checkAutoBuild')?.checked ?? true
   const installerPath = el('selectInstaller').value
-  if (!installerPath) {
-    alert('No hay un instalador de Windows seleccionado. Por favor compílalo primero pulsando "Compilar Instalador Ahora".')
+  if (!installerPath && !autoBuild) {
+    alert('No hay un instalador de Windows seleccionado. Por favor marca la casilla de compilar automáticamente o compila uno primero.')
     return
   }
 
@@ -265,8 +284,12 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
   const conf = confirm(
     `¿Confirmas la publicación de la versión v${version.replace(/^v/, '')} en GitHub?\n\n` +
     `• Repositorio: S3cur3CAt/GoldBlack_Lash\n` +
-    `• Instalador: ${installerPath.split(/[\/\\]/).pop()}\n\n` +
-    `Una vez publicada, la aplicación de administración detectará la actualización automáticamente.`
+    `• Se actualizará automáticamente a v${version.replace(/^v/, '')} en:\n` +
+    `    - admin/package.json\n` +
+    `    - admin/src/services/updater.ts\n` +
+    `    - package.json\n` +
+    (autoBuild ? `• Se compilará automáticamente el nuevo instalador de Windows (GoldBlack-Lash-Admin-Setup-${version.replace(/^v/, '')}.exe)\n` : '') +
+    `\nUna vez publicada, la aplicación de administración detectará la actualización automáticamente.`
   )
   if (!conf) return
 
@@ -286,9 +309,16 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
   successBox.classList.add('hidden')
   progressBar.style.width = '0%'
   progressPercent.textContent = '0%'
-  progressBytes.textContent = 'Iniciando creación de release en GitHub...'
+  progressBytes.textContent = 'Iniciando proceso de publicación...'
 
   const unsubscribeProgress = window.publisherAPI?.onUploadProgress((data) => {
+    if (data.step === 'compiling') {
+      statusText.textContent = data.message || '🔨 Compilando nuevo instalador de Windows...'
+      progressBar.style.width = '30%'
+      progressPercent.textContent = 'Compilando...'
+      progressBytes.textContent = 'Generando instalador con Vite + NSIS...'
+      return
+    }
     const percent = data.percent || 0
     progressBar.style.width = `${percent}%`
     progressPercent.textContent = `${percent}%`
@@ -298,12 +328,13 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
   })
 
   try {
-    statusText.textContent = '1/2 Creando Release en GitHub...'
+    statusText.textContent = '1/3 Aplicando versión a packages.json y preparando release...'
     const result = await window.publisherAPI?.publishRelease({
       token,
       version,
       title,
       notes,
+      autoBuild,
       installerPath,
     })
 
@@ -315,6 +346,10 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
 
       successBox.classList.remove('hidden')
       el('successTitleText').textContent = `¡Release ${result.tagName} publicada con éxito en GitHub!`
+
+      // Refresh local version and installer list
+      await loadAdminVersion()
+      await refreshInstallers()
 
       // Update header
       el('txtGitHubVersion').textContent = result.tagName

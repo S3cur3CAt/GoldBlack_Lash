@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('publisherAPI', {
 
   // Config & Info
   getAdminVersion: () => ipcRenderer.invoke('publisher:get-admin-version'),
+  setVersion: (version) => ipcRenderer.invoke('publisher:set-version', { version }),
   checkGitHub: (token) => ipcRenderer.invoke('publisher:check-github', { token }),
   findInstallers: () => ipcRenderer.invoke('publisher:find-installers'),
   selectInstallerFile: () => ipcRenderer.invoke('publisher:select-installer-file'),
