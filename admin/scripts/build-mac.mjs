@@ -11,7 +11,7 @@ const distPackages = join(adminRoot, 'dist-packages')
 const pkg = JSON.parse(readFileSync(join(adminRoot, 'package.json'), 'utf8'))
 const appVersion = pkg.version || '0.0.1'
 
-console.log('=== Compilando GoldBlack Lash Admin para macOS El Capitan (OS X 10.11) ===')
+console.log('=== Compilando GoldBlack Lash Admin para macOS Monterey (macOS 12.0+) ===')
 
 // 1. Ensure dist-installers exists
 if (!existsSync(distInstallers)) {
@@ -23,7 +23,7 @@ console.log('\n[1/3] Compilando frontend React con Vite...')
 execSync('pnpm run build', { cwd: adminRoot, stdio: 'inherit' })
 
 // 3. Package macOS with electron-packager
-console.log('\n[2/3] Empaquetando runtime de macOS El Capitan (darwin-x64, Electron 11.5.0)...')
+console.log('\n[2/3] Empaquetando runtime de macOS Monterey (darwin-x64, Electron 11.5.0)...')
 const packager = (await import('electron-packager')).default
 
 const appPaths = await packager({
@@ -73,31 +73,31 @@ if (existsSync(resourcesDir) && existsSync(sourceIcns)) {
   }
 }
 
-// 4. Validate & Adjust Info.plist for macOS 10.11 El Capitan
-console.log('\n[3/3] Configurando Info.plist con LSMinimumSystemVersion = 10.11.0...')
+// 4. Validate & Adjust Info.plist for macOS 12.0 Monterey
+console.log('\n[3/3] Configurando Info.plist con LSMinimumSystemVersion = 12.0.0...')
 const plistPath = join(macAppDir, 'GoldBlack Lash Admin.app', 'Contents', 'Info.plist')
 if (existsSync(plistPath)) {
   let plistContent = readFileSync(plistPath, 'utf8')
 
-  // Ensure LSMinimumSystemVersion is set to 10.11.0 for El Capitan
+  // Ensure LSMinimumSystemVersion is set to 12.0.0 for Monterey
   if (plistContent.includes('<key>LSMinimumSystemVersion</key>')) {
     plistContent = plistContent.replace(
       /<key>LSMinimumSystemVersion<\/key>\s*<string>[^<]*<\/string>/,
-      '<key>LSMinimumSystemVersion</key>\n    <string>10.11.0</string>'
+      '<key>LSMinimumSystemVersion</key>\n    <string>12.0.0</string>'
     )
   } else {
     plistContent = plistContent.replace(
       '</dict>',
-      '  <key>LSMinimumSystemVersion</key>\n    <string>10.11.0</string>\n  </dict>'
+      '  <key>LSMinimumSystemVersion</key>\n    <string>12.0.0</string>\n  </dict>'
     )
   }
 
   writeFileSync(plistPath, plistContent, 'utf8')
-  console.log('✓ Info.plist verificado para compatibilidad con OS X 10.11 El Capitan.')
+  console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey.')
 }
 
 // 5. Compress into final distributable zip
-const finalMacZip = join(distInstallers, `GoldBlack-Lash-Admin-${appVersion}-macOS-ElCapitan.zip`)
+const finalMacZip = join(distInstallers, `GoldBlack-Lash-Admin-${appVersion}-macOS-Monterey.zip`)
 console.log(`\nGenerando paquete distribuible de macOS: ${finalMacZip}...`)
 
 // Use tar -a -c -f (bsdtar) to preserve symlinks and avoid permission errors
@@ -107,5 +107,5 @@ execSync(
   { stdio: 'inherit' }
 )
 
-console.log(`\n🎉 PAQUETE DE MAC OS EL CAPITAN CREADO CON ÉXITO:`)
+console.log(`\n🎉 PAQUETE DE MACOS MONTEREY CREADO CON ÉXITO:`)
 console.log(`👉 ${finalMacZip}`)

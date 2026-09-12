@@ -302,7 +302,7 @@ async function buildAdminInstallers() {
   const macScript = path.join(adminRoot, 'scripts', 'build-mac.mjs')
 
   await runBuildScript(winScript, '[1/2] Compilando instalador de Windows 11 (.exe)')
-  await runBuildScript(macScript, '[2/2] Compilando paquete de macOS El Capitan (.zip)')
+  await runBuildScript(macScript, '[2/2] Compilando paquete de macOS Monterey (.zip)')
   return { success: true }
 }
 
@@ -402,7 +402,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
 
   const expectedWinName = `GoldBlack-Lash-Admin-Setup-${cleanVersion}.exe`
   const expectedWinPath = path.join(distInstallersDir, expectedWinName)
-  const expectedMacName = `GoldBlack-Lash-Admin-${cleanVersion}-macOS-ElCapitan.zip`
+  const expectedMacName = `GoldBlack-Lash-Admin-${cleanVersion}-macOS-Monterey.zip`
   const expectedMacPath = path.join(distInstallersDir, expectedMacName)
 
   // STEP 2: If autoBuild is requested OR if expected installers do not exist yet:
@@ -411,7 +411,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
       mainWindow.webContents.send('publisher:upload-progress', {
         step: 'compiling',
         percent: 0,
-        message: `Compilando instaladores para Windows y macOS (v${cleanVersion})...`,
+        message: `Compilando instaladores para Windows y macOS Monterey (v${cleanVersion})...`,
       })
     }
     await buildAdminInstallers()
@@ -423,7 +423,13 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
     assetsToUpload.push({ path: expectedWinPath, label: 'Instalador de Windows (.exe)' })
   }
   if (fs.existsSync(expectedMacPath)) {
-    assetsToUpload.push({ path: expectedMacPath, label: 'Paquete de macOS El Capitan (.zip)' })
+    assetsToUpload.push({ path: expectedMacPath, label: 'Paquete de macOS Monterey (.zip)' })
+  } else {
+    const fallbackMacName = `GoldBlack-Lash-Admin-${cleanVersion}-macOS-ElCapitan.zip`
+    const fallbackMacPath = path.join(distInstallersDir, fallbackMacName)
+    if (fs.existsSync(fallbackMacPath)) {
+      assetsToUpload.push({ path: fallbackMacPath, label: 'Paquete de macOS (.zip)' })
+    }
   }
 
   // If user selected a custom file and it's not in the list, add it

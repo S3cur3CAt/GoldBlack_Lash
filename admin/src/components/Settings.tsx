@@ -346,9 +346,9 @@ export const Settings: React.FC<SettingsProps> = ({
         </h5>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
           <div className="p-3 rounded-xl bg-[#14141e] border border-[#222232]">
-            <span className="text-gold-400 font-bold block mb-1">🍏 macOS El Capitan (OS X 10.11+)</span>
+            <span className="text-gold-400 font-bold block mb-1">🍏 macOS Monterey (macOS 12.0+)</span>
             <p className="text-gray-400">
-              Compatible gracias al runtime Electron 11.5.0 (Chromium 87) y binario x64 empaquetado.
+              Compatible con macOS 12.0 Monterey y versiones superiores en arquitecturas Intel y Apple Silicon.
             </p>
           </div>
           <div className="p-3 rounded-xl bg-[#14141e] border border-[#222232]">

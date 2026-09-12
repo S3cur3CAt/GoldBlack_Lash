@@ -229,7 +229,7 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
   const btn = el('btnBuildInstaller')
 
   container.classList.remove('hidden')
-  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} sincronizada en packages.json.\nIniciando compilación multiplataforma (Windows NSIS + macOS El Capitan)...\n`
+  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} sincronizada en packages.json.\nIniciando compilación multiplataforma (Windows NSIS + macOS Monterey)...\n`
   badge.textContent = 'Compilando...'
   badge.className = 'text-[10px] text-amber-400 animate-pulse'
   btn.disabled = true
@@ -297,7 +297,7 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
     `    - package.json\n` +
     (autoBuild ? `• Se compilarán y subirán automáticamente ambos paquetes:\n` +
                  `    - Windows 11 NSIS: GoldBlack-Lash-Admin-Setup-${version.replace(/^v/, '')}.exe\n` +
-                 `    - macOS El Capitan: GoldBlack-Lash-Admin-${version.replace(/^v/, '')}-macOS-ElCapitan.zip\n` : '') +
+                 `    - macOS Monterey: GoldBlack-Lash-Admin-${version.replace(/^v/, '')}-macOS-Monterey.zip\n` : '') +
     `\nLa release se mantendrá oculta (draft) hasta que los instaladores estén subidos al 100%, evitando avisos de actualización incompletos.`
   )
   if (!conf) return
