@@ -2,6 +2,10 @@ import React, { useState, useMemo } from 'react'
 import { useDialog } from '../context/DialogContext'
 import { GalleryItem } from '../types/admin'
 import {
+  getCustomGalleryCategories,
+  saveCustomGalleryCategories,
+} from '../services/storage'
+import {
   IconImage,
   IconPlus,
   IconTrash,
@@ -11,6 +15,7 @@ import {
   IconCheck,
   IconSparkles,
   IconSearch,
+  IconFolderPlus,
 } from './Icons'
 
 interface GalleryManagerProps {
@@ -66,9 +71,14 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
 
+  // Custom Categories Management
+  const [customCategories, setCustomCategories] = useState<string[]>(() => getCustomGalleryCategories())
+  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+
   // Form State
   const [title, setTitle] = useState('')
-  const [category, setCategory] = useState('Fibras Tecnológicas')
+  const [category, setCategory] = useState('Volumen 3D')
   const [isCreatingCategory, setIsCreatingCategory] = useState(false)
   const [customCatInput, setCustomCatInput] = useState('')
   const [price, setPrice] = useState('')
@@ -81,14 +91,54 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const [elements, setElements] = useState<string[]>([])
   const [newElementInput, setNewElementInput] = useState('')
 
-  // Dynamically compute available categories from existing items + defaults
+  // Dynamically compute available categories from defaults + custom + existing items
   const categoriesList = useMemo(() => {
     const set = new Set<string>(DEFAULT_CATEGORIES)
+    customCategories.forEach((c) => set.add(c))
     galleryItems.forEach((item) => {
       if (item.category) set.add(item.category)
     })
     return Array.from(set)
-  }, [galleryItems])
+  }, [galleryItems, customCategories])
+
+  const handleAddCategorySubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    const trimmed = newCategoryName.trim()
+    if (!trimmed) {
+      showAlert({
+        title: 'Nombre requerido',
+        message: 'Por favor introduce el nombre para la nueva categoría.',
+        type: 'warning',
+      })
+      return
+    }
+
+    const exists = categoriesList.some((c) => c.toLowerCase() === trimmed.toLowerCase())
+    if (exists) {
+      showAlert({
+        title: 'Categoría existente',
+        message: `La categoría "${trimmed}" ya existe en el catálogo.`,
+        type: 'info',
+      })
+      setSelectedCategory(trimmed)
+      setIsAddCategoryModalOpen(false)
+      setNewCategoryName('')
+      return
+    }
+
+    const updated = [...customCategories, trimmed]
+    setCustomCategories(updated)
+    saveCustomGalleryCategories(updated)
+    setSelectedCategory(trimmed)
+    setIsAddCategoryModalOpen(false)
+    setNewCategoryName('')
+
+    showAlert({
+      title: 'Categoría creada',
+      message: `La categoría "${trimmed}" se ha creado con éxito. Ahora puedes seleccionarla al subir cualquier fotografía.`,
+      type: 'success',
+    })
+  }
 
   // Filtered gallery items
   const filteredItems = useMemo(() => {
@@ -116,7 +166,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const handleOpenCreate = () => {
     setEditingItem(null)
     setTitle('')
-    setCategory('Fibras Tecnológicas')
+    const initialCategory = selectedCategory !== 'Todas' ? selectedCategory : (categoriesList[0] || 'Volumen 3D')
+    setCategory(initialCategory)
     setIsCreatingCategory(false)
     setCustomCatInput('')
     setPrice('27 €')
@@ -288,13 +339,29 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
             Administra los trabajos de pestañas, edita sus elementos, curvaturas, precios y fotos del catálogo.
           </p>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow self-start sm:self-auto"
-        >
-          <IconPlus size={16} />
-          <span>Subir Fotografía</span>
-        </button>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setNewCategoryName('')
+              setIsAddCategoryModalOpen(true)
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gold-400 hover:text-gold-300 border border-gold-500/30 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm cursor-pointer"
+            title="Añadir una nueva categoría a la galería"
+          >
+            <IconFolderPlus size={16} />
+            <span>Nueva Categoría</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"
+          >
+            <IconPlus size={16} />
+            <span>Subir Fotografía</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Tabs & Search Bar */}
@@ -313,7 +380,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           </button>
           {categoriesList.map((cat) => {
             const count = galleryItems.filter((i) => i.category === cat).length
-            if (count === 0 && selectedCategory !== cat) return null
+            const isCustom = customCategories.includes(cat)
+            if (count === 0 && selectedCategory !== cat && !isCustom) return null
             return (
               <button
                 key={cat}
@@ -324,7 +392,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                     : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
                 }`}
               >
-                {cat} {count > 0 && `(${count})`}
+                {cat} {count > 0 ? `(${count})` : isCustom ? '(0)' : ''}
               </button>
             )
           })}
@@ -767,6 +835,80 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all"
                 >
                   {editingItem ? 'Guardar Cambios' : 'Subir Fotografía'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nueva Categoría */}
+      {isAddCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md rounded-2xl bg-[#12121a] border border-[#2a2a3c] shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-[#222230]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20 shadow-gold-glow">
+                  <IconFolderPlus size={20} />
+                </div>
+                <div>
+                  <h4 className="font-serif text-base font-bold text-white">Añadir Nueva Categoría</h4>
+                  <p className="text-[11px] text-gray-400">Crea una categoría para clasificar tus fotos y trabajos</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddCategoryModalOpen(false)
+                  setNewCategoryName('')
+                }}
+                className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-[#1a1a24]"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddCategorySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-2">
+                  Nombre de la Categoría *
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="Ej. Efecto Sirena, Fox Eyes, Anime Lash..."
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#2c2c40] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition-colors"
+                />
+              </div>
+
+              <div className="rounded-xl bg-[#161622] border border-[#242436] p-3 text-[11px] text-gray-400 space-y-1">
+                <p className="text-gold-400 font-semibold flex items-center gap-1.5">
+                  <IconSparkles size={13} />
+                  Disponible inmediatamente
+                </p>
+                <p>
+                  Esta categoría se añadirá a la lista de opciones para que puedas seleccionarla al subir o editar cualquier fotografía.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222230]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddCategoryModalOpen(false)
+                    setNewCategoryName('')
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all"
+                >
+                  Crear Categoría
                 </button>
               </div>
             </form>

@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   SERVICES: 'goldblack_admin_services_v2',
   CONFIG: 'goldblack_admin_config_v2',
   GALLERY: 'goldblack_admin_gallery_v2',
+  CUSTOM_GALLERY_CATEGORIES: 'goldblack_admin_custom_gallery_categories_v2',
 }
 
 // Initial Studio Config from site.ts
@@ -496,6 +497,21 @@ export function getGalleryItems(): GalleryItem[] {
 
 export function saveGalleryItems(items: GalleryItem[]): void {
   localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(items))
+}
+
+export function getCustomGalleryCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_GALLERY_CATEGORIES)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+export function saveCustomGalleryCategories(categories: string[]): void {
+  localStorage.setItem(STORAGE_KEYS.CUSTOM_GALLERY_CATEGORIES, JSON.stringify(categories))
 }
 
 // WhatsApp Helper Generators
