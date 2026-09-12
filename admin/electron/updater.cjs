@@ -285,6 +285,68 @@ function setupUpdaterIPC(mainWindow) {
 
       return { success: true }
     } else if (process.platform === 'darwin') {
+      const currentAppPath = path.resolve(process.execPath, '../../..')
+      const isAppBundle = currentAppPath.endsWith('.app')
+
+      if (isAppBundle && fileToRun.endsWith('.zip')) {
+        try {
+          const tempExtractDir = path.join(app.getPath('temp'), `goldblack-extracted-${Date.now()}`)
+          if (!fs.existsSync(tempExtractDir)) {
+            fs.mkdirSync(tempExtractDir, { recursive: true })
+          }
+
+          // Descomprimir usando ditto nativo de macOS (preserva firmas, permisos UNIX y symlinks)
+          const { execSync } = require('child_process')
+          execSync(`/usr/bin/ditto -x -k "${fileToRun}" "${tempExtractDir}"`)
+
+          // Localizar el bundle .app extraído
+          const files = fs.readdirSync(tempExtractDir)
+          const appName = files.find((f) => f.endsWith('.app')) || 'GoldBlack Lash Admin.app'
+          const extractedAppPath = path.join(tempExtractDir, appName)
+
+          if (fs.existsSync(extractedAppPath)) {
+            const scriptPath = path.join(app.getPath('temp'), 'goldblack_mac_updater.sh')
+            const scriptContent = `#!/bin/bash
+PID="${process.pid}"
+EXTRACTED="${extractedAppPath}"
+TARGET="${currentAppPath}"
+
+# Esperar a que la app actual se cierre completamente
+while kill -0 "$PID" 2>/dev/null; do
+  sleep 0.2
+done
+
+# Reemplazar la aplicacion anterior por la nueva version
+rm -rf "$TARGET"
+cp -R "$EXTRACTED" "$TARGET"
+
+# Limpiar carpeta temporal
+rm -rf "$(dirname "$EXTRACTED")"
+rm -f "$0"
+
+# Relanzar la aplicacion actualizada
+open -n "$TARGET"
+`
+            fs.writeFileSync(scriptPath, scriptContent, { encoding: 'utf8', mode: 0o755 })
+
+            const child = spawn('/bin/bash', [scriptPath], {
+              detached: true,
+              stdio: 'ignore',
+            })
+            child.unref()
+
+            setTimeout(() => {
+              app.quit()
+            }, 400)
+
+            return { success: true }
+          }
+        } catch (macErr) {
+          console.error('[Updater] Error en actualización automática de macOS:', macErr)
+        }
+      }
+
+      // Fallback estándar si no es bundle .app o si ocurre un imprevisto
       const { shell } = require('electron')
       await shell.openPath(fileToRun)
       setTimeout(() => {
