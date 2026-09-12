@@ -43,23 +43,54 @@ export const Services: React.FC<ServicesProps> = ({
   })
 
   const [newInclusion, setNewInclusion] = useState('')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+  const [customCatInput, setCustomCatInput] = useState('')
 
-  const categories = [
-    { id: 'all', name: 'Todos los servicios' },
-    { id: 'extensiones', name: 'Extensiones' },
-    { id: 'mantenimiento', name: 'Mantenimiento' },
-    { id: 'lifting', name: 'Lifting & Tinte' },
-    { id: 'extras', name: 'Extras' },
+  const [customCategories, setCustomCategories] = useState<{ id: string; name: string }[]>(() => {
+    try {
+      const raw = localStorage.getItem('goldblack_admin_custom_categories')
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
+
+  const DEFAULT_CATEGORIES: { id: string; name: string }[] = [
+    { id: 'extensiones', name: 'Extensiones de pestañas' },
+    { id: 'mantenimiento', name: 'Mantenimiento & Retoques' },
+    { id: 'lifting', name: 'Lifting & Tratamientos' },
+    { id: 'extras', name: 'Servicios Extras' },
   ]
+
+  const allCategories = React.useMemo(() => {
+    const map = new Map<string, string>()
+    DEFAULT_CATEGORIES.forEach((c) => map.set(c.id, c.name))
+    customCategories.forEach((c) => map.set(c.id, c.name))
+    services.forEach((s) => {
+      if (s.categoryId && s.categoryName) {
+        map.set(s.categoryId, s.categoryName)
+      }
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [services, customCategories])
+
+  const filterTabs = React.useMemo(() => [
+    { id: 'all', name: 'Todos los servicios' },
+    ...allCategories,
+  ], [allCategories])
 
   const handleEdit = (service: AdminService) => {
     setEditingService(service)
     setFormData(service)
+    setIsCreatingCategory(false)
+    setCustomCatInput('')
     setIsModalOpen(true)
   }
 
   const handleNew = () => {
     setEditingService(null)
+    setIsCreatingCategory(false)
+    setCustomCatInput('')
     setFormData({
       name: '',
       categoryId: 'extensiones',
@@ -98,19 +129,42 @@ export const Services: React.FC<ServicesProps> = ({
       return
     }
 
-    const catName =
-      formData.categoryId === 'extensiones'
-        ? 'Extensiones de pestañas'
-        : formData.categoryId === 'mantenimiento'
-        ? 'Mantenimiento & Retoques'
-        : formData.categoryId === 'lifting'
-        ? 'Lifting & Tratamientos'
-        : 'Servicios Extras'
+    let finalCatId = formData.categoryId || 'extensiones'
+    let finalCatName = formData.categoryName || 'Extensiones de pestañas'
+
+    if (isCreatingCategory) {
+      const trimmed = customCatInput.trim()
+      if (!trimmed) {
+        alert('Por favor introduce el nombre de la nueva categoría')
+        return
+      }
+      finalCatName = trimmed
+      finalCatId = trimmed
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || `cat-${Date.now()}`
+
+      const updated = [
+        ...customCategories.filter((c) => c.id !== finalCatId),
+        { id: finalCatId, name: finalCatName },
+      ]
+      setCustomCategories(updated)
+      try {
+        localStorage.setItem('goldblack_admin_custom_categories', JSON.stringify(updated))
+      } catch (err) {
+        console.warn('Error saving custom category:', err)
+      }
+    } else {
+      const found = allCategories.find((c) => c.id === finalCatId)
+      if (found) finalCatName = found.name
+    }
 
     const serviceToSave: AdminService = {
       id: editingService ? editingService.id : `srv-${Date.now()}`,
-      categoryId: formData.categoryId || 'extensiones',
-      categoryName: catName,
+      categoryId: finalCatId,
+      categoryName: finalCatName,
       name: formData.name || '',
       badge: formData.badge || '',
       description: formData.description || '',
@@ -157,7 +211,7 @@ export const Services: React.FC<ServicesProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Category Filter Pills */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {categories.map((cat) => (
+          {filterTabs.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
@@ -405,17 +459,65 @@ export const Services: React.FC<ServicesProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">Categoría</label>
-                  <select
-                    value={formData.categoryId}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
-                  >
-                    <option value="extensiones">Extensiones de pestañas</option>
-                    <option value="mantenimiento">Mantenimiento & Retoques</option>
-                    <option value="lifting">Lifting & Tratamientos</option>
-                    <option value="extras">Servicios Extras</option>
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-gray-300">
+                      Categoría *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreatingCategory(!isCreatingCategory)
+                        setCustomCatInput('')
+                      }}
+                      className="text-[11px] text-gold-400 hover:text-gold-300 font-medium transition-colors"
+                    >
+                      {isCreatingCategory ? '← Elegir existente' : '+ Crear nueva categoría'}
+                    </button>
+                  </div>
+
+                  {isCreatingCategory ? (
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        placeholder="Ej. Cejas & Microblading, Masajes..."
+                        value={customCatInput}
+                        onChange={(e) => setCustomCatInput(e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-gold-500/40 text-sm text-white focus:outline-none focus:border-gold-400 placeholder-gray-500"
+                      />
+                      <p className="text-[10px] text-gray-400 leading-snug">
+                        Se guardará como categoría independiente en los filtros y listas.
+                      </p>
+                    </div>
+                  ) : (
+                    <select
+                      value={formData.categoryId}
+                      onChange={(e) => {
+                        if (e.target.value === '__new__') {
+                          setIsCreatingCategory(true)
+                          setCustomCatInput('')
+                        } else {
+                          const found = allCategories.find((c) => c.id === e.target.value)
+                          setFormData({
+                            ...formData,
+                            categoryId: e.target.value,
+                            categoryName: found?.name || e.target.value,
+                          })
+                        }
+                      }}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    >
+                      {allCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                      <option value="__new__" className="text-gold-400 font-semibold">
+                        + Crear nueva categoría...
+                      </option>
+                    </select>
+                  )}
                 </div>
 
                 <div>
