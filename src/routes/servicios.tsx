@@ -1,4 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { useEffect, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
@@ -6,17 +7,31 @@ import { StudioVisual } from '#/components/StudioVisual'
 import {
   business,
   faqs,
-  serviceCategories,
+  serviceCategories as fallbackCategories,
   whatsappLink,
   type Service,
   type ServiceCategory,
 } from '#/data/site'
+
+const fetchLiveCategories = createServerFn({ method: 'GET' }).handler(async () => {
+  const { fetchServicesFromDb, groupServicesByCategory } = await import('../server/services.server')
+  const dbServices = await fetchServicesFromDb()
+  return groupServicesByCategory(dbServices)
+})
 
 type ServiciosSearch = {
   categoria?: string
 }
 
 export const Route = createFileRoute('/servicios')({
+  loader: async () => {
+    try {
+      const live = await fetchLiveCategories()
+      return live && live.length > 0 ? live : fallbackCategories
+    } catch {
+      return fallbackCategories
+    }
+  },
   component: Servicios,
   validateSearch: (search: Record<string, unknown>): ServiciosSearch => ({
     categoria:
@@ -37,9 +52,10 @@ export const Route = createFileRoute('/servicios')({
 })
 
 function Servicios() {
+  const categories = Route.useLoaderData() || fallbackCategories
   const { categoria } = Route.useSearch()
 
-  const active = serviceCategories.some((category) => category.id === categoria)
+  const active = categories.some((category) => category.id === categoria)
     ? categoria
     : undefined
 
@@ -76,7 +92,7 @@ function Servicios() {
     )
 
     const ids = [
-      ...serviceCategories.map((category) => category.id),
+      ...categories.map((category) => category.id),
       'faq',
     ]
 
@@ -117,7 +133,7 @@ function Servicios() {
         className="sticky top-20 sm:top-28 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
       >
         <ul className="wrap flex gap-2 overflow-x-auto py-3">
-          {serviceCategories.map((category) => (
+          {categories.map((category) => (
             <li key={category.id}>
               <Link
                 to="/servicios"
@@ -157,7 +173,7 @@ function Servicios() {
           y su adecuación a tu pestaña natural en la valoración previa.
         </p>
 
-        {serviceCategories.map((category, index) => (
+        {categories.map((category, index) => (
           <CategoryBlock
             key={category.id}
             category={category}

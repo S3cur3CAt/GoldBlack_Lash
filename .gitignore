@@ -11,3 +11,6 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+admin/dist
+admin/dist-packages
+admin/dist-installers

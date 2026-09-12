@@ -9,7 +9,12 @@
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "admin:dev": "pnpm --filter goldblack-lash-admin dev",
+    "admin:build": "pnpm --filter goldblack-lash-admin build",
+    "admin:package:win": "pnpm --filter goldblack-lash-admin package:win",
+    "admin:package:mac": "pnpm --filter goldblack-lash-admin package:mac",
+    "admin:package:all": "pnpm --filter goldblack-lash-admin package:all"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
