@@ -244,12 +244,6 @@ export function ReservationModal({
           /* FORM VIEW */
           <div className="reservation-form-view">
             <div className="reservation-header">
-              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-                <span className="reservation-badge">GoldBlack Lash Studio</span>
-                <span className="text-[11px] font-medium text-rose tracking-wide flex items-center gap-1 bg-blush/60 px-2.5 py-0.5 rounded-full">
-                  ⚡ Confirmación directa con el estudio
-                </span>
-              </div>
               <h2 className="reservation-title">Reserva tu momento</h2>
               <p className="reservation-subtitle">
                 Introduce tus datos para registrar tu cita. Nos pondremos en contacto contigo para coordinar tu horario ideal.
