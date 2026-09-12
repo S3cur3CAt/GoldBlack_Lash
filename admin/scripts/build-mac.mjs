@@ -96,16 +96,13 @@ if (existsSync(plistPath)) {
   console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey.')
 }
 
-// 5. Compress into final distributable zip
+// 5. Compress into final distributable zip with native UNIX POSIX permissions and 1-click installer
 const finalMacZip = join(distInstallers, `GoldBlack-Lash-Admin-${appVersion}-macOS-Monterey.zip`)
-console.log(`\nGenerando paquete distribuible de macOS: ${finalMacZip}...`)
+console.log(`\nGenerando paquete distribuible de macOS con permisos POSIX nativos y script instalador: ${finalMacZip}...`)
 
-// Use tar -a -c -f (bsdtar) to preserve symlinks and avoid permission errors
-const appName = 'GoldBlack Lash Admin.app'
-execSync(
-  `tar -a -c -f "${finalMacZip}" -C "${macAppDir}" "${appName}"`,
-  { stdio: 'inherit' }
-)
+const packagerPy = join(__dirname, 'package-mac-zip.py')
+const appDir = join(macAppDir, 'GoldBlack Lash Admin.app')
+execSync(`python "${packagerPy}" "${appDir}" "${finalMacZip}"`, { stdio: 'inherit' })
 
 console.log(`\n🎉 PAQUETE DE MACOS MONTEREY CREADO CON ÉXITO:`)
 console.log(`👉 ${finalMacZip}`)

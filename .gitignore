@@ -16,3 +16,5 @@ admin/dist-packages
 admin/dist-installers
 tools/release-manager/dist-packages
 tools/release-manager/dist-installers
+__pycache__
+*.pyc
