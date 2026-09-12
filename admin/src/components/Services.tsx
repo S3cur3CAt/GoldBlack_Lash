@@ -222,7 +222,7 @@ export const Services: React.FC<ServicesProps> = ({
               key={service.id}
               className={`rounded-xl p-4 transition-all flex flex-col justify-between border ${
                 service.featured
-                  ? 'bg-linear-to-b from-[#181824] to-[#12121a] border-gold-500/40 shadow-gold-glow'
+                  ? 'bg-gradient-to-b from-[#181824] to-[#12121a] border-gold-500/40 shadow-gold-glow'
                   : 'bg-[#12121a] border-[#222230] hover:border-gold-500/20'
               }`}
             >

@@ -247,7 +247,7 @@ export const App: React.FC = () => {
         />
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-linear-to-br from-[#0c0c11] via-[#09090d] to-[#07070a]">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-[#0c0c11] via-[#09090d] to-[#07070a]">
         <Header
           title={activeInfo.title}
           subtitle={activeInfo.subtitle}

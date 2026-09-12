@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Primary CTA: Nueva Cita */}
         <button
           onClick={onNewAppointment}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-linear-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-ink-950 font-bold text-xs tracking-wide uppercase transition-all duration-200 shadow-gold-glow hover:shadow-gold-glow-lg transform hover:-translate-y-0.5"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-ink-950 font-bold text-xs tracking-wide uppercase transition-all duration-200 shadow-gold-glow hover:shadow-gold-glow-lg transform hover:-translate-y-0.5"
         >
           <IconPlus size={16} className="stroke-[2.5]" />
           <span>Nueva Cita</span>
