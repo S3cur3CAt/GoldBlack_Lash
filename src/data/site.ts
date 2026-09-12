@@ -13,7 +13,7 @@ export const business = {
   phoneDisplay: '+34 604 18 76 76',
   phoneClean: '34604187676',
   siteUrl: 'https://goldblacklash.com',
-  email: 'hola@goldblacklash.com',
+  email: 'citas@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
   city: 'Dos Hermanas (Sevilla)',
   postalCode: '41089',

@@ -2,7 +2,7 @@
   "name": "goldblack-lash-admin",
   "version": "0.1.8",
   "description": "Panel de Administración de GoldBlack Lash Studio",
-  "author": "GoldBlack Lash <hola@goldblacklash.com>",
+  "author": "GoldBlack Lash <citas@goldblacklash.com>",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",

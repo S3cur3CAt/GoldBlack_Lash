@@ -15,7 +15,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   tagline: 'Estudio de extensiones de pestañas',
   claim: 'Belleza de autor, hecha a medida',
   phoneDisplay: '+34 604 18 76 76',
-  email: 'hola@goldblacklash.com',
+  email: 'citas@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
   city: 'Dos Hermanas (Sevilla)',
   postalCode: '41089',
