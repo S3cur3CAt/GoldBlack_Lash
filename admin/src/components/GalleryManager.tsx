@@ -20,13 +20,19 @@ interface GalleryManagerProps {
 }
 
 const DEFAULT_CATEGORIES = [
-  'Fibras Tecnológicas',
-  'Densidad y Negro Intenso',
+  'Volumen 3D',
+  'Volumen 4D',
+  'Volumen 5D',
+  'Volumen 6D',
   'Volumen Ruso',
-  'Clásicas Pelo a Pelo',
   'Mega Volumen',
+  'Clásicas Efecto Rímel',
+  'Clásicas Pelo a Pelo',
+  'Efecto Híbrido',
   'Híbridas / Kim',
   'Lifting de Pestañas',
+  'Fibras Tecnológicas',
+  'Densidad y Negro Intenso',
   'Cuidado Facial',
 ]
 

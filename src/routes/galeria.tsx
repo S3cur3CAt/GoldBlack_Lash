@@ -51,15 +51,45 @@ export const Route = createFileRoute('/galeria')({
   }),
 })
 
+const PRIORITY_TECHNIQUES = [
+  'Volumen 3D',
+  'Volumen 4D',
+  'Volumen 5D',
+  'Volumen 6D',
+  'Volumen Ruso',
+  'Volumen ruso',
+  'Mega Volumen',
+  'Clásicas Efecto Rímel',
+  'Clásicas Pelo a Pelo',
+  'Efecto Híbrido',
+  'Híbridas / Kim',
+  'Lifting de Pestañas',
+  'Fibras Tecnológicas',
+  'Densidad y Negro Intenso',
+]
+
 function Galeria() {
   const loaderPieces = Route.useLoaderData() || fallbackPieces
-  const techniques = useMemo(
-    () => [
-      'Todas',
-      ...new Set(loaderPieces.map((piece: any) => piece.technique)),
-    ],
-    [loaderPieces],
-  )
+  const techniques = useMemo(() => {
+    const rawSet = new Set<string>()
+    loaderPieces.forEach((piece: any) => {
+      if (piece.technique && typeof piece.technique === 'string') {
+        rawSet.add(piece.technique.trim())
+      }
+    })
+    const list = Array.from(rawSet)
+
+    list.sort((a, b) => {
+      const idxA = PRIORITY_TECHNIQUES.findIndex((p) => p.toLowerCase() === a.toLowerCase())
+      const idxB = PRIORITY_TECHNIQUES.findIndex((p) => p.toLowerCase() === b.toLowerCase())
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return a.localeCompare(b)
+    })
+
+    return ['Todas', ...list]
+  }, [loaderPieces])
 
   const [filter, setFilter] = useState('Todas')
   const [openIndex, setOpenIndex] = useState<number | null>(null)
