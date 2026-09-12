@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
+import { HeaderSubBarPortal } from '#/context/HeaderContext'
 import {
   business,
   galleryPieces as fallbackPieces,
@@ -123,13 +124,13 @@ function Galeria() {
         crumbs={[{ label: 'Galería' }]}
       />
 
-      <div className="sticky top-20 sm:top-28 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl">
+      <HeaderSubBarPortal>
         <ul
           aria-label="Filtrar diseños por técnica"
-          className="wrap flex gap-2 overflow-x-auto py-3"
+          className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
         >
           {techniques.map((technique) => (
-            <li key={technique}>
+            <li key={technique} className="flex-shrink-0">
               <button
                 type="button"
                 aria-pressed={filter === technique}
@@ -137,8 +138,10 @@ function Galeria() {
                   setFilter(technique)
                   setOpenIndex(null)
                 }}
-                className={`category-tab ${
-                  filter === technique ? 'is-active' : ''
+                className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                  filter === technique
+                    ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
+                    : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
                 }`}
               >
                 {technique}
@@ -146,7 +149,7 @@ function Galeria() {
             </li>
           ))}
         </ul>
-      </div>
+      </HeaderSubBarPortal>
 
       <section className="section">
         <div className="wrap">

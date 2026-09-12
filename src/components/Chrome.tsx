@@ -2,6 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { openReservationModal } from '#/components/ReservationModal'
+import { useHeaderSubBar } from '#/context/HeaderContext'
 import { business } from '#/data/site'
 
 export const tabs = [
@@ -14,7 +15,9 @@ export const tabs = [
 
 export function Header() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
+  const { subBar } = useHeaderSubBar()
 
   const pathname = useLocation({
     select: (location) => location.pathname,
@@ -23,6 +26,14 @@ export function Header() {
   useEffect(() => {
     setOpen(false)
   }, [pathname])
+
+  // Show U-dock only after user scrolls past 200px
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 200)
+    onScroll() // check initial position
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 1024px)')
@@ -48,7 +59,9 @@ export function Header() {
         }
       }}
     >
-      <div className="pointer-events-auto max-w-6xl mx-auto flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/80 backdrop-blur-2xl border border-white/90 shadow-[0_12px_36px_-10px_rgba(93,49,59,0.12),0_0_0_1px_rgba(255,255,255,0.8)_inset]">
+      <div className="pointer-events-auto max-w-6xl mx-auto flex flex-col items-center">
+        {/* Main Floating Header Pill */}
+        <div className="w-full relative z-10 flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/85 backdrop-blur-2xl border border-white/90 shadow-[0_12px_36px_-10px_rgba(93,49,59,0.12),0_0_0_1px_rgba(255,255,255,0.8)_inset]">
         {/* Brand / Gleaming Rounded Logo */}
         <Link
           to="/"
@@ -134,6 +147,16 @@ export function Header() {
           </button>
         </div>
       </div>
+
+      {/* Fused U-Shape Bottom Tray — only appears on scroll */}
+      {subBar && scrolled ? (
+        <div className="relative -mt-2 z-0 flex justify-center w-full overflow-hidden pointer-events-auto animate-in fade-in slide-in-from-top-1 duration-300">
+          <div className="no-scrollbar flex items-center justify-center pt-3 pb-1.5 px-3 sm:px-6 bg-white/90 backdrop-blur-2xl border-x border-b border-white/90 rounded-b-2xl sm:rounded-b-3xl shadow-[0_16px_36px_-10px_rgba(93,49,59,0.14),0_0_0_1px_rgba(255,255,255,0.7)_inset] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto">
+            {subBar}
+          </div>
+        </div>
+      ) : null}
+    </div>
 
       {/* Floating Mobile Dropdown Menu */}
       {open ? (

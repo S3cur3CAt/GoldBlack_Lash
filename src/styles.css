@@ -30,6 +30,14 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   body {
     margin: 0;
     /* Base aurora: el cristal necesita color detrás para refractar. */

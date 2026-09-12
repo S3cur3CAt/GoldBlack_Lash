@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 
 import { Footer, Header } from '#/components/Chrome'
 import { ReservationModal } from '#/components/ReservationModal'
+import { HeaderProvider } from '#/context/HeaderContext'
 import { business } from '#/data/site'
 
 import appCss from '../styles.css?url'
@@ -96,19 +97,21 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
 
       <body className="bg-paper font-body text-ink antialiased">
-        <a href="#contenido" className="skip-link">
-          Saltar al contenido
-        </a>
+        <HeaderProvider>
+          <a href="#contenido" className="skip-link">
+            Saltar al contenido
+          </a>
 
-        <Header />
+          <Header />
 
-        <main id="contenido" tabIndex={-1}>
-          {children}
-        </main>
+          <main id="contenido" tabIndex={-1}>
+            {children}
+          </main>
 
-        <Footer />
+          <Footer />
 
-        <ReservationModal />
+          <ReservationModal />
+        </HeaderProvider>
 
         {import.meta.env.DEV ? (
           <TanStackDevtools

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
+import { HeaderSubBarPortal } from '#/context/HeaderContext'
 import {
   business,
   faqs,
@@ -128,13 +129,13 @@ function Servicios() {
         </div>
       </PageHero>
 
-      <nav
-        aria-label="Categorías de servicios"
-        className="sticky top-20 sm:top-28 z-30 border-b border-line/70 bg-paper/95 backdrop-blur-xl"
-      >
-        <ul className="wrap flex gap-2 overflow-x-auto py-3">
+      <HeaderSubBarPortal>
+        <ul
+          aria-label="Categorías de servicios"
+          className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
+        >
           {categories.map((category) => (
-            <li key={category.id}>
+            <li key={category.id} className="flex-shrink-0">
               <Link
                 to="/servicios"
                 search={{ categoria: category.id }}
@@ -142,8 +143,10 @@ function Servicios() {
                 aria-current={
                   visible === category.id ? 'location' : undefined
                 }
-                className={`category-tab ${
-                  visible === category.id ? 'is-active' : ''
+                className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
+                  visible === category.id
+                    ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
+                    : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
                 }`}
               >
                 {category.name}
@@ -151,21 +154,23 @@ function Servicios() {
             </li>
           ))}
 
-          <li>
+          <li className="flex-shrink-0">
             <Link
               to="/servicios"
               search={{}}
               hash="faq"
               aria-current={visible === 'faq' ? 'location' : undefined}
-              className={`category-tab ${
-                visible === 'faq' ? 'is-active' : ''
+              className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
+                visible === 'faq'
+                  ? 'bg-gradient-to-r from-[#2b1a23] via-[#4a2839] to-[#b66f79] text-white shadow-sm border border-gold-400/40'
+                  : 'text-[#826c73] hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
               }`}
             >
               Preguntas frecuentes
             </Link>
           </li>
         </ul>
-      </nav>
+      </HeaderSubBarPortal>
 
       <div className="wrap">
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-7 text-muted">
