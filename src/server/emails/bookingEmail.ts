@@ -1,3 +1,5 @@
+import { business } from '../../data/site'
+
 export interface BookingEmailData {
   clientName: string
   clientPhone: string
@@ -6,16 +8,28 @@ export interface BookingEmailData {
   date: string
   time?: string
   notes?: string
+  studioPhone?: string
+  studioPhoneClean?: string
+  studioEmail?: string
+  studioAddress?: string
+  studioMapsUrl?: string
 }
 
 export function generateBookingEmailHtml(data: BookingEmailData): string {
   const { clientName, clientPhone, serviceName, date, time, notes } = data
 
+  const studioPhone = data.studioPhone || business.phoneDisplay
+  const studioPhoneClean =
+    data.studioPhoneClean || business.phoneClean || studioPhone.replace(/\D/g, '')
+  const studioEmail = data.studioEmail || business.email
+  const studioAddress =
+    data.studioAddress || `${business.address}, ${business.postalCode} ${business.city}`
+  const mapsUrl = data.studioMapsUrl || business.mapsUrl
+
   const whatsappMessage = encodeURIComponent(
     `Hola, he solicitado una reserva web para "${serviceName}" a nombre de ${clientName}. ¡Me gustaría confirmar los detalles!`
   )
-  const whatsappUrl = `https://wa.me/34604187676?text=${whatsappMessage}`
-  const mapsUrl = 'https://maps.app.goo.gl/pTmcZcRxHETf7QJq7?g_st=iw'
+  const whatsappUrl = `https://wa.me/${studioPhoneClean}?text=${whatsappMessage}`
   const logoUrl = 'https://goldblacklash.com/avatar_google_completo.png'
   const displayTime = time && time !== 'Por coordinar' ? time : 'Por coordinar contigo'
 
@@ -196,8 +210,8 @@ export function generateBookingEmailHtml(data: BookingEmailData): string {
                 GoldBlack Lash Studio
               </p>
               <p style="margin: 0 0 10px 0; font-size: 12px; line-height: 1.5; color: #8c737b;">
-                Calle Numa, Montequinto · 41089 Dos Hermanas (Sevilla)<br>
-                Teléfono: <a href="tel:+34604187676" style="color: #b66f79; text-decoration: none; font-weight: 600;">+34 604 18 76 76</a> · Email: <a href="mailto:citas@goldblacklash.com" style="color: #b66f79; text-decoration: none;">citas@goldblacklash.com</a>
+                ${studioAddress}<br>
+                Teléfono: <a href="tel:${studioPhoneClean}" style="color: #b66f79; text-decoration: none; font-weight: 600;">${studioPhone}</a> · Email: <a href="mailto:${studioEmail}" style="color: #b66f79; text-decoration: none;">${studioEmail}</a>
               </p>
               <p style="margin: 0 0 12px 0; font-size: 11px; color: #aa949a;">
                 Horario: Lunes a viernes 10:00 – 20:00 · Sábados 10:00 – 15:00
@@ -229,6 +243,11 @@ export function generateBookingEmailHtml(data: BookingEmailData): string {
 
 export function generateBookingEmailText(data: BookingEmailData): string {
   const { clientName, clientPhone, serviceName, date, time, notes } = data
+  const studioPhone = data.studioPhone || business.phoneDisplay
+  const studioEmail = data.studioEmail || business.email
+  const studioAddress =
+    data.studioAddress || `${business.address}, ${business.postalCode} ${business.city}`
+
   return `¡Muchas gracias por tu reserva en GoldBlack Lash, ${clientName}!
 
 Hemos recibido tu solicitud de cita en GoldBlack Lash Studio.
@@ -239,7 +258,7 @@ RESUMEN DE TU SOLICITUD:
 - Preferencia horaria: ${time || 'Por coordinar contigo'}
 - Teléfono: ${clientPhone}
 ${notes ? `- Notas: ${notes}\n` : ''}
-- Ubicación: Calle Numa, Montequinto, 41089 Dos Hermanas (Sevilla)
+- Ubicación: ${studioAddress}
 
 ¿QUÉ PASARÁ A CONTINUACIÓN?
 1. Comprobamos la disponibilidad en el salón.
@@ -252,8 +271,8 @@ CONSEJOS PREVIOS:
 - Si usas lentillas, puedes traer tu estuche para retirarlas durante el tratamiento.
 
 CONTACTO:
-- Teléfono / WhatsApp: +34 604 18 76 76
-- Email: citas@goldblacklash.com
+- Teléfono / WhatsApp: ${studioPhone}
+- Email: ${studioEmail}
 - Web: https://goldblacklash.com
 
 GoldBlack Lash Studio · Belleza de autor, hecha a medida.`
