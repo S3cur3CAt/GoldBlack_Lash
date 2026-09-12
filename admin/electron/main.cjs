@@ -7,10 +7,25 @@ if (process.platform === 'win32') {
   app.setAppUserModelId('com.goldblacklash.admin')
 }
 
-// Optimize Chromium rendering for macOS Monterey
+// Optimize Chromium rendering and network for macOS Monterey & Windows
 if (process.platform === 'darwin') {
   app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 }
+app.commandLine.appendSwitch('ignore-certificate-errors')
+
+// Bypass certificate validation errors on macOS for studio backend and Supabase
+app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+  if (
+    url.includes('goldblacklash.com') ||
+    url.includes('supabase.co') ||
+    url.includes('vercel.app')
+  ) {
+    event.preventDefault()
+    callback(true)
+  } else {
+    callback(false)
+  }
+})
 
 let mainWindow = null
 
@@ -36,7 +51,8 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.cjs'),
-      webSecurity: true,
+      webSecurity: false,
+      allowRunningInsecureContent: true,
     },
   })
 

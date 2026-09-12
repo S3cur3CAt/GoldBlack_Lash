@@ -233,7 +233,7 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     detail: 'Higiene dérmica con espátula ultrasónica, vapor de ozono y mascarilla calmante.',
     price: '35 €',
     elements: ['Espátula Ultrasónica', 'Vapor Ozono', 'Mascarilla Calmante', 'Hidratación Ácido Hialurónico'],
-    url: './galeria/limpieza-facial.avif',
+    url: './galeria/limpieza-facial.jpg',
     updatedAt: '2026-03-06',
   },
 ]
@@ -309,6 +309,15 @@ export function setApiBaseUrl(url: string): void {
  * Resolves an image URL so it works seamlessly in both Web and Electron (file:// protocol).
  * Any relative path like /api/images/... will be prefixed with the Vercel backend base URL.
  */
+const LOCAL_GALLERY_FILES: Record<string, string> = {
+  'pieza-01': './galeria/pieza-01.jpg',
+  'pieza-02': './galeria/pieza-02.jpg',
+  'pieza-03': './galeria/pieza-03.jpg',
+  'pieza-04': './galeria/pieza-04.jpg',
+  'pieza-05': './galeria/pieza-05.jpg',
+  'limpieza-facial': './galeria/limpieza-facial.jpg',
+}
+
 export function resolveImageUrl(url?: string, key?: string): string {
   if (!url && !key) return ''
   // If it's a base64 data URL, return directly (works in Electron & browser)
@@ -316,7 +325,37 @@ export function resolveImageUrl(url?: string, key?: string): string {
   // If it's already an absolute http or https URL, return directly
   if (url && (url.startsWith('http://') || url.startsWith('https://'))) return url
 
+  const isElectron =
+    typeof window !== 'undefined' &&
+    (window.location.protocol === 'file:' || Boolean((window as any).electronAPI))
+
+  // In Electron, prioritize bundled local assets for known items (zero latency, offline-ready)
+  if (isElectron) {
+    if (key && LOCAL_GALLERY_FILES[key]) {
+      return LOCAL_GALLERY_FILES[key]
+    }
+    if (url) {
+      for (const [k, path] of Object.entries(LOCAL_GALLERY_FILES)) {
+        if (url.includes(k)) return path
+      }
+      if (url.startsWith('./') || url.startsWith('galeria/')) {
+        return `./${url.replace(/^\.?\//, '')}`
+      }
+    }
+  }
+
+  // If url is already a relative local path ./galeria/...
+  if (url && (url.startsWith('./galeria/') || url.startsWith('/galeria/') || url.startsWith('galeria/'))) {
+    const cleanPath = url.replace(/^(\.\/|\/)?galeria\//, '')
+    return isElectron ? `./galeria/${cleanPath}` : `/galeria/${cleanPath}`
+  }
+
   const baseUrl = getApiBaseUrl()
+
+  // In browser/dev mode, check local bundled items
+  if (!isElectron && key && LOCAL_GALLERY_FILES[key]) {
+    return `/galeria/${key === 'limpieza-facial' ? 'limpieza-facial.jpg' : key + '.jpg'}`
+  }
 
   // If url is just a key or starts with custom- or pieza-
   if (url && (url.startsWith('custom-') || url.startsWith('pieza-'))) {
@@ -346,7 +385,7 @@ export function resolveImageUrl(url?: string, key?: string): string {
   if (url && url.includes('pieza-')) {
     const match = url.match(/(pieza-\d+)/)
     if (match) {
-      return `${baseUrl}/api/images/${match[1]}`
+      return isElectron ? `./galeria/${match[1]}.jpg` : `${baseUrl}/api/images/${match[1]}`
     }
   }
 

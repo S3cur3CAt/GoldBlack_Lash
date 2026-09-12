@@ -101,6 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   height={48}
                   style={{ width: '48px', height: '48px', objectFit: 'cover' }}
                   className="w-full h-full object-cover rounded-[10.5px]"
+                  onError={(e) => {
+                    const t = e.target as HTMLImageElement
+                    if (!t.src.endsWith('logo.png')) t.src = './logo.png'
+                  }}
                 />
               </div>
             </div>

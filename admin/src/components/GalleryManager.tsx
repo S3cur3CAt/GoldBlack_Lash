@@ -536,10 +536,18 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   alt={item.title}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
-                    if (item.key && !target.src.includes('goldblacklash.com')) {
-                      target.src = `https://goldblacklash.com/api/images/${item.key}`
+                    if (item.key) {
+                      if (target.src.includes('goldblacklash.com')) {
+                        // Remote failed, fallback to local bundle
+                        target.src = `./galeria/${item.key === 'limpieza-facial' ? 'limpieza-facial.jpg' : item.key + '.jpg'}`
+                      } else if (target.src.includes('./galeria/')) {
+                        // Local failed, fallback to remote
+                        target.src = `https://goldblacklash.com/api/images/${item.key}`
+                      } else {
+                        target.style.opacity = '0.4'
+                      }
                     } else {
-                      target.style.display = 'none'
+                      target.style.opacity = '0.4'
                     }
                   }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -883,8 +891,12 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                         alt="Preview"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
-                          if (editingItem?.key && !target.src.includes('goldblacklash.com')) {
-                            target.src = `https://goldblacklash.com/api/images/${editingItem.key}`
+                          if (editingItem?.key) {
+                            if (target.src.includes('goldblacklash.com')) {
+                              target.src = `./galeria/${editingItem.key === 'limpieza-facial' ? 'limpieza-facial.jpg' : editingItem.key + '.jpg'}`
+                            } else if (target.src.includes('./galeria/')) {
+                              target.src = `https://goldblacklash.com/api/images/${editingItem.key}`
+                            }
                           }
                         }}
                         className="w-full h-full object-cover"

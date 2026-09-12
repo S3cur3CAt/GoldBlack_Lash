@@ -43,6 +43,10 @@ export const TitleBar: React.FC = () => {
             height={20}
             style={{ width: '20px', height: '20px', objectFit: 'cover' }}
             className="w-full h-full object-cover rounded-[3px]"
+            onError={(e) => {
+              const t = e.target as HTMLImageElement
+              if (!t.src.endsWith('logo.png')) t.src = './logo.png'
+            }}
           />
         </div>
         <div className="flex items-center gap-2">

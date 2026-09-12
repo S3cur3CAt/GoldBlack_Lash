@@ -23,7 +23,7 @@ const LOCAL_FILES: Record<string, { file: string; mime: string }> = {
   'hero-video': { file: 'hero-video.mp4', mime: 'video/mp4' },
   'hero-video-2': { file: 'hero-video-2.mp4', mime: 'video/mp4' },
   'hero-video-3': { file: 'hero-video-3.mp4', mime: 'video/mp4' },
-  'limpieza-facial': { file: 'galeria/limpieza-facial.avif', mime: 'image/avif' },
+  'limpieza-facial': { file: 'galeria/limpieza-facial.jpg', mime: 'image/jpeg' },
   'pieza-01': { file: 'galeria/pieza-01.jpg', mime: 'image/jpeg' },
   'pieza-02': { file: 'galeria/pieza-02.jpg', mime: 'image/jpeg' },
   'pieza-03': { file: 'galeria/pieza-03.jpg', mime: 'image/jpeg' },

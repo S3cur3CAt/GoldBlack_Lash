@@ -1,6 +1,6 @@
 {
   "name": "goldblack-lash-admin",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "Panel de Administración de GoldBlack Lash Studio",
   "author": "GoldBlack Lash <citas@goldblacklash.com>",
   "private": true,
