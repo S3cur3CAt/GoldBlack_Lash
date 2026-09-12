@@ -1,0 +1,11 @@
+{
+  "name": "goldblack-release-publisher",
+  "version": "1.0.0",
+  "description": "Gestor de Actualizaciones y Publicador de Releases para GoldBlack Lash",
+  "author": "GoldBlack Lash <hola@goldblacklash.com>",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron main.cjs"
+  }
+}

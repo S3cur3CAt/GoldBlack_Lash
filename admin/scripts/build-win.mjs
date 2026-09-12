@@ -1,5 +1,5 @@
 import { execSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,6 +7,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const adminRoot = join(__dirname, '..')
 const distInstallers = join(adminRoot, 'dist-installers')
 const distPackages = join(adminRoot, 'dist-packages')
+
+const pkg = JSON.parse(readFileSync(join(adminRoot, 'package.json'), 'utf8'))
+const appVersion = pkg.version || '0.0.1'
 
 console.log('=== Compilando GoldBlack Lash Admin para Windows 11 ===')
 
@@ -47,7 +50,7 @@ const appPaths = await packager({
     /tailwind\.config/,
     /postcss\.config/,
   ],
-  appVersion: '1.0.0',
+  appVersion,
   appCopyright: 'Copyright © 2026 GoldBlack Lash Studio',
   win32metadata: {
     CompanyName: 'GoldBlack Lash Studio',
@@ -85,7 +88,7 @@ if (!makensisPath) {
   } catch (e) {}
 }
 
-const installerExeName = 'GoldBlack-Lash-Admin-Setup-1.0.0.exe'
+const installerExeName = `GoldBlack-Lash-Admin-Setup-${appVersion}.exe`
 const finalInstallerPath = join(distInstallers, installerExeName)
 
 if (makensisPath) {
@@ -138,7 +141,7 @@ Section "Instalar Archivos" SecApp
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayName" "GoldBlack Lash Admin"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "UninstallString" "$INSTDIR\\Uninstall.exe"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayIcon" "$INSTDIR\\icon.ico,0"
-  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayVersion" "1.0.0"
+  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayVersion" "${appVersion}"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "Publisher" "GoldBlack Lash Studio"
 SectionEnd
 

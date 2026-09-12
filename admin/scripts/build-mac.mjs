@@ -8,6 +8,9 @@ const adminRoot = join(__dirname, '..')
 const distInstallers = join(adminRoot, 'dist-installers')
 const distPackages = join(adminRoot, 'dist-packages')
 
+const pkg = JSON.parse(readFileSync(join(adminRoot, 'package.json'), 'utf8'))
+const appVersion = pkg.version || '0.0.1'
+
 console.log('=== Compilando GoldBlack Lash Admin para macOS El Capitan (OS X 10.11) ===')
 
 // 1. Ensure dist-installers exists
@@ -49,7 +52,7 @@ const appPaths = await packager({
   ],
   appBundleId: 'com.goldblacklash.admin',
   appCategoryType: 'public.app-category.business',
-  appVersion: '1.0.0',
+  appVersion,
   appCopyright: 'Copyright © 2026 GoldBlack Lash Studio',
 })
 
@@ -94,7 +97,7 @@ if (existsSync(plistPath)) {
 }
 
 // 5. Compress into final distributable zip
-const finalMacZip = join(distInstallers, 'GoldBlack-Lash-Admin-1.0.0-macOS-ElCapitan.zip')
+const finalMacZip = join(distInstallers, `GoldBlack-Lash-Admin-${appVersion}-macOS-ElCapitan.zip`)
 console.log(`\nGenerando paquete distribuible de macOS: ${finalMacZip}...`)
 
 // Use tar -a -c -f (bsdtar) to preserve symlinks and avoid permission errors
