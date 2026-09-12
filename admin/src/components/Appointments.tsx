@@ -20,13 +20,12 @@ import {
   IconCheck,
   IconX,
   IconSparkles,
+  IconMessageSquare,
 } from './Icons'
 import {
-  createWhatsAppReminderUrl,
-  createWhatsAppConfirmationUrl,
-  createWhatsAppPreCareUrl,
   fetchLiveAppointmentsFromVercel,
 } from '../services/storage'
+import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 
 interface AppointmentsProps {
   appointments: Appointment[]
@@ -59,6 +58,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   const [filterDate, setFilterDate] = useState<'all' | 'today' | 'tomorrow' | 'week'>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
+
+  // WhatsApp Custom Message Modal State
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
+  const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null)
+  const [whatsAppModalMode, setWhatsAppModalMode] = useState<WhatsAppModalMode>('recordar')
+
+  const handleOpenWhatsApp = (apt: Appointment, mode: WhatsAppModalMode) => {
+    setSelectedWhatsAppApt(apt)
+    setWhatsAppModalMode(mode)
+    setWhatsAppModalOpen(true)
+  }
 
   // Form State for Create/Edit Modal
   const [formData, setFormData] = useState<Partial<Appointment>>({
@@ -303,9 +313,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
       ) : (
         <div className="space-y-3">
           {filteredAppointments.map((apt) => {
-            const reminderUrl = createWhatsAppReminderUrl(apt, config)
-            const confirmUrl = createWhatsAppConfirmationUrl(apt, config)
-            const preCareUrl = createWhatsAppPreCareUrl(apt, config)
 
             return (
               <div
@@ -393,38 +400,44 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
                 {/* Right: WhatsApp Actions & Admin Controls */}
                 <div className="flex flex-wrap items-center gap-2 self-end lg:self-center">
-                  {/* WhatsApp Action Buttons */}
+                  {/* WhatsApp Action Buttons - Opens customize form before sending */}
                   <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#242436]">
-                    <a
-                      href={reminderUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Enviar recordatorio 24h por WhatsApp"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 text-xs font-medium transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(apt, 'recordar')}
+                      title="Personalizar y enviar recordatorio 24h por WhatsApp"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconWhatsApp size={14} />
                       <span className="hidden sm:inline">Recordar</span>
-                    </a>
-                    <a
-                      href={confirmUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Enviar confirmación de reserva"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(apt, 'confirmar')}
+                      title="Personalizar y enviar confirmación de reserva"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconCheck size={14} />
                       <span className="hidden sm:inline">Confirmar</span>
-                    </a>
-                    <a
-                      href={preCareUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Enviar pautas de cuidados previos a la cita"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border border-purple-500/30 text-xs font-medium transition-colors"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(apt, 'cuidados')}
+                      title="Personalizar y enviar pautas de cuidados previos a la cita"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border border-purple-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconSparkles size={14} />
                       <span className="hidden sm:inline">Cuidados</span>
-                    </a>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(apt, 'responder')}
+                      title="Responder alguna consulta o pregunta a la clienta"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 text-xs font-medium transition-colors cursor-pointer"
+                    >
+                      <IconMessageSquare size={14} />
+                      <span className="hidden sm:inline">Responder</span>
+                    </button>
                   </div>
 
                   {/* Status Change Selector */}
@@ -696,6 +709,15 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           </div>
         </div>
       )}
+
+      {/* WhatsApp Customize & Send Modal */}
+      <WhatsAppModal
+        isOpen={whatsAppModalOpen}
+        onClose={() => setWhatsAppModalOpen(false)}
+        appointment={selectedWhatsAppApt}
+        config={config}
+        initialMode={whatsAppModalMode}
+      />
     </div>
   )
 }

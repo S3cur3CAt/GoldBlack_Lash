@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   Appointment,
   Client,
@@ -17,10 +17,9 @@ import {
   IconPlus,
 } from './Icons'
 import {
-  createWhatsAppReminderUrl,
-  createWhatsAppConfirmationUrl,
   createWhatsAppRecallUrl,
 } from '../services/storage'
+import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 
 interface DashboardProps {
   appointments: Appointment[]
@@ -42,6 +41,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateAppointmentStatus,
 }) => {
   const today = new Date().toISOString().split('T')[0]
+
+  // WhatsApp Message Modal State
+  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
+  const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null)
+  const [whatsAppModalMode, setWhatsAppModalMode] = useState<WhatsAppModalMode>('recordar')
 
   // Filter today's appointments
   const todayAppointments = appointments.filter((a) => a.date === today)
@@ -215,8 +219,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ) : (
             <div className="space-y-3">
               {todayAppointments.map((apt) => {
-                const reminderUrl = createWhatsAppReminderUrl(apt, config)
-                const confirmUrl = createWhatsAppConfirmationUrl(apt, config)
                 return (
                   <div
                     key={apt.id}
@@ -267,15 +269,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                     {/* Actions: WhatsApp & Status Change */}
                     <div className="flex items-center gap-2 self-end sm:self-center">
-                      <a
-                        href={reminderUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Enviar recordatorio por WhatsApp"
-                        className="p-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 transition-colors"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedWhatsAppApt(apt)
+                          setWhatsAppModalMode('recordar')
+                          setWhatsAppModalOpen(true)
+                        }}
+                        title="Personalizar y enviar mensaje por WhatsApp"
+                        className="p-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
                       >
                         <IconWhatsApp size={16} />
-                      </a>
+                      </button>
                       {apt.status !== 'completada' && (
                         <button
                           onClick={() => onUpdateAppointmentStatus(apt.id, 'completada')}
@@ -381,6 +386,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* WhatsApp Customize & Send Modal */}
+      <WhatsAppModal
+        isOpen={whatsAppModalOpen}
+        onClose={() => setWhatsAppModalOpen(false)}
+        appointment={selectedWhatsAppApt}
+        config={config}
+        initialMode={whatsAppModalMode}
+      />
     </div>
   )
 }
