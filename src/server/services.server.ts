@@ -94,21 +94,32 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
 
 export async function saveServiceToDb(service: {
   id: string
-  categoryId: string
-  categoryName: string
+  categoryId?: string
+  category_id?: string
+  categoryName?: string
+  category_name?: string
   name: string
   badge?: string
-  description: string
-  duration: string
-  price: string
+  description?: string
+  duration?: string
+  price?: string
   priceNumber?: number
+  price_number?: number
   featured?: boolean
   pinnedFirst?: boolean
   active?: boolean
   includes?: string[]
 }): Promise<boolean> {
   const client = await getSql()
-  const priceNum = service.priceNumber ?? (parseInt(service.price.replace(/\D/g, ''), 10) || 0)
+  const catId = service.categoryId || service.category_id || 'extensiones'
+  const catName = service.categoryName || service.category_name || 'Extensiones de pestañas'
+  const description = service.description || ''
+  const duration = service.duration || '1 h 30 min'
+  const price = service.price || ''
+  const priceNum =
+    service.priceNumber ??
+    service.price_number ??
+    (parseInt(price.replace(/\D/g, ''), 10) || 0)
   const cleanIncludes = parseIncludes(service.includes)
   const includesJson = JSON.stringify(cleanIncludes)
   const sortOrder = service.pinnedFirst ? 0 : 100
@@ -125,9 +136,9 @@ export async function saveServiceToDb(service: {
     INSERT INTO studio_services (
       id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
     ) VALUES (
-      ${service.id}, ${service.categoryId}, ${service.categoryName}, ${service.name},
-      ${service.badge || null}, ${service.description}, ${service.duration},
-      ${service.price}, ${priceNum}, ${!!service.featured}, ${service.active !== false},
+      ${service.id}, ${catId}, ${catName}, ${service.name},
+      ${service.badge || null}, ${description}, ${duration},
+      ${price}, ${priceNum}, ${!!service.featured}, ${service.active !== false},
       ${includesJson}::jsonb, ${sortOrder}, now()
     )
     ON CONFLICT (id) DO UPDATE SET

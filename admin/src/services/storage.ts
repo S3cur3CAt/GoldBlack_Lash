@@ -399,14 +399,14 @@ export async function syncServiceWithVercel(service: AdminService): Promise<bool
       category_name: service.categoryName,
       name: service.name,
       badge: service.badge || null,
-      description: service.description,
-      duration: service.duration,
-      duration_minutes: 90,
-      price: service.price,
+      description: service.description || '',
+      duration: service.duration || '1 h 30 min',
+      price: service.price || '',
       price_number: service.priceNumber || 0,
       featured: !!service.featured,
-      includes: JSON.stringify(service.includes || []),
-      image_url: null,
+      active: service.active !== false,
+      sort_order: service.pinnedFirst ? 0 : 100,
+      includes: Array.isArray(service.includes) ? service.includes : [],
       updated_at: new Date().toISOString(),
     }
     const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_services`, {
@@ -679,6 +679,7 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
       price: d.price,
       priceNumber: d.price_number || d.priceNumber || 0,
       featured: !!d.featured,
+      pinnedFirst: d.sort_order === 0,
       active: d.active !== undefined ? !!d.active : true,
       includes: Array.isArray(d.includes)
         ? d.includes
