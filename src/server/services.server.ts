@@ -111,22 +111,27 @@ export async function saveServiceToDb(service: {
   includes?: string[]
 }): Promise<boolean> {
   const client = await getSql()
+  const id = service.id || `srv-${Date.now()}`
   const catId = service.categoryId || service.category_id || 'extensiones'
   const catName = service.categoryName || service.category_name || 'Extensiones de pestañas'
-  const description = service.description || ''
-  const duration = service.duration || '1 h 30 min'
-  const price = service.price || ''
+  const name = service.name || 'Servicio'
+  const badge = service.badge ? String(service.badge).trim() : null
+  const description = service.description ? String(service.description) : ''
+  const duration = service.duration ? String(service.duration) : '1 h 30 min'
+  const price = service.price ? String(service.price) : '0 €'
   const priceNum =
     service.priceNumber ??
     service.price_number ??
     (parseInt(price.replace(/\D/g, ''), 10) || 0)
+  const featured = Boolean(service.featured)
+  const active = service.active !== false
   const cleanIncludes = parseIncludes(service.includes)
   const includesJson = JSON.stringify(cleanIncludes)
   const sortOrder = service.pinnedFirst ? 0 : 100
 
   if (service.pinnedFirst) {
     try {
-      await client`UPDATE studio_services SET sort_order = 100 WHERE sort_order <= 0 AND id != ${service.id}`
+      await client`UPDATE studio_services SET sort_order = 100 WHERE sort_order <= 0 AND id != ${id}`
     } catch (err) {
       console.warn('Could not reset sort_order on existing records:', err)
     }
@@ -136,9 +141,9 @@ export async function saveServiceToDb(service: {
     INSERT INTO studio_services (
       id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
     ) VALUES (
-      ${service.id}, ${catId}, ${catName}, ${service.name},
-      ${service.badge || null}, ${description}, ${duration},
-      ${price}, ${priceNum}, ${!!service.featured}, ${service.active !== false},
+      ${id}, ${catId}, ${catName}, ${name},
+      ${badge}, ${description}, ${duration},
+      ${price}, ${priceNum}, ${featured}, ${active},
       ${includesJson}::jsonb, ${sortOrder}, now()
     )
     ON CONFLICT (id) DO UPDATE SET
