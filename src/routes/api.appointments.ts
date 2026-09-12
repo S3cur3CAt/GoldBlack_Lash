@@ -14,6 +14,8 @@ export const Route = createFileRoute('/api/appointments')({
           return Response.json(appointments, {
             headers: {
               'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+              'Access-Control-Allow-Headers': '*',
               'Cache-Control': 'no-cache, no-store, must-revalidate',
             },
           })
@@ -61,13 +63,24 @@ export const Route = createFileRoute('/api/appointments')({
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                'Access-Control-Allow-Headers': '*',
                 'Cache-Control': 'no-cache',
               },
             }
           )
         } catch (e: any) {
           console.error('[API Appointments POST error]', e)
-          return Response.json({ error: e?.message || 'Error guardando cita' }, { status: 500 })
+          return Response.json(
+            { error: e?.message || 'Error guardando cita' },
+            {
+              status: 500,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
         }
       },
       DELETE: async ({ request }) => {
@@ -75,7 +88,16 @@ export const Route = createFileRoute('/api/appointments')({
           const url = new URL(request.url)
           const id = url.searchParams.get('id')
           if (!id) {
-            return Response.json({ error: 'Falta parámetro id' }, { status: 400 })
+            return Response.json(
+              { error: 'Falta parámetro id' },
+              {
+                status: 400,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Headers': '*',
+                },
+              }
+            )
           }
           await deleteAppointmentFromDb(id)
           return Response.json(
@@ -83,11 +105,22 @@ export const Route = createFileRoute('/api/appointments')({
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                'Access-Control-Allow-Headers': '*',
               },
             }
           )
         } catch (e: any) {
-          return Response.json({ error: e?.message || 'Error eliminando cita' }, { status: 500 })
+          return Response.json(
+            { error: e?.message || 'Error eliminando cita' },
+            {
+              status: 500,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
         }
       },
       OPTIONS: async () => {
@@ -95,8 +128,8 @@ export const Route = createFileRoute('/api/appointments')({
           status: 204,
           headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+            'Access-Control-Allow-Headers': '*',
           },
         })
       },

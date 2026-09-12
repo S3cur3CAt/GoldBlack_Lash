@@ -54,6 +54,7 @@ export const Route = createFileRoute('/api/images/$key')({
                   'Accept-Ranges': 'bytes',
                   'Content-Length': String(chunk.length),
                   'Cache-Control': 'public, max-age=31536000, immutable',
+                  'Access-Control-Allow-Origin': '*',
                 },
               })
             }
@@ -66,6 +67,17 @@ export const Route = createFileRoute('/api/images/$key')({
             'Content-Length': String(hit.data.length),
             'Accept-Ranges': 'bytes',
             'Cache-Control': 'public, max-age=31536000, immutable',
+            'Access-Control-Allow-Origin': '*',
+          },
+        })
+      },
+      OPTIONS: async () => {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': '*',
           },
         })
       },

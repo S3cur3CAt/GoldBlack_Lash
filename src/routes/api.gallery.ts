@@ -14,6 +14,8 @@ export const Route = createFileRoute('/api/gallery')({
           return Response.json(items, {
             headers: {
               'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+              'Access-Control-Allow-Headers': '*',
               'Cache-Control': 'no-cache, no-store, must-revalidate',
             },
           })
@@ -33,12 +35,23 @@ export const Route = createFileRoute('/api/gallery')({
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                'Access-Control-Allow-Headers': '*',
                 'Cache-Control': 'no-cache',
               },
             }
           )
         } catch (e: any) {
-          return Response.json({ error: e?.message || 'Error guardando en BD' }, { status: 500 })
+          return Response.json(
+            { error: e?.message || 'Error guardando en BD' },
+            {
+              status: 500,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
         }
       },
       DELETE: async ({ request }) => {
@@ -46,7 +59,16 @@ export const Route = createFileRoute('/api/gallery')({
           const url = new URL(request.url)
           const id = url.searchParams.get('id')
           if (!id) {
-            return Response.json({ error: 'Falta parámetro id' }, { status: 400 })
+            return Response.json(
+              { error: 'Falta parámetro id' },
+              {
+                status: 400,
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Headers': '*',
+                },
+              }
+            )
           }
           await deleteGalleryItemFromDb(id)
           return Response.json(
@@ -54,11 +76,22 @@ export const Route = createFileRoute('/api/gallery')({
             {
               headers: {
                 'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                'Access-Control-Allow-Headers': '*',
               },
             }
           )
         } catch (e: any) {
-          return Response.json({ error: e?.message || 'Error eliminando en BD' }, { status: 500 })
+          return Response.json(
+            { error: e?.message || 'Error eliminando en BD' },
+            {
+              status: 500,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
         }
       },
       OPTIONS: async () => {
@@ -66,8 +99,8 @@ export const Route = createFileRoute('/api/gallery')({
           status: 204,
           headers: {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+            'Access-Control-Allow-Headers': '*',
           },
         })
       },

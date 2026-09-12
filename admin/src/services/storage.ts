@@ -282,7 +282,9 @@ export function saveClients(clients: Client[]): void {
 export function getApiBaseUrl(): string {
   try {
     const saved = localStorage.getItem('goldblack_admin_api_url')
-    if (saved) return saved.trim()
+    if (saved && saved.trim().startsWith('http')) {
+      return saved.trim().replace(/\/+$/, '')
+    }
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '3000') {
       return 'http://localhost:3000'
     }
@@ -353,6 +355,9 @@ export function resolveImageUrl(url?: string, key?: string): string {
 
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'idle'
 
+const SUPABASE_REST_URL = 'https://uiohtupgtqxbzmfqkqea.supabase.co/rest/v1'
+const SUPABASE_ANON_KEY = 'sb_publishable_EmVnt_9VUQnB2wrBt5U1LA_khOLHLCh'
+
 // Broadcast sync events to UI
 export function notifySyncEvent(status: SyncStatus, message: string) {
   if (typeof window !== 'undefined') {
@@ -363,258 +368,457 @@ export function notifySyncEvent(status: SyncStatus, message: string) {
 /** Syncs a single service with Supabase / Vercel API */
 export async function syncServiceWithVercel(service: AdminService): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
-  notifySyncEvent('syncing', `Sincronizando ${service.name} con Vercel...`)
+  notifySyncEvent('syncing', `Sincronizando ${service.name}...`)
   try {
     const res = await fetch(`${baseUrl}/api/services`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(service),
     })
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.error || `HTTP ${res.status}`)
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ ${service.name} actualizado en tiempo real`)
+      return true
     }
-    notifySyncEvent('synced', `✓ ${service.name} actualizado en tiempo real en Vercel`)
-    return true
   } catch (err: any) {
-    console.warn('[Sync Error]', err)
-    notifySyncEvent('error', `Guardado local. (Sincronización remota: ${err.message})`)
-    return false
+    console.warn('[Sync Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbPayload = {
+      id: service.id,
+      category_id: service.categoryId,
+      category_name: service.categoryName,
+      name: service.name,
+      badge: service.badge || null,
+      description: service.description,
+      duration: service.duration,
+      duration_minutes: 90,
+      price: service.price,
+      price_number: service.priceNumber || 0,
+      featured: !!service.featured,
+      includes: JSON.stringify(service.includes || []),
+      image_url: null,
+      updated_at: new Date().toISOString(),
+    }
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(sbPayload),
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ ${service.name} actualizado en tiempo real`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Direct Sync Error]', sbErr)
+  }
+
+  notifySyncEvent('error', `Guardado local.`)
+  return false
 }
 
 /** Deletes a service from Supabase / Vercel API */
 export async function deleteServiceFromVercel(id: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
-  notifySyncEvent('syncing', `Eliminando servicio en Vercel...`)
+  notifySyncEvent('syncing', `Eliminando servicio...`)
   try {
     const res = await fetch(`${baseUrl}/api/services?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    notifySyncEvent('synced', `✓ Servicio eliminado en tiempo real de Vercel`)
-    return true
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ Servicio eliminado en tiempo real`)
+      return true
+    }
   } catch (err: any) {
-    console.warn('[Sync Delete Error]', err)
-    notifySyncEvent('error', `Eliminado local. (Vercel: ${err.message})`)
-    return false
+    console.warn('[Sync Delete Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_services?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Servicio eliminado en tiempo real`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Direct Delete Error]', sbErr)
+  }
+
+  notifySyncEvent('error', `Eliminado local.`)
+  return false
 }
 
 /** Syncs a single gallery item with Supabase / Vercel API */
 export async function syncGalleryItemWithVercel(item: GalleryItem): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
-  notifySyncEvent('syncing', `Publicando foto "${item.title}" en el sitio web...`)
+  notifySyncEvent('syncing', `Publicando foto "${item.title}"...`)
   try {
     const res = await fetch(`${baseUrl}/api/gallery`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(item),
     })
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.error || `HTTP ${res.status}`)
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}))
+      if (data.item?.image_url) {
+        item.url = data.item.image_url
+      }
+      notifySyncEvent('synced', `✓ Foto "${item.title}" guardada en tiempo real`)
+      return true
     }
-    const data = await res.json().catch(() => ({}))
-    if (data.item?.image_url) {
-      item.url = data.item.image_url
-    }
-    notifySyncEvent('synced', `✓ Foto "${item.title}" añadida en tiempo real en el sitio web`)
-    return true
   } catch (err: any) {
-    console.warn('[Gallery Sync Error]', err)
-    notifySyncEvent('error', `Guardado local. (Sincronización web: ${err.message})`)
-    return false
+    console.warn('[Gallery Sync Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbPayload = {
+      id: item.id,
+      title: item.title,
+      category: item.category,
+      detail: item.detail || '',
+      price: item.price || '',
+      badge: item.badge || null,
+      featured: !!item.featured,
+      elements: JSON.stringify(item.elements || []),
+      url: item.url || '',
+      image_url: item.url || '',
+      key: item.key || null,
+      sort_order: 100,
+      updated_at: new Date().toISOString(),
+    }
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_gallery`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(sbPayload),
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Foto "${item.title}" guardada en tiempo real`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Gallery Sync Error]', sbErr)
+  }
+
+  notifySyncEvent('error', `Guardado local.`)
+  return false
 }
 
 /** Deletes a gallery item from Supabase / Vercel API */
 export async function deleteGalleryItemFromVercel(id: string): Promise<boolean> {
   const baseUrl = getApiBaseUrl()
-  notifySyncEvent('syncing', `Eliminando foto del sitio web...`)
+  notifySyncEvent('syncing', `Eliminando foto...`)
   try {
     const res = await fetch(`${baseUrl}/api/gallery?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    notifySyncEvent('synced', `✓ Foto eliminada en tiempo real del sitio web`)
-    return true
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ Foto eliminada en tiempo real`)
+      return true
+    }
   } catch (err: any) {
-    console.warn('[Gallery Delete Error]', err)
-    notifySyncEvent('error', `Eliminado local. (Vercel: ${err.message})`)
-    return false
+    console.warn('[Gallery Delete Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_gallery?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Foto eliminada en tiempo real`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Gallery Delete Error]', sbErr)
+  }
+
+  notifySyncEvent('error', `Eliminado local.`)
+  return false
 }
 
 /** Fetch latest gallery items from Vercel API / Supabase */
 export async function fetchLiveGalleryFromVercel(): Promise<GalleryItem[] | null> {
   const baseUrl = getApiBaseUrl()
+  let data: any[] | null = null
+
   try {
-    const res = await fetch(`${baseUrl}/api/gallery`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (Array.isArray(data) && data.length > 0) {
-      const mapped: GalleryItem[] = data.map((d: any) => ({
-        id: d.id,
-        key: d.key,
-        title: d.title,
-        category: d.category,
-        detail: d.detail,
-        price: d.price,
-        badge: d.badge,
-        featured: !!d.featured,
-        elements: d.elements || [],
-        url: d.image_url || d.url,
-        updatedAt: d.updated_at ? d.updated_at.split('T')[0] : new Date().toISOString().split('T')[0],
-      }))
-      saveGalleryItems(mapped)
-      return mapped
+    const res = await fetch(`${baseUrl}/api/gallery?_t=${Date.now()}`)
+    if (res.ok) {
+      const parsed = await res.json()
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        data = parsed
+      }
     }
-    return null
   } catch (e) {
-    console.warn('[Fetch Live Gallery Error]', e)
-    return null
+    console.warn('[Gallery fetch from Vercel failed, trying Supabase]', e)
   }
+
+  if (!data) {
+    try {
+      const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_gallery?select=*&order=sort_order.asc`, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      })
+      if (sbRes.ok) {
+        const parsed = await sbRes.json()
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          data = parsed
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[Gallery fetch from Supabase failed]', sbErr)
+    }
+  }
+
+  if (Array.isArray(data) && data.length > 0) {
+    const mapped: GalleryItem[] = data.map((d: any) => ({
+      id: d.id,
+      key: d.key,
+      title: d.title,
+      category: d.category,
+      detail: d.detail,
+      price: d.price,
+      badge: d.badge,
+      featured: !!d.featured,
+      elements: Array.isArray(d.elements)
+        ? d.elements
+        : typeof d.elements === 'string'
+        ? (() => {
+            try {
+              let p = JSON.parse(d.elements)
+              while (typeof p === 'string') p = JSON.parse(p)
+              return Array.isArray(p) ? p : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+      url: d.image_url || d.url || (d.key ? `/api/images/${d.key}` : ''),
+      updatedAt: d.updated_at ? d.updated_at.split('T')[0] : new Date().toISOString().split('T')[0],
+    }))
+    saveGalleryItems(mapped)
+    return mapped
+  }
+  return null
 }
 
 /** Fetch latest services from Vercel API / Supabase */
 export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | null> {
   const baseUrl = getApiBaseUrl()
+  let data: any[] | null = null
+
   try {
-    const res = await fetch(`${baseUrl}/api/services`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    if (Array.isArray(data) && data.length > 0) {
-      const mapped: AdminService[] = data.map((d: any) => ({
-        id: d.id,
-        categoryId: d.category_id || d.categoryId,
-        categoryName: d.category_name || d.categoryName,
-        name: d.name,
-        badge: d.badge || undefined,
-        description: d.description,
-        duration: d.duration,
-        price: d.price,
-        priceNumber: d.price_number || d.priceNumber || 0,
-        featured: !!d.featured,
-        includes: Array.isArray(d.includes)
-          ? d.includes
-          : typeof d.includes === 'string'
-          ? (() => {
-              try {
-                let p = JSON.parse(d.includes)
-                while (typeof p === 'string') p = JSON.parse(p)
-                return Array.isArray(p) ? p : []
-              } catch {
-                return []
-              }
-            })()
-          : [],
-      saveServices(mapped)
-      return mapped
+    const res = await fetch(`${baseUrl}/api/services?_t=${Date.now()}`)
+    if (res.ok) {
+      const parsed = await res.json()
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        data = parsed
+      }
     }
-    return null
   } catch (e) {
-    console.warn('[Fetch Live Error]', e)
-    return null
+    console.warn('[Services fetch from Vercel failed, trying Supabase]', e)
   }
+
+  if (!data) {
+    try {
+      const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_services?select=*&order=sort_order.asc`, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      })
+      if (sbRes.ok) {
+        const parsed = await sbRes.json()
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          data = parsed
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[Services fetch from Supabase failed]', sbErr)
+    }
+  }
+
+  if (Array.isArray(data) && data.length > 0) {
+    const mapped: AdminService[] = data.map((d: any) => ({
+      id: d.id,
+      categoryId: d.category_id || d.categoryId,
+      categoryName: d.category_name || d.categoryName,
+      name: d.name,
+      badge: d.badge || undefined,
+      description: d.description,
+      duration: d.duration,
+      price: d.price,
+      priceNumber: d.price_number || d.priceNumber || 0,
+      featured: !!d.featured,
+      active: d.active !== undefined ? !!d.active : true,
+      includes: Array.isArray(d.includes)
+        ? d.includes
+        : typeof d.includes === 'string'
+        ? (() => {
+            try {
+              let p = JSON.parse(d.includes)
+              while (typeof p === 'string') p = JSON.parse(p)
+              return Array.isArray(p) ? p : []
+            } catch {
+              return []
+            }
+          })()
+        : [],
+    }))
+    saveServices(mapped)
+    return mapped
+  }
+  return null
 }
 
 /** Fetch latest appointments from Vercel API / Supabase */
 export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] | null> {
   const baseUrl = getApiBaseUrl()
+  let remoteList: any[] | null = null
+
   try {
-    const res = await fetch(`${baseUrl}/api/appointments`, {
-      headers: { 'Cache-Control': 'no-cache' },
-    })
-    if (!res.ok) return null
-    const remoteList = await res.json()
-    if (!Array.isArray(remoteList)) return null
-
-    // Get current local appointments
-    const local = getAppointments()
-    const map = new Map<string, Appointment>()
-
-    // First put local ones
-    for (const apt of local) {
-      map.set(apt.id, apt)
-    }
-
-    // Overlay / add remote ones
-    let hasNewAppointments = false
-    const currentClients = getClients()
-    let clientsUpdated = false
-    const clientsMap = new Map<string, Client>()
-    for (const c of currentClients) {
-      clientsMap.set(c.phone.replace(/\D/g, ''), c)
-    }
-
-    for (const r of remoteList) {
-      if (!map.has(r.id)) {
-        hasNewAppointments = true
-      }
-      map.set(r.id, {
-        id: r.id,
-        clientName: r.clientName,
-        clientPhone: r.clientPhone,
-        date: r.date,
-        time: r.time,
-        durationMinutes: r.durationMinutes || 90,
-        serviceId: r.serviceId || '',
-        serviceName: r.serviceName || 'Servicio de Pestañas',
-        price: r.price || 0,
-        status: r.status || 'pendiente',
-        paymentStatus: r.paymentStatus || 'pendiente',
-        curl: r.curl,
-        length: r.length,
-        style: r.style,
-        notes: r.notes,
-        createdAt: r.createdAt || new Date().toISOString(),
-      })
-
-      // Check if client is registered in CRM
-      const cleanPhone = (r.clientPhone || '').replace(/\D/g, '')
-      if (cleanPhone && !clientsMap.has(cleanPhone)) {
-        const newClient: Client = {
-          id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-          name: r.clientName,
-          phone: r.clientPhone,
-          allergies: 'Ninguna conocida',
-          preferredStyle: r.style || 'Cat Eye (Ojo de Gato)',
-          preferredCurl: r.curl || 'D',
-          totalVisits: 1,
-          totalSpent: r.price || 0,
-          lastVisitDate: r.date,
-          notes: r.notes ? `Registrada desde reserva web: ${r.notes}` : 'Cliente creada automáticamente desde reserva web',
-          createdAt: r.date || new Date().toISOString().split('T')[0],
-        }
-        clientsMap.set(cleanPhone, newClient)
-        clientsUpdated = true
+    const res = await fetch(`${baseUrl}/api/appointments?_t=${Date.now()}`)
+    if (res.ok) {
+      const parsed = await res.json()
+      if (Array.isArray(parsed)) {
+        remoteList = parsed
       }
     }
-
-    const merged = Array.from(map.values())
-    // Sort by date desc
-    merged.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time))
-
-    saveAppointments(merged)
-
-    if (clientsUpdated) {
-      saveClients(Array.from(clientsMap.values()))
-    }
-
-    if (hasNewAppointments) {
-      notifySyncEvent('synced', '✓ Nuevas reservas recibidas desde el sitio web')
-    }
-
-    return merged
   } catch (e) {
-    console.warn('[Fetch Live Appointments Error]', e)
-    return null
+    console.warn('[Appointments fetch from Vercel failed, trying Supabase]', e)
   }
+
+  if (!Array.isArray(remoteList)) {
+    try {
+      const sbRes = await fetch(
+        `${SUPABASE_REST_URL}/studio_appointments?select=*&order=date.desc,time.desc`,
+        {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+        }
+      )
+      if (sbRes.ok) {
+        const parsed = await sbRes.json()
+        if (Array.isArray(parsed)) {
+          remoteList = parsed
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[Appointments fetch from Supabase failed]', sbErr)
+    }
+  }
+
+  if (!Array.isArray(remoteList)) return null
+
+  // Get current local appointments
+  const local = getAppointments()
+  const map = new Map<string, Appointment>()
+
+  // First put local ones
+  for (const apt of local) {
+    map.set(apt.id, apt)
+  }
+
+  // Overlay / add remote ones
+  let hasNewAppointments = false
+  const currentClients = getClients()
+  let clientsUpdated = false
+  const clientsMap = new Map<string, Client>()
+  for (const c of currentClients) {
+    clientsMap.set(c.phone.replace(/\D/g, ''), c)
+  }
+
+  for (const r of remoteList) {
+    if (!map.has(r.id)) {
+      hasNewAppointments = true
+    }
+    const aptClientName = r.clientName || r.client_name || 'Cliente'
+    const aptClientPhone = r.clientPhone || r.client_phone || ''
+    const aptDuration = r.durationMinutes || r.duration_minutes || 90
+    const aptServiceId = r.serviceId || r.service_id || ''
+    const aptServiceName = r.serviceName || r.service_name || 'Servicio de Pestañas'
+    const aptPrice = Number(r.price) || 0
+    const aptStatus = r.status || 'pendiente'
+    const aptPaymentStatus = r.paymentStatus || r.payment_status || 'pendiente'
+    const aptCreatedAt = r.createdAt || r.created_at || new Date().toISOString()
+
+    map.set(r.id, {
+      id: r.id,
+      clientName: aptClientName,
+      clientPhone: aptClientPhone,
+      date: r.date,
+      time: r.time,
+      durationMinutes: aptDuration,
+      serviceId: aptServiceId,
+      serviceName: aptServiceName,
+      price: aptPrice,
+      status: aptStatus,
+      paymentStatus: aptPaymentStatus,
+      curl: r.curl || undefined,
+      length: r.length || undefined,
+      style: r.style || undefined,
+      notes: r.notes || undefined,
+      createdAt: aptCreatedAt,
+    })
+
+    // Check if client is registered in CRM
+    const cleanPhone = (aptClientPhone || '').replace(/\D/g, '')
+    if (cleanPhone && !clientsMap.has(cleanPhone)) {
+      const newClient: Client = {
+        id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name: aptClientName,
+        phone: aptClientPhone,
+        allergies: 'Ninguna conocida',
+        preferredStyle: r.style || 'Cat Eye (Ojo de Gato)',
+        preferredCurl: r.curl || 'D',
+        totalVisits: 1,
+        totalSpent: aptPrice,
+        lastVisitDate: r.date,
+        notes: r.notes ? `Registrada desde reserva web: ${r.notes}` : 'Cliente creada automáticamente desde reserva web',
+        createdAt: r.date || new Date().toISOString().split('T')[0],
+      }
+      clientsMap.set(cleanPhone, newClient)
+      clientsUpdated = true
+    }
+  }
+
+  const merged = Array.from(map.values())
+  // Sort by date desc
+  merged.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time))
+
+  saveAppointments(merged)
+
+  if (clientsUpdated) {
+    saveClients(Array.from(clientsMap.values()))
+  }
+
+  if (hasNewAppointments) {
+    notifySyncEvent('synced', '✓ Nuevas reservas recibidas desde el sitio web')
+  }
+
+  return merged
 }
 
 /** Syncs a single appointment with Supabase / Vercel API */
@@ -626,16 +830,52 @@ export async function syncAppointmentWithVercel(appointment: Appointment): Promi
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointment),
     })
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.error || `HTTP ${res.status}`)
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ Cita de ${appointment.clientName} sincronizada`)
+      return true
     }
-    notifySyncEvent('synced', `✓ Cita de ${appointment.clientName} sincronizada`)
-    return true
   } catch (err: any) {
-    console.warn('[Appointment Sync Error]', err)
-    return false
+    console.warn('[Appointment Sync Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbPayload = {
+      id: appointment.id,
+      client_name: appointment.clientName,
+      client_phone: appointment.clientPhone,
+      date: appointment.date,
+      time: appointment.time,
+      duration_minutes: appointment.durationMinutes,
+      service_id: appointment.serviceId || null,
+      service_name: appointment.serviceName || null,
+      price: appointment.price || 0,
+      status: appointment.status || 'pendiente',
+      payment_status: appointment.paymentStatus || 'pendiente',
+      curl: appointment.curl || null,
+      length: appointment.length || null,
+      style: appointment.style || null,
+      notes: appointment.notes || null,
+      updated_at: new Date().toISOString(),
+    }
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_appointments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(sbPayload),
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Cita de ${appointment.clientName} sincronizada`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Appointment Sync Error]', sbErr)
+  }
+
+  return false
 }
 
 /** Deletes an appointment from Supabase / Vercel API */
@@ -645,13 +885,31 @@ export async function deleteAppointmentFromVercel(id: string): Promise<boolean> 
     const res = await fetch(`${baseUrl}/api/appointments?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    notifySyncEvent('synced', `✓ Cita eliminada en tiempo real`)
-    return true
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ Cita eliminada en tiempo real`)
+      return true
+    }
   } catch (err: any) {
-    console.warn('[Appointment Sync Delete Error]', err)
-    return false
+    console.warn('[Appointment Sync Delete Error with Vercel, trying Supabase]', err)
   }
+
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_appointments?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Cita eliminada en tiempo real`)
+      return true
+    }
+  } catch (sbErr: any) {
+    console.warn('[Supabase Appointment Delete Error]', sbErr)
+  }
+
+  return false
 }
 
 export function getServices(): AdminService[] {
