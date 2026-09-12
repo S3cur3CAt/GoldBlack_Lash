@@ -176,6 +176,24 @@ function updateSelectedInstallerInfo() {
 
 el('selectInstaller')?.addEventListener('change', updateSelectedInstallerInfo)
 
+// Browse installer file manually
+el('btnBrowseInstaller')?.addEventListener('click', async () => {
+  const chosen = await window.publisherAPI?.selectInstallerFile()
+  if (chosen) {
+    currentInstallers = [chosen, ...currentInstallers.filter((i) => i.fullPath !== chosen.fullPath)]
+    const select = el('selectInstaller')
+    select.innerHTML = ''
+    currentInstallers.forEach((inst, idx) => {
+      const opt = document.createElement('option')
+      opt.value = inst.fullPath
+      opt.textContent = `${inst.name} (${inst.sizeFormatted})`
+      if (idx === 0) opt.selected = true
+      select.appendChild(opt)
+    })
+    updateSelectedInstallerInfo()
+  }
+})
+
 // Build Installer On-Demand
 let isBuilding = false
 el('btnBuildInstaller')?.addEventListener('click', async () => {

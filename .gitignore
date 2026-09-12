@@ -14,3 +14,5 @@ todos.json
 admin/dist
 admin/dist-packages
 admin/dist-installers
+tools/release-manager/dist-packages
+tools/release-manager/dist-installers

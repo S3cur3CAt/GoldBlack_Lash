@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const https = require('https')
@@ -7,13 +7,30 @@ const { spawn } = require('child_process')
 const REPO_OWNER = 'S3cur3CAt'
 const REPO_NAME = 'GoldBlack_Lash'
 
-const projectRoot = path.join(__dirname, '..', '..')
-const adminRoot = path.join(projectRoot, 'admin')
+function getAdminRoot() {
+  const candidates = [
+    path.join(__dirname, '..', '..', 'admin'),
+    path.join(app.getPath('documents'), 'GoldBlack_Lash', 'admin'),
+    'C:\\Users\\antonio\\Documents\\GoldBlack_Lash\\admin',
+  ]
+  for (const c of candidates) {
+    if (fs.existsSync(path.join(c, 'package.json'))) {
+      return c
+    }
+  }
+  return candidates[0]
+}
+
+const adminRoot = getAdminRoot()
 const distInstallersDir = path.join(adminRoot, 'dist-installers')
 
 let mainWindow = null
 
 function createWindow() {
+  const iconPath = fs.existsSync(path.join(__dirname, 'icon.ico'))
+    ? path.join(__dirname, 'icon.ico')
+    : path.join(adminRoot, 'build', 'icon.ico')
+
   mainWindow = new BrowserWindow({
     width: 980,
     height: 820,
@@ -22,7 +39,7 @@ function createWindow() {
     backgroundColor: '#0a0a0d',
     title: 'GoldBlack Lash — Gestor de Actualizaciones',
     frame: false,
-    icon: path.join(adminRoot, 'build', 'icon.ico'),
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -105,6 +122,29 @@ ipcMain.handle('publisher:find-installers', () => {
   } catch (e) {
     return []
   }
+})
+
+// Select Custom Installer File via Dialog
+ipcMain.handle('publisher:select-installer-file', async () => {
+  if (!mainWindow) return null
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Seleccionar archivo instalador de Windows (.exe)',
+    filters: [{ name: 'Instalador ejecutable', extensions: ['exe'] }],
+    properties: ['openFile'],
+  })
+  if (!result.canceled && result.filePaths.length > 0) {
+    const fullPath = result.filePaths[0]
+    const stats = fs.statSync(fullPath)
+    const sizeMb = (stats.size / (1024 * 1024)).toFixed(1)
+    return {
+      name: path.basename(fullPath),
+      fullPath,
+      sizeBytes: stats.size,
+      sizeFormatted: `${sizeMb} MB`,
+      mtime: stats.mtime,
+    }
+  }
+  return null
 })
 
 // Check GitHub Releases

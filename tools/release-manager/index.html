@@ -249,11 +249,17 @@
 
       <div class="space-y-2">
         <label class="block text-xs text-gray-400 font-medium">
-          Selecciona el archivo ejecutable (.exe) generado en admin/dist-installers:
+          Selecciona el archivo ejecutable (.exe) de la aplicación a publicar:
         </label>
-        <select id="selectInstaller" class="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400">
-          <option value="">Buscando instaladores disponibles...</option>
-        </select>
+        <div class="flex items-center gap-2">
+          <select id="selectInstaller" class="flex-1 px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400">
+            <option value="">Buscando instaladores disponibles...</option>
+          </select>
+          <button id="btnBrowseInstaller" type="button" class="px-3.5 py-2.5 rounded-xl bg-[#202030] hover:bg-[#2c2c42] text-gray-200 hover:text-white text-xs font-semibold border border-[#34344e] transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+            <span>Examinar...</span>
+          </button>
+        </div>
         <div id="selectedInstallerInfo" class="text-[11px] text-gray-500 font-mono"></div>
       </div>
 
