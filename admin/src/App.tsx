@@ -181,7 +181,14 @@ export const App: React.FC = () => {
 
   // Gallery Actions
   const handleSaveGalleryItem = (item: GalleryItem) => {
-    const updated = [item, ...gallery]
+    const existingIndex = gallery.findIndex((g) => g.id === item.id)
+    let updated: GalleryItem[]
+    if (existingIndex >= 0) {
+      updated = [...gallery]
+      updated[existingIndex] = item
+    } else {
+      updated = [item, ...gallery]
+    }
     setGallery(updated)
     saveGalleryItems(updated)
   }

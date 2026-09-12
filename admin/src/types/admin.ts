@@ -76,5 +76,10 @@ export interface GalleryItem {
   title: string
   category: string
   url: string
+  detail?: string
+  price?: string
+  badge?: string
+  featured?: boolean
+  elements?: string[]
   updatedAt: string
 }
