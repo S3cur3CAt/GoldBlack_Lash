@@ -347,13 +347,13 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
   const fileName = path.basename(installerPath)
   const fileStat = fs.statSync(installerPath)
 
-  // 1. Create Release
+  // 1. Create Release as DRAFT first (not visible in releases/latest while uploading)
   const releasePayload = JSON.stringify({
     tag_name: cleanTag,
     target_commitish: 'main',
     name: title || `GoldBlack Lash Admin ${cleanTag}`,
     body: notes || `Versión ${cleanTag} de GoldBlack Lash Admin.`,
-    draft: false,
+    draft: true, // DRAFT: Keeps it hidden until the binary is 100% uploaded
     prerelease: !!isPrerelease,
   })
 
@@ -425,9 +425,11 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
           if (res.statusCode >= 200 && res.statusCode < 300) {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('publisher:upload-progress', {
+                step: 'upload-complete',
                 percent: 100,
                 uploadedBytes: totalBytes,
                 totalBytes,
+                message: 'Instalador subido al 100%. Publicando release oficial...',
               })
             }
             resolve()
@@ -455,6 +457,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
         const percent = Math.round((uploadedBytes / totalBytes) * 100)
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('publisher:upload-progress', {
+            step: 'uploading',
             percent,
             uploadedBytes,
             totalBytes,
@@ -467,10 +470,46 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
     fileStream.pipe(uploadReq)
   })
 
+  // 3. Publish Release (Convert draft: true -> draft: false now that executable is 100% attached)
+  const publishPayload = JSON.stringify({ draft: false })
+  const publishedRelease = await new Promise((resolve, reject) => {
+    const patchReq = https.request(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/${releaseData.id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'User-Agent': 'GoldBlack-Release-Publisher',
+          Authorization: `token ${token.trim()}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(publishPayload),
+        },
+      },
+      (res) => {
+        let respBody = ''
+        res.on('data', (c) => (respBody += c))
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try {
+              resolve(JSON.parse(respBody))
+            } catch (e) {
+              resolve(releaseData)
+            }
+          } else {
+            reject(new Error(`Error al publicar release tras subir asset: HTTP ${res.statusCode}`))
+          }
+        })
+      }
+    )
+    patchReq.on('error', reject)
+    patchReq.write(publishPayload)
+    patchReq.end()
+  })
+
   return {
     success: true,
-    releaseUrl: releaseData.html_url,
-    tagName: releaseData.tag_name,
+    releaseUrl: publishedRelease.html_url || releaseData.html_url,
+    tagName: publishedRelease.tag_name || releaseData.tag_name,
     assetName: fileName,
   }
 })

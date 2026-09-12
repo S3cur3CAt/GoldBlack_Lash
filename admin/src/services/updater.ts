@@ -92,16 +92,22 @@ export function useUpdater() {
           const release = await res.json()
           const tag = release.tag_name || ''
           const isNewer = compareSemver(tag, CURRENT_APP_VERSION)
-          if (isNewer) {
+          const validAsset = release.assets?.find(
+            (a: any) =>
+              a.name?.endsWith('.exe') &&
+              (a.state === 'uploaded' || a.state === undefined) &&
+              (a.size ? a.size > 1000000 : false)
+          )
+          if (isNewer && validAsset && validAsset.browser_download_url) {
             const info: UpdateInfo = {
               available: true,
               currentVersion: CURRENT_APP_VERSION,
               latestVersion: tag,
               releaseName: release.name || tag,
               notes: release.body || '',
-              assetUrl: release.assets?.[0]?.browser_download_url || null,
-              assetName: release.assets?.[0]?.name || `${tag}-update.exe`,
-              assetSize: release.assets?.[0]?.size || 0,
+              assetUrl: validAsset.browser_download_url,
+              assetName: validAsset.name || `${tag}-update.exe`,
+              assetSize: validAsset.size || 0,
               htmlUrl: release.html_url,
             }
             setUpdateInfo(info)

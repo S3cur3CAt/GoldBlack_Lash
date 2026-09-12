@@ -92,16 +92,25 @@ function formatReleaseResult(release, available, currentVersion) {
   if (Array.isArray(release.assets) && release.assets.length > 0) {
     if (platform === 'win32') {
       chosenAsset =
-        release.assets.find((a) => a.name.endsWith('.exe')) ||
-        release.assets.find((a) => a.name.endsWith('app.asar')) ||
-        release.assets[0]
+        release.assets.find((a) => a.name.endsWith('.exe') && a.state === 'uploaded' && a.size > 1000000) ||
+        release.assets.find((a) => a.name.endsWith('app.asar') && a.state === 'uploaded' && a.size > 1000000)
     } else if (platform === 'darwin') {
       chosenAsset =
-        release.assets.find((a) => a.name.endsWith('.zip') || a.name.endsWith('.dmg')) ||
-        release.assets.find((a) => a.name.endsWith('app.asar')) ||
-        release.assets[0]
+        release.assets.find((a) => (a.name.endsWith('.zip') || a.name.endsWith('.dmg')) && a.state === 'uploaded' && a.size > 1000000) ||
+        release.assets.find((a) => a.name.endsWith('app.asar') && a.state === 'uploaded' && a.size > 1000000)
     } else {
-      chosenAsset = release.assets[0]
+      chosenAsset = release.assets.find((a) => a.state === 'uploaded' && a.size > 1000000)
+    }
+  }
+
+  // IMPORTANT: If executable asset is not fully uploaded yet, DO NOT show update notification!
+  if (!chosenAsset || !chosenAsset.browser_download_url) {
+    console.log(`[Updater] Release ${tagName} detectada pero el ejecutable aún no está completamente subido. Esperando...`)
+    return {
+      available: false,
+      latestVersion: tagName,
+      currentVersion,
+      reason: 'executable_upload_in_progress',
     }
   }
 
@@ -112,9 +121,9 @@ function formatReleaseResult(release, available, currentVersion) {
     releaseName: release.name || tagName,
     notes: release.body || '',
     publishedAt: release.published_at,
-    assetUrl: chosenAsset ? chosenAsset.browser_download_url : null,
-    assetName: chosenAsset ? chosenAsset.name : `${tagName}-update.exe`,
-    assetSize: chosenAsset ? chosenAsset.size : 0,
+    assetUrl: chosenAsset.browser_download_url,
+    assetName: chosenAsset.name || `${tagName}-update.exe`,
+    assetSize: chosenAsset.size || 0,
     htmlUrl: release.html_url,
   }
 }
