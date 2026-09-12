@@ -229,7 +229,7 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
   const btn = el('btnBuildInstaller')
 
   container.classList.remove('hidden')
-  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} aplicada a package.json y updater.ts.\nIniciando proceso de compilación de Windows con NSIS...\n`
+  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} sincronizada en packages.json.\nIniciando compilación multiplataforma (Windows NSIS + macOS El Capitan)...\n`
   badge.textContent = 'Compilando...'
   badge.className = 'text-[10px] text-amber-400 animate-pulse'
   btn.disabled = true
@@ -242,7 +242,7 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
 
   try {
     const res = await window.publisherAPI?.buildInstaller({ version })
-    badge.textContent = '✓ Compilado con éxito'
+    badge.textContent = '✓ Compilados con éxito'
     badge.className = 'text-[10px] text-emerald-400 font-bold'
     await loadAdminVersion(false)
     await refreshInstallers()
@@ -280,7 +280,7 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
   const autoBuild = el('checkAutoBuild')?.checked ?? true
   const installerPath = el('selectInstaller').value
   if (!installerPath && !autoBuild) {
-    alert('No hay un instalador de Windows seleccionado. Por favor marca la casilla de compilar automáticamente o compila uno primero.')
+    alert('No hay instaladores seleccionados. Por favor marca la casilla de compilar automáticamente o compila primero.')
     return
   }
 
@@ -293,9 +293,12 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
     `• Se actualizará automáticamente a v${version.replace(/^v/, '')} en:\n` +
     `    - admin/package.json\n` +
     `    - admin/src/services/updater.ts\n` +
+    `    - tools/release-manager/package.json\n` +
     `    - package.json\n` +
-    (autoBuild ? `• Se compilará automáticamente el nuevo instalador de Windows (GoldBlack-Lash-Admin-Setup-${version.replace(/^v/, '')}.exe)\n` : '') +
-    `\nUna vez publicada, la aplicación de administración detectará la actualización automáticamente.`
+    (autoBuild ? `• Se compilarán y subirán automáticamente ambos paquetes:\n` +
+                 `    - Windows 11 NSIS: GoldBlack-Lash-Admin-Setup-${version.replace(/^v/, '')}.exe\n` +
+                 `    - macOS El Capitan: GoldBlack-Lash-Admin-${version.replace(/^v/, '')}-macOS-ElCapitan.zip\n` : '') +
+    `\nLa release se mantendrá oculta (draft) hasta que los instaladores estén subidos al 100%, evitando avisos de actualización incompletos.`
   )
   if (!conf) return
 
@@ -319,10 +322,10 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
 
   const unsubscribeProgress = window.publisherAPI?.onUploadProgress((data) => {
     if (data.step === 'compiling') {
-      statusText.textContent = data.message || '🔨 Compilando nuevo instalador de Windows...'
-      progressBar.style.width = '30%'
+      statusText.textContent = data.message || '🔨 Compilando instaladores (Windows y macOS)...'
+      progressBar.style.width = '25%'
       progressPercent.textContent = 'Compilando...'
-      progressBytes.textContent = 'Generando instalador con Vite + NSIS...'
+      progressBytes.textContent = 'Generando instaladores para Windows y Mac...'
       return
     }
     const percent = data.percent || 0
@@ -330,11 +333,14 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
     progressPercent.textContent = `${percent}%`
     const upMb = ((data.uploadedBytes || 0) / (1024 * 1024)).toFixed(1)
     const totMb = ((data.totalBytes || 0) / (1024 * 1024)).toFixed(1)
+    if (data.message) {
+      statusText.textContent = data.message
+    }
     progressBytes.textContent = `${upMb} MB / ${totMb} MB subidos`
   })
 
   try {
-    statusText.textContent = '1/3 Aplicando versión a packages.json y preparando release...'
+    statusText.textContent = '1/3 Aplicando versión a packages.json y creando release en borrador...'
     const result = await window.publisherAPI?.publishRelease({
       token,
       version,
@@ -348,7 +354,7 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
       lastPublishedUrl = result.releaseUrl
       progressBar.style.width = '100%'
       progressPercent.textContent = '100%'
-      statusText.textContent = '✓ Subida completada'
+      statusText.textContent = '✓ Subida y publicación completadas'
 
       successBox.classList.remove('hidden')
       el('successTitleText').textContent = `¡Release ${result.tagName} publicada con éxito en GitHub!`

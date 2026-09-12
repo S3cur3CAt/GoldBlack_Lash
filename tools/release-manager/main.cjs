@@ -114,7 +114,7 @@ ipcMain.handle('publisher:find-installers', () => {
     if (!fs.existsSync(distInstallersDir)) return []
     const files = fs.readdirSync(distInstallersDir)
     return files
-      .filter((f) => f.endsWith('.exe'))
+      .filter((f) => f.endsWith('.exe') || f.endsWith('.zip'))
       .map((f) => {
         const fullPath = path.join(distInstallersDir, f)
         const stats = fs.statSync(fullPath)
@@ -137,8 +137,8 @@ ipcMain.handle('publisher:find-installers', () => {
 ipcMain.handle('publisher:select-installer-file', async () => {
   if (!mainWindow) return null
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Seleccionar archivo instalador de Windows (.exe)',
-    filters: [{ name: 'Instalador ejecutable', extensions: ['exe'] }],
+    title: 'Seleccionar archivo ejecutable (Windows .exe o macOS .zip)',
+    filters: [{ name: 'Paquetes de instalación', extensions: ['exe', 'zip'] }],
     properties: ['openFile'],
   })
   if (!result.canceled && result.filePaths.length > 0) {
@@ -265,21 +265,21 @@ ipcMain.handle('publisher:set-version', (event, { version }) => {
   return applyVersionToProject(version)
 })
 
-// Build Installer Execution
-function buildAdminInstaller() {
+// Build Script Runner Helper
+function runBuildScript(scriptPath, label) {
   return new Promise((resolve, reject) => {
-    const scriptPath = path.join(adminRoot, 'scripts', 'build-win.mjs')
-    const child = spawn('node', [scriptPath], {
-      cwd: adminRoot,
-      env: { ...process.env, NODE_ENV: 'production' },
-      shell: true,
-    })
-
     const sendLog = (line) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('publisher:build-log', line)
       }
     }
+
+    sendLog(`\n▶ ${label}...\n`)
+    const child = spawn('node', [scriptPath], {
+      cwd: adminRoot,
+      env: { ...process.env, NODE_ENV: 'production' },
+      shell: true,
+    })
 
     child.stdout.on('data', (d) => sendLog(d.toString()))
     child.stderr.on('data', (d) => sendLog(d.toString()))
@@ -288,7 +288,7 @@ function buildAdminInstaller() {
       if (code === 0) {
         resolve({ success: true })
       } else {
-        reject(new Error(`El proceso de compilación falló con código ${code}`))
+        reject(new Error(`Falló: ${label} (código ${code})`))
       }
     })
 
@@ -296,64 +296,152 @@ function buildAdminInstaller() {
   })
 }
 
+// Build Admin Installers (Windows .exe and macOS .zip)
+async function buildAdminInstallers() {
+  const winScript = path.join(adminRoot, 'scripts', 'build-win.mjs')
+  const macScript = path.join(adminRoot, 'scripts', 'build-mac.mjs')
+
+  await runBuildScript(winScript, '[1/2] Compilando instalador de Windows 11 (.exe)')
+  await runBuildScript(macScript, '[2/2] Compilando paquete de macOS El Capitan (.zip)')
+  return { success: true }
+}
+
 ipcMain.handle('publisher:build-installer', async (event, payload) => {
   const version = payload?.version
   if (version) {
     applyVersionToProject(version)
   }
-  return await buildAdminInstaller()
+  return await buildAdminInstallers()
 })
 
-// Publish Release to GitHub & Upload Binary Asset
+// Upload Single Asset Helper
+function uploadAssetToRelease(rawUploadUrlTemplate, filePath, token, onProgress) {
+  return new Promise((resolve, reject) => {
+    if (!fs.existsSync(filePath)) {
+      return reject(new Error(`Archivo no encontrado: ${filePath}`))
+    }
+
+    const fileName = path.basename(filePath)
+    const fileStat = fs.statSync(filePath)
+    const totalBytes = fileStat.size
+
+    const cleanBaseUrl = rawUploadUrlTemplate.replace(/\{[^{}]*\}$/, '')
+    const targetUploadUrl = `${cleanBaseUrl}?name=${encodeURIComponent(fileName)}`
+    const parsedUrl = new URL(targetUploadUrl)
+
+    const contentType = fileName.endsWith('.exe')
+      ? 'application/vnd.microsoft.portable-executable'
+      : fileName.endsWith('.zip')
+      ? 'application/zip'
+      : 'application/octet-stream'
+
+    let uploadedBytes = 0
+    let lastReport = 0
+
+    const uploadReq = https.request(
+      parsedUrl,
+      {
+        method: 'POST',
+        headers: {
+          'User-Agent': 'GoldBlack-Release-Publisher',
+          Authorization: `token ${token.trim()}`,
+          Accept: 'application/vnd.github.v3+json',
+          'Content-Type': contentType,
+          'Content-Length': totalBytes,
+        },
+      },
+      (res) => {
+        let respBody = ''
+        res.on('data', (c) => (respBody += c))
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ fileName, size: totalBytes })
+          } else {
+            try {
+              const err = JSON.parse(respBody)
+              reject(new Error(err.message || `Error en subida de ${fileName}: HTTP ${res.statusCode}`))
+            } catch {
+              reject(new Error(`Error en subida de ${fileName}: HTTP ${res.statusCode}`))
+            }
+          }
+        })
+      }
+    )
+
+    uploadReq.on('error', reject)
+
+    const fileStream = fs.createReadStream(filePath)
+    fileStream.on('data', (chunk) => {
+      uploadedBytes += chunk.length
+      const now = Date.now()
+      if (now - lastReport > 120 || uploadedBytes === totalBytes) {
+        lastReport = now
+        const percent = Math.round((uploadedBytes / totalBytes) * 100)
+        onProgress?.({ fileName, uploadedBytes, totalBytes, percent })
+      }
+    })
+
+    fileStream.on('error', reject)
+    fileStream.pipe(uploadReq)
+  })
+}
+
+// Publish Release to GitHub & Upload Binary Assets (Windows + macOS)
 ipcMain.handle('publisher:publish-release', async (event, payload) => {
   const { token, version, title, notes, isPrerelease, autoBuild, installerPath: userInstallerPath } = payload
 
   if (!token) throw new Error('Se requiere un GitHub Personal Access Token con permisos repo.')
-  if (!version) throw new Error('Se requiere especificar la versión (ej. 0.0.2).')
+  if (!version) throw new Error('Se requiere especificar la versión (ej. 0.0.8).')
 
   const cleanVersion = version.replace(/^v/, '').trim()
   const cleanTag = `v${cleanVersion}`
 
-  // STEP 1: Automatically apply new version to admin/package.json, updater.ts, etc.
+  // STEP 1: Automatically apply new version to packages.json, updater.ts, etc.
   const syncResult = applyVersionToProject(cleanVersion)
   console.log('[Publisher] Versión aplicada a packages.json:', syncResult)
 
-  let installerPath = userInstallerPath
-  const expectedInstallerName = `GoldBlack-Lash-Admin-Setup-${cleanVersion}.exe`
-  const expectedInstallerPath = path.join(distInstallersDir, expectedInstallerName)
+  const expectedWinName = `GoldBlack-Lash-Admin-Setup-${cleanVersion}.exe`
+  const expectedWinPath = path.join(distInstallersDir, expectedWinName)
+  const expectedMacName = `GoldBlack-Lash-Admin-${cleanVersion}-macOS-ElCapitan.zip`
+  const expectedMacPath = path.join(distInstallersDir, expectedMacName)
 
-  // STEP 2: If autoBuild is requested OR if the expected installer for this version does not exist yet:
-  if (autoBuild || !installerPath || !fs.existsSync(installerPath) || (!fs.existsSync(expectedInstallerPath) && (!installerPath || !installerPath.includes(cleanVersion)))) {
+  // STEP 2: If autoBuild is requested OR if expected installers do not exist yet:
+  if (autoBuild || !fs.existsSync(expectedWinPath) || !fs.existsSync(expectedMacPath)) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('publisher:upload-progress', {
         step: 'compiling',
         percent: 0,
-        message: `Compilando nuevo instalador para versión ${cleanVersion}...`,
+        message: `Compilando instaladores para Windows y macOS (v${cleanVersion})...`,
       })
     }
-    await buildAdminInstaller()
-    installerPath = expectedInstallerPath
+    await buildAdminInstallers()
   }
 
-  // If still not found, check if expected installer exists now
-  if ((!installerPath || !fs.existsSync(installerPath)) && fs.existsSync(expectedInstallerPath)) {
-    installerPath = expectedInstallerPath
+  // Gather available assets for this version
+  const assetsToUpload = []
+  if (fs.existsSync(expectedWinPath)) {
+    assetsToUpload.push({ path: expectedWinPath, label: 'Instalador de Windows (.exe)' })
+  }
+  if (fs.existsSync(expectedMacPath)) {
+    assetsToUpload.push({ path: expectedMacPath, label: 'Paquete de macOS El Capitan (.zip)' })
   }
 
-  if (!installerPath || !fs.existsSync(installerPath)) {
-    throw new Error(`El archivo instalador ${expectedInstallerName} no se encontró tras compilar.`)
+  // If user selected a custom file and it's not in the list, add it
+  if (userInstallerPath && fs.existsSync(userInstallerPath) && !assetsToUpload.some(a => a.path === userInstallerPath)) {
+    assetsToUpload.unshift({ path: userInstallerPath, label: path.basename(userInstallerPath) })
   }
 
-  const fileName = path.basename(installerPath)
-  const fileStat = fs.statSync(installerPath)
+  if (assetsToUpload.length === 0) {
+    throw new Error(`No se encontraron instaladores para v${cleanVersion} tras compilar.`)
+  }
 
   // 1. Create Release as DRAFT first (not visible in releases/latest while uploading)
   const releasePayload = JSON.stringify({
     tag_name: cleanTag,
     target_commitish: 'main',
     name: title || `GoldBlack Lash Admin ${cleanTag}`,
-    body: notes || `Versión ${cleanTag} de GoldBlack Lash Admin.`,
-    draft: true, // DRAFT: Keeps it hidden until the binary is 100% uploaded
+    body: notes || `Versión ${cleanTag} de GoldBlack Lash Admin para Windows y macOS.`,
+    draft: true, // DRAFT: Keeps it hidden until all binaries are 100% uploaded
     prerelease: !!isPrerelease,
   })
 
@@ -396,81 +484,47 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
     req.end()
   })
 
-  // 2. Upload Asset (.exe)
-  const rawUploadUrl = releaseData.upload_url.replace(/\{[^{}]*\}$/, '')
-  const uploadUrl = `${rawUploadUrl}?name=${encodeURIComponent(fileName)}`
-  const parsedUploadUrl = new URL(uploadUrl)
+  // 2. Upload All Assets (Windows .exe and macOS .zip)
+  for (let i = 0; i < assetsToUpload.length; i++) {
+    const asset = assetsToUpload[i]
+    const fileIndexStr = `[${i + 1}/${assetsToUpload.length}]`
 
-  await new Promise((resolve, reject) => {
-    const totalBytes = fileStat.size
-    let uploadedBytes = 0
-    let lastReport = 0
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('publisher:upload-progress', {
+        step: 'uploading',
+        currentFile: i + 1,
+        totalFiles: assetsToUpload.length,
+        fileName: path.basename(asset.path),
+        message: `Subiendo ${fileIndexStr} ${asset.label}...`,
+        percent: 0,
+      })
+    }
 
-    const uploadReq = https.request(
-      parsedUploadUrl,
-      {
-        method: 'POST',
-        headers: {
-          'User-Agent': 'GoldBlack-Release-Publisher',
-          Authorization: `token ${token.trim()}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/vnd.microsoft.portable-executable',
-          'Content-Length': totalBytes,
-        },
-      },
-      (res) => {
-        let respBody = ''
-        res.on('data', (c) => (respBody += c))
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('publisher:upload-progress', {
-                step: 'upload-complete',
-                percent: 100,
-                uploadedBytes: totalBytes,
-                totalBytes,
-                message: 'Instalador subido al 100%. Publicando release oficial...',
-              })
-            }
-            resolve()
-          } else {
-            try {
-              const err = JSON.parse(respBody)
-              reject(new Error(err.message || `Error en subida de asset: HTTP ${res.statusCode}`))
-            } catch {
-              reject(new Error(`Error en subida de asset: HTTP ${res.statusCode}`))
-            }
-          }
+    await uploadAssetToRelease(releaseData.upload_url, asset.path, token, (prog) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('publisher:upload-progress', {
+          step: 'uploading',
+          currentFile: i + 1,
+          totalFiles: assetsToUpload.length,
+          fileName: prog.fileName,
+          message: `Subiendo ${fileIndexStr} ${asset.label} (${prog.percent}%)...`,
+          percent: prog.percent,
+          uploadedBytes: prog.uploadedBytes,
+          totalBytes: prog.totalBytes,
         })
       }
-    )
-
-    uploadReq.on('error', reject)
-
-    const fileStream = fs.createReadStream(installerPath)
-
-    fileStream.on('data', (chunk) => {
-      uploadedBytes += chunk.length
-      const now = Date.now()
-      if (now - lastReport > 120 || uploadedBytes === totalBytes) {
-        lastReport = now
-        const percent = Math.round((uploadedBytes / totalBytes) * 100)
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('publisher:upload-progress', {
-            step: 'uploading',
-            percent,
-            uploadedBytes,
-            totalBytes,
-          })
-        }
-      }
     })
+  }
 
-    fileStream.on('error', reject)
-    fileStream.pipe(uploadReq)
-  })
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('publisher:upload-progress', {
+      step: 'upload-complete',
+      percent: 100,
+      message: 'Todos los instaladores (Windows y Mac) subidos al 100%. Publicando release oficial...',
+    })
+  }
 
-  // 3. Publish Release (Convert draft: true -> draft: false now that executable is 100% attached)
+  // 3. Publish Release (Convert draft: true -> draft: false now that all assets are attached)
   const publishPayload = JSON.stringify({ draft: false })
   const publishedRelease = await new Promise((resolve, reject) => {
     const patchReq = https.request(
@@ -496,7 +550,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
               resolve(releaseData)
             }
           } else {
-            reject(new Error(`Error al publicar release tras subir asset: HTTP ${res.statusCode}`))
+            reject(new Error(`Error al publicar release tras subir assets: HTTP ${res.statusCode}`))
           }
         })
       }
@@ -510,7 +564,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
     success: true,
     releaseUrl: publishedRelease.html_url || releaseData.html_url,
     tagName: publishedRelease.tag_name || releaseData.tag_name,
-    assetName: fileName,
+    assetsCount: assetsToUpload.length,
   }
 })
 
