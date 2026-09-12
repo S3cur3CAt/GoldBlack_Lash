@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 
 import { Diamond, PageHero } from '#/components/PageHero'
 import { openReservationModal } from '#/components/ReservationModal'
+import { StudioVisual } from '#/components/StudioVisual'
 import { business } from '#/data/site'
 
 export const Route = createFileRoute('/sobre-mi')({
