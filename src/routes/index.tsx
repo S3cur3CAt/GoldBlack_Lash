@@ -6,7 +6,6 @@ import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   faqs,
-  whatsappLink,
 } from '#/data/site'
 
 export const Route = createFileRoute('/')({

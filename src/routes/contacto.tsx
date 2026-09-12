@@ -6,7 +6,6 @@ import { PageHero } from '#/components/PageHero'
 import {
   business,
   serviceCategories,
-  whatsappLink,
 } from '#/data/site'
 
 export const Route = createFileRoute('/contacto')({
@@ -18,7 +17,7 @@ export const Route = createFileRoute('/contacto')({
       },
       {
         name: 'description',
-        content: `Reserva tu momento en ${business.name}, ${business.city}. Contacta por WhatsApp, consulta nuestros horarios y encuentra el estudio.`,
+        content: `Reserva tu momento en ${business.name}, ${business.city}. Solicita tu cita, consulta nuestros horarios y encuentra el estudio.`,
       },
     ],
   }),
@@ -108,26 +107,32 @@ function DirectContact() {
         ♡
       </span>
 
-      <p className="eyebrow mt-5">Si prefieres algo más directo</p>
+      <p className="eyebrow mt-5">Atención personalizada</p>
 
       <h2 className="mt-3 font-display text-3xl">
-        Hablemos por WhatsApp.
+        Escríbenos o llámanos.
       </h2>
 
       <p className="mt-4 text-sm leading-7 text-muted">
-        Puedes enviarme tu idea, tus dudas o una foto de referencia.
-        Te responderé personalmente.
+        Puedes enviarnos tus dudas por correo electrónico o llamarnos directamente. Estaremos encantadas de asesorarte.
       </p>
 
-      <a
-        href={whatsappLink()}
-        target="_blank"
-        rel="noreferrer"
-        className="button button-dark mt-6 w-full"
-      >
-        Abrir WhatsApp
-        <span aria-hidden="true">↗</span>
-      </a>
+      <div className="mt-6 flex flex-col gap-3">
+        <a
+          href={`mailto:${business.email}`}
+          className="button button-dark w-full justify-center"
+        >
+          Enviar email a {business.email}
+          <span aria-hidden="true">✉</span>
+        </a>
+        <a
+          href={`tel:${business.phoneDisplay.replace(/\s/g, '')}`}
+          className="button button-accent w-full justify-center"
+        >
+          Llamar al {business.phoneDisplay}
+          <span aria-hidden="true">📞</span>
+        </a>
+      </div>
     </div>
   )
 }
@@ -216,6 +221,7 @@ function OpeningHours() {
 
 type FormState = {
   nombre: string
+  email: string
   telefono: string
   servicio: string
   fecha: string
@@ -224,6 +230,7 @@ type FormState = {
 
 const emptyForm: FormState = {
   nombre: '',
+  email: '',
   telefono: '',
   servicio: 'Necesito asesoría',
   fecha: '',
@@ -233,7 +240,8 @@ const emptyForm: FormState = {
 function BookingForm() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [error, setError] = useState<string | null>(null)
-  const [preparedLink, setPreparedLink] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const update = (field: keyof FormState, value: string) => {
     setForm((previous) => ({
@@ -242,45 +250,119 @@ function BookingForm() {
     }))
 
     setError(null)
-    setPreparedLink(null)
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!form.nombre.trim() || !form.telefono.trim()) {
-      setError('Indica tu nombre y un teléfono de contacto.')
+    const trimmedNombre = form.nombre.trim()
+    const trimmedEmail = form.email.trim()
+    const trimmedTelefono = form.telefono.trim()
+
+    if (!trimmedNombre) {
+      setError('Por favor indica tu nombre.')
       return
     }
 
-    const servicePrice = serviceCategories
-      .flatMap((category) => category.services)
-      .find((service) => service.name === form.servicio)?.price
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Por favor introduce un correo electrónico válido para enviarte la confirmación.')
+      return
+    }
 
-    const message = [
-      `*Nueva solicitud de cita — ${business.name}*`,
-      '---------------------------',
-      `*Nombre:* ${form.nombre.trim()}`,
-      `*Teléfono:* ${form.telefono.trim()}`,
-      `*Servicio:* ${form.servicio}${servicePrice ? ` (${servicePrice})` : ''}`,
-      form.fecha.trim()
-        ? `*Disponibilidad:* ${form.fecha.trim()}`
-        : null,
-      form.mensaje.trim()
-        ? `*Comentarios:* ${form.mensaje.trim()}`
-        : null,
-      '---------------------------',
-      `${business.siteUrl}`,
-    ]
-      .filter((line): line is string => line !== null)
-      .join('\n')
+    if (!trimmedTelefono || trimmedTelefono.replace(/\D/g, '').length < 9) {
+      setError('Por favor introduce un teléfono de contacto válido (mínimo 9 dígitos).')
+      return
+    }
 
-    const link = whatsappLink(message)
-
+    setIsSubmitting(true)
     setError(null)
-    setPreparedLink(link)
 
-    window.open(link, '_blank', 'noopener,noreferrer')
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const appointmentId = `apt-web-${Date.now()}`
+
+      const payload = {
+        id: appointmentId,
+        clientName: trimmedNombre,
+        clientPhone: trimmedTelefono,
+        clientEmail: trimmedEmail,
+        serviceName: form.servicio,
+        serviceId: 'web-contact-form',
+        date: today,
+        time: form.fecha.trim() || 'Por coordinar',
+        durationMinutes: 90,
+        price: 30,
+        status: 'pendiente',
+        paymentStatus: 'pendiente',
+        notes: [
+          form.fecha.trim() ? `Disponibilidad: ${form.fecha.trim()}` : null,
+          form.mensaje.trim() ? `Mensaje: ${form.mensaje.trim()}` : null,
+        ]
+          .filter(Boolean)
+          .join(' | ') || 'Solicitud desde página de contacto',
+      }
+
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'No se pudo registrar la solicitud.')
+      }
+
+      setIsSuccess(true)
+    } catch (err: any) {
+      console.error('[BookingForm Submit Error]', err)
+      setError(err?.message || 'Ocurrió un error al enviar tu solicitud. Inténtalo de nuevo en unos minutos.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="rounded-4xl border border-rose/20 bg-blush/40 p-8 shadow-soft sm:p-12 text-center">
+        <span
+          aria-hidden="true"
+          className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white text-3xl text-rose shadow-sm"
+        >
+          ✓
+        </span>
+
+        <p className="eyebrow justify-center mt-6">¡Solicitud recibida!</p>
+
+        <h2 className="mt-3 font-display text-3xl sm:text-4xl">
+          ¡Gracias, {form.nombre}!
+        </h2>
+
+        <p className="mt-4 text-sm sm:text-base leading-7 text-muted max-w-lg mx-auto">
+          Tu solicitud para <strong>{form.servicio}</strong> ha quedado registrada en nuestra agenda.
+        </p>
+
+        <div className="mt-6 p-5 rounded-2xl bg-white border border-rose/10 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
+          <p>
+            ✉ Hemos enviado un correo de confirmación a <strong className="text-ink">{form.email}</strong>.
+          </p>
+          <p>
+            📞 Te contactaremos al <strong className="text-ink font-mono">{form.telefono}</strong> para coordinar tu cita en el mejor horario para ti.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setForm(emptyForm)
+            setIsSuccess(false)
+          }}
+          className="button button-dark mt-8"
+        >
+          Enviar otra consulta
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -314,8 +396,7 @@ function BookingForm() {
         id="booking-form-description"
         className="mt-5 text-sm leading-7 text-muted"
       >
-        Rellena estos datos y prepararemos tu mensaje de WhatsApp.
-        Confirmaremos la cita cuando acordemos fecha y hora.
+        Rellena estos datos para coordinar tu cita. Te responderemos personalmente y te enviaremos una confirmación por correo.
       </p>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -335,7 +416,22 @@ function BookingForm() {
         </label>
 
         <label className="block">
-          <span className="field-label">Teléfono *</span>
+          <span className="field-label">Correo electrónico *</span>
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            required
+            maxLength={100}
+            value={form.email}
+            onChange={(event) => update('email', event.target.value)}
+            placeholder="tu-email@ejemplo.com"
+            className="field"
+          />
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="field-label">Teléfono móvil de contacto *</span>
           <input
             type="tel"
             name="telefono"
@@ -344,7 +440,7 @@ function BookingForm() {
             maxLength={30}
             value={form.telefono}
             onChange={(event) => update('telefono', event.target.value)}
-            placeholder="+34 600 000 000"
+            placeholder="+34 604 18 76 76"
             className="field"
           />
         </label>
@@ -420,40 +516,15 @@ function BookingForm() {
 
       <button
         type="submit"
-        className="button button-dark mt-8 w-full"
+        disabled={isSubmitting}
+        className="button button-dark mt-8 w-full justify-center cursor-pointer"
       >
-        Continuar en WhatsApp
-        <span aria-hidden="true">↗</span>
+        {isSubmitting ? 'Enviando solicitud...' : 'Enviar solicitud de cita'}
+        <span aria-hidden="true">→</span>
       </button>
 
-      {preparedLink ? (
-        <div
-          role="status"
-          className="mt-5 rounded-2xl border border-rose/15 bg-blush p-5 text-sm leading-7"
-        >
-          <p className="font-semibold">
-            Tu mensaje está preparado.
-          </p>
-
-          <p className="mt-1 text-muted">
-            Si WhatsApp no se ha abierto,{' '}
-            <a
-              href={preparedLink}
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-plum underline underline-offset-4"
-            >
-              pulsa aquí para continuar
-            </a>
-            . Todavía debes enviar el mensaje en WhatsApp.
-          </p>
-        </div>
-      ) : null}
-
       <p className="mt-5 text-xs leading-6 text-muted">
-        * Campos obligatorios. Al continuar, los datos del formulario
-        se incluirán en un enlace a WhatsApp. Esta web no guarda
-        tu solicitud.
+        * Campos obligatorios. Tu información se procesa de forma segura para coordinar tu cita en GoldBlack Lash Studio.
       </p>
     </form>
   )

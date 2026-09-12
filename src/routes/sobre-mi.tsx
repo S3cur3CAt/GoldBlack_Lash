@@ -1,8 +1,8 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 
 import { Diamond, PageHero } from '#/components/PageHero'
-import { StudioVisual } from '#/components/StudioVisual'
-import { business, whatsappLink } from '#/data/site'
+import { openReservationModal } from '#/components/ReservationModal'
+import { business } from '#/data/site'
 
 export const Route = createFileRoute('/sobre-mi')({
   component: SobreMi,
@@ -273,15 +273,14 @@ function SobreMi() {
               </p>
 
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <a
-                  href={whatsappLink()}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="button button-light focus-visible:outline-accent"
+                <button
+                  type="button"
+                  onClick={() => openReservationModal()}
+                  className="button button-light focus-visible:outline-accent cursor-pointer"
                 >
-                  Hablemos por WhatsApp
-                  <span aria-hidden="true">↗</span>
-                </a>
+                  Reservar mi cita
+                  <span aria-hidden="true">→</span>
+                </button>
 
                 <Link
                   to="/contacto"

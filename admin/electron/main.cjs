@@ -61,7 +61,7 @@ function createWindow() {
   // Initialize auto-updater IPC
   setupUpdaterIPC(mainWindow)
 
-  // Open external links (like WhatsApp wa.me links, Instagram, Maps) in user's default browser
+  // Open external links (like email mailto, Instagram, Maps) in user's default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
       shell.openExternal(url)
@@ -151,9 +151,9 @@ function createApplicationMenu() {
           },
         },
         {
-          label: 'WhatsApp de Soporte',
+          label: 'Correo de Soporte',
           click: async () => {
-            await shell.openExternal('https://wa.me/34604187676')
+            await shell.openExternal('mailto:citas@goldblacklash.com')
           },
         },
       ],

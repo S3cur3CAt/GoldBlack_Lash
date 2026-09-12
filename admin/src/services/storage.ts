@@ -14,7 +14,6 @@ export const DEFAULT_CONFIG: StudioConfig = {
   name: 'GoldBlack Lash',
   tagline: 'Estudio de extensiones de pestañas',
   claim: 'Belleza de autor, hecha a medida',
-  whatsapp: '34604187676',
   phoneDisplay: '+34 604 18 76 76',
   email: 'hola@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
@@ -23,6 +22,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   instagram: 'https://instagram.com/goldblack_lash',
   instagramHandle: '@goldblack_lash',
   mapsUrl: 'https://maps.app.goo.gl/pTmcZcRxHETf7QJq7?g_st=iw',
+  senderEmail: 'citas@goldblacklash.com',
   hours: [
     { days: 'Lunes a viernes', time: '10:00 – 20:00' },
     { days: 'Sábado', time: '10:00 – 15:00' },
@@ -248,7 +248,16 @@ export function getAppointments(): Appointment[] {
       localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify([]))
       return []
     }
-    return JSON.parse(raw)
+    const parsed: Appointment[] = JSON.parse(raw)
+    const filtered = parsed.filter((apt) => {
+      const id = apt.id || ''
+      const name = (apt.clientName || '').toLowerCase()
+      return !id.startsWith('test-') && !name.includes('test') && !name.includes('prueba')
+    })
+    if (filtered.length !== parsed.length) {
+      localStorage.setItem(STORAGE_KEYS.APPOINTMENTS, JSON.stringify(filtered))
+    }
+    return filtered
   } catch (e) {
     console.error(e)
     return []
@@ -751,11 +760,23 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
   }
 
   for (const r of remoteList) {
+    const aptClientName = r.clientName || r.client_name || 'Cliente'
+    const id = r.id || ''
+
+    // Strictly discard any test appointments
+    if (
+      id.startsWith('test-') ||
+      aptClientName.toLowerCase().includes('test') ||
+      aptClientName.toLowerCase().includes('prueba')
+    ) {
+      continue
+    }
+
     if (!map.has(r.id)) {
       hasNewAppointments = true
     }
-    const aptClientName = r.clientName || r.client_name || 'Cliente'
     const aptClientPhone = r.clientPhone || r.client_phone || ''
+    const aptClientEmail = r.clientEmail || r.client_email || ''
     const aptDuration = r.durationMinutes || r.duration_minutes || 90
     const aptServiceId = r.serviceId || r.service_id || ''
     const aptServiceName = r.serviceName || r.service_name || 'Servicio de Pestañas'
@@ -768,6 +789,7 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
       id: r.id,
       clientName: aptClientName,
       clientPhone: aptClientPhone,
+      clientEmail: aptClientEmail || undefined,
       date: r.date,
       time: r.time,
       durationMinutes: aptDuration,
@@ -790,6 +812,7 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
         id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name: aptClientName,
         phone: aptClientPhone,
+        email: aptClientEmail || undefined,
         allergies: 'Ninguna conocida',
         preferredStyle: r.style || 'Cat Eye (Ojo de Gato)',
         preferredCurl: r.curl || 'D',
@@ -800,6 +823,10 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
         createdAt: r.date || new Date().toISOString().split('T')[0],
       }
       clientsMap.set(cleanPhone, newClient)
+      clientsUpdated = true
+    } else if (cleanPhone && clientsMap.has(cleanPhone) && aptClientEmail && !clientsMap.get(cleanPhone)?.email) {
+      const existing = clientsMap.get(cleanPhone)!
+      existing.email = aptClientEmail
       clientsUpdated = true
     }
   }
@@ -843,6 +870,7 @@ export async function syncAppointmentWithVercel(appointment: Appointment): Promi
       id: appointment.id,
       client_name: appointment.clientName,
       client_phone: appointment.clientPhone,
+      client_email: appointment.clientEmail || null,
       date: appointment.date,
       time: appointment.time,
       duration_minutes: appointment.durationMinutes,
@@ -998,33 +1026,56 @@ export function saveCustomGalleryCategories(categories: string[]): void {
   saveGalleryCategories(categories)
 }
 
-// WhatsApp Helper Generators
-export function createWhatsAppReminderUrl(apt: Appointment, config: StudioConfig): string {
-  const cleanPhone = apt.clientPhone.replace(/\D/g, '')
-  const fullPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`
-  const text = `¡Hola ${apt.clientName}! 🌟 Te recordamos tu cita en *${config.name}* para mañana ${apt.date} a las *${apt.time}* para tu tratamiento de *${apt.serviceName}*.\n\n📍 Ubicación: ${config.address}, ${config.city}.\n\nPor favor, recuerda acudir sin maquillaje en los ojos ni restos de rímel. Si necesitas modificar tu horario avísanos con antelación. ¡Te esperamos!`
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
-}
-
-export function createWhatsAppConfirmationUrl(apt: Appointment, config: StudioConfig): string {
-  const cleanPhone = apt.clientPhone.replace(/\D/g, '')
-  const fullPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`
-  const text = `¡Hola ${apt.clientName}! ✨ Tu cita en *${config.name}* ha sido confirmada con éxito:\n\n🗓 *Fecha:* ${apt.date}\n⏰ *Hora:* ${apt.time}\n🌸 *Servicio:* ${apt.serviceName}\n💶 *Precio:* ${apt.price} €\n\n📍 Nos encontramos en ${config.address}, ${config.city}.\n¡Nos encantará atenderte!`
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
-}
-
-export function createWhatsAppPreCareUrl(apt: Appointment, config: StudioConfig): string {
-  const cleanPhone = apt.clientPhone.replace(/\D/g, '')
-  const fullPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`
-  const text = `¡Hola ${apt.clientName}! 🌸 Para garantizar que tu tratamiento de *${apt.serviceName}* en *${config.name}* quede perfecto y tenga la máxima retención, te dejamos estas sencillas pautas para tu sesión:\n\n1️⃣ Acudir con los ojos completamente limpios, sin sombras, rímel ni delineador.\n2️⃣ No aplicar cremas grasas ni aceites en el contorno de ojos las horas previas.\n3️⃣ Si usas lentillas, te recomendamos traer estuche para retirarlas durante la colocación.\n4️⃣ Evitar tomar cafeína en exceso justo antes para mantener los párpados relajados.\n\n¡Cualquier duda estamos a tu disposición!`
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
-}
-
-export function createWhatsAppRecallUrl(client: Client, config: StudioConfig): string {
-  const cleanPhone = client.phone.replace(/\D/g, '')
-  const fullPhone = cleanPhone.startsWith('34') ? cleanPhone : `34${cleanPhone}`
-  const text = `¡Hola ${client.name}! 💖 En *${config.name}* esperamos que estés genial. Hemos visto que han pasado varias semanas desde tu última puesta de pestañas. Recuerda que para mantener tu mirada densa y uniforme, lo ideal es realizar un retoque a las 2-3 semanas.\n\n¿Te gustaría que te reservemos hueco para esta semana? ¡Escríbenos y elegimos el mejor horario para ti! ✨`
-  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
+// Email Dispatch via Resend (Vercel Backend / Direct API)
+export async function sendEmailViaResend(options: {
+  to: string | string[]
+  subject: string
+  html?: string
+  text?: string
+  from?: string
+  apiKey?: string
+}): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      return { ok: false, error: data?.error || `Error ${res.status} al enviar correo` }
+    }
+    return { ok: true, id: data.id }
+  } catch (err: any) {
+    // Direct fallback to Resend REST API if Vercel endpoint is unreachable
+    if (options.apiKey) {
+      try {
+        const directRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${options.apiKey}`,
+          },
+          body: JSON.stringify({
+            from: options.from || 'GoldBlack Lash <citas@goldblacklash.com>',
+            to: Array.isArray(options.to) ? options.to : [options.to],
+            subject: options.subject,
+            html: options.html,
+            text: options.text,
+          }),
+        })
+        const directData = await directRes.json()
+        if (directRes.ok) {
+          return { ok: true, id: directData.id }
+        }
+        return { ok: false, error: directData?.message || 'Error en Resend' }
+      } catch (directErr: any) {
+        return { ok: false, error: directErr?.message || 'Error de conexión con Resend' }
+      }
+    }
+    return { ok: false, error: err?.message || 'Error al enviar correo' }
+  }
 }
 
 // Backup and Restore

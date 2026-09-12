@@ -10,16 +10,13 @@ export const business = {
   name: 'GoldBlack Lash',
   tagline: 'Estudio de extensiones de pestañas',
   claim: 'Belleza de autor, hecha a medida',
-  // TODO: sustituir por el número real (formato internacional, sin + ni espacios).
-  whatsapp: '34604187676',
-  // TODO: sustituir por el teléfono real tal y como quieres que se muestre.
   phoneDisplay: '+34 604 18 76 76',
+  phoneClean: '34604187676',
   siteUrl: 'https://goldblacklash.vercel.app',
   email: 'hola@goldblacklash.com',
   address: 'Calle Numa, Montequinto',
   city: 'Dos Hermanas (Sevilla)',
   postalCode: '41089',
-  // TODO: sustituir por la URL real del perfil.
   instagram: 'https://instagram.com/goldblack_lash',
   instagramHandle: '@goldblack_lash',
   // Ubicación real de la tienda (37.3415415, -5.9386880).
@@ -32,13 +29,6 @@ export const business = {
     { days: 'Domingo', time: 'Cerrado' },
   ],
 } as const
-
-/** Enlace de WhatsApp con mensaje prerellenado para pedir cita. */
-export function whatsappLink(
-  message = '¡Hola! Me gustaría pedir cita en GoldBlack Lash',
-) {
-  return `https://wa.me/${business.whatsapp}?text=${encodeURIComponent(message)}`
-}
 
 export type Service = {
   id: string
@@ -174,7 +164,7 @@ export type GalleryPiece = {
   technique: string
   detail: string
   image: string
-  /** Precio orientativo que se muestra al pedir el diseño por WhatsApp. */
+  /** Precio orientativo del diseño o servicio. */
   price?: string
   badge?: string
   featured?: boolean

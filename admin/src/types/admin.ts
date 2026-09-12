@@ -8,6 +8,7 @@ export interface Appointment {
   id: string
   clientName: string
   clientPhone: string
+  clientEmail?: string
   date: string // YYYY-MM-DD
   time: string // HH:MM
   durationMinutes: number
@@ -58,7 +59,6 @@ export interface StudioConfig {
   name: string
   tagline: string
   claim: string
-  whatsapp: string
   phoneDisplay: string
   email: string
   address: string
@@ -68,6 +68,10 @@ export interface StudioConfig {
   instagramHandle: string
   mapsUrl: string
   hours: { days: string; time: string }[]
+  whatsapp?: string
+  resendApiKey?: string
+  senderEmail?: string
+  alertEmail?: string
 }
 
 export interface GalleryItem {

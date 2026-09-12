@@ -40,6 +40,7 @@ export function ReservationModal({
   const [isOpen, setIsOpen] = useState(controlledOpen ?? false)
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [selectedService, setSelectedService] = useState(initialServiceName || 'Volumen Ruso (Más Popular)')
   const [notes, setNotes] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -98,6 +99,7 @@ export function ReservationModal({
     if (isSuccess) {
       setClientName('')
       setClientPhone('')
+      setClientEmail('')
       setNotes('')
       setIsSuccess(false)
     }
@@ -115,6 +117,7 @@ export function ReservationModal({
 
     const trimmedName = clientName.trim()
     const trimmedPhone = clientPhone.trim()
+    const trimmedEmail = clientEmail.trim()
 
     if (!trimmedName) {
       setError('Por favor, indica tu nombre completo.')
@@ -122,6 +125,10 @@ export function ReservationModal({
     }
     if (!trimmedPhone || trimmedPhone.replace(/\D/g, '').length < 9) {
       setError('Por favor, introduce un teléfono de contacto válido (mínimo 9 dígitos).')
+      return
+    }
+    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Por favor, introduce una dirección de correo electrónico válida.')
       return
     }
 
@@ -136,6 +143,7 @@ export function ReservationModal({
         id: appointmentId,
         clientName: trimmedName,
         clientPhone: trimmedPhone,
+        clientEmail: trimmedEmail,
         serviceName: selectedService,
         serviceId: initialServiceId || 'web-reservation',
         date: today,
@@ -215,9 +223,12 @@ export function ReservationModal({
               Tu cita para <strong className="text-rose font-semibold">{selectedService}</strong> ha quedado registrada en nuestra aplicación de administración.
             </p>
 
-            <div className="reservation-notice-box max-w-md mx-auto">
+            <div className="reservation-notice-box max-w-md mx-auto space-y-1.5">
               <p className="text-xs text-muted leading-relaxed">
-                Nos pondremos en contacto contigo al número <strong className="text-ink font-mono">{clientPhone}</strong> para coordinar la fecha y hora que mejor te venga.
+                Hemos enviado un correo con todos los detalles a <strong className="text-ink font-semibold">{clientEmail}</strong>.
+              </p>
+              <p className="text-xs text-muted leading-relaxed">
+                Nos pondremos en contacto contigo al número <strong className="text-ink font-mono">{clientPhone}</strong> para coordinar tu horario ideal.
               </p>
             </div>
 
@@ -269,6 +280,29 @@ export function ReservationModal({
                         onChange={(e) => setClientName(e.target.value)}
                         className="reservation-input"
                         autoComplete="name"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-email" className="reservation-label">
+                      Correo electrónico para confirmación <span className="text-rose">*</span>
+                    </label>
+                    <div className="reservation-input-wrapper">
+                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                      </svg>
+                      <input
+                        id="res-email"
+                        type="email"
+                        required
+                        placeholder="tu-correo@ejemplo.com"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        className="reservation-input"
+                        autoComplete="email"
                       />
                     </div>
                   </div>

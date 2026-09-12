@@ -2,6 +2,7 @@ export interface DbAppointmentRecord {
   id: string
   client_name: string
   client_phone: string
+  client_email?: string | null
   date: string
   time: string
   duration_minutes: number
@@ -35,13 +36,14 @@ async function getSql() {
         connect_timeout: 10,
       })
 
-      // Ensure table exists
+      // Ensure table and columns exist
       try {
         await client`
           CREATE TABLE IF NOT EXISTS studio_appointments (
             id TEXT PRIMARY KEY,
             client_name TEXT NOT NULL,
             client_phone TEXT NOT NULL,
+            client_email TEXT,
             date TEXT NOT NULL,
             time TEXT NOT NULL,
             duration_minutes INTEGER DEFAULT 90,
@@ -58,6 +60,9 @@ async function getSql() {
             updated_at TIMESTAMPTZ DEFAULT NOW()
           )
         `
+        await client`
+          ALTER TABLE studio_appointments ADD COLUMN IF NOT EXISTS client_email TEXT
+        `
       } catch (err) {
         console.warn('[Supabase DB] Table check notice:', err)
       }
@@ -72,7 +77,7 @@ export async function fetchAppointmentsFromDb() {
   try {
     const client = await getSql()
     const rows = await client`
-      SELECT id, client_name, client_phone, date, time, duration_minutes,
+      SELECT id, client_name, client_phone, client_email, date, time, duration_minutes,
              service_id, service_name, price, status, payment_status,
              curl, length, style, notes, created_at, updated_at
       FROM studio_appointments
@@ -82,6 +87,7 @@ export async function fetchAppointmentsFromDb() {
       id: r.id,
       clientName: r.client_name,
       clientPhone: r.client_phone,
+      clientEmail: r.client_email || undefined,
       date: r.date,
       time: r.time,
       durationMinutes: r.duration_minutes || 90,
@@ -106,6 +112,7 @@ export async function saveAppointmentToDb(appointment: {
   id: string
   clientName: string
   clientPhone: string
+  clientEmail?: string
   date?: string
   time?: string
   durationMinutes?: number
@@ -129,11 +136,12 @@ export async function saveAppointmentToDb(appointment: {
 
   await client`
     INSERT INTO studio_appointments (
-      id, client_name, client_phone, date, time, duration_minutes,
+      id, client_name, client_phone, client_email, date, time, duration_minutes,
       service_id, service_name, price, status, payment_status,
       curl, length, style, notes, created_at, updated_at
     ) VALUES (
       ${appointment.id}, ${appointment.clientName}, ${appointment.clientPhone},
+      ${appointment.clientEmail || null},
       ${date}, ${time}, ${durationMinutes},
       ${appointment.serviceId || null}, ${appointment.serviceName || null},
       ${price}, ${status}, ${paymentStatus},
@@ -144,6 +152,7 @@ export async function saveAppointmentToDb(appointment: {
     ON CONFLICT (id) DO UPDATE SET
       client_name = EXCLUDED.client_name,
       client_phone = EXCLUDED.client_phone,
+      client_email = EXCLUDED.client_email,
       date = EXCLUDED.date,
       time = EXCLUDED.time,
       duration_minutes = EXCLUDED.duration_minutes,

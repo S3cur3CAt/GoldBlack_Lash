@@ -10,16 +10,13 @@ import {
   IconUsers,
   IconEuro,
   IconSparkles,
-  IconWhatsApp,
+  IconMail,
   IconCheck,
   IconClock,
   IconAlertCircle,
   IconPlus,
 } from './Icons'
-import {
-  createWhatsAppRecallUrl,
-} from '../services/storage'
-import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
+import { EmailModal, EmailModalMode } from './EmailModal'
 
 interface DashboardProps {
   appointments: Appointment[]
@@ -42,10 +39,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const today = new Date().toISOString().split('T')[0]
 
-  // WhatsApp Message Modal State
-  const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false)
-  const [selectedWhatsAppApt, setSelectedWhatsAppApt] = useState<Appointment | null>(null)
-  const [whatsAppModalMode, setWhatsAppModalMode] = useState<WhatsAppModalMode>('recordar')
+  // Email Modal State for direct Resend messaging
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [selectedEmailApt, setSelectedEmailApt] = useState<Appointment | null>(null)
+  const [selectedEmailClient, setSelectedEmailClient] = useState<Client | null>(null)
+  const [emailModalMode, setEmailModalMode] = useState<EmailModalMode>('recordar')
 
   // Filter today's appointments
   const todayAppointments = appointments.filter((a) => a.date === today)
@@ -267,19 +265,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
 
-                    {/* Actions: WhatsApp & Status Change */}
+                    {/* Actions: Email & Status Change */}
                     <div className="flex items-center gap-2 self-end sm:self-center">
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedWhatsAppApt(apt)
-                          setWhatsAppModalMode('recordar')
-                          setWhatsAppModalOpen(true)
+                          setSelectedEmailApt(apt)
+                          setSelectedEmailClient(null)
+                          setEmailModalMode('recordar')
+                          setEmailModalOpen(true)
                         }}
-                        title="Personalizar y enviar mensaje por WhatsApp"
-                        className="p-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
+                        title="Enviar correo corporativo (Resend)"
+                        className="p-2 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border border-gold-500/30 transition-colors cursor-pointer"
                       >
-                        <IconWhatsApp size={16} />
+                        <IconMail size={16} />
                       </button>
                       {apt.status !== 'completada' && (
                         <button
@@ -356,7 +355,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-xs text-gray-500">No hay clientas pendientes de retoque.</p>
               ) : (
                 recallClients.map((c) => {
-                  const recallUrl = createWhatsAppRecallUrl(c, config)
                   return (
                     <div
                       key={c.id}
@@ -368,16 +366,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           Última visita: {c.lastVisitDate || 'Sin registro'}
                         </div>
                       </div>
-                      <a
-                        href={recallUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Enviar invitación de retoque por WhatsApp"
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 text-[11px] font-semibold"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedEmailApt(null)
+                          setSelectedEmailClient(c)
+                          setEmailModalMode('retoque')
+                          setEmailModalOpen(true)
+                        }}
+                        title="Enviar invitación de retoque por correo corporativo"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 text-gold-300 border border-gold-500/30 text-[11px] font-semibold transition-colors cursor-pointer"
                       >
-                        <IconWhatsApp size={13} />
+                        <IconMail size={13} />
                         <span>Avisar</span>
-                      </a>
+                      </button>
                     </div>
                   )
                 })
@@ -387,13 +389,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* WhatsApp Customize & Send Modal */}
-      <WhatsAppModal
-        isOpen={whatsAppModalOpen}
-        onClose={() => setWhatsAppModalOpen(false)}
-        appointment={selectedWhatsAppApt}
+      {/* Email Modal */}
+      <EmailModal
+        isOpen={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        appointment={selectedEmailApt}
+        client={selectedEmailClient}
         config={config}
-        initialMode={whatsAppModalMode}
+        initialMode={emailModalMode}
       />
     </div>
   )

@@ -163,9 +163,16 @@ export const App: React.FC = () => {
       fetchLiveAppointmentsFromVercel()
         .then((liveApts) => {
           if (liveApts) {
+            // Guarantee test appointments are completely ignored
+            const realApts = liveApts.filter((a) => {
+              const id = (a.id || '').toLowerCase()
+              const name = (a.clientName || '').toLowerCase()
+              return !id.startsWith('test-') && !name.includes('test') && !name.includes('prueba')
+            })
+
             // Check for new real-time appointments
             if (knownAptIdsRef.current && !isInitialSyncRef.current) {
-              const newApts = liveApts.filter((a) => !knownAptIdsRef.current!.has(a.id))
+              const newApts = realApts.filter((a) => !knownAptIdsRef.current!.has(a.id))
               if (newApts.length > 0) {
                 // Play luxury notification chime
                 playNotificationChime()
@@ -196,7 +203,7 @@ export const App: React.FC = () => {
 
                 // If currently viewing appointments tab, mark as viewed right away
                 if (activeTab === 'appointments') {
-                  const updatedViewed = new Set(liveApts.map((a) => a.id))
+                  const updatedViewed = new Set(realApts.map((a) => a.id))
                   setViewedAptIds(updatedViewed)
                   try {
                     localStorage.setItem('goldblack_viewed_appointment_ids', JSON.stringify(Array.from(updatedViewed)))
@@ -206,8 +213,8 @@ export const App: React.FC = () => {
             }
 
             isInitialSyncRef.current = false
-            knownAptIdsRef.current = new Set(liveApts.map((a) => a.id))
-            setAppointments(liveApts)
+            knownAptIdsRef.current = new Set(realApts.map((a) => a.id))
+            setAppointments(realApts)
             setClients(getClients())
           }
         })
@@ -461,7 +468,7 @@ export const App: React.FC = () => {
     },
     appointments: {
       title: 'Gestor de Citas & Agenda',
-      subtitle: 'Control de reservas, fichas técnicas y envíos de WhatsApp',
+      subtitle: 'Control de reservas, fichas técnicas y envíos por correo corporativo',
     },
     services: {
       title: 'Catálogo de Servicios y Precios',

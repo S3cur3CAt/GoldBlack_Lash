@@ -8,7 +8,6 @@ import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   galleryPieces as fallbackPieces,
-  whatsappLink,
   type GalleryPiece,
 } from '#/data/site'
 

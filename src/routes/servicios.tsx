@@ -9,7 +9,6 @@ import {
   business,
   faqs,
   serviceCategories as fallbackCategories,
-  whatsappLink,
   type Service,
   type ServiceCategory,
 } from '#/data/site'
@@ -225,17 +224,14 @@ function CategoryBlock({
             {category.blurb}
           </p>
 
-          <a
-            href={whatsappLink(
-              `¡Hola! Me gustaría recibir asesoría sobre ${category.name.toLowerCase()}.`,
-            )}
-            target="_blank"
-            rel="noreferrer"
-            className="text-link mt-6"
+          <button
+            type="button"
+            onClick={() => openReservationModal({ serviceName: `Asesoramiento: ${category.name}` })}
+            className="text-link mt-6 inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-left"
           >
             Ayúdame a elegir
             <span aria-hidden="true">↗</span>
-          </a>
+          </button>
         </header>
 
         <div className="space-y-6">
@@ -417,17 +413,13 @@ function FaqBlock() {
               Si necesitas preguntar algo más, estoy al otro lado.
             </p>
 
-            <a
-              href={whatsappLink(
-                '¡Hola! Tengo una duda antes de reservar mi cita.',
-              )}
-              target="_blank"
-              rel="noreferrer"
-              className="text-link mt-6"
+            <Link
+              to="/contacto"
+              className="text-link mt-6 inline-flex items-center gap-1"
             >
               Hacer una pregunta
               <span aria-hidden="true">↗</span>
-            </a>
+            </Link>
           </header>
 
           <div className="space-y-3">
