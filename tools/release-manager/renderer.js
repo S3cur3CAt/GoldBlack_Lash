@@ -78,18 +78,21 @@ async function checkGitHubStatus(userTriggered = false) {
 }
 
 el('btnRefreshStatus')?.addEventListener('click', () => {
-  loadAdminVersion()
+  loadAdminVersion(false)
   checkGitHubStatus(true)
   refreshInstallers()
 })
 
 // Load Admin App Local Version
-async function loadAdminVersion() {
+async function loadAdminVersion(shouldSuggest = false) {
   const res = await window.publisherAPI?.getAdminVersion()
   if (res && res.version) {
     localVersion = res.version
     el('txtLocalVersion').textContent = `v${localVersion}`
-    suggestNextVersion(localVersion)
+    // Only suggest next version on initial empty load, never overwrite user input
+    if (shouldSuggest && !el('inputVersion').value.trim()) {
+      suggestNextVersion(localVersion)
+    }
   }
 }
 
@@ -97,31 +100,25 @@ function suggestNextVersion(baseVer) {
   const clean = baseVer.replace(/^v/, '')
   const parts = clean.split('.').map((n) => parseInt(n, 10) || 0)
   while (parts.length < 3) parts.push(0)
-  // Default suggestion: patch + 1
   parts[2] = parts[2] + 1
   const next = parts.join('.')
   el('inputVersion').value = next
   el('inputTitle').value = `GoldBlack Lash Admin v${next}`
 }
 
-// Version Bump Helpers
-el('btnBumpPatch')?.addEventListener('click', async () => {
-  const current = el('inputVersion').value.trim().replace(/^v/, '')
+// Version Bump Helpers (only update input UI without saving until build/publish)
+el('btnBumpPatch')?.addEventListener('click', () => {
+  const current = el('inputVersion').value.trim().replace(/^v/, '') || localVersion
   const parts = current.split('.').map((n) => parseInt(n, 10) || 0)
   while (parts.length < 3) parts.push(0)
   parts[2] = parts[2] + 1
   const v = parts.join('.')
   el('inputVersion').value = v
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
-  const res = await window.publisherAPI?.setVersion(v)
-  if (res && res.ok) {
-    localVersion = res.version
-    el('txtLocalVersion').textContent = `v${localVersion}`
-  }
 })
 
-el('btnBumpMinor')?.addEventListener('click', async () => {
-  const current = el('inputVersion').value.trim().replace(/^v/, '')
+el('btnBumpMinor')?.addEventListener('click', () => {
+  const current = el('inputVersion').value.trim().replace(/^v/, '') || localVersion
   const parts = current.split('.').map((n) => parseInt(n, 10) || 0)
   while (parts.length < 3) parts.push(0)
   parts[1] = parts[1] + 1
@@ -129,28 +126,12 @@ el('btnBumpMinor')?.addEventListener('click', async () => {
   const v = parts.join('.')
   el('inputVersion').value = v
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
-  const res = await window.publisherAPI?.setVersion(v)
-  if (res && res.ok) {
-    localVersion = res.version
-    el('txtLocalVersion').textContent = `v${localVersion}`
-  }
 })
 
-// Auto-sync title when version is typed and auto-save on change
+// Auto-sync title when version is typed
 el('inputVersion')?.addEventListener('input', () => {
   const v = el('inputVersion').value.trim().replace(/^v/, '')
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
-})
-
-el('inputVersion')?.addEventListener('change', async () => {
-  const v = el('inputVersion').value.trim()
-  if (v) {
-    const res = await window.publisherAPI?.setVersion(v)
-    if (res && res.ok) {
-      localVersion = res.version
-      el('txtLocalVersion').textContent = `v${localVersion}`
-    }
-  }
 })
 
 // Templates for Notes
@@ -263,7 +244,7 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
     const res = await window.publisherAPI?.buildInstaller({ version })
     badge.textContent = '✓ Compilado con éxito'
     badge.className = 'text-[10px] text-emerald-400 font-bold'
-    await loadAdminVersion()
+    await loadAdminVersion(false)
     await refreshInstallers()
   } catch (err) {
     badge.textContent = '✗ Error en compilación'
@@ -373,7 +354,7 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
       el('successTitleText').textContent = `¡Release ${result.tagName} publicada con éxito en GitHub!`
 
       // Refresh local version and installer list
-      await loadAdminVersion()
+      await loadAdminVersion(false)
       await refreshInstallers()
 
       // Update header
@@ -404,7 +385,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (savedToken) {
     el('inputToken').value = savedToken
   }
-  await loadAdminVersion()
+  await loadAdminVersion(true)
   await refreshInstallers()
   await checkGitHubStatus(false)
 })
