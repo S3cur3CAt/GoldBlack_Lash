@@ -30,6 +30,7 @@ const appPaths = await packager({
   platform: 'win32',
   arch: 'x64',
   electronVersion: '11.5.0',
+  icon: join(adminRoot, 'build', 'icon.ico'),
   out: distPackages,
   overwrite: true,
   asar: true,
@@ -90,6 +91,8 @@ const finalInstallerPath = join(distInstallers, installerExeName)
 if (makensisPath) {
   console.log(`✓ Compilador NSIS encontrado: ${makensisPath}`)
 
+  const iconPathWin = join(adminRoot, 'build', 'icon.ico').replace(/\\/g, '\\\\')
+
   const nsiScript = `
 !include "MUI2.nsh"
 
@@ -99,6 +102,8 @@ InstallDir "$LOCALAPPDATA\\Programs\\GoldBlack Lash Admin"
 InstallDirRegKey HKCU "Software\\GoldBlack Lash Admin" "InstallDir"
 RequestExecutionLevel user
 
+!define MUI_ICON "${iconPathWin}"
+!define MUI_UNICON "${iconPathWin}"
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TITLE "Instalador de GoldBlack Lash Admin"
 !define MUI_WELCOMEPAGE_TEXT "Bienvenida a la instalación del panel de administración y gestión para GoldBlack Lash Studio.\\n\\nPresiona Siguiente para continuar."
@@ -116,22 +121,23 @@ RequestExecutionLevel user
 Section "Instalar Archivos" SecApp
   SetOutPath "$INSTDIR"
   File /r "${winAppDir.replace(/\\/g, '\\\\')}\\*.*"
+  File "${iconPathWin}"
 
   ; Crear desinstalador
   WriteUninstaller "$INSTDIR\\Uninstall.exe"
 
   ; Acceso directo en Menú Inicio
   CreateDirectory "$SMPROGRAMS\\GoldBlack Lash"
-  CreateShortcut "$SMPROGRAMS\\GoldBlack Lash\\GoldBlack Lash Admin.lnk" "$INSTDIR\\GoldBlack-Lash-Admin.exe"
-  CreateShortcut "$SMPROGRAMS\\GoldBlack Lash\\Desinstalar.lnk" "$INSTDIR\\Uninstall.exe"
+  CreateShortcut "$SMPROGRAMS\\GoldBlack Lash\\GoldBlack Lash Admin.lnk" "$INSTDIR\\GoldBlack-Lash-Admin.exe" "" "$INSTDIR\\icon.ico" 0
+  CreateShortcut "$SMPROGRAMS\\GoldBlack Lash\\Desinstalar.lnk" "$INSTDIR\\Uninstall.exe" "" "$INSTDIR\\icon.ico" 0
 
   ; Acceso directo en Escritorio
-  CreateShortcut "$DESKTOP\\GoldBlack Lash Admin.lnk" "$INSTDIR\\GoldBlack-Lash-Admin.exe"
+  CreateShortcut "$DESKTOP\\GoldBlack Lash Admin.lnk" "$INSTDIR\\GoldBlack-Lash-Admin.exe" "" "$INSTDIR\\icon.ico" 0
 
   ; Registro de desinstalación en Panel de Control de Windows
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayName" "GoldBlack Lash Admin"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "UninstallString" "$INSTDIR\\Uninstall.exe"
-  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayIcon" "$INSTDIR\\GoldBlack-Lash-Admin.exe"
+  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayIcon" "$INSTDIR\\icon.ico,0"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "DisplayVersion" "1.0.0"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackLashAdmin" "Publisher" "GoldBlack Lash Studio"
 SectionEnd

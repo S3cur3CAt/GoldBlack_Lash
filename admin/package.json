@@ -11,6 +11,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "start": "electron electron/main.cjs",
+    "generate:icons": "python scripts/generate-icons.py",
     "package:win": "node scripts/build-win.mjs",
     "package:mac": "node scripts/build-mac.mjs",
     "package:all": "node scripts/build-win.mjs && node scripts/build-mac.mjs"

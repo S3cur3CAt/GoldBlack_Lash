@@ -30,6 +30,7 @@ const appPaths = await packager({
   platform: 'darwin',
   arch: 'x64',
   electronVersion: '11.5.0',
+  icon: join(adminRoot, 'build', 'icon.icns'),
   out: distPackages,
   overwrite: true,
   asar: true,
@@ -54,6 +55,20 @@ const appPaths = await packager({
 
 const macAppDir = appPaths[0]
 console.log(`✓ Bundle de macOS creado en: ${macAppDir}`)
+
+// Ensure ICNS is copied to Resources as electron.icns and app icon
+const resourcesDir = join(macAppDir, 'GoldBlack Lash Admin.app', 'Contents', 'Resources')
+const sourceIcns = join(adminRoot, 'build', 'icon.icns')
+if (existsSync(resourcesDir) && existsSync(sourceIcns)) {
+  try {
+    const { copyFileSync } = await import('node:fs')
+    copyFileSync(sourceIcns, join(resourcesDir, 'electron.icns'))
+    copyFileSync(sourceIcns, join(resourcesDir, 'GoldBlack Lash Admin.icns'))
+    console.log('✓ Icono ICNS copiado al bundle de macOS Contents/Resources.')
+  } catch (e) {
+    console.warn('Advertencia al copiar icono:', e.message)
+  }
+}
 
 // 4. Validate & Adjust Info.plist for macOS 10.11 El Capitan
 console.log('\n[3/3] Configurando Info.plist con LSMinimumSystemVersion = 10.11.0...')

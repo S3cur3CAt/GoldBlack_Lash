@@ -1,6 +1,11 @@
 const { app, BrowserWindow, Menu, shell } = require('electron')
 const path = require('path')
 
+// Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.goldblacklash.admin')
+}
+
 // Disable GPU acceleration if running on older hardware or virtualized environment (helpful for OS X El Capitan)
 if (process.platform === 'darwin') {
   app.commandLine.appendSwitch('disable-color-correct-rendering')
@@ -9,6 +14,9 @@ if (process.platform === 'darwin') {
 let mainWindow = null
 
 function createWindow() {
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  const iconPath = path.join(__dirname, iconFile)
+
   mainWindow = new BrowserWindow({
     width: 1300,
     height: 850,
@@ -16,6 +24,7 @@ function createWindow() {
     minHeight: 680,
     backgroundColor: '#0a0a0d',
     title: 'GoldBlack Lash — Panel de Administración',
+    icon: iconPath,
     show: false,
     webPreferences: {
       nodeIntegration: false,
@@ -25,6 +34,15 @@ function createWindow() {
       webSecurity: true,
     },
   })
+
+  // Set macOS dock icon dynamically if supported
+  if (process.platform === 'darwin' && app.dock) {
+    try {
+      app.dock.setIcon(path.join(__dirname, 'icon.png'))
+    } catch (e) {
+      console.warn('Could not set dock icon dynamically:', e.message)
+    }
+  }
 
   // Load the built production frontend
   const indexPath = path.join(__dirname, '..', 'dist', 'index.html')
