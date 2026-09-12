@@ -4,6 +4,7 @@ import { GalleryItem } from '../types/admin'
 import {
   getGalleryCategories,
   saveGalleryCategories,
+  resolveImageUrl,
 } from '../services/storage'
 import {
   IconImage,
@@ -531,7 +532,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               {/* Photo Container */}
               <div className="relative aspect-[4/5] w-full bg-[#0d0d12] overflow-hidden flex items-center justify-center">
                 <img
-                  src={item.url}
+                  src={resolveImageUrl(item.url, item.key)}
                   alt={item.title}
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
@@ -877,7 +878,17 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-2 border-[#2b2b3d] border-dashed rounded-xl bg-[#181824] hover:border-gold-500/40 transition-colors">
                   {previewUrl ? (
                     <div className="relative shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-gold-500/30 bg-black/50">
-                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={resolveImageUrl(previewUrl, editingItem?.key)}
+                        alt="Preview"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          if (editingItem?.key && !target.src.includes('goldblacklash.vercel.app')) {
+                            target.src = `https://goldblacklash.vercel.app/api/images/${editingItem.key}`
+                          }
+                        }}
+                        className="w-full h-full object-cover"
+                      />
                       <div className="absolute inset-0 bg-black/20 flex items-end p-1">
                         <span className="text-[9px] font-bold text-emerald-300 bg-black/70 px-1.5 py-0.5 rounded">
                           ✓ Cargada

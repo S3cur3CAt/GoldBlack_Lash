@@ -294,6 +294,63 @@ export function setApiBaseUrl(url: string): void {
   localStorage.setItem('goldblack_admin_api_url', url.trim())
 }
 
+/**
+ * Resolves an image URL so it works seamlessly in both Web and Electron (file:// protocol).
+ * Any relative path like /api/images/... will be prefixed with the Vercel backend base URL.
+ */
+export function resolveImageUrl(url?: string, key?: string): string {
+  if (!url && !key) return ''
+  // If it's a base64 data URL, return directly (works in Electron & browser)
+  if (url && url.startsWith('data:image/')) return url
+  // If it's already an absolute http or https URL, return directly
+  if (url && (url.startsWith('http://') || url.startsWith('https://'))) return url
+
+  const baseUrl = getApiBaseUrl()
+
+  // If url is just a key or starts with custom- or pieza-
+  if (url && (url.startsWith('custom-') || url.startsWith('pieza-'))) {
+    return `${baseUrl}/api/images/${url}`
+  }
+
+  // If it starts with /api/ or api/
+  if (url && url.startsWith('/api/')) {
+    return `${baseUrl}${url}`
+  }
+  if (url && url.startsWith('api/')) {
+    return `${baseUrl}/${url}`
+  }
+
+  // If it contains /api/images/
+  if (url && url.includes('/api/images/')) {
+    const idx = url.indexOf('/api/images/')
+    return `${baseUrl}${url.substring(idx)}`
+  }
+
+  // If key is provided (e.g. pieza-01 or custom-123456)
+  if (key) {
+    return `${baseUrl}/api/images/${key}`
+  }
+
+  // If url contains pieza-
+  if (url && url.includes('pieza-')) {
+    const match = url.match(/(pieza-\d+)/)
+    if (match) {
+      return `${baseUrl}/api/images/${match[1]}`
+    }
+  }
+
+  // If it starts with /
+  if (url && url.startsWith('/')) {
+    return `${baseUrl}${url}`
+  }
+
+  if (url) {
+    return `${baseUrl}/${url.replace(/^\.?\//, '')}`
+  }
+
+  return ''
+}
+
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'idle'
 
 // Broadcast sync events to UI
