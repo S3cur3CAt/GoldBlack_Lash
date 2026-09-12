@@ -22,9 +22,6 @@ import {
   IconSparkles,
   IconMessageSquare,
 } from './Icons'
-import {
-  fetchLiveAppointmentsFromVercel,
-} from '../services/storage'
 import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 
 interface AppointmentsProps {
@@ -212,16 +209,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-3 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => fetchLiveAppointmentsFromVercel()}
-            title="Sincronizar reservas con la web"
-            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#171722] hover:bg-[#202030] text-gray-300 hover:text-white border border-[#252535] text-xs font-semibold transition-all cursor-pointer"
-          >
-            <span>🔄</span>
-            <span>Sincronizar</span>
-          </button>
-
           <button
             onClick={handleNew}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron')
+const { app, BrowserWindow, Menu, shell, ipcMain, Notification } = require('electron')
 const path = require('path')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
@@ -188,6 +188,36 @@ ipcMain.on('window:close', () => {
 
 ipcMain.handle('window:is-maximized', () => {
   return mainWindow ? mainWindow.isMaximized() : false
+})
+
+// Visual and sound notification for new real-time appointment
+ipcMain.on('notification:appointment', (_event, data) => {
+  try {
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.bounce('informational')
+    }
+
+    if (Notification.isSupported()) {
+      const notif = new Notification({
+        title: data?.title || 'GoldBlack Lash — Nueva Cita Recibida',
+        body: data?.body || 'Una clienta ha registrado una nueva reserva.',
+        icon: path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+        silent: false,
+      })
+
+      notif.on('click', () => {
+        if (mainWindow) {
+          if (mainWindow.isMinimized()) mainWindow.restore()
+          mainWindow.focus()
+          mainWindow.webContents.send('navigate:tab', 'appointments')
+        }
+      })
+
+      notif.show()
+    }
+  } catch (err) {
+    console.warn('[Notification Error]', err)
+  }
 })
 
 app.whenReady().then(() => {

@@ -20,7 +20,10 @@ interface ReservationModalProps {
 
 const POPULAR_SERVICES = [
   'Volumen Ruso (Más Popular)',
-  'Volumen (3D, 4D, 5D y 6D)',
+  'Volumen 3D',
+  'Volumen 4D',
+  'Volumen 5D',
+  'Volumen 6D',
   'Mega Volumen Glam',
   'Lifting de Pestañas con Tinte & Queratina',
   'Retoque (2 a 3 semanas)',
@@ -180,7 +183,7 @@ export function ReservationModal({
       }}
       className="reservation-modal-backdrop"
     >
-      <div className="reservation-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className="reservation-modal-card reservation-modal-card-horizontal" onClick={(e) => e.stopPropagation()}>
         {/* Close Button */}
         <button
           type="button"
@@ -207,12 +210,12 @@ export function ReservationModal({
             <span className="reservation-badge">¡Solicitud Registrada!</span>
             <h3 className="reservation-title">¡Reserva enviada con éxito!</h3>
 
-            <p className="reservation-text">
+            <p className="reservation-text max-w-lg mx-auto">
               Muchas gracias, <strong className="text-ink font-semibold">{clientName}</strong>.
               Tu cita para <strong className="text-rose font-semibold">{selectedService}</strong> ha quedado registrada en nuestra aplicación de administración.
             </p>
 
-            <div className="reservation-notice-box">
+            <div className="reservation-notice-box max-w-md mx-auto">
               <p className="text-xs text-muted leading-relaxed">
                 Nos pondremos en contacto contigo al número <strong className="text-ink font-mono">{clientPhone}</strong> para coordinar la fecha y hora que mejor te venga.
               </p>
@@ -221,7 +224,7 @@ export function ReservationModal({
             <button
               type="button"
               onClick={handleClose}
-              className="reservation-submit-btn w-full mt-4"
+              className="reservation-submit-btn max-w-sm mx-auto mt-4"
             >
               Entendido, gracias
             </button>
@@ -230,7 +233,12 @@ export function ReservationModal({
           /* FORM VIEW */
           <div className="reservation-form-view">
             <div className="reservation-header">
-              <span className="reservation-badge">GoldBlack Lash Studio</span>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
+                <span className="reservation-badge">GoldBlack Lash Studio</span>
+                <span className="text-[11px] font-medium text-rose tracking-wide flex items-center gap-1 bg-blush/60 px-2.5 py-0.5 rounded-full">
+                  ⚡ Confirmación directa con el estudio
+                </span>
+              </div>
               <h2 className="reservation-title">Reserva tu momento</h2>
               <p className="reservation-subtitle">
                 Introduce tus datos para registrar tu cita. Nos pondremos en contacto contigo para coordinar tu horario ideal.
@@ -238,89 +246,97 @@ export function ReservationModal({
             </div>
 
             <form onSubmit={handleSubmit} className="reservation-form">
-              {/* Name */}
-              <div className="reservation-field-group">
-                <label htmlFor="res-name" className="reservation-label">
-                  Nombre completo <span className="text-rose">*</span>
-                </label>
-                <div className="reservation-input-wrapper">
-                  <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                  <input
-                    ref={nameInputRef}
-                    id="res-name"
-                    type="text"
-                    required
-                    placeholder="Ej. María García"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    className="reservation-input"
-                    autoComplete="name"
-                  />
-                </div>
-              </div>
+              <div className="reservation-form-grid">
+                {/* Left Column */}
+                <div className="reservation-col">
+                  {/* Name */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-name" className="reservation-label">
+                      Nombre completo <span className="text-rose">*</span>
+                    </label>
+                    <div className="reservation-input-wrapper">
+                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <input
+                        ref={nameInputRef}
+                        id="res-name"
+                        type="text"
+                        required
+                        placeholder="Ej. María García"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        className="reservation-input"
+                        autoComplete="name"
+                      />
+                    </div>
+                  </div>
 
-              {/* Phone */}
-              <div className="reservation-field-group">
-                <label htmlFor="res-phone" className="reservation-label">
-                  Número de teléfono móvil <span className="text-rose">*</span>
-                </label>
-                <div className="reservation-input-wrapper">
-                  <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  <input
-                    id="res-phone"
-                    type="tel"
-                    required
-                    placeholder="Ej. 604 18 76 76"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    className="reservation-input font-mono"
-                    autoComplete="tel"
-                  />
+                  {/* Phone */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-phone" className="reservation-label">
+                      Número de teléfono móvil <span className="text-rose">*</span>
+                    </label>
+                    <div className="reservation-input-wrapper">
+                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                      </svg>
+                      <input
+                        id="res-phone"
+                        type="tel"
+                        required
+                        placeholder="Ej. 604 18 76 76"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        className="reservation-input font-mono"
+                        autoComplete="tel"
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Service Selection */}
-              <div className="reservation-field-group">
-                <label htmlFor="res-service" className="reservation-label">
-                  Tratamiento de interés
-                </label>
-                <div className="reservation-input-wrapper">
-                  <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-                  </svg>
-                  <select
-                    id="res-service"
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    className="reservation-input cursor-pointer"
-                  >
-                    {POPULAR_SERVICES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                {/* Right Column */}
+                <div className="reservation-col">
+                  {/* Service Selection */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-service" className="reservation-label">
+                      Tratamiento de interés
+                    </label>
+                    <div className="reservation-input-wrapper">
+                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                      </svg>
+                      <select
+                        id="res-service"
+                        value={selectedService}
+                        onChange={(e) => setSelectedService(e.target.value)}
+                        className="reservation-input cursor-pointer"
+                      >
+                        {POPULAR_SERVICES.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-notes" className="reservation-label">
+                      Preferencia de horario o comentario <span className="text-muted text-[11px] font-normal">(opcional)</span>
+                    </label>
+                    <textarea
+                      id="res-notes"
+                      rows={2}
+                      placeholder="Ej. Preferiblemente por las mañanas..."
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      className="reservation-input resize-none"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              {/* Notes */}
-              <div className="reservation-field-group">
-                <label htmlFor="res-notes" className="reservation-label">
-                  Preferencia de horario o comentario <span className="text-muted text-[11px] font-normal">(opcional)</span>
-                </label>
-                <textarea
-                  id="res-notes"
-                  rows={2}
-                  placeholder="Ej. Preferiblemente por las mañanas o primera puesta..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="reservation-input resize-none"
-                />
               </div>
 
               {/* Error Box */}

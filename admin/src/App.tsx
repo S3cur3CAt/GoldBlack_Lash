@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar, TabId } from './components/Sidebar'
 import { Header } from './components/Header'
@@ -41,6 +41,54 @@ import {
   deleteAppointmentFromVercel,
 } from './services/storage'
 
+/**
+ * Synthesizes a luxury studio notification chime using the Web Audio API.
+ * High clarity, zero latency, guaranteed to work across macOS, Windows, and browsers.
+ */
+function playNotificationChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') {
+      ctx.resume()
+    }
+
+    const now = ctx.currentTime
+
+    const playTone = (freq: number, start: number, duration: number, peakGain: number) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, start)
+
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.linearRampToValueAtTime(peakGain, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(start)
+      osc.stop(start + duration)
+    }
+
+    // High clarity 3-tone ascending chord: D5 (587Hz) -> A5 (880Hz) -> D6 (1174Hz)
+    playTone(587.33, now, 0.5, 0.28)
+    playTone(880.0, now + 0.12, 0.7, 0.32)
+    playTone(1174.66, now + 0.24, 0.95, 0.24)
+
+    setTimeout(() => {
+      try {
+        ctx.close()
+      } catch {}
+    }, 1500)
+  } catch (err) {
+    console.warn('[Audio Chime Error]', err)
+  }
+}
+
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -54,13 +102,57 @@ export const App: React.FC = () => {
   const [editingApt, setEditingApt] = useState<Appointment | null>(null)
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
 
+  // Track IDs of appointments viewed by the user
+  const [viewedAptIds, setViewedAptIds] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('goldblack_viewed_appointment_ids')
+      return stored ? new Set(JSON.parse(stored)) : new Set()
+    } catch {
+      return new Set()
+    }
+  })
+
+  // Ref to track IDs of all appointments known so far (to detect new incoming ones)
+  const knownAptIdsRef = useRef<Set<string> | null>(null)
+  const isInitialSyncRef = useRef<boolean>(true)
+
   // Load state on mount
   const refreshAll = () => {
-    setAppointments(getAppointments())
+    const apts = getAppointments()
+    setAppointments(apts)
     setClients(getClients())
     setServices(getServices())
     setConfig(getStudioConfig())
     setGallery(getGalleryItems())
+
+    // If local storage has no record of viewed IDs yet, initialize with current IDs
+    // so historical appointments don't show as newly unread
+    if (!localStorage.getItem('goldblack_viewed_appointment_ids') && apts.length > 0) {
+      const ids = new Set(apts.map((a) => a.id))
+      setViewedAptIds(ids)
+      try {
+        localStorage.setItem('goldblack_viewed_appointment_ids', JSON.stringify(Array.from(ids)))
+      } catch {}
+    }
+    if (!knownAptIdsRef.current) {
+      knownAptIdsRef.current = new Set(apts.map((a) => a.id))
+    }
+  }
+
+  // Clear unread counter when clicking Agenda & Citas
+  const markAppointmentsAsViewed = () => {
+    const allIds = new Set(appointments.map((a) => a.id))
+    setViewedAptIds(allIds)
+    try {
+      localStorage.setItem('goldblack_viewed_appointment_ids', JSON.stringify(Array.from(allIds)))
+    } catch {}
+  }
+
+  const handleSelectTab = (tab: TabId) => {
+    setActiveTab(tab)
+    if (tab === 'appointments') {
+      markAppointmentsAsViewed()
+    }
   }
 
   useEffect(() => {
@@ -71,6 +163,50 @@ export const App: React.FC = () => {
       fetchLiveAppointmentsFromVercel()
         .then((liveApts) => {
           if (liveApts) {
+            // Check for new real-time appointments
+            if (knownAptIdsRef.current && !isInitialSyncRef.current) {
+              const newApts = liveApts.filter((a) => !knownAptIdsRef.current!.has(a.id))
+              if (newApts.length > 0) {
+                // Play luxury notification chime
+                playNotificationChime()
+
+                // Trigger visual notifications (Electron native macOS / Win + web fallback)
+                for (const apt of newApts) {
+                  const title = '✨ ¡Nueva Cita Recibida!'
+                  const body = `${apt.clientName} — ${apt.serviceName} (${apt.clientPhone})`
+
+                  if ((window as any).electronAPI?.notifyNewAppointment) {
+                    (window as any).electronAPI.notifyNewAppointment({ title, body })
+                  } else if ('Notification' in window) {
+                    if (Notification.permission === 'granted') {
+                      new Notification(title, { body })
+                    } else if (Notification.permission !== 'denied') {
+                      Notification.requestPermission().then((perm) => {
+                        if (perm === 'granted') new Notification(title, { body })
+                      })
+                    }
+                  }
+
+                  // Floating toast
+                  setSyncToast({
+                    status: 'synced',
+                    message: `🔔 ¡Nueva cita en tiempo real: ${apt.clientName} (${apt.serviceName})!`,
+                  })
+                }
+
+                // If currently viewing appointments tab, mark as viewed right away
+                if (activeTab === 'appointments') {
+                  const updatedViewed = new Set(liveApts.map((a) => a.id))
+                  setViewedAptIds(updatedViewed)
+                  try {
+                    localStorage.setItem('goldblack_viewed_appointment_ids', JSON.stringify(Array.from(updatedViewed)))
+                  } catch {}
+                }
+              }
+            }
+
+            isInitialSyncRef.current = false
+            knownAptIdsRef.current = new Set(liveApts.map((a) => a.id))
             setAppointments(liveApts)
             setClients(getClients())
           }
@@ -81,11 +217,20 @@ export const App: React.FC = () => {
     // Initial sync
     syncAppointments()
 
-    // Regular polling for online web bookings (every 10s)
-    const aptPolling = setInterval(syncAppointments, 10000)
+    // Regular polling for online web bookings (every 5 seconds)
+    const aptPolling = setInterval(syncAppointments, 5000)
 
     // Sync on window focus (e.g. user returns to admin app)
     window.addEventListener('focus', syncAppointments)
+
+    // Listen for tab navigation from native notification click
+    const cleanupNavigate = (window as any).electronAPI?.onNavigateTab?.((tab: string) => {
+      if (tab === 'appointments') {
+        handleSelectTab('appointments')
+      } else {
+        setActiveTab(tab as TabId)
+      }
+    })
 
     // Defer services and gallery network sync to let UI render first (faster perceived startup)
     const deferTimer = setTimeout(() => {
@@ -128,6 +273,7 @@ export const App: React.FC = () => {
     return () => {
       clearTimeout(deferTimer)
       clearInterval(aptPolling)
+      cleanupNavigate?.()
       window.removeEventListener('focus', syncAppointments)
       window.removeEventListener('goldblack:sync', handleSync)
     }
@@ -166,6 +312,19 @@ export const App: React.FC = () => {
     setAppointments(updated)
     saveAppointments(updated)
     syncAppointmentWithVercel(apt)
+
+    // Mark locally created appointment as viewed and known
+    setViewedAptIds((prev) => {
+      const next = new Set(prev)
+      next.add(apt.id)
+      try {
+        localStorage.setItem('goldblack_viewed_appointment_ids', JSON.stringify(Array.from(next)))
+      } catch {}
+      return next
+    })
+    if (knownAptIdsRef.current) {
+      knownAptIdsRef.current.add(apt.id)
+    }
   }
 
   const handleDeleteAppointment = (id: string) => {
@@ -282,8 +441,9 @@ export const App: React.FC = () => {
     saveStudioConfig(newConfig)
   }
 
-  // Pending appointments count
-  const pendingCount = appointments.filter((a) => a.status === 'pendiente').length
+  // Unseen appointments count: appointments the user hasn't viewed yet in Agenda & Citas
+  // The badge appears when a new booking arrives and disappears when the user clicks 'Agenda & Citas'
+  const unseenCount = appointments.filter((a) => !viewedAptIds.has(a.id)).length
 
   // Recall count (clients with > 20 days since last visit)
   const nowMs = Date.now()
@@ -332,8 +492,8 @@ export const App: React.FC = () => {
         {/* Sidebar */}
         <Sidebar
           activeTab={activeTab}
-          onSelectTab={setActiveTab}
-          pendingAppointmentsCount={pendingCount}
+          onSelectTab={handleSelectTab}
+          pendingAppointmentsCount={unseenCount}
           clientsRecallCount={recallCount}
         />
 
@@ -345,7 +505,7 @@ export const App: React.FC = () => {
           config={config}
           onNewAppointment={() => {
             setEditingApt(null)
-            setActiveTab('appointments')
+            handleSelectTab('appointments')
             setIsAptModalOpen(true)
           }}
         />
@@ -359,10 +519,10 @@ export const App: React.FC = () => {
               config={config}
               onNewAppointment={() => {
                 setEditingApt(null)
-                setActiveTab('appointments')
+                handleSelectTab('appointments')
                 setIsAptModalOpen(true)
               }}
-              onSelectTab={(tab) => setActiveTab(tab)}
+              onSelectTab={(tab) => handleSelectTab(tab)}
               onUpdateAppointmentStatus={handleUpdateStatus}
             />
           )}

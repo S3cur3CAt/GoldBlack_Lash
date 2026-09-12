@@ -11,6 +11,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximize: () => ipcRenderer.send('window:maximize'),
   close: () => ipcRenderer.send('window:close'),
   isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
+  // Real-time notifications (macOS / Win)
+  notifyNewAppointment: (data) => ipcRenderer.send('notification:appointment', data),
+  onNavigateTab: (callback) => {
+    const handler = (_event, tab) => callback(tab)
+    ipcRenderer.on('navigate:tab', handler)
+    return () => ipcRenderer.removeListener('navigate:tab', handler)
+  },
   // Auto-Updater from GitHub Releases
   checkForUpdates: (currentVersion) => ipcRenderer.invoke('updater:check', currentVersion),
   downloadUpdate: (url, assetName) => ipcRenderer.invoke('updater:download', { url, assetName }),

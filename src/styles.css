@@ -980,16 +980,39 @@
 
 .reservation-modal-card {
   position: relative;
-  width: 92%;
-  max-width: 480px;
+  width: 95%;
+  max-width: 760px;
   max-height: 90vh;
   overflow-y: auto;
   background: #ffffff;
   border: 1px solid var(--color-line);
   border-radius: 1.75rem;
-  padding: 2rem 1.75rem;
+  padding: 2.25rem 2.25rem;
   box-shadow: 0 25px 70px -15px rgba(63, 41, 50, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
   animation: modal-scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reservation-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.15rem 1.5rem;
+}
+
+.reservation-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+@media (max-width: 680px) {
+  .reservation-modal-card {
+    padding: 1.75rem 1.25rem;
+    max-width: 480px;
+  }
+  .reservation-form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
 }
 
 @keyframes modal-fade-in {
