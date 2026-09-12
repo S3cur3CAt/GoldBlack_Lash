@@ -73,12 +73,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div>
         <div className="p-6 border-b border-[#1c1c26]">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-400/50 to-gold-700/50 p-[1.5px] shadow-gold-glow shrink-0 overflow-hidden">
-              <div className="w-full h-full bg-[#0e0e14] rounded-[10px] flex items-center justify-center p-1">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 p-[1.5px] shadow-gold-glow shrink-0 overflow-hidden">
+              <div className="w-full h-full bg-[#0e0e14] rounded-[10.5px] overflow-hidden flex items-center justify-center">
                 <img
                   src={logoImg}
                   alt="GoldBlack Lash Studio"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-cover rounded-[10.5px]"
                 />
               </div>
             </div>
