@@ -39,6 +39,7 @@ import {
   fetchLiveAppointmentsFromVercel,
   syncAppointmentWithVercel,
   deleteAppointmentFromVercel,
+  syncStudioConfigWithVercel,
 } from './services/storage'
 
 /**
@@ -442,10 +443,11 @@ export const App: React.FC = () => {
     await deleteGalleryItemFromVercel(id)
   }
 
-  // Config Action
-  const handleSaveConfig = (newConfig: StudioConfig) => {
+  // Config Action — saves locally and syncs to Supabase so the live website reflects changes immediately
+  const handleSaveConfig = async (newConfig: StudioConfig) => {
     setConfig(newConfig)
     saveStudioConfig(newConfig)
+    await syncStudioConfigWithVercel(newConfig)
   }
 
   // Unseen appointments count: appointments the user hasn't viewed yet in Agenda & Citas

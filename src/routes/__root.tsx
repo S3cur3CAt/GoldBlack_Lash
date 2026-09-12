@@ -1,4 +1,5 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { ReactNode } from 'react'
@@ -6,11 +7,25 @@ import type { ReactNode } from 'react'
 import { Footer, Header } from '#/components/Chrome'
 import { ReservationModal } from '#/components/ReservationModal'
 import { HeaderProvider } from '#/context/HeaderContext'
+import { StudioConfigProvider } from '#/context/StudioConfigContext'
 import { business } from '#/data/site'
 
 import appCss from '../styles.css?url'
 
+const fetchLiveConfig = createServerFn({ method: 'GET' }).handler(async () => {
+  const { fetchConfigFromDb } = await import('../server/config.server')
+  return fetchConfigFromDb()
+})
+
 export const Route = createRootRoute({
+  loader: async () => {
+    try {
+      const config = await fetchLiveConfig()
+      return { config: config || business }
+    } catch {
+      return { config: business }
+    }
+  },
   head: () => ({
     meta: [
       {
@@ -90,6 +105,9 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: ReactNode }) {
+  const data = Route.useLoaderData()
+  const liveConfig = (data?.config || business) as any
+
   return (
     <html lang="es">
       <head>
@@ -97,21 +115,23 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
 
       <body className="bg-paper font-body text-ink antialiased">
-        <HeaderProvider>
-          <a href="#contenido" className="skip-link">
-            Saltar al contenido
-          </a>
+        <StudioConfigProvider value={liveConfig}>
+          <HeaderProvider>
+            <a href="#contenido" className="skip-link">
+              Saltar al contenido
+            </a>
 
-          <Header />
+            <Header />
 
-          <main id="contenido" tabIndex={-1}>
-            {children}
-          </main>
+            <main id="contenido" tabIndex={-1}>
+              {children}
+            </main>
 
-          <Footer />
+            <Footer />
 
-          <ReservationModal />
-        </HeaderProvider>
+            <ReservationModal />
+          </HeaderProvider>
+        </StudioConfigProvider>
 
         {import.meta.env.DEV ? (
           <TanStackDevtools

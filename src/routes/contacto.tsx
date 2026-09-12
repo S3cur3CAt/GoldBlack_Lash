@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { PageHero } from '#/components/PageHero'
+import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
   business,
   serviceCategories,
@@ -24,6 +25,7 @@ export const Route = createFileRoute('/contacto')({
 })
 
 function Contacto() {
+  const business = useStudioConfig()
   return (
     <>
       <PageHero
@@ -98,6 +100,7 @@ function Contacto() {
 }
 
 function DirectContact() {
+  const business = useStudioConfig()
   return (
     <div className="rounded-4xl border border-rose/15 bg-blush p-7 md:p-8">
       <span
@@ -138,6 +141,7 @@ function DirectContact() {
 }
 
 function ContactDetails() {
+  const business = useStudioConfig()
   return (
     <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">También me encuentras aquí</h2>
@@ -195,6 +199,7 @@ function ContactDetails() {
 }
 
 function OpeningHours() {
+  const business = useStudioConfig()
   return (
     <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">Horario del estudio</h2>

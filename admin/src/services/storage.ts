@@ -976,6 +976,71 @@ export function saveStudioConfig(config: StudioConfig): void {
   localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config))
 }
 
+/** Fetch latest studio config from Vercel / Supabase API */
+export async function fetchLiveConfigFromVercel(): Promise<StudioConfig | null> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/config?_t=${Date.now()}`)
+    if (res.ok) {
+      const parsed = await res.json()
+      if (parsed && typeof parsed === 'object' && parsed.name) {
+        saveStudioConfig(parsed)
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.warn('[Config fetch from Vercel failed]', e)
+  }
+  return null
+}
+
+/** Sync studio config with Vercel / Supabase API */
+export async function syncStudioConfigWithVercel(config: StudioConfig): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  notifySyncEvent('syncing', 'Sincronizando ajustes del estudio con la web...')
+
+  try {
+    const res = await fetch(`${baseUrl}/api/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+    })
+    if (res.ok) {
+      notifySyncEvent('synced', '✓ Datos del estudio sincronizados con la web')
+      return true
+    }
+  } catch (err) {
+    console.warn('[Config sync with Vercel failed, trying direct Supabase]', err)
+  }
+
+  // Direct Supabase fallback
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        id: 'main',
+        data: config,
+        updated_at: new Date().toISOString(),
+      }),
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', '✓ Datos del estudio sincronizados con la web')
+      return true
+    }
+  } catch (sbErr) {
+    console.warn('[Direct Supabase Config sync failed]', sbErr)
+  }
+
+  notifySyncEvent('error', '⚠️ No se pudo sincronizar la configuración con la web')
+  return false
+}
+
 export function getGalleryItems(): GalleryItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.GALLERY)

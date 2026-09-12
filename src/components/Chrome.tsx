@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { openReservationModal } from '#/components/ReservationModal'
 import { useHeaderSubBar } from '#/context/HeaderContext'
-import { business } from '#/data/site'
+import { useStudioConfig } from '#/context/StudioConfigContext'
 
 export const tabs = [
   { to: '/', label: 'Inicio' },
@@ -14,6 +14,7 @@ export const tabs = [
 ] as const
 
 export function Header() {
+  const business = useStudioConfig()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
@@ -201,6 +202,7 @@ export function Header() {
 }
 
 export function Footer() {
+  const business = useStudioConfig()
   return (
     <footer className="rounded-t-[3rem] bg-plum text-white md:rounded-t-[5rem]">
       <div className="wrap pt-14 pb-7 md:pt-20">

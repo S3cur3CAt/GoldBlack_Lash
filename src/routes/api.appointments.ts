@@ -8,6 +8,7 @@ import {
   generateBookingEmailHtml,
   generateBookingEmailText,
 } from '../server/emails/bookingEmail'
+import { fetchConfigFromDb } from '../server/config.server'
 
 export const Route = createFileRoute('/api/appointments')({
   server: {
@@ -90,11 +91,14 @@ export const Route = createFileRoute('/api/appointments')({
 
           if (resendKey && rawEmail) {
             try {
+              const liveConfig = await fetchConfigFromDb().catch(() => null)
+              const studioEmail = liveConfig?.email || 'citas@goldblacklash.com'
+
               const sender =
                 process.env.RESEND_FROM_EMAIL ||
-                'GoldBlack Lash <citas@goldblacklash.com>'
+                `GoldBlack Lash <${studioEmail}>`
 
-              const confirmationHtml = generateBookingEmailHtml({
+              const emailData = {
                 clientName: rawName,
                 clientPhone: rawPhone,
                 clientEmail: rawEmail,
@@ -102,17 +106,17 @@ export const Route = createFileRoute('/api/appointments')({
                 date: aptRecord.date,
                 time: aptRecord.time,
                 notes: aptRecord.notes,
-              })
+                studioPhone: liveConfig?.phoneDisplay,
+                studioPhoneClean: liveConfig?.phoneClean,
+                studioEmail: liveConfig?.email,
+                studioAddress: liveConfig?.address
+                  ? `${liveConfig.address}, ${liveConfig.postalCode} ${liveConfig.city}`
+                  : undefined,
+                studioMapsUrl: liveConfig?.mapsUrl,
+              }
 
-              const confirmationText = generateBookingEmailText({
-                clientName: rawName,
-                clientPhone: rawPhone,
-                clientEmail: rawEmail,
-                serviceName: aptRecord.serviceName,
-                date: aptRecord.date,
-                time: aptRecord.time,
-                notes: aptRecord.notes,
-              })
+              const confirmationHtml = generateBookingEmailHtml(emailData)
+              const confirmationText = generateBookingEmailText(emailData)
 
               const emailRes = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
@@ -135,9 +139,9 @@ export const Route = createFileRoute('/api/appointments')({
                 console.warn('[Resend Client Email Error]', errData)
               }
 
-              // Also alert the studio owner at citas@goldblacklash.com
+              // Also alert the studio owner
               const alertEmail =
-                process.env.RESEND_ALERT_EMAIL || 'citas@goldblacklash.com'
+                process.env.RESEND_ALERT_EMAIL || studioEmail
 
               await fetch('https://api.resend.com/emails', {
                 method: 'POST',
