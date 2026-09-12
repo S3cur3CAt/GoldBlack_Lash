@@ -105,7 +105,7 @@ function suggestNextVersion(baseVer) {
 }
 
 // Version Bump Helpers
-el('btnBumpPatch')?.addEventListener('click', () => {
+el('btnBumpPatch')?.addEventListener('click', async () => {
   const current = el('inputVersion').value.trim().replace(/^v/, '')
   const parts = current.split('.').map((n) => parseInt(n, 10) || 0)
   while (parts.length < 3) parts.push(0)
@@ -113,9 +113,14 @@ el('btnBumpPatch')?.addEventListener('click', () => {
   const v = parts.join('.')
   el('inputVersion').value = v
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
+  const res = await window.publisherAPI?.setVersion(v)
+  if (res && res.ok) {
+    localVersion = res.version
+    el('txtLocalVersion').textContent = `v${localVersion}`
+  }
 })
 
-el('btnBumpMinor')?.addEventListener('click', () => {
+el('btnBumpMinor')?.addEventListener('click', async () => {
   const current = el('inputVersion').value.trim().replace(/^v/, '')
   const parts = current.split('.').map((n) => parseInt(n, 10) || 0)
   while (parts.length < 3) parts.push(0)
@@ -124,12 +129,28 @@ el('btnBumpMinor')?.addEventListener('click', () => {
   const v = parts.join('.')
   el('inputVersion').value = v
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
+  const res = await window.publisherAPI?.setVersion(v)
+  if (res && res.ok) {
+    localVersion = res.version
+    el('txtLocalVersion').textContent = `v${localVersion}`
+  }
 })
 
-// Auto-sync title when version is typed
+// Auto-sync title when version is typed and auto-save on change
 el('inputVersion')?.addEventListener('input', () => {
   const v = el('inputVersion').value.trim().replace(/^v/, '')
   el('inputTitle').value = `GoldBlack Lash Admin v${v}`
+})
+
+el('inputVersion')?.addEventListener('change', async () => {
+  const v = el('inputVersion').value.trim()
+  if (v) {
+    const res = await window.publisherAPI?.setVersion(v)
+    if (res && res.ok) {
+      localVersion = res.version
+      el('txtLocalVersion').textContent = `v${localVersion}`
+    }
+  }
 })
 
 // Save version directly to package.json
@@ -216,6 +237,21 @@ el('btnBrowseInstaller')?.addEventListener('click', async () => {
 let isBuilding = false
 el('btnBuildInstaller')?.addEventListener('click', async () => {
   if (isBuilding) return
+
+  const version = el('inputVersion').value.trim()
+  if (!version) {
+    alert('Por favor especifica un número de versión antes de compilar.')
+    el('inputVersion').focus()
+    return
+  }
+
+  // Sincronizar versión con los package.json y archivos del proyecto
+  const syncRes = await window.publisherAPI?.setVersion(version)
+  if (syncRes && syncRes.ok) {
+    localVersion = syncRes.version
+    el('txtLocalVersion').textContent = `v${localVersion}`
+  }
+
   isBuilding = true
 
   const container = el('buildOutputContainer')
@@ -224,7 +260,7 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
   const btn = el('btnBuildInstaller')
 
   container.classList.remove('hidden')
-  logText.textContent = 'Iniciando proceso de compilación de Windows...\n'
+  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} aplicada a package.json y updater.ts.\nIniciando proceso de compilación de Windows con NSIS...\n`
   badge.textContent = 'Compilando...'
   badge.className = 'text-[10px] text-amber-400 animate-pulse'
   btn.disabled = true
@@ -236,9 +272,10 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
   })
 
   try {
-    const res = await window.publisherAPI?.buildInstaller()
+    const res = await window.publisherAPI?.buildInstaller({ version })
     badge.textContent = '✓ Compilado con éxito'
     badge.className = 'text-[10px] text-emerald-400 font-bold'
+    await loadAdminVersion()
     await refreshInstallers()
   } catch (err) {
     badge.textContent = '✗ Error en compilación'

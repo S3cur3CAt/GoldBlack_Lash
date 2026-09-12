@@ -8,9 +8,18 @@ const REPO_OWNER = 'S3cur3CAt'
 const REPO_NAME = 'GoldBlack_Lash'
 
 function getAdminRoot() {
+  const docs = (() => {
+    try {
+      return app.getPath('documents')
+    } catch (e) {
+      return path.join(process.env.USERPROFILE || 'C:\\Users\\antonio', 'Documents')
+    }
+  })()
+
   const candidates = [
     path.join(__dirname, '..', '..', 'admin'),
-    path.join(app.getPath('documents'), 'GoldBlack_Lash', 'admin'),
+    path.join(docs, 'GoldBlack_Lash', 'admin'),
+    path.join(process.env.USERPROFILE || 'C:\\Users\\antonio', 'Documents', 'GoldBlack_Lash', 'admin'),
     'C:\\Users\\antonio\\Documents\\GoldBlack_Lash\\admin',
   ]
   for (const c of candidates) {
@@ -224,8 +233,10 @@ function applyVersionToProject(newVersion) {
     }
   }
 
+  const projectRoot = path.resolve(adminRoot, '..')
+
   // 3. tools/release-manager/package.json
-  const managerPkgPath = path.join(__dirname, 'package.json')
+  const managerPkgPath = path.join(projectRoot, 'tools', 'release-manager', 'package.json')
   if (fs.existsSync(managerPkgPath)) {
     try {
       const pkg = JSON.parse(fs.readFileSync(managerPkgPath, 'utf8'))
@@ -236,7 +247,6 @@ function applyVersionToProject(newVersion) {
   }
 
   // 4. Root package.json
-  const projectRoot = path.resolve(adminRoot, '..')
   const rootPkgPath = path.join(projectRoot, 'package.json')
   if (fs.existsSync(rootPkgPath)) {
     try {
@@ -247,6 +257,7 @@ function applyVersionToProject(newVersion) {
     } catch (e) {}
   }
 
+  console.log(`[Publisher] Versión v${clean} aplicada a:`, modifiedFiles)
   return { ok: true, version: clean, modifiedFiles }
 }
 
@@ -285,7 +296,11 @@ function buildAdminInstaller() {
   })
 }
 
-ipcMain.handle('publisher:build-installer', async () => {
+ipcMain.handle('publisher:build-installer', async (event, payload) => {
+  const version = payload?.version
+  if (version) {
+    applyVersionToProject(version)
+  }
   return await buildAdminInstaller()
 })
 

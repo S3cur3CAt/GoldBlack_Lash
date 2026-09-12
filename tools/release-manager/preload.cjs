@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('publisherAPI', {
   loadToken: () => ipcRenderer.invoke('publisher:load-token'),
 
   // Build
-  buildInstaller: () => ipcRenderer.invoke('publisher:build-installer'),
+  buildInstaller: (opts) => ipcRenderer.invoke('publisher:build-installer', opts),
   onBuildLog: (callback) => {
     const handler = (_event, line) => callback(line)
     ipcRenderer.on('publisher:build-log', handler)
