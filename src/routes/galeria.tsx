@@ -387,20 +387,20 @@ function Lightbox({
           onPrevious()
         }
       }}
-      className="fixed inset-0 m-auto w-full max-w-4xl overflow-y-auto rounded-4xl border border-line bg-paper p-0 text-ink shadow-panel"
+      className="fixed inset-0 m-auto w-full max-w-4xl max-h-[90dvh] overflow-hidden rounded-4xl border border-line bg-paper p-0 text-ink shadow-panel"
     >
-      <div className="grid md:grid-cols-2">
-        <div className="p-3 md:p-4">
+      <div className="grid md:grid-cols-2 h-full max-h-[90dvh]">
+        <div className="p-3 md:p-4 max-h-[35dvh] md:max-h-none md:h-full">
           <StudioVisual
             key={piece.id}
             src={piece.image}
             alt={piece.title}
             label={piece.technique}
-            className="max-md:max-h-[42dvh] md:h-full"
+            className="max-h-[32dvh] md:max-h-[82dvh] md:h-full"
           />
         </div>
 
-        <div className="flex min-w-0 flex-col px-6 pt-2 pb-7 md:p-8">
+        <div className="flex min-w-0 flex-col px-6 pt-2 pb-7 md:p-8 overflow-y-auto">
           <div className="flex items-center justify-between gap-4">
             <p
               aria-live="polite"
