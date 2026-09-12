@@ -142,9 +142,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-3 m-3 rounded-xl bg-[#111118] border border-[#20202c] flex items-center justify-center">
-        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400">v1.0.0</span>
+      {/* Footer Version in Bottom Right Corner */}
+      <div className="p-3.5 flex justify-end items-center">
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400">
+          v1.0.0
+        </span>
       </div>
     </aside>
   )

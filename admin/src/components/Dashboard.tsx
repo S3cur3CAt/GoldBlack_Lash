@@ -79,11 +79,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-gold-500/10 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="text-[11px] font-semibold tracking-wider uppercase text-gold-400">
-              Panel de Control • GoldBlack Lash Studio
-            </span>
-            <h3 className="text-2xl font-serif font-bold text-white mt-0.5">
-              Bienvenida, Administradora
+            <h3 className="text-2xl font-serif font-bold text-white">
+              Bienvenida
             </h3>
             <p className="text-sm text-gray-400 mt-1 max-w-xl">
               {todayAppointments.length > 0 ? (

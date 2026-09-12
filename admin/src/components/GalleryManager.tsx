@@ -91,8 +91,12 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 src={item.url}
                 alt={item.title}
                 onError={(e) => {
-                  // Fallback to stylized gold placeholder if local file is missing
-                  ;(e.target as HTMLElement).style.display = 'none'
+                  const target = e.target as HTMLImageElement
+                  if (item.key && !target.src.includes('goldblacklash.vercel.app')) {
+                    target.src = `https://goldblacklash.vercel.app/api/images/${item.key}`
+                  } else {
+                    target.style.display = 'none'
+                  }
                 }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />

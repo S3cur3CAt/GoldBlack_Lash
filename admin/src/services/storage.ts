@@ -153,7 +153,7 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     key: 'pieza-04',
     title: 'Volumen 3D',
     category: 'Fibras Tecnológicas',
-    url: '/galeria/pieza-04.jpg',
+    url: './galeria/pieza-04.jpg',
     updatedAt: '2026-03-01',
   },
   {
@@ -161,7 +161,7 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     key: 'pieza-01',
     title: 'Volumen 4D',
     category: 'Fibras Tecnológicas',
-    url: '/galeria/pieza-01.jpg',
+    url: './galeria/pieza-01.jpg',
     updatedAt: '2026-03-02',
   },
   {
@@ -169,7 +169,7 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     key: 'pieza-02',
     title: 'Volumen 5D',
     category: 'Fibras Tecnológicas',
-    url: '/galeria/pieza-02.jpg',
+    url: './galeria/pieza-02.jpg',
     updatedAt: '2026-03-03',
   },
   {
@@ -177,7 +177,7 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     key: 'pieza-03',
     title: 'Volumen 6D',
     category: 'Fibras Tecnológicas',
-    url: '/galeria/pieza-03.jpg',
+    url: './galeria/pieza-03.jpg',
     updatedAt: '2026-03-04',
   },
   {
@@ -185,8 +185,16 @@ export const DEFAULT_GALLERY: GalleryItem[] = [
     key: 'pieza-05',
     title: 'Volumen Ruso',
     category: 'Densidad y Negro Intenso',
-    url: '/galeria/pieza-05.jpg',
+    url: './galeria/pieza-05.jpg',
     updatedAt: '2026-03-05',
+  },
+  {
+    id: 'gal-06',
+    key: 'limpieza-facial',
+    title: 'Limpieza Facial Profunda',
+    category: 'Cuidado Facial',
+    url: './galeria/limpieza-facial.avif',
+    updatedAt: '2026-03-06',
   },
 ]
 
@@ -373,7 +381,13 @@ export function getGalleryItems(): GalleryItem[] {
       localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(DEFAULT_GALLERY))
       return DEFAULT_GALLERY
     }
-    return JSON.parse(raw)
+    const items: GalleryItem[] = JSON.parse(raw)
+    // Normalize relative paths for Electron file:// and web compatibility
+    const normalized = items.map((item) => ({
+      ...item,
+      url: item.url.startsWith('/galeria/') ? `.${item.url}` : item.url,
+    }))
+    return normalized
   } catch (e) {
     console.error(e)
     return DEFAULT_GALLERY
