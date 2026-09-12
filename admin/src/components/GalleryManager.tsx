@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react'
 import { useDialog } from '../context/DialogContext'
 import { GalleryItem } from '../types/admin'
 import {
-  getCustomGalleryCategories,
-  saveCustomGalleryCategories,
+  getGalleryCategories,
+  saveGalleryCategories,
 } from '../services/storage'
 import {
   IconImage,
@@ -71,10 +71,11 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
 
-  // Custom Categories Management
-  const [customCategories, setCustomCategories] = useState<string[]>(() => getCustomGalleryCategories())
-  const [isAddCategoryModalOpen, setIsAddCategoryModalOpen] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
+  // Categories Management State
+  const [categories, setCategories] = useState<string[]>(() => getGalleryCategories())
+  const [isCatModalOpen, setIsCatModalOpen] = useState(false)
+  const [newCatInput, setNewCatInput] = useState('')
+  const [editingCat, setEditingCat] = useState<{ oldName: string; currentName: string } | null>(null)
 
   // Form State
   const [title, setTitle] = useState('')
@@ -91,19 +92,20 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   const [elements, setElements] = useState<string[]>([])
   const [newElementInput, setNewElementInput] = useState('')
 
-  // Dynamically compute available categories from defaults + custom + existing items
+  // Dynamically compute available categories from stored categories + existing items
   const categoriesList = useMemo(() => {
-    const set = new Set<string>(DEFAULT_CATEGORIES)
-    customCategories.forEach((c) => set.add(c))
+    const list = [...categories]
     galleryItems.forEach((item) => {
-      if (item.category) set.add(item.category)
+      if (item.category && !list.includes(item.category)) {
+        list.push(item.category)
+      }
     })
-    return Array.from(set)
-  }, [galleryItems, customCategories])
+    return list
+  }, [categories, galleryItems])
 
   const handleAddCategorySubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    const trimmed = newCategoryName.trim()
+    const trimmed = newCatInput.trim()
     if (!trimmed) {
       showAlert({
         title: 'Nombre requerido',
@@ -121,22 +123,119 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
         type: 'info',
       })
       setSelectedCategory(trimmed)
-      setIsAddCategoryModalOpen(false)
-      setNewCategoryName('')
+      setNewCatInput('')
       return
     }
 
-    const updated = [...customCategories, trimmed]
-    setCustomCategories(updated)
-    saveCustomGalleryCategories(updated)
+    const updated = [...categories, trimmed]
+    setCategories(updated)
+    saveGalleryCategories(updated)
     setSelectedCategory(trimmed)
-    setIsAddCategoryModalOpen(false)
-    setNewCategoryName('')
+    setNewCatInput('')
 
     showAlert({
       title: 'Categoría creada',
       message: `La categoría "${trimmed}" se ha creado con éxito. Ahora puedes seleccionarla al subir cualquier fotografía.`,
       type: 'success',
+    })
+  }
+
+  const handleStartEditCategory = (cat: string) => {
+    setEditingCat({ oldName: cat, currentName: cat })
+  }
+
+  const handleSaveEditCategory = () => {
+    if (!editingCat) return
+    const { oldName, currentName } = editingCat
+    const trimmed = currentName.trim()
+
+    if (!trimmed) {
+      showAlert({
+        title: 'Nombre no válido',
+        message: 'El nombre de la categoría no puede estar vacío.',
+        type: 'warning',
+      })
+      return
+    }
+
+    if (trimmed.toLowerCase() === oldName.toLowerCase()) {
+      setEditingCat(null)
+      return
+    }
+
+    const duplicate = categoriesList.some(
+      (c) => c.toLowerCase() === trimmed.toLowerCase() && c.toLowerCase() !== oldName.toLowerCase()
+    )
+    if (duplicate) {
+      showAlert({
+        title: 'Categoría existente',
+        message: `Ya existe otra categoría con el nombre "${trimmed}".`,
+        type: 'warning',
+      })
+      return
+    }
+
+    // 1. Update categories list
+    const updatedCategories = categories.map((c) => (c === oldName ? trimmed : c))
+    setCategories(updatedCategories)
+    saveGalleryCategories(updatedCategories)
+
+    // 2. Update active selection if matched
+    if (selectedCategory === oldName) setSelectedCategory(trimmed)
+    if (category === oldName) setCategory(trimmed)
+
+    // 3. Update all existing gallery items with this category & sync with Vercel / Neon DB
+    let affectedCount = 0
+    galleryItems.forEach((item) => {
+      if (item.category === oldName) {
+        affectedCount++
+        onSaveItem({ ...item, category: trimmed })
+      }
+    })
+
+    setEditingCat(null)
+    showAlert({
+      title: 'Categoría actualizada',
+      message: `La categoría "${oldName}" ha sido renombrada a "${trimmed}"${
+        affectedCount > 0 ? ` (${affectedCount} fotos actualizadas)` : ''
+      }.`,
+      type: 'success',
+    })
+  }
+
+  const handleDeleteCategory = (catName: string) => {
+    const count = galleryItems.filter((i) => i.category === catName).length
+
+    showConfirm({
+      title: '¿Eliminar categoría?',
+      message:
+        count > 0
+          ? `La categoría "${catName}" tiene ${count} fotografía(s) asociada(s). Si la eliminas, esas fotos se reasignarán automáticamente a "Volumen 3D". ¿Deseas continuar?`
+          : `¿Estás seguro de que deseas eliminar la categoría "${catName}" del catálogo?`,
+      confirmText: 'Eliminar categoría',
+      danger: true,
+      onConfirm: () => {
+        const fallback = 'Volumen 3D'
+        const updated = categories.filter((c) => c !== catName)
+        setCategories(updated)
+        saveGalleryCategories(updated)
+
+        if (selectedCategory === catName) setSelectedCategory('Todas')
+        if (category === catName) setCategory(fallback)
+
+        // Reassign affected items
+        galleryItems.forEach((item) => {
+          if (item.category === catName) {
+            onSaveItem({ ...item, category: fallback })
+          }
+        })
+
+        showAlert({
+          title: 'Categoría eliminada',
+          message: `La categoría "${catName}" ha sido eliminada correctamente.`,
+          type: 'success',
+        })
+      },
     })
   }
 
@@ -343,14 +442,15 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           <button
             type="button"
             onClick={() => {
-              setNewCategoryName('')
-              setIsAddCategoryModalOpen(true)
+              setNewCatInput('')
+              setEditingCat(null)
+              setIsCatModalOpen(true)
             }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gold-400 hover:text-gold-300 border border-gold-500/30 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm cursor-pointer"
-            title="Añadir una nueva categoría a la galería"
+            title="Añadir, renombrar o eliminar categorías"
           >
             <IconFolderPlus size={16} />
-            <span>Nueva Categoría</span>
+            <span>Gestionar Categorías</span>
           </button>
 
           <button
@@ -380,8 +480,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           </button>
           {categoriesList.map((cat) => {
             const count = galleryItems.filter((i) => i.category === cat).length
-            const isCustom = customCategories.includes(cat)
-            if (count === 0 && selectedCategory !== cat && !isCustom) return null
+            if (count === 0 && selectedCategory !== cat) return null
             return (
               <button
                 key={cat}
@@ -392,7 +491,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                     : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
                 }`}
               >
-                {cat} {count > 0 ? `(${count})` : isCustom ? '(0)' : ''}
+                {cat} {count > 0 ? `(${count})` : '(0)'}
               </button>
             )
           })}
@@ -842,25 +941,27 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
         </div>
       )}
 
-      {/* Modal Nueva Categoría */}
-      {isAddCategoryModalOpen && (
+      {/* Modal Gestionar Categorías */}
+      {isCatModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md rounded-2xl bg-[#12121a] border border-[#2a2a3c] shadow-2xl p-6 space-y-5">
+          <div className="relative w-full max-w-lg rounded-2xl bg-[#12121a] border border-[#2a2a3c] shadow-2xl p-6 space-y-5">
+            {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-[#222230]">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20 shadow-gold-glow">
                   <IconFolderPlus size={20} />
                 </div>
                 <div>
-                  <h4 className="font-serif text-base font-bold text-white">Añadir Nueva Categoría</h4>
-                  <p className="text-[11px] text-gray-400">Crea una categoría para clasificar tus fotos y trabajos</p>
+                  <h4 className="font-serif text-base font-bold text-white">Gestión de Categorías</h4>
+                  <p className="text-[11px] text-gray-400">Añade nuevas categorías, edita sus nombres o elimínalas</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  setIsAddCategoryModalOpen(false)
-                  setNewCategoryName('')
+                  setIsCatModalOpen(false)
+                  setEditingCat(null)
+                  setNewCatInput('')
                 }}
                 className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-[#1a1a24]"
               >
@@ -868,50 +969,131 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleAddCategorySubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-2">
-                  Nombre de la Categoría *
-                </label>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Ej. Efecto Sirena, Fox Eyes, Anime Lash..."
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#2c2c40] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition-colors"
-                />
-              </div>
-
-              <div className="rounded-xl bg-[#161622] border border-[#242436] p-3 text-[11px] text-gray-400 space-y-1">
-                <p className="text-gold-400 font-semibold flex items-center gap-1.5">
-                  <IconSparkles size={13} />
-                  Disponible inmediatamente
-                </p>
-                <p>
-                  Esta categoría se añadirá a la lista de opciones para que puedas seleccionarla al subir o editar cualquier fotografía.
-                </p>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222230]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddCategoryModalOpen(false)
-                    setNewCategoryName('')
-                  }}
-                  className="px-4 py-2 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all"
-                >
-                  Crear Categoría
-                </button>
-              </div>
+            {/* Formulario Añadir Nueva Categoría */}
+            <form onSubmit={handleAddCategorySubmit} className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Nombre de nueva categoría (ej. Efecto Sirena, Fox Eyes...)"
+                value={newCatInput}
+                onChange={(e) => setNewCatInput(e.target.value)}
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#2c2c40] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition-colors"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all shrink-0 cursor-pointer"
+              >
+                + Añadir
+              </button>
             </form>
+
+            {/* Listado de Categorías Existentes */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                Categorías del Catálogo ({categoriesList.length})
+              </label>
+
+              <div className="max-h-64 overflow-y-auto pr-1 space-y-1.5 custom-scrollbar">
+                {categoriesList.map((cat) => {
+                  const isEditing = editingCat?.oldName === cat
+                  const photoCount = galleryItems.filter((i) => i.category === cat).length
+
+                  return (
+                    <div
+                      key={cat}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#171722] border border-[#262638] hover:border-[#35354c] transition-colors gap-3"
+                    >
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            autoFocus
+                            value={editingCat.currentName}
+                            onChange={(e) =>
+                              setEditingCat({ ...editingCat, currentName: e.target.value })
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                handleSaveEditCategory()
+                              } else if (e.key === 'Escape') {
+                                setEditingCat(null)
+                              }
+                            }}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-[#20202e] border border-gold-500/50 text-xs text-white focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSaveEditCategory}
+                            className="p-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-semibold cursor-pointer"
+                            title="Guardar nuevo nombre"
+                          >
+                            <IconCheck size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCat(null)}
+                            className="p-1.5 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 text-gray-400 text-xs font-semibold cursor-pointer"
+                            title="Cancelar edición"
+                          >
+                            <IconX size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="font-semibold text-xs text-gray-200 truncate">{cat}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                              photoCount > 0
+                                ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20'
+                                : 'bg-[#20202e] text-gray-500'
+                            }`}>
+                              {photoCount} {photoCount === 1 ? 'foto' : 'fotos'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditCategory(cat)}
+                              className="p-1.5 rounded-lg hover:bg-[#252536] text-gray-400 hover:text-gold-400 transition-colors cursor-pointer"
+                              title="Editar nombre de la categoría"
+                            >
+                              <IconEdit size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat)}
+                              className="p-1.5 rounded-lg hover:bg-rose/20 text-gray-400 hover:text-rose transition-colors cursor-pointer"
+                              title="Eliminar categoría"
+                            >
+                              <IconTrash size={14} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-[#222230]">
+              <p className="text-[11px] text-gray-500">
+                Al renombrar o eliminar, los cambios se sincronizan en la web en tiempo real.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCatModalOpen(false)
+                  setEditingCat(null)
+                  setNewCatInput('')
+                }}
+                className="px-4 py-2 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

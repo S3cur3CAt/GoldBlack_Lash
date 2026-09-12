@@ -148,6 +148,23 @@ export const DEFAULT_CLIENTS: Client[] = []
 // Appointments Agenda (Starts clean, without dummy/sample data)
 export const DEFAULT_APPOINTMENTS: Appointment[] = []
 
+export const DEFAULT_GALLERY_CATEGORIES: string[] = [
+  'Volumen 3D',
+  'Volumen 4D',
+  'Volumen 5D',
+  'Volumen 6D',
+  'Volumen Ruso',
+  'Mega Volumen',
+  'Clásicas Efecto Rímel',
+  'Clásicas Pelo a Pelo',
+  'Efecto Híbrido',
+  'Híbridas / Kim',
+  'Lifting de Pestañas',
+  'Fibras Tecnológicas',
+  'Densidad y Negro Intenso',
+  'Cuidado Facial',
+]
+
 export const DEFAULT_GALLERY: GalleryItem[] = [
   {
     id: 'gal-01',
@@ -499,19 +516,30 @@ export function saveGalleryItems(items: GalleryItem[]): void {
   localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(items))
 }
 
-export function getCustomGalleryCategories(): string[] {
+export function getGalleryCategories(): string[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_GALLERY_CATEGORIES)
-    if (!raw) return []
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_GALLERY_CATEGORIES, JSON.stringify(DEFAULT_GALLERY_CATEGORIES))
+      return DEFAULT_GALLERY_CATEGORIES
+    }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_GALLERY_CATEGORIES
   } catch {
-    return []
+    return DEFAULT_GALLERY_CATEGORIES
   }
 }
 
-export function saveCustomGalleryCategories(categories: string[]): void {
+export function saveGalleryCategories(categories: string[]): void {
   localStorage.setItem(STORAGE_KEYS.CUSTOM_GALLERY_CATEGORIES, JSON.stringify(categories))
+}
+
+export function getCustomGalleryCategories(): string[] {
+  return getGalleryCategories()
+}
+
+export function saveCustomGalleryCategories(categories: string[]): void {
+  saveGalleryCategories(categories)
 }
 
 // WhatsApp Helper Generators
