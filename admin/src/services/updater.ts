@@ -54,9 +54,19 @@ export function useUpdater() {
     }
   }, [])
 
+  const statusRef = useRef<UpdateStatus>('idle')
+  statusRef.current = status
+
   const checkUpdates = useCallback(async (manual = false): Promise<UpdateInfo | null> => {
-    setStatus('checking')
-    setErrorMessage(null)
+    // Never interrupt an ongoing download or ready installation
+    if (statusRef.current === 'downloading' || statusRef.current === 'downloaded') {
+      return null
+    }
+
+    if (manual) {
+      setStatus('checking')
+      setErrorMessage(null)
+    }
 
     try {
       if (window.electronAPI?.checkForUpdates) {
@@ -67,8 +77,10 @@ export function useUpdater() {
           setIsSimulated(false)
           return result
         } else {
-          setStatus('idle')
-          setUpdateInfo(null)
+          if (statusRef.current !== 'available') {
+            setStatus('idle')
+            setUpdateInfo(null)
+          }
           return null
         }
       } else {
@@ -98,14 +110,18 @@ export function useUpdater() {
             return info
           }
         }
-        setStatus('idle')
-        setUpdateInfo(null)
+        if (statusRef.current !== 'available') {
+          setStatus('idle')
+          setUpdateInfo(null)
+        }
         return null
       }
     } catch (err: any) {
-      console.warn('[Updater check error]:', err)
-      setStatus(manual ? 'error' : 'idle')
-      setErrorMessage(err.message || 'Error comprobando actualizaciones')
+      if (manual) {
+        console.warn('[Updater check error]:', err)
+        setStatus('error')
+        setErrorMessage(err.message || 'Error comprobando actualizaciones')
+      }
       return null
     }
   }, [])
@@ -193,12 +209,22 @@ export function useUpdater() {
     setStatus('idle')
   }, [])
 
-  // Auto-check 3 seconds after mounting
+  // Auto-check on mount and poll every 5 seconds (5000 ms)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Initial check shortly after load
+    const initialTimer = setTimeout(() => {
       checkUpdates(false)
-    }, 3000)
-    return () => clearTimeout(timer)
+    }, 1500)
+
+    // Periodic check every 5 seconds
+    const interval = setInterval(() => {
+      checkUpdates(false)
+    }, 5000)
+
+    return () => {
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+    }
   }, [checkUpdates])
 
   return {

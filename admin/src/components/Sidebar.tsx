@@ -36,10 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     receivedBytes,
     totalBytes,
     errorMessage,
-    checkUpdates,
     startDownload,
     applyAndRestart,
-    simulateUpdate,
     dismiss,
   } = useUpdater()
   const menuItems = [
@@ -262,26 +260,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Footer Version: keep v1.0.0 in bottom right, with manual check on click or simulate */}
-        <div className="p-3.5 flex justify-between items-center text-gray-500">
-          <button
-            type="button"
-            onClick={() => checkUpdates(true)}
-            disabled={status === 'checking' || status === 'downloading'}
-            className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gold-400 transition-colors cursor-pointer group"
-            title="Comprobar actualizaciones en GitHub"
-          >
-            <IconRefreshCw
-              size={11}
-              className={`group-hover:rotate-180 transition-transform duration-500 ${status === 'checking' ? 'animate-spin text-gold-400' : ''}`}
-            />
-            <span>{status === 'checking' ? 'Buscando...' : 'Buscar updates'}</span>
-          </button>
+        {/* Footer Version: automatic background polling every 5s */}
+        <div className="p-3.5 flex justify-between items-center text-gray-500 border-t border-[#1c1c26]/60">
+          <div className="flex items-center gap-1.5 text-[10px] text-gray-500 select-none">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80 animate-pulse"></span>
+            <span className="tracking-wider uppercase text-[9px] text-gray-400 font-medium">Auto-sync</span>
+          </div>
 
           <span
-            onDoubleClick={() => simulateUpdate('v1.0.1')}
-            title="Versión actual (Doble clic para probar simulación de update)"
-            className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400 cursor-pointer select-none"
+            title={`Versión instalada: v${CURRENT_APP_VERSION} (Búsqueda automática cada 5 segundos)`}
+            className="text-[10px] font-mono px-2.5 py-0.5 rounded bg-[#1e1e2c] text-gold-400 border border-[#2b2b3d] select-none shadow-sm font-semibold"
           >
             v{CURRENT_APP_VERSION}
           </span>

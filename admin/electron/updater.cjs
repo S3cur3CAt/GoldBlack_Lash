@@ -65,13 +65,81 @@ function httpsGetWithRedirects(url, headers = {}, maxRedirects = 5) {
   })
 }
 
+let lastEtag = null
+let lastReleaseData = null
+
+function getSavedToken() {
+  try {
+    const tokenPath = path.join(app.getPath('userData'), 'github_token.json')
+    if (fs.existsSync(tokenPath)) {
+      const data = JSON.parse(fs.readFileSync(tokenPath, 'utf8'))
+      if (data && data.token) return data.token.trim()
+    }
+  } catch (e) {}
+  return null
+}
+
+function formatReleaseResult(release, available, currentVersion) {
+  const tagName = release.tag_name || ''
+  if (!available) {
+    return { available: false, latestVersion: tagName, currentVersion }
+  }
+
+  // Find best asset for current platform
+  const platform = process.platform
+  let chosenAsset = null
+
+  if (Array.isArray(release.assets) && release.assets.length > 0) {
+    if (platform === 'win32') {
+      chosenAsset =
+        release.assets.find((a) => a.name.endsWith('.exe')) ||
+        release.assets.find((a) => a.name.endsWith('app.asar')) ||
+        release.assets[0]
+    } else if (platform === 'darwin') {
+      chosenAsset =
+        release.assets.find((a) => a.name.endsWith('.zip') || a.name.endsWith('.dmg')) ||
+        release.assets.find((a) => a.name.endsWith('app.asar')) ||
+        release.assets[0]
+    } else {
+      chosenAsset = release.assets[0]
+    }
+  }
+
+  return {
+    available: true,
+    currentVersion,
+    latestVersion: tagName,
+    releaseName: release.name || tagName,
+    notes: release.body || '',
+    publishedAt: release.published_at,
+    assetUrl: chosenAsset ? chosenAsset.browser_download_url : null,
+    assetName: chosenAsset ? chosenAsset.name : `${tagName}-update.exe`,
+    assetSize: chosenAsset ? chosenAsset.size : 0,
+    htmlUrl: release.html_url,
+  }
+}
+
 /**
- * Check GitHub for latest release
+ * Check GitHub for latest release with ETag caching
  */
 async function checkGitHubRelease(currentVersion) {
   try {
     const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
-    const res = await httpsGetWithRedirects(apiUrl)
+    const headers = {}
+    const token = getSavedToken()
+    if (token) {
+      headers.Authorization = `token ${token}`
+    }
+    if (lastEtag) {
+      headers['If-None-Match'] = lastEtag
+    }
+
+    const res = await httpsGetWithRedirects(apiUrl, headers)
+
+    if (res.statusCode === 304 && lastReleaseData) {
+      const available = isNewerVersion(lastReleaseData.tag_name || '', currentVersion)
+      return formatReleaseResult(lastReleaseData, available, currentVersion)
+    }
 
     if (res.statusCode === 404) {
       return { available: false, reason: 'no_releases_found', currentVersion }
@@ -81,51 +149,22 @@ async function checkGitHubRelease(currentVersion) {
       return { available: false, reason: `HTTP_${res.statusCode}`, currentVersion }
     }
 
+    if (res.headers && res.headers.etag) {
+      lastEtag = res.headers.etag
+    }
+
     let data = ''
     for await (const chunk of res) {
       data += chunk
     }
 
     const release = JSON.parse(data)
+    lastReleaseData = release
+
     const tagName = release.tag_name || ''
     const available = isNewerVersion(tagName, currentVersion)
 
-    if (!available) {
-      return { available: false, latestVersion: tagName, currentVersion }
-    }
-
-    // Find best asset for current platform
-    const platform = process.platform
-    let chosenAsset = null
-
-    if (Array.isArray(release.assets) && release.assets.length > 0) {
-      if (platform === 'win32') {
-        chosenAsset =
-          release.assets.find((a) => a.name.endsWith('.exe')) ||
-          release.assets.find((a) => a.name.endsWith('app.asar')) ||
-          release.assets[0]
-      } else if (platform === 'darwin') {
-        chosenAsset =
-          release.assets.find((a) => a.name.endsWith('.zip') || a.name.endsWith('.dmg')) ||
-          release.assets.find((a) => a.name.endsWith('app.asar')) ||
-          release.assets[0]
-      } else {
-        chosenAsset = release.assets[0]
-      }
-    }
-
-    return {
-      available: true,
-      currentVersion,
-      latestVersion: tagName,
-      releaseName: release.name || tagName,
-      notes: release.body || '',
-      publishedAt: release.published_at,
-      assetUrl: chosenAsset ? chosenAsset.browser_download_url : null,
-      assetName: chosenAsset ? chosenAsset.name : `${tagName}-update.exe`,
-      assetSize: chosenAsset ? chosenAsset.size : 0,
-      htmlUrl: release.html_url,
-    }
+    return formatReleaseResult(release, available, currentVersion)
   } catch (err) {
     console.warn('[Updater] Error comprobando releases en GitHub:', err.message)
     return { available: false, error: err.message, currentVersion }
