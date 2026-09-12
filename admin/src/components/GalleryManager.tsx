@@ -86,7 +86,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
             key={item.id}
             className="group relative rounded-2xl bg-[#12121a] border border-[#222230] overflow-hidden hover:border-gold-500/40 transition-all flex flex-col"
           >
-            <div className="relative aspect-[4/5] w-full bg-[#0d0d12] overflow-hidden flex items-center justify-center">
+            <div className="relative aspect-4/5 w-full bg-[#0d0d12] overflow-hidden flex items-center justify-center">
               <img
                 src={item.url}
                 alt={item.title}
@@ -96,7 +96,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 }}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
               <div className="absolute top-3 left-3">
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/60 text-gold-300 border border-gold-500/30 backdrop-blur-md">

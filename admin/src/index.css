@@ -1,35 +1,74 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  :root {
-    color-scheme: dark;
-  }
-  
-  body {
-    background-color: #08080a;
-    color: #e5e5eb;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
+@theme {
+  --color-gold-50: #fdfbf2;
+  --color-gold-100: #faf5e1;
+  --color-gold-200: #f4e8bd;
+  --color-gold-300: #ecd591;
+  --color-gold-400: #dfbc60;
+  --color-gold-500: #d4af37;
+  --color-gold-600: #b89228;
+  --color-gold-700: #927020;
+  --color-gold-800: #755820;
+  --color-gold-900: #61491e;
 
-  /* Custom luxury scrollbars */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #0d0d12;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #2b2b38;
-    border-radius: 9999px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #d4af37;
-  }
+  --color-ink-600: #2c2c38;
+  --color-ink-700: #1f1f28;
+  --color-ink-800: #16161c;
+  --color-ink-850: #101014;
+  --color-ink-900: #0a0a0d;
+  --color-ink-950: #060608;
+
+  --color-cream: #faf8f5;
+  --color-muted: #8e8ea0;
+
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Jost", Inter, system-ui, sans-serif;
+
+  --shadow-gold-glow: 0 0 25px -5px rgba(212, 175, 55, 0.25);
+  --shadow-gold-glow-lg: 0 0 35px -3px rgba(212, 175, 55, 0.35);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #08080a;
+  color: #e5e5eb;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Explicit button reset to prevent browser default white background */
+button {
+  background-color: transparent;
+  background-image: none;
+  border-style: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Custom luxury scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0d12;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b2b38;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d4af37;
 }
 
 /* Luxury Gold gradients and glows */

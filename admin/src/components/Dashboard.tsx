@@ -75,8 +75,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
       {/* Top Welcome Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-[#171722] via-[#1c1c28] to-[#121218] border border-gold-500/20 p-6 overflow-hidden shadow-gold-glow">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-gold-500/10 to-transparent pointer-events-none" />
+      <div className="relative rounded-2xl bg-linear-to-r from-[#171722] via-[#1c1c28] to-[#121218] border border-gold-500/20 p-6 overflow-hidden shadow-gold-glow">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-linear-to-l from-gold-500/10 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <span className="text-[11px] font-semibold tracking-wider uppercase text-gold-400">
@@ -226,7 +226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="p-4 rounded-2xl bg-[#12121a] border border-[#222230] hover:border-gold-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className="px-3 py-2 rounded-xl bg-[#1c1c28] border border-[#2a2a3c] text-center min-w-[65px]">
+                      <div className="px-3 py-2 rounded-xl bg-[#1c1c28] border border-[#2a2a3c] text-center min-w-16.25">
                         <span className="block text-sm font-bold font-mono text-gold-300">{apt.time}</span>
                         <span className="block text-[10px] text-gray-400">{apt.durationMinutes} min</span>
                       </div>
@@ -316,12 +316,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   return (
                     <div key={name} className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-300 font-medium truncate max-w-[180px]">{name}</span>
+                        <span className="text-gray-300 font-medium truncate max-w-45">{name}</span>
                         <span className="text-gold-400 font-mono font-semibold">{count} citas ({percent}%)</span>
                       </div>
                       <div className="h-2 w-full rounded-full bg-[#1e1e2c] overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-gold-500 to-gold-300 rounded-full"
+                          className="h-full bg-linear-to-r from-gold-500 to-gold-300 rounded-full"
                           style={{ width: `${percent}%` }}
                         />
                       </div>

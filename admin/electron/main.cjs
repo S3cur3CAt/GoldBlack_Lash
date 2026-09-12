@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell } = require('electron')
+const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron')
 const path = require('path')
 
 // Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
@@ -14,6 +14,7 @@ if (process.platform === 'darwin') {
 let mainWindow = null
 
 function createWindow() {
+  const isMac = process.platform === 'darwin'
   const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
   const iconPath = path.join(__dirname, iconFile)
 
@@ -26,6 +27,9 @@ function createWindow() {
     title: 'GoldBlack Lash — Panel de Administración',
     icon: iconPath,
     show: false,
+    frame: isMac,
+    titleBarStyle: isMac ? 'hiddenInset' : undefined,
+    trafficLightPosition: isMac ? { x: 14, y: 11 } : undefined,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -152,9 +156,35 @@ function createApplicationMenu() {
     },
   ]
 
-  const menu = Menu.buildFromTemplate(template)
-  Menu.setApplicationMenu(menu)
+  if (isMac) {
+    const menu = Menu.buildFromTemplate(template)
+    Menu.setApplicationMenu(menu)
+  } else {
+    Menu.setApplicationMenu(null)
+  }
 }
+
+// Window controls IPC
+ipcMain.on('window:minimize', () => {
+  mainWindow?.minimize()
+})
+
+ipcMain.on('window:maximize', () => {
+  if (!mainWindow) return
+  if (mainWindow.isMaximized()) {
+    mainWindow.unmaximize()
+  } else {
+    mainWindow.maximize()
+  }
+})
+
+ipcMain.on('window:close', () => {
+  mainWindow?.close()
+})
+
+ipcMain.handle('window:is-maximized', () => {
+  return mainWindow ? mainWindow.isMaximized() : false
+})
 
 app.whenReady().then(() => {
   createWindow()

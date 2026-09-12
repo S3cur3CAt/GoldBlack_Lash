@@ -258,7 +258,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         </div>
 
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+        <div className="relative flex-1 min-w-50 max-w-xs">
           <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
@@ -295,7 +295,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               >
                 {/* Left: Time & Client Data */}
                 <div className="flex items-start gap-4">
-                  <div className="px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#28283a] text-center min-w-[80px]">
+                  <div className="px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#28283a] text-center min-w-20">
                     <span className="block text-[11px] font-mono text-gray-400 uppercase tracking-wider">{apt.date}</span>
                     <span className="block text-base font-bold font-mono text-gold-300 mt-0.5">{apt.time}</span>
                     <span className="block text-[10px] text-gray-500">{apt.durationMinutes} min</span>

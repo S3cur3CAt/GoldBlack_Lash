@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { TitleBar } from './components/TitleBar'
 import { Sidebar, TabId } from './components/Sidebar'
 import { Header } from './components/Header'
 import { Dashboard } from './components/Dashboard'
@@ -232,17 +233,21 @@ export const App: React.FC = () => {
   const activeInfo = tabTitles[activeTab]
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0a0a0d] text-gray-200">
-      {/* Sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        pendingAppointmentsCount={pendingCount}
-        clientsRecallCount={recallCount}
-      />
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0a0a0d] text-gray-200">
+      {/* Custom App TitleBar */}
+      <TitleBar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden bg-gradient-to-br from-[#0c0c11] via-[#09090d] to-[#07070a]">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          pendingAppointmentsCount={pendingCount}
+          clientsRecallCount={recallCount}
+        />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-linear-to-br from-[#0c0c11] via-[#09090d] to-[#07070a]">
         <Header
           title={activeInfo.title}
           subtitle={activeInfo.subtitle}
@@ -346,6 +351,7 @@ export const App: React.FC = () => {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

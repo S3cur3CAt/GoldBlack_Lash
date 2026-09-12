@@ -250,7 +250,7 @@ function CategoryBlock({
 function ServiceCard({ service }: { service: Service }) {
   return (
     <article
-      className={`rounded-[2rem] border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
+      className={`rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
         service.featured
           ? 'border-rose/20 bg-blush'
           : 'border-line bg-surface'
@@ -372,7 +372,7 @@ function ProcessBlock() {
         {steps.map((step, index) => (
           <li
             key={step.title}
-            className="rounded-[2rem] border border-line bg-white p-7 text-center shadow-soft"
+            className="rounded-4xl border border-line bg-white p-7 text-center shadow-soft"
           >
             <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-blush font-display text-xl text-rose">
               {index + 1}

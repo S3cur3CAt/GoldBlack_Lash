@@ -81,7 +81,7 @@ function Contacto() {
                 </a>
               </div>
 
-              <div className="overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-soft">
+              <div className="overflow-hidden rounded-4xl border-4 border-white bg-white shadow-soft">
                 <iframe
                   title={`Ubicación de ${business.name}`}
                   src={business.mapsEmbed}
@@ -100,7 +100,7 @@ function Contacto() {
 
 function DirectContact() {
   return (
-    <div className="rounded-[2rem] border border-rose/15 bg-blush p-7 md:p-8">
+    <div className="rounded-4xl border border-rose/15 bg-blush p-7 md:p-8">
       <span
         aria-hidden="true"
         className="grid h-12 w-12 place-items-center rounded-full bg-white text-2xl text-rose"
@@ -134,7 +134,7 @@ function DirectContact() {
 
 function ContactDetails() {
   return (
-    <div className="rounded-[2rem] border border-line bg-white p-7 shadow-soft md:p-8">
+    <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">También me encuentras aquí</h2>
 
       <dl className="mt-6 space-y-6 text-sm">
@@ -159,7 +159,7 @@ function ContactDetails() {
           <dd className="mt-2">
             <a
               href={`mailto:${business.email}`}
-              className="break-words transition-colors hover:text-rose"
+              className="wrap-break-word transition-colors hover:text-rose"
             >
               {business.email}
             </a>
@@ -175,7 +175,7 @@ function ContactDetails() {
               href={business.instagram}
               target="_blank"
               rel="noreferrer"
-              className="break-words transition-colors hover:text-rose"
+              className="wrap-break-word transition-colors hover:text-rose"
             >
               {business.instagramHandle}
               <span aria-hidden="true" className="ml-2">
@@ -191,7 +191,7 @@ function ContactDetails() {
 
 function OpeningHours() {
   return (
-    <div className="rounded-[2rem] border border-line bg-white p-7 shadow-soft md:p-8">
+    <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">Horario del estudio</h2>
 
       <ul className="mt-6 space-y-4">
@@ -288,7 +288,7 @@ function BookingForm() {
       onSubmit={handleSubmit}
       aria-labelledby="booking-form-title"
       aria-describedby="booking-form-description"
-      className="rounded-[2rem] border border-line bg-surface p-6 shadow-soft sm:p-10"
+      className="rounded-4xl border border-line bg-surface p-6 shadow-soft sm:p-10"
     >
       <div className="flex items-start justify-between gap-4">
         <div>

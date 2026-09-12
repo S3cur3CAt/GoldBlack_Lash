@@ -1,4 +1,4 @@
-import { serviceCategories as fallbackCategories, type Service, type ServiceCategory } from '../data/site'
+import { serviceCategories as fallbackCategories, type ServiceCategory } from '../data/site'
 
 export interface DbServiceRecord {
   id: string

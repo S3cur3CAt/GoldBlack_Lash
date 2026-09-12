@@ -8,6 +8,8 @@ import {
   IconCheck,
   IconX,
   IconEuro,
+  IconGrid,
+  IconList,
 } from './Icons'
 
 interface ServicesProps {
@@ -22,6 +24,7 @@ export const Services: React.FC<ServicesProps> = ({
   onDeleteService,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingService, setEditingService] = useState<AdminService | null>(null)
 
@@ -165,116 +168,223 @@ export const Services: React.FC<ServicesProps> = ({
         </span>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2">
-        {categories.map((cat) => (
+      {/* Filter and View Mode Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Category Filter Pills */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                selectedCategory === cat.id
+                  ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
+                  : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
+              }`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#14141d] border border-[#222230]">
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              selectedCategory === cat.id
-                ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
-                : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
+            onClick={() => setViewMode('grid')}
+            title="Vista Cuadrícula Compacta"
+            className={`p-1.5 rounded-md transition-colors ${
+              viewMode === 'grid'
+                ? 'bg-gold-500/20 text-gold-400'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
-            {cat.name}
+            <IconGrid size={15} />
           </button>
-        ))}
+          <button
+            onClick={() => setViewMode('table')}
+            title="Vista Tabla Resumida"
+            className={`p-1.5 rounded-md transition-colors ${
+              viewMode === 'table'
+                ? 'bg-gold-500/20 text-gold-400'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <IconList size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Service Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredServices.map((service) => (
-          <div
-            key={service.id}
-            className={`rounded-2xl p-6 transition-all flex flex-col justify-between border ${
-              service.featured
-                ? 'bg-gradient-to-b from-[#181824] to-[#12121a] border-gold-500/40 shadow-gold-glow'
-                : 'bg-[#12121a] border-[#222230] hover:border-gold-500/20'
-            }`}
-          >
-            <div>
-              {/* Header: Badge & Actions */}
-              <div className="flex items-center justify-between gap-2 mb-3">
-                <span className="text-[10px] uppercase font-mono tracking-wider text-gray-400">
-                  {service.categoryName}
-                </span>
+      {/* Services Presentation: Grid or Table */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredServices.map((service) => (
+            <div
+              key={service.id}
+              className={`rounded-xl p-4 transition-all flex flex-col justify-between border ${
+                service.featured
+                  ? 'bg-linear-to-b from-[#181824] to-[#12121a] border-gold-500/40 shadow-gold-glow'
+                  : 'bg-[#12121a] border-[#222230] hover:border-gold-500/20'
+              }`}
+            >
+              <div>
+                {/* Header: Category & Badge */}
+                <div className="flex items-center justify-between gap-1.5 mb-2">
+                  <span className="text-[10px] uppercase font-mono tracking-wider text-gray-400 truncate">
+                    {service.categoryName}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {service.badge && (
+                      <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30">
+                        {service.badge}
+                      </span>
+                    )}
+                    {service.featured && (
+                      <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        ★
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Service Name & Price */}
+                <h4 className="text-sm font-bold font-serif text-white truncate" title={service.name}>
+                  {service.name}
+                </h4>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-lg font-bold font-serif text-gold-300">{service.price}</span>
+                  <span className="text-[11px] text-gray-400 font-mono">/ {service.duration}</span>
+                </div>
+
+                {/* Description */}
+                <p className="text-[11.5px] text-gray-400 mt-2 line-clamp-2 leading-relaxed">
+                  {service.description}
+                </p>
+
+                {/* Inclusions as compact pills */}
+                {service.includes && service.includes.length > 0 && (
+                  <div className="mt-3 pt-2.5 border-t border-[#1e1e2c] flex flex-wrap gap-1">
+                    {service.includes.map((inc, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#161622] text-gray-300 border border-[#232332]"
+                      >
+                        <IconCheck size={10} className="text-gold-400 shrink-0" />
+                        <span className="truncate max-w-[130px]">{inc}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Controls */}
+              <div className="mt-3.5 pt-2.5 border-t border-[#1e1e2c] flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  {service.badge && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gold-500/20 text-gold-300 border border-gold-500/30">
-                      {service.badge}
-                    </span>
-                  )}
-                  {service.featured && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                      ★ Destacado
-                    </span>
-                  )}
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      service.active ? 'bg-emerald-400' : 'bg-gray-500'
+                    }`}
+                  />
+                  <span className="text-[11px] text-gray-400">
+                    {service.active ? 'Activo en web' : 'Pausado'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleEdit(service)}
+                    className="p-1.5 rounded-lg bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] transition-colors"
+                    title="Editar servicio"
+                  >
+                    <IconEdit size={13} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`¿Eliminar servicio "${service.name}"?`)) {
+                        onDeleteService(service.id)
+                      }
+                    }}
+                    className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 transition-colors"
+                    title="Eliminar servicio"
+                  >
+                    <IconTrash size={13} />
+                  </button>
                 </div>
               </div>
-
-              {/* Service Name & Price */}
-              <h4 className="text-lg font-bold font-serif text-white">{service.name}</h4>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-bold font-serif text-gold-300">{service.price}</span>
-                <span className="text-xs text-gray-400 font-mono">/ {service.duration}</span>
-              </div>
-
-              {/* Description */}
-              <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-                {service.description}
-              </p>
-
-              {/* Inclusions */}
-              <div className="mt-4 pt-4 border-t border-[#20202e] space-y-1.5">
-                <span className="text-[11px] font-semibold text-gray-300 uppercase tracking-wider">
-                  Qué incluye:
-                </span>
-                {service.includes.map((inc, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-gray-300">
-                    <IconCheck size={13} className="text-gold-400 shrink-0" />
-                    <span>{inc}</span>
-                  </div>
-                ))}
-              </div>
             </div>
-
-            {/* Bottom Controls */}
-            <div className="mt-6 pt-4 border-t border-[#20202e] flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    service.active ? 'bg-emerald-400' : 'bg-gray-500'
-                  }`}
-                />
-                <span className="text-xs text-gray-400">
-                  {service.active ? 'Activo en web' : 'Pausado'}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => handleEdit(service)}
-                  className="p-2 rounded-xl bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] transition-colors"
-                  title="Editar servicio"
-                >
-                  <IconEdit size={14} />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`¿Eliminar servicio "${service.name}"?`)) {
-                      onDeleteService(service.id)
-                    }
-                  }}
-                  className="p-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 transition-colors"
-                  title="Eliminar servicio"
-                >
-                  <IconTrash size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        /* Table / List View */
+        <div className="rounded-xl border border-[#20202e] bg-[#12121a] overflow-hidden">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[#20202e] bg-[#151520] text-gray-400 uppercase tracking-wider font-mono text-[10px]">
+                <th className="py-3 px-4">Servicio</th>
+                <th className="py-3 px-4">Categoría</th>
+                <th className="py-3 px-4">Duración</th>
+                <th className="py-3 px-4">Precio</th>
+                <th className="py-3 px-4">Inclusiones</th>
+                <th className="py-3 px-4">Estado</th>
+                <th className="py-3 px-4 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1c1c28]">
+              {filteredServices.map((service) => (
+                <tr key={service.id} className="hover:bg-[#161622] transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-white text-xs">{service.name}</span>
+                      {service.featured && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+                          ★ Destacado
+                        </span>
+                      )}
+                      {service.badge && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-gold-500/20 text-gold-300 border border-gold-500/30">
+                          {service.badge}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-gray-400 font-mono text-[11px]">{service.categoryName}</td>
+                  <td className="py-3 px-4 text-gray-300 font-mono">{service.duration}</td>
+                  <td className="py-3 px-4 text-gold-300 font-bold font-serif text-sm">{service.price}</td>
+                  <td className="py-3 px-4 text-gray-400 max-w-xs truncate">
+                    {service.includes.join(', ')}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] ${service.active ? 'text-emerald-400' : 'text-gray-500'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${service.active ? 'bg-emerald-400' : 'bg-gray-500'}`} />
+                      {service.active ? 'Activo' : 'Pausado'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => handleEdit(service)}
+                        className="p-1.5 rounded-lg bg-[#1e1e2c] hover:bg-[#2a2a3e] text-gray-300 hover:text-white transition-colors"
+                        title="Editar"
+                      >
+                        <IconEdit size={13} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (confirm(`¿Eliminar servicio "${service.name}"?`)) {
+                            onDeleteService(service.id)
+                          }
+                        }}
+                        className="p-1.5 rounded-lg bg-red-950/30 hover:bg-red-900/40 text-red-400 transition-colors"
+                        title="Eliminar"
+                      >
+                        <IconTrash size={13} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal: Create / Edit Service */}
       {isModalOpen && (
