@@ -389,15 +389,26 @@ function Lightbox({
       }}
       className="fixed inset-0 m-auto w-full max-w-4xl max-h-[90dvh] overflow-hidden rounded-4xl border border-line bg-paper p-0 text-ink shadow-panel"
     >
-      <div className="grid md:grid-cols-2 h-full max-h-[90dvh]">
-        <div className="p-3 md:p-4 max-h-[35dvh] md:max-h-none md:h-full">
-          <StudioVisual
-            key={piece.id}
-            src={piece.image}
-            alt={piece.title}
-            label={piece.technique}
-            className="max-h-[32dvh] md:max-h-[82dvh] md:h-full"
-          />
+      <div className="grid md:grid-cols-2 h-full max-h-[90dvh] overflow-hidden">
+        <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-6 bg-blush/20 overflow-hidden min-h-0 min-w-0 max-h-[35dvh] md:max-h-none md:h-full">
+          <div className="relative w-full h-full max-w-[320px] md:max-w-md max-h-full aspect-[4/5] overflow-hidden rounded-2xl md:rounded-3xl border border-line/60 bg-paper shadow-soft flex items-center justify-center">
+            {piece.image ? (
+              <img
+                key={piece.id}
+                src={piece.image}
+                alt={piece.title}
+                loading="eager"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <StudioVisual
+                key={piece.id}
+                label={piece.technique}
+                className="h-full w-full"
+              />
+            )}
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col px-6 pt-2 pb-7 md:p-8 overflow-y-auto">

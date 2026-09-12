@@ -82,8 +82,8 @@ function Hero() {
           onError={() => handleEnded(index)}
           className={`hero-video-bg ${activeVideo === index ? 'hero-video-active' : 'hero-video-inactive'}`}
         >
-          <source src={`/api/images/${vid.key}`} type="video/mp4" />
           <source src={`/${vid.file}`} type="video/mp4" />
+          <source src={`/api/images/${vid.key}`} type="video/mp4" />
         </video>
       ))}
 
