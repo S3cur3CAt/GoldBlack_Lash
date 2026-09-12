@@ -27,15 +27,21 @@ export const TitleBar: React.FC = () => {
 
   return (
     <div
-      className="h-9 w-full bg-[#08080b] border-b border-[#1c1c27] flex items-center justify-between select-none shrink-0 z-50 text-xs"
+      className="h-9 w-full bg-[#08080b] border-b border-[#1c1c27] flex items-center justify-between select-none shrink-0 z-50 text-xs overflow-hidden"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* Left brand area */}
       <div className={`flex items-center gap-2.5 ${isMac ? 'pl-20' : 'pl-3.5'}`}>
-        <div className="w-4.5 h-4.5 rounded-[4px] bg-gradient-to-br from-gold-400 to-gold-600 p-[0.75px] shadow-gold-glow shrink-0 overflow-hidden">
+        <div
+          className="w-5 h-5 rounded-[4px] bg-gradient-to-br from-gold-400 to-gold-600 p-[0.75px] shadow-gold-glow shrink-0 overflow-hidden"
+          style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px', maxWidth: '20px', maxHeight: '20px' }}
+        >
           <img
             src={logoImg}
             alt="GoldBlack"
+            width={20}
+            height={20}
+            style={{ width: '20px', height: '20px', objectFit: 'cover' }}
             className="w-full h-full object-cover rounded-[3px]"
           />
         </div>
