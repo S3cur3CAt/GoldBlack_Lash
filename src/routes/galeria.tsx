@@ -308,9 +308,9 @@ function GalleryTile({
             {piece.elements.map((el, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-0.5 text-[0.65rem] font-medium text-plum"
+                className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-2.5 py-0.5 text-[0.65rem] font-bold text-[#08080a] border border-white/60 shadow-xs"
               >
-                <span>♡</span>
+                <span className="text-[0.6rem] text-[#8a5a12]">✦</span>
                 <span>{el}</span>
               </span>
             ))}
@@ -458,9 +458,9 @@ function Lightbox({
                 {piece.elements.map((el, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 text-xs font-medium text-plum"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3 py-1 text-xs font-bold text-[#08080a] border border-white/70 shadow-sm"
                   >
-                    <span>♡</span>
+                    <span className="text-[#8a5a12]">✦</span>
                     <span>{el}</span>
                   </span>
                 ))}

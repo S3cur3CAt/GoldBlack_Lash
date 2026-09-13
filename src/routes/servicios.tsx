@@ -259,8 +259,8 @@ function ServiceCard({ service }: { service: Service }) {
       }`}
     >
       {service.featured ? (
-        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose/30 bg-[#161622] px-3 py-1.5 text-[0.6rem] font-bold tracking-widest text-rose uppercase">
-          <span aria-hidden="true">♡</span>
+        <p className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
+          <span aria-hidden="true" className="text-[#8a5a12]">★</span>
           Favorito del estudio
         </p>
       ) : null}
@@ -282,7 +282,8 @@ function ServiceCard({ service }: { service: Service }) {
               {service.name}
             </h3>
             {service.badge ? (
-              <span className="rounded-full bg-blush px-3 py-1 text-[0.7rem] font-semibold tracking-wide text-plum border border-rose/15 shadow-soft">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.72rem] font-extrabold tracking-wide text-[#08080a] border border-white/80 shadow-[0_2px_14px_rgba(229,193,88,0.5)]">
+                <span className="text-[0.65rem] text-[#8a5a12]">✦</span>
                 {service.badge}
               </span>
             ) : null}
