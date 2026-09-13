@@ -71,18 +71,15 @@ export function Header() {
           className="group flex items-center gap-2.5 sm:gap-3 py-0.5"
         >
           <div className="relative shrink-0">
-            {/* Ambient luxury halo shimmer */}
-            <div className="absolute -inset-1 rounded-2xl bg-linear-to-tr from-[#d4af37] via-[#f3d997] to-[#aa820a] opacity-70 blur-xs group-hover:opacity-100 group-hover:blur-[6px] transition-all duration-300" />
-
-            {/* Rounded gleaming logo container */}
-            <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-2xl p-[1.5px] bg-linear-to-b from-[#fcedc7] via-[#d4af37] to-[#8a5a36] shadow-[0_4px_12px_rgba(212,175,55,0.35)] transition-transform duration-300 group-hover:scale-105">
-              <div className="h-full w-full rounded-[14px] overflow-hidden bg-black flex items-center justify-center">
+            {/* Elegant minimal luxury frame */}
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50 group-hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.9)]">
+              <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#08080c] flex items-center justify-center">
                 <img
                   src="/api/images/logo"
                   alt="GoldBlack Lash — logotipo"
                   width={96}
                   height={96}
-                  className="h-full w-full object-cover rounded-[14px]"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
                 />
               </div>
             </div>
@@ -110,7 +107,7 @@ export function Header() {
               activeOptions={{ exact: tab.to === '/' }}
               className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#9e9ea7] hover:text-[#f5f5f7] hover:bg-white/10 transition-all duration-200"
               activeProps={{
-                className: 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70 outline-none',
+                className: 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70 outline-none',
               }}
             >
               {tab.label}
@@ -123,7 +120,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => openReservationModal()}
-            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_6px_20px_-4px_rgba(212,175,55,0.6),inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_8px_25px_-4px_rgba(212,175,55,0.8),0_0_20px_rgba(229,193,88,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
+            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_4px_12px_-2px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.5)] hover:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
           >
             <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             <span className="relative">Reserva tu momento</span>
@@ -215,14 +212,14 @@ export function Footer() {
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <div className="relative h-14 w-14 rounded-2xl p-[1.5px] bg-linear-to-b from-[#fcedc7] via-[#d4af37] to-[#8a5a36] shadow-[0_4px_16px_rgba(212,175,55,0.4)]">
-                <div className="h-full w-full rounded-[14px] overflow-hidden bg-black flex items-center justify-center">
+              <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+                <div className="h-full w-full rounded-[11px] overflow-hidden bg-[#08080c] flex items-center justify-center">
                   <img
                     src="/api/images/logo"
                     alt="GoldBlack Lash — logotipo"
                     width={120}
                     height={120}
-                    className="h-full w-full object-cover rounded-[14px]"
+                    className="h-full w-full object-cover"
                   />
                 </div>
               </div>

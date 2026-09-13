@@ -140,7 +140,7 @@ function Galeria() {
                 }}
                 className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer outline-none focus:outline-none ${
                   filter === technique
-                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
+                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70'
                     : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
                 }`}
               >

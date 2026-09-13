@@ -29,8 +29,8 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
       <header className="relative z-10 w-full pt-6 sm:pt-8 px-4 sm:px-8">
         <div className="max-w-4xl mx-auto flex items-center justify-between py-3 px-5 sm:px-6 rounded-2xl bg-[#0c0c11]/80 backdrop-blur-2xl border border-[#d4af37]/25 shadow-[0_12px_30px_-8px_rgba(0,0,0,0.85)]">
           <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1.5px] bg-linear-to-b from-[#fcedc7] via-[#d4af37] to-[#8a5a36] shadow-sm">
-              <div className="h-full w-full rounded-[10px] overflow-hidden bg-black flex items-center justify-center">
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.8)]">
+              <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#08080c] flex items-center justify-center">
                 <img
                   src="/api/images/logo"
                   alt="GoldBlack Lash Logo"

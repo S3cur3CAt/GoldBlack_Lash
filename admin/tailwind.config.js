@@ -35,8 +35,8 @@ export default {
         sans: ['Plus Jakarta Sans', 'Jost', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'gold-glow': '0 0 25px -5px rgba(212, 175, 55, 0.25)',
-        'gold-glow-lg': '0 0 35px -3px rgba(212, 175, 55, 0.35)',
+        'gold-glow': '0 2px 8px -1px rgba(0, 0, 0, 0.4)',
+        'gold-glow-lg': '0 4px 14px -2px rgba(0, 0, 0, 0.5)',
       },
     },
   },
