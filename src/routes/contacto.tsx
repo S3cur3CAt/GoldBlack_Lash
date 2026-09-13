@@ -52,14 +52,7 @@ function Contacto() {
           <div className="rounded-[2.5rem] bg-lilac/60 p-6 md:p-10 border border-line">
             <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr] md:gap-12">
               <div>
-                <span
-                  aria-hidden="true"
-                  className="grid h-14 w-14 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
-                >
-                  ♡
-                </span>
-
-                <p className="eyebrow mt-6">Te esperamos aquí</p>
+                <p className="eyebrow">Te esperamos aquí</p>
 
                 <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
                   Tu rincón de belleza en {business.city}.
@@ -103,14 +96,7 @@ function DirectContact() {
   const business = useStudioConfig()
   return (
     <div className="rounded-4xl border border-rose/15 bg-blush p-7 md:p-8">
-      <span
-        aria-hidden="true"
-        className="grid h-12 w-12 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
-      >
-        ♡
-      </span>
-
-      <p className="eyebrow mt-5">Atención personalizada</p>
+      <p className="eyebrow">Atención personalizada</p>
 
       <h2 className="mt-3 font-display text-3xl">
         Escríbenos o llámanos.
@@ -377,24 +363,15 @@ function BookingForm() {
       aria-describedby="booking-form-description"
       className="rounded-4xl border border-line bg-surface p-6 shadow-soft sm:p-10"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="eyebrow">Solicitud de cita</p>
+      <div>
+        <p className="eyebrow">Solicitud de cita</p>
 
-          <h2
-            id="booking-form-title"
-            className="mt-4 font-display text-3xl leading-tight sm:text-4xl"
-          >
-            Cuéntame qué te apetece.
-          </h2>
-        </div>
-
-        <span
-          aria-hidden="true"
-          className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-blush text-2xl text-rose"
+        <h2
+          id="booking-form-title"
+          className="mt-4 font-display text-3xl leading-tight sm:text-4xl"
         >
-          ✧
-        </span>
+          Cuéntame qué te apetece.
+        </h2>
       </div>
 
       <p

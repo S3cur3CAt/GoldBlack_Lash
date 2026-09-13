@@ -206,14 +206,7 @@ function Galeria() {
       <section className="pb-16 md:pb-24">
         <div className="wrap">
           <div className="rounded-[2.5rem] bg-blush px-6 py-12 text-center md:py-16">
-            <span
-              aria-hidden="true"
-              className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
-            >
-              ♡
-            </span>
-
-            <p className="eyebrow mt-6 justify-center">
+            <p className="eyebrow justify-center">
               Sigamos inspirándonos
             </p>
 
@@ -282,7 +275,7 @@ function GalleryTile({
 
         <span
           aria-hidden="true"
-          className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft transition-all group-hover:bg-[#d4af37] group-hover:text-[#08080a]"
+          className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-lg bg-[#181824] border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft transition-all group-hover:bg-[#d4af37] group-hover:text-[#08080a]"
         >
           ↗
         </span>
