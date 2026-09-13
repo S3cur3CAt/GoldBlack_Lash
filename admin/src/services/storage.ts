@@ -1616,6 +1616,53 @@ export function saveDayNote(
   return notes
 }
 
+/** Add a brand-new note entry for a date (supports multiple per day) */
+export function addDayNote(
+  date: string,
+  content: string,
+  color: AgendaDayNote['color'] = 'gold'
+): AgendaDayNote[] {
+  const notes = getAgendaNotes()
+  const trimmed = content.trim()
+  if (!trimmed) return notes
+  notes.push({
+    id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    date,
+    content: trimmed,
+    color,
+    createdAt: new Date().toISOString(),
+  })
+  saveAgendaNotes(notes)
+  return notes
+}
+
+/** Update an existing note by its unique id */
+export function updateDayNoteById(
+  id: string,
+  content: string,
+  color?: AgendaDayNote['color']
+): AgendaDayNote[] {
+  const notes = getAgendaNotes()
+  const idx = notes.findIndex((n) => n.id === id)
+  if (idx >= 0) {
+    notes[idx] = {
+      ...notes[idx],
+      content: content.trim(),
+      ...(color ? { color } : {}),
+      updatedAt: new Date().toISOString(),
+    }
+    saveAgendaNotes(notes)
+  }
+  return notes
+}
+
+/** Delete a note by its unique id */
+export function deleteDayNoteById(id: string): AgendaDayNote[] {
+  const notes = getAgendaNotes().filter((n) => n.id !== id)
+  saveAgendaNotes(notes)
+  return notes
+}
+
 // Backup and Restore
 export function exportBackupJSON(): string {
   const data = {
