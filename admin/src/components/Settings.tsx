@@ -93,11 +93,25 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSaveConfig(formData)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+    try {
+      await onSaveConfig(formData)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 4000)
+      showAlert({
+        title: '¡Configuración Guardada!',
+        message:
+          'Todos los ajustes del estudio se han guardado correctamente y se han sincronizado con el sitio web en tiempo real.',
+        type: 'success',
+      })
+    } catch (err: any) {
+      showAlert({
+        title: 'Error al Guardar',
+        message: `No se pudieron guardar los ajustes: ${err?.message ?? 'Error desconocido'}`,
+        type: 'error',
+      })
+    }
   }
 
   const handleExportBackup = () => {

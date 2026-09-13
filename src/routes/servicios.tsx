@@ -143,7 +143,7 @@ function Servicios() {
                 aria-current={
                   visible === category.id ? 'location' : undefined
                 }
-                className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
+                className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                   visible === category.id
                     ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
                     : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
@@ -160,7 +160,7 @@ function Servicios() {
               search={{}}
               hash="faq"
               aria-current={visible === 'faq' ? 'location' : undefined}
-              className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
+              className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                 visible === 'faq'
                   ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
                   : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
