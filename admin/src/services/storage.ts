@@ -1,4 +1,4 @@
-import { Appointment, Client, AdminService, StudioConfig, GalleryItem } from '../types/admin'
+import { Appointment, Client, AdminService, StudioConfig, GalleryItem, Invoice } from '../types/admin'
 
 const STORAGE_KEYS = {
   APPOINTMENTS: 'goldblack_admin_appointments_v2',
@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   CONFIG: 'goldblack_admin_config_v2',
   GALLERY: 'goldblack_admin_gallery_v2',
   CUSTOM_GALLERY_CATEGORIES: 'goldblack_admin_custom_gallery_categories_v2',
+  INVOICES: 'goldblack_admin_invoices_v2',
 }
 
 // Initial Studio Config from site.ts
@@ -286,6 +287,109 @@ export function getClients(): Client[] {
 
 export function saveClients(clients: Client[]): void {
   localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients))
+}
+
+export function getInvoices(): Invoice[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.INVOICES)
+    if (raw) {
+      return JSON.parse(raw)
+    }
+    const initial = generateInitialInvoices()
+    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(initial))
+    return initial
+  } catch (e) {
+    console.error(e)
+    return []
+  }
+}
+
+export function saveInvoices(invoices: Invoice[]): void {
+  localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices))
+}
+
+function generateInitialInvoices(): Invoice[] {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const todayStr = `${year}-${month}-${day}`
+
+  return [
+    {
+      id: `inv-${year}-001`,
+      number: `${year}-001`,
+      date: todayStr,
+      clientName: 'María García López',
+      clientNif: '48921045K',
+      clientPhone: '+34 612 345 678',
+      clientEmail: 'maria.garcia@email.com',
+      items: [
+        {
+          description: 'Volumen Ruso (3D - 5D) + Sellado Térmico',
+          quantity: 1,
+          unitPrice: 40.0,
+          total: 40.0,
+        },
+      ],
+      subtotal: 33.06,
+      taxRate: 21,
+      taxAmount: 6.94,
+      total: 40.0,
+      paymentMethod: 'bizum',
+      status: 'cobrada',
+      notes: 'Tratamiento completado y sellado.',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: `inv-${year}-002`,
+      number: `${year}-002`,
+      date: todayStr,
+      clientName: 'Lucía Fernández Ramos',
+      clientNif: '28934512P',
+      clientPhone: '+34 620 987 654',
+      clientEmail: 'lucia.f@email.com',
+      items: [
+        {
+          description: 'Lifting de Pestañas + Tinte Negro Profundo',
+          quantity: 1,
+          unitPrice: 28.0,
+          total: 28.0,
+        },
+      ],
+      subtotal: 23.14,
+      taxRate: 21,
+      taxAmount: 4.86,
+      total: 28.0,
+      paymentMethod: 'tarjeta',
+      status: 'cobrada',
+      notes: 'Cobrado con datáfono TPV.',
+      createdAt: new Date().toISOString(),
+    },
+    {
+      id: `inv-${year}-003`,
+      number: `${year}-003`,
+      date: todayStr,
+      clientName: 'Carmen Morales Silva',
+      clientPhone: '+34 655 432 109',
+      items: [
+        {
+          description: 'Mantenimiento Volumen (2-3 semanas)',
+          quantity: 1,
+          unitPrice: 22.0,
+          total: 22.0,
+        },
+      ],
+      subtotal: 18.18,
+      taxRate: 21,
+      taxAmount: 3.82,
+      total: 22.0,
+      paymentMethod: 'efectivo',
+      status: 'cobrada',
+      notes: 'Pago en metálico en estudio.',
+      createdAt: new Date().toISOString(),
+    },
+  ]
 }
 
 export function getApiBaseUrl(): string {
@@ -1193,6 +1297,7 @@ export function exportBackupJSON(): string {
     services: getServices(),
     config: getStudioConfig(),
     gallery: getGalleryItems(),
+    invoices: getInvoices(),
   }
   return JSON.stringify(data, null, 2)
 }
@@ -1205,6 +1310,7 @@ export function importBackupJSON(jsonStr: string): boolean {
     if (data.services) saveServices(data.services)
     if (data.config) saveStudioConfig(data.config)
     if (data.gallery) saveGalleryItems(data.gallery)
+    if (data.invoices) saveInvoices(data.invoices)
     return true
   } catch (e) {
     console.error('Error importing backup:', e)

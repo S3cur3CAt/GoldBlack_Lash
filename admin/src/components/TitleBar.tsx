@@ -50,7 +50,7 @@ export const TitleBar: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-serif font-bold text-[13px] text-white tracking-wide">
+          <span className="font-sans font-bold text-[13px] text-white tracking-wide">
             GoldBlack <span className="text-gold-400 font-light">Lash</span>
           </span>
           <span className="text-gray-500 text-[11px] hidden sm:inline">

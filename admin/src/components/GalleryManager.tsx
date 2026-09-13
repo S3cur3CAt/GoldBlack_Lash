@@ -23,6 +23,8 @@ interface GalleryManagerProps {
   galleryItems: GalleryItem[]
   onSaveItem: (item: GalleryItem) => void
   onDeleteItem: (id: string) => void
+  isModalOpen?: boolean
+  setIsModalOpen?: (open: boolean) => void
 }
 
 const DEFAULT_CATEGORIES = [
@@ -65,11 +67,22 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   galleryItems,
   onSaveItem,
   onDeleteItem,
+  isModalOpen: controlledModalOpen,
+  setIsModalOpen: setControlledModalOpen,
 }) => {
   const { showAlert, showConfirm } = useDialog()
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [internalModalOpen, setInternalModalOpen] = useState(false)
+  const isModalOpen = controlledModalOpen !== undefined ? controlledModalOpen : internalModalOpen
+  const setIsModalOpen = (val: boolean) => {
+    if (setControlledModalOpen) {
+      setControlledModalOpen(val)
+    } else {
+      setInternalModalOpen(val)
+    }
+  }
+
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null)
 
   // Categories Management State
@@ -92,6 +105,21 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   // Elements Manager State
   const [elements, setElements] = useState<string[]>([])
   const [newElementInput, setNewElementInput] = useState('')
+
+  React.useEffect(() => {
+    if (controlledModalOpen && !editingItem) {
+      setTitle('')
+      setCategory('Volumen 3D')
+      setIsCreatingCategory(false)
+      setCustomCatInput('')
+      setPrice('')
+      setBadge('')
+      setDetail('')
+      setFeatured(false)
+      setPreviewUrl('')
+      setElements(['Curvatura D', 'Grosor 0.07', 'Efecto Cat Eye'])
+    }
+  }, [controlledModalOpen])
 
   // Dynamically compute available categories from stored categories + existing items
   const categoriesList = useMemo(() => {
@@ -428,47 +456,10 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2.5">
-            <IconImage size={24} className="text-gold-400" />
-            Galería y Catálogo Multimedia
-          </h3>
-          <p className="text-xs text-gray-400">
-            Administra los trabajos de pestañas, edita sus elementos, curvaturas, precios y fotos del catálogo.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => {
-              setNewCatInput('')
-              setEditingCat(null)
-              setIsCatModalOpen(true)
-            }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gold-400 hover:text-gold-300 border border-gold-500/30 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm cursor-pointer"
-            title="Añadir, renombrar o eliminar categorías"
-          >
-            <IconFolderPlus size={16} />
-            <span>Gestionar Categorías</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleOpenCreate}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"
-          >
-            <IconPlus size={16} />
-            <span>Subir Fotografía</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+      {/* Filter Tabs, Categories Manager & Search Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5 flex-1">
           <button
             onClick={() => setSelectedCategory('Todas')}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -498,16 +489,32 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           })}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64 shrink-0">
-          <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar por técnica, curvatura..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#222230] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
-          />
+        {/* Actions: Categorías & Search */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              setNewCatInput('')
+              setEditingCat(null)
+              setIsCatModalOpen(true)
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gold-400 hover:text-gold-300 border border-gold-500/30 text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer"
+            title="Añadir, renombrar o eliminar categorías"
+          >
+            <IconFolderPlus size={14} />
+            <span>Categorías</span>
+          </button>
+
+          <div className="relative w-full sm:w-60">
+            <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Buscar por técnica, curvatura..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#222230] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+            />
+          </div>
         </div>
       </div>
 
@@ -515,7 +522,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
       {filteredItems.length === 0 ? (
         <div className="rounded-2xl border border-[#222232] bg-[#12121a] p-12 text-center">
           <IconImage size={36} className="mx-auto text-gray-600 mb-3" />
-          <h4 className="font-serif text-lg text-white font-semibold">No se encontraron fotografías</h4>
+          <h4 className="font-sans text-lg text-white font-bold">No se encontraron fotografías</h4>
           <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
             {searchQuery
               ? 'No hay resultados que coincidan con la búsqueda. Intenta con otros términos.'
@@ -600,11 +607,11 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 {/* Overlaid Bottom Title & Price */}
                 <div className="absolute bottom-3 left-3 right-3">
                   <div className="flex items-baseline justify-between gap-2">
-                    <h5 className="font-serif font-bold text-white text-sm truncate" title={item.title}>
+                    <h5 className="font-sans font-bold text-white text-sm truncate" title={item.title}>
                       {item.title}
                     </h5>
                     {item.price && (
-                      <span className="font-serif font-bold text-gold-300 text-sm shrink-0">
+                      <span className="font-sans font-bold text-gold-300 text-sm shrink-0">
                         {item.price}
                       </span>
                     )}
@@ -662,7 +669,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           <div className="w-full max-w-2xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 max-h-[92vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="font-sans text-xl font-bold tracking-tight text-white flex items-center gap-2">
                 <IconSparkles size={20} className="text-gold-400" />
                 {editingItem ? 'Editar Fotografía y Elementos' : 'Subir Fotografía al Catálogo'}
               </h3>
@@ -975,7 +982,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   <IconFolderPlus size={20} />
                 </div>
                 <div>
-                  <h4 className="font-serif text-base font-bold text-white">Gestión de Categorías</h4>
+                  <h4 className="font-sans text-base font-bold tracking-tight text-white">Gestión de Categorías</h4>
                   <p className="text-[11px] text-gray-400">Añade nuevas categorías, edita sus nombres o elimínalas</p>
                 </div>
               </div>

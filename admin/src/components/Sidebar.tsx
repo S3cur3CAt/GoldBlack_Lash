@@ -11,11 +11,12 @@ import {
   IconRefreshCw,
   IconCheck,
   IconX,
+  IconReceipt,
 } from './Icons'
 import { CURRENT_APP_VERSION, formatBytes } from '../services/updater'
 import { useUpdaterContext } from '../context/UpdaterContext'
 
-export type TabId = 'dashboard' | 'appointments' | 'services' | 'clients' | 'gallery' | 'settings'
+export type TabId = 'dashboard' | 'appointments' | 'services' | 'clients' | 'gallery' | 'billing' | 'settings'
 
 interface SidebarProps {
   activeTab: TabId
@@ -77,6 +78,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: IconImage,
     },
     {
+      id: 'billing' as TabId,
+      label: 'Facturación & Caja',
+      subtitle: 'Tickets, IVA y cobros',
+      icon: IconReceipt,
+    },
+    {
       id: 'settings' as TabId,
       label: 'Ajustes de Estudio',
       subtitle: 'Horarios y datos',
@@ -110,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             </div>
             <div>
-              <h1 className="font-serif text-xl font-bold tracking-wide text-white leading-tight">
+              <h1 className="font-sans text-xl font-bold tracking-tight text-white leading-tight">
                 GoldBlack <span className="text-gold-400 font-light">Lash</span>
               </h1>
               <p className="text-[11px] tracking-widest uppercase text-muted font-medium">

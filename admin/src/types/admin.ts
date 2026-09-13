@@ -89,3 +89,33 @@ export interface GalleryItem {
   elements?: string[]
   updatedAt: string
 }
+
+export type PaymentMethod = 'efectivo' | 'tarjeta' | 'bizum' | 'transferencia'
+export type InvoiceStatus = 'cobrada' | 'pendiente' | 'anulada'
+
+export interface InvoiceItem {
+  description: string
+  quantity: number
+  unitPrice: number
+  total: number
+}
+
+export interface Invoice {
+  id: string // ej. "FAC-2026-001"
+  number: string // "2026-001"
+  date: string // YYYY-MM-DD
+  appointmentId?: string
+  clientName: string
+  clientNif?: string
+  clientPhone?: string
+  clientEmail?: string
+  items: InvoiceItem[]
+  subtotal: number
+  taxRate: number // 0, 10, 21 (%)
+  taxAmount: number
+  total: number
+  paymentMethod: PaymentMethod
+  status: InvoiceStatus
+  notes?: string
+  createdAt: string
+}

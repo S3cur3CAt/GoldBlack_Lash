@@ -6,17 +6,24 @@ interface HeaderProps {
   title: string
   subtitle: string
   config: StudioConfig
-  onNewAppointment: () => void
+  actionLabel?: string | null
+  onAction?: () => void
+  onNewAppointment?: () => void
 }
 
 export const Header: React.FC<HeaderProps> = ({
   title,
   subtitle,
   config,
+  actionLabel,
+  onAction,
   onNewAppointment,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('')
   const [currentDate, setCurrentDate] = useState<string>('')
+
+  const effectiveAction = onAction || onNewAppointment
+  const effectiveLabel = actionLabel !== undefined ? actionLabel : 'Nueva Cita'
 
   useEffect(() => {
     const updateTime = () => {
@@ -46,22 +53,24 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="h-20 bg-[#0c0c10]/95 backdrop-blur-md border-b border-[#1f1f2a] px-8 flex items-center justify-between shrink-0">
       {/* Page Title & Breadcrumb */}
       <div>
-        <h2 className="text-xl font-bold font-serif text-white tracking-wide flex items-center gap-2">
+        <h2 className="text-xl font-bold font-sans tracking-tight text-white flex items-center gap-2">
           {title}
         </h2>
         <p className="text-xs text-muted">{subtitle}</p>
       </div>
 
-      {/* Right controls: New Appointment CTA & Live Time */}
+      {/* Right controls: Dynamic Action CTA & Live Time */}
       <div className="flex items-center gap-4">
-        {/* Primary CTA: Nueva Cita */}
-        <button
-          onClick={onNewAppointment}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-ink-950 font-bold text-xs tracking-wide uppercase transition-all duration-200 shadow-gold-glow hover:shadow-gold-glow-lg transform hover:-translate-y-0.5"
-        >
-          <IconPlus size={16} className="stroke-[2.5]" />
-          <span>Nueva Cita</span>
-        </button>
+        {/* Dynamic CTA */}
+        {effectiveAction && effectiveLabel && (
+          <button
+            onClick={effectiveAction}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-ink-950 font-bold text-xs tracking-wide uppercase transition-all duration-200 shadow-gold-glow hover:shadow-gold-glow-lg transform hover:-translate-y-0.5 cursor-pointer"
+          >
+            <IconPlus size={16} className="stroke-[2.5]" />
+            <span>{effectiveLabel}</span>
+          </button>
+        )}
 
         {/* Live Date and Clock */}
         <div className="hidden lg:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#232330] text-xs">

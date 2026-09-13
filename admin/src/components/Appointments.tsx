@@ -53,6 +53,8 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   setEditingAppointment,
 }) => {
   const { showAlert, showConfirm } = useDialog()
+  const [viewMode, setViewMode] = useState<'agenda' | 'list'>('agenda')
+  const [agendaDate, setAgendaDate] = useState<string>(new Date().toISOString().split('T')[0])
   const [filterDate, setFilterDate] = useState<'all' | 'today' | 'tomorrow' | 'week'>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -95,14 +97,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   }
 
   // Open modal for creating
-  const handleNew = () => {
+  const handleNew = (defaultDate?: string, defaultTime?: string) => {
     setEditingAppointment(null)
     setFormData({
       clientName: '',
       clientPhone: '',
       clientEmail: '',
-      date: new Date().toISOString().split('T')[0],
-      time: '11:00',
+      date: defaultDate || agendaDate || new Date().toISOString().split('T')[0],
+      time: defaultTime || '11:00',
       durationMinutes: services[0]?.duration.includes('2') ? 120 : 90,
       serviceId: services[0]?.id || '',
       serviceName: services[0]?.name || '',
@@ -200,107 +202,321 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   }).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
-      {/* Top Bar: Title & New Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2.5">
-            <IconCalendar size={24} className="text-gold-400" />
-            Agenda y Control de Citas
-          </h3>
-          <p className="text-xs text-gray-400">
-            Gestiona citas, envía confirmaciones y recordatorios por correo corporativo y anota especificaciones de pestañas.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
+
+      {/* View Switcher: Agenda Horaria vs Lista de Citas */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#1f1f2c]">
+        <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#14141e] border border-[#242436]">
           <button
-            onClick={handleNew}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"
+            type="button"
+            onClick={() => setViewMode('agenda')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'agenda'
+                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
+                : 'text-gray-400 hover:text-white'
+            }`}
           >
-            <IconPlus size={16} />
-            <span>Nueva Cita</span>
+            <IconCalendar size={15} />
+            <span>Vista Agenda (Horario)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'list'
+                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <span className="text-sm">📋</span>
+            <span>Vista Lista ({appointments.length})</span>
           </button>
         </div>
+
+        {/* Quick Date Navigator for Agenda */}
+        {viewMode === 'agenda' && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date(agendaDate)
+                  d.setDate(d.getDate() - 1)
+                  setAgendaDate(d.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                ← Ayer
+              </button>
+              <button
+                type="button"
+                onClick={() => setAgendaDate(new Date().toISOString().split('T')[0])}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                Hoy
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const d = new Date(agendaDate)
+                  d.setDate(d.getDate() + 1)
+                  setAgendaDate(d.toISOString().split('T')[0])
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                Mañana →
+              </button>
+            </div>
+
+            <input
+              type="date"
+              value={agendaDate}
+              onChange={(e) => e.target.value && setAgendaDate(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
-        {/* Date Tabs */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#222232]">
-          <button
-            onClick={() => setFilterDate('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterDate === 'all' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Todas ({appointments.length})
-          </button>
-          <button
-            onClick={() => setFilterDate('today')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterDate === 'today' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Hoy
-          </button>
-          <button
-            onClick={() => setFilterDate('tomorrow')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterDate === 'tomorrow' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Mañana
-          </button>
-          <button
-            onClick={() => setFilterDate('week')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              filterDate === 'week' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Esta Semana
-          </button>
-        </div>
+      {/* AGENDA VIEW: Timeline by hours */}
+      {viewMode === 'agenda' && (
+        <div className="space-y-5 animate-fadeIn">
+          {/* Day KPI Summary */}
+          {(() => {
+            const dayApts = appointments.filter((a) => a.date === agendaDate)
+            const confirmed = dayApts.filter((a) => a.status === 'confirmada').length
+            const completed = dayApts.filter((a) => a.status === 'completada').length
+            const totalIncome = dayApts.reduce((acc, a) => acc + (a.price || 0), 0)
+            const dateObj = new Date(agendaDate + 'T00:00:00')
+            const dateFormatted = dateObj.toLocaleDateString('es-ES', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
 
-        {/* Status Filter */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Estado:</span>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 focus:outline-none focus:border-gold-500"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="pendiente">Pendientes</option>
-            <option value="confirmada">Confirmadas</option>
-            <option value="completada">Completadas</option>
-            <option value="cancelada">Canceladas</option>
-          </select>
-        </div>
+            return (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#141420] via-[#101018] to-[#0d0d14] border border-gold-500/30 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+                <div>
+                  <span className="text-[11px] uppercase tracking-widest text-gold-400 font-bold block">
+                    Horario de la Jornada
+                  </span>
+                  <h4 className="text-base font-bold font-sans tracking-tight text-white capitalize mt-0.5">
+                    {dateFormatted}
+                  </h4>
+                </div>
 
-        {/* Search */}
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
-          <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar por clienta o teléfono..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500"
-          />
-        </div>
-      </div>
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="px-3 py-1.5 rounded-xl bg-[#181826] border border-[#262638]">
+                    <span className="text-gray-400">Citas: </span>
+                    <strong className="text-white">{dayApts.length}</strong>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                    <span>Completadas: </span>
+                    <strong>{completed}</strong>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300">
+                    <span>Confirmadas: </span>
+                    <strong>{confirmed}</strong>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300">
+                    <span>Previsión: </span>
+                    <strong>{totalIncome} €</strong>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
 
-      {/* Appointments List */}
-      {filteredAppointments.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-[#111118] border border-[#20202c]">
-          <p className="text-sm text-gray-400">No se encontraron citas con los filtros seleccionados.</p>
-          <button
-            onClick={handleNew}
-            className="mt-4 px-4 py-2 rounded-xl bg-gold-500/20 text-gold-300 border border-gold-500/30 text-xs font-semibold hover:bg-gold-500/30"
-          >
-            + Crear Nueva Cita
-          </button>
+          {/* Timeline Schedule from 09:00 to 20:30 */}
+          <div className="rounded-3xl bg-[#0f0f16] border border-[#1e1e2c] p-6 space-y-3 shadow-xl">
+            {['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'].map((timeSlot) => {
+              const matchedApt = appointments.find((a) => a.date === agendaDate && a.time === timeSlot)
+
+              if (matchedApt) {
+                return (
+                  <div
+                    key={timeSlot}
+                    onClick={() => handleEdit(matchedApt)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-md ${
+                      matchedApt.status === 'completada'
+                        ? 'bg-[#101c15] border-emerald-500/40 hover:border-emerald-400'
+                        : matchedApt.status === 'confirmada'
+                        ? 'bg-[#121626] border-blue-500/40 hover:border-blue-400'
+                        : matchedApt.status === 'cancelada'
+                        ? 'bg-[#1c1214] border-red-500/40 opacity-70'
+                        : 'bg-[#1c1810] border-amber-500/40 hover:border-amber-400'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <div className="px-3 py-2 rounded-xl bg-black/40 border border-white/10 text-center min-w-[70px]">
+                        <span className="block text-base font-bold font-mono text-gold-300">{matchedApt.time}</span>
+                        <span className="block text-[10px] text-gray-400">{matchedApt.durationMinutes} min</span>
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h5 className="font-bold text-white text-sm">{matchedApt.clientName}</h5>
+                          <span className="text-xs font-mono text-gray-400 bg-black/30 px-2 py-0.5 rounded">
+                            {matchedApt.clientPhone}
+                          </span>
+                          <span
+                            className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                              matchedApt.status === 'completada'
+                                ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40'
+                                : matchedApt.status === 'confirmada'
+                                ? 'bg-blue-500/25 text-blue-300 border border-blue-500/40'
+                                : 'bg-amber-500/25 text-amber-300 border border-amber-500/40'
+                            }`}
+                          >
+                            {matchedApt.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-300 mt-1">
+                          {matchedApt.serviceName} • <strong className="text-gold-300">{matchedApt.price} €</strong>
+                          {matchedApt.curl && <span className="ml-2 text-gray-400 font-mono">Curva: {matchedApt.curl}</span>}
+                          {matchedApt.length && <span className="ml-2 text-gray-400 font-mono">{matchedApt.length}</span>}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmail(matchedApt, 'confirmar')}
+                        title="Enviar confirmación de cita por correo"
+                        className="p-2 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border border-gold-500/30 transition-colors cursor-pointer"
+                      >
+                        <IconMail size={15} />
+                      </button>
+                      {matchedApt.status !== 'completada' && (
+                        <button
+                          type="button"
+                          onClick={() => onUpdateStatus(matchedApt.id, 'completada')}
+                          title="Marcar cita como completada"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                        >
+                          <IconCheck size={14} />
+                          <span>Completar</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              }
+
+              // Empty time slot with quick add
+              return (
+                <div
+                  key={timeSlot}
+                  onClick={() => handleNew(agendaDate, timeSlot)}
+                  className="group flex items-center justify-between p-3 rounded-2xl bg-[#12121c]/40 hover:bg-[#1a1a28] border border-dashed border-[#242436] hover:border-gold-500/50 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-xs font-bold text-gray-500 group-hover:text-gold-300 min-w-[50px]">
+                      {timeSlot}
+                    </span>
+                    <span className="text-xs text-gray-500 group-hover:text-gray-300">
+                      Hueco disponible en estudio
+                    </span>
+                  </div>
+
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-xs text-gold-400 font-semibold pr-2">
+                    <IconPlus size={14} />
+                    <span>Agendar en este turno</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
+      )}
+
+      {/* LIST VIEW: Filters + Cards */}
+      {viewMode === 'list' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Filter and Search Bar */}
+          <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
+            {/* Date Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#222232]">
+              <button
+                type="button"
+                onClick={() => setFilterDate('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  filterDate === 'all' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Todas ({appointments.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterDate('today')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  filterDate === 'today' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Hoy
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterDate('tomorrow')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  filterDate === 'tomorrow' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Mañana
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilterDate('week')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  filterDate === 'week' ? 'bg-gold-500/20 text-gold-300 border border-gold-500/30' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Esta Semana
+              </button>
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">Estado:</span>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 focus:outline-none focus:border-gold-500"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="confirmada">Confirmadas</option>
+                <option value="completada">Completadas</option>
+                <option value="cancelada">Canceladas</option>
+              </select>
+            </div>
+
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px] max-w-xs">
+              <IconSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Buscar por clienta o teléfono..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500"
+              />
+            </div>
+          </div>
+
+          {/* Appointments List */}
+          {filteredAppointments.length === 0 ? (
+            <div className="p-12 text-center rounded-2xl bg-[#111118] border border-[#20202c]">
+              <p className="text-sm text-gray-400">No se encontraron citas con los filtros seleccionados.</p>
+              <button
+                type="button"
+                onClick={() => handleNew()}
+                className="mt-4 px-4 py-2 rounded-xl bg-gold-500/20 text-gold-300 border border-gold-500/30 text-xs font-semibold hover:bg-gold-500/30 cursor-pointer"
+              >
+                + Crear Nueva Cita
+              </button>
+            </div>
       ) : (
         <div className="space-y-3">
           {filteredAppointments.map((apt) => {
@@ -474,13 +690,15 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           })}
         </div>
       )}
+      </div>
+      )}
 
       {/* Modal: Create / Edit Appointment */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-2xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="font-sans text-xl font-bold text-white flex items-center gap-2">
                 <IconCalendar size={20} className="text-gold-400" />
                 {editingAppointment ? 'Editar Cita de Estudio' : 'Nueva Cita en GoldBlack Lash'}
               </h3>
@@ -604,7 +822,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
               {/* Ficha Técnica de Pestañas */}
               <div className="p-4 rounded-xl bg-[#181824] border border-[#28283a] space-y-3">
-                <div className="text-xs font-bold font-serif text-gold-300 uppercase tracking-wider flex items-center gap-2">
+                <div className="text-xs font-bold font-sans text-gold-300 uppercase tracking-wider flex items-center gap-2">
                   <IconSparkles size={15} />
                   Ficha Técnica de Extensiones
                 </div>

@@ -31,8 +31,9 @@ module.exports = {
         muted: '#8e8ea0',
       },
       fontFamily: {
-        serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        sans: ['Jost', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['"SF Pro Rounded"', '-apple-system', 'BlinkMacSystemFont', 'Nunito', 'sans-serif'],
+        sans: ['"SF Pro Rounded"', '-apple-system', 'BlinkMacSystemFont', 'Nunito', 'sans-serif'],
+        rounded: ['"SF Pro Rounded"', '-apple-system', 'BlinkMacSystemFont', 'Nunito', 'sans-serif'],
       },
       boxShadow: {
         'gold-glow': '0 0 25px -5px rgba(212, 175, 55, 0.25)',

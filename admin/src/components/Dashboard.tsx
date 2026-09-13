@@ -81,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-gold-500/10 to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-serif font-bold text-white">
+            <h3 className="text-2xl font-bold font-sans tracking-tight text-white">
               Bienvenida
             </h3>
             <p className="text-sm text-gray-400 mt-1 max-w-xl">
@@ -91,24 +91,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </>
               ) : (
                 <>
-                  Agenda del día lista. Pulsa en <strong className="text-gold-300">Agendar Cita</strong> para registrar el primer turno.
+                  Agenda del día lista. Pulsa en <strong className="text-gold-300">Nueva Cita</strong> en la barra superior para registrar el primer turno.
                 </>
               )}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={onNewAppointment}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow"
-            >
-              <IconPlus size={16} />
-              <span>Agendar Cita</span>
-            </button>
-            <button
               onClick={() => onSelectTab('appointments')}
-              className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-200 text-xs font-semibold border border-gray-700/50 transition-all"
+              className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-200 text-xs font-semibold border border-gray-700/50 transition-all cursor-pointer"
             >
-              Ver Agenda Completa
+              Ver Agenda Completa →
             </button>
           </div>
         </div>
@@ -125,7 +118,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-white">{todayAppointments.length}</span>
+            <span className="text-3xl font-bold font-sans tracking-tight text-white">{todayAppointments.length}</span>
             <span className="text-xs text-emerald-400 font-medium">
               {completedToday > 0 ? `${completedToday} completada(s)` : 'En progreso'}
             </span>
@@ -144,7 +137,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-gold-300">{monthlyIncome} €</span>
+            <span className="text-3xl font-bold font-sans tracking-tight text-gold-300">{monthlyIncome} €</span>
             <span className="text-xs text-gold-400/80 font-mono">EST.</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-2">
@@ -161,7 +154,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-white">{clients.length}</span>
+            <span className="text-3xl font-bold font-sans tracking-tight text-white">{clients.length}</span>
             <span className="text-xs text-purple-400 font-medium">Fichas registradas</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-2">
@@ -178,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-serif text-white">{services.length}</span>
+            <span className="text-3xl font-bold font-sans tracking-tight text-white">{services.length}</span>
             <span className="text-xs text-emerald-400 font-medium">Servicios activos</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-2">
@@ -192,7 +185,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Left Column (2 cols): Today's Appointments */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-serif text-lg font-bold text-white flex items-center gap-2">
+            <h4 className="font-sans text-lg font-bold text-white flex items-center gap-2">
               <IconClock size={18} className="text-gold-400" />
               Citas Programadas para Hoy ({today})
             </h4>
@@ -302,7 +295,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="space-y-6">
           {/* Top Services */}
           <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202c]">
-            <h4 className="font-serif text-base font-bold text-white flex items-center gap-2 mb-4">
+            <h4 className="font-sans text-base font-bold text-white flex items-center gap-2 mb-4">
               <IconSparkles size={16} className="text-gold-400" />
               Técnicas Más Pedidas
             </h4>
@@ -336,7 +329,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Maintenance Recalls (> 3 weeks) */}
           <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202c]">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+              <h4 className="font-sans text-base font-bold text-white flex items-center gap-2">
                 <IconAlertCircle size={16} className="text-amber-400" />
                 Avisos de Retoque ({recallClients.length})
               </h4>

@@ -7,6 +7,7 @@ import { Appointments } from './components/Appointments'
 import { Services } from './components/Services'
 import { Clients } from './components/Clients'
 import { GalleryManager } from './components/GalleryManager'
+import { Billing } from './components/Billing'
 import { Settings } from './components/Settings'
 
 import {
@@ -17,6 +18,7 @@ import {
   GalleryItem,
   AppointmentStatus,
   PaymentStatus,
+  Invoice,
 } from './types/admin'
 
 import {
@@ -30,6 +32,8 @@ import {
   saveStudioConfig,
   getGalleryItems,
   saveGalleryItems,
+  getInvoices,
+  saveInvoices,
   syncServiceWithVercel,
   deleteServiceFromVercel,
   fetchLiveServicesFromVercel,
@@ -97,10 +101,15 @@ export const App: React.FC = () => {
   const [services, setServices] = useState<AdminService[]>([])
   const [config, setConfig] = useState<StudioConfig>(getStudioConfig())
   const [gallery, setGallery] = useState<GalleryItem[]>([])
+  const [invoices, setInvoices] = useState<Invoice[]>([])
 
-  // Modal control for Appointment creation/editing across the app
+  // Modal controls for item creation/editing across the app
   const [isAptModalOpen, setIsAptModalOpen] = useState(false)
   const [editingApt, setEditingApt] = useState<Appointment | null>(null)
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false)
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false)
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false)
+  const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
 
   // Track IDs of appointments viewed by the user
@@ -125,6 +134,7 @@ export const App: React.FC = () => {
     setServices(getServices())
     setConfig(getStudioConfig())
     setGallery(getGalleryItems())
+    setInvoices(getInvoices())
 
     // If local storage has no record of viewed IDs yet, initialize with current IDs
     // so historical appointments don't show as newly unread
@@ -443,6 +453,26 @@ export const App: React.FC = () => {
     await deleteGalleryItemFromVercel(id)
   }
 
+  // Invoices Actions
+  const handleSaveInvoice = (invoice: Invoice) => {
+    const existingIndex = invoices.findIndex((i) => i.id === invoice.id)
+    let updated: Invoice[]
+    if (existingIndex >= 0) {
+      updated = [...invoices]
+      updated[existingIndex] = invoice
+    } else {
+      updated = [invoice, ...invoices]
+    }
+    setInvoices(updated)
+    saveInvoices(updated)
+  }
+
+  const handleDeleteInvoice = (id: string) => {
+    const updated = invoices.filter((i) => i.id !== id)
+    setInvoices(updated)
+    saveInvoices(updated)
+  }
+
   // Config Action — saves locally and syncs to Supabase so the live website reflects changes immediately
   const handleSaveConfig = async (newConfig: StudioConfig) => {
     setConfig(newConfig)
@@ -484,6 +514,10 @@ export const App: React.FC = () => {
       title: 'Galería y Trabajos del Estudio',
       subtitle: 'Fotografías del catálogo y antes / después',
     },
+    billing: {
+      title: 'Facturación & Control de Caja',
+      subtitle: 'Tickets oficiales, desglose de IVA, TPV/Bizum/Efectivo y balance de ingresos',
+    },
     settings: {
       title: 'Ajustes del Estudio',
       subtitle: 'Datos de contacto, horarios y copias de seguridad',
@@ -491,6 +525,49 @@ export const App: React.FC = () => {
   }
 
   const activeInfo = tabTitles[activeTab]
+
+  const getHeaderAction = () => {
+    switch (activeTab) {
+      case 'dashboard':
+      case 'appointments':
+        return {
+          actionLabel: 'Nueva Cita',
+          onAction: () => {
+            setEditingApt(null)
+            if (activeTab !== 'appointments') handleSelectTab('appointments')
+            setIsAptModalOpen(true)
+          },
+        }
+      case 'services':
+        return {
+          actionLabel: 'Añadir Servicio',
+          onAction: () => setIsServiceModalOpen(true),
+        }
+      case 'clients':
+        return {
+          actionLabel: 'Nueva Clienta',
+          onAction: () => setIsClientModalOpen(true),
+        }
+      case 'gallery':
+        return {
+          actionLabel: 'Subir Fotografía',
+          onAction: () => setIsGalleryModalOpen(true),
+        }
+      case 'billing':
+        return {
+          actionLabel: 'Emitir Factura',
+          onAction: () => setIsBillingModalOpen(true),
+        }
+      case 'settings':
+      default:
+        return {
+          actionLabel: null,
+          onAction: undefined,
+        }
+    }
+  }
+
+  const headerAction = getHeaderAction()
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0a0a0d] text-gray-200">
@@ -512,11 +589,8 @@ export const App: React.FC = () => {
           title={activeInfo.title}
           subtitle={activeInfo.subtitle}
           config={config}
-          onNewAppointment={() => {
-            setEditingApt(null)
-            handleSelectTab('appointments')
-            setIsAptModalOpen(true)
-          }}
+          actionLabel={headerAction.actionLabel}
+          onAction={headerAction.onAction}
         />
 
         {config.maintenanceMode && (
@@ -575,6 +649,8 @@ export const App: React.FC = () => {
               services={services}
               onSaveService={handleSaveService}
               onDeleteService={handleDeleteService}
+              isModalOpen={isServiceModalOpen}
+              setIsModalOpen={setIsServiceModalOpen}
             />
           )}
 
@@ -584,6 +660,8 @@ export const App: React.FC = () => {
               config={config}
               onSaveClient={handleSaveClient}
               onDeleteClient={handleDeleteClient}
+              isModalOpen={isClientModalOpen}
+              setIsModalOpen={setIsClientModalOpen}
             />
           )}
 
@@ -592,6 +670,19 @@ export const App: React.FC = () => {
               galleryItems={gallery}
               onSaveItem={handleSaveGalleryItem}
               onDeleteItem={handleDeleteGalleryItem}
+              isModalOpen={isGalleryModalOpen}
+              setIsModalOpen={setIsGalleryModalOpen}
+            />
+          )}
+
+          {activeTab === 'billing' && (
+            <Billing
+              invoices={invoices}
+              config={config}
+              onSaveInvoice={handleSaveInvoice}
+              onDeleteInvoice={handleDeleteInvoice}
+              isCreateModalOpen={isBillingModalOpen}
+              setIsCreateModalOpen={setIsBillingModalOpen}
             />
           )}
 

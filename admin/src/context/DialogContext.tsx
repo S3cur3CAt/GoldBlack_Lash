@@ -96,7 +96,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               </div>
 
               <div className="flex-1 min-w-0 pr-4">
-                <h4 className="font-serif text-lg font-bold text-white tracking-wide">
+                <h4 className="font-sans text-lg font-bold text-white tracking-wide">
                   {alertState.title || (alertState.type === 'error' ? 'Error' : alertState.type === 'warning' ? 'Atención' : 'Información')}
                 </h4>
                 <p className="text-xs text-gray-300 mt-1.5 leading-relaxed whitespace-pre-line">
@@ -146,7 +146,7 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               </div>
 
               <div className="flex-1 min-w-0 pr-4">
-                <h4 className="font-serif text-lg font-bold text-white tracking-wide">
+                <h4 className="font-sans text-lg font-bold text-white tracking-wide">
                   {confirmState.title}
                 </h4>
                 <p className="text-xs text-gray-300 mt-1.5 leading-relaxed whitespace-pre-line">

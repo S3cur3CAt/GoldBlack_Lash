@@ -17,17 +17,23 @@ interface ServicesProps {
   services: AdminService[]
   onSaveService: (service: AdminService) => void
   onDeleteService: (id: string) => void
+  isModalOpen?: boolean
+  setIsModalOpen?: (open: boolean) => void
 }
 
 export const Services: React.FC<ServicesProps> = ({
   services,
   onSaveService,
   onDeleteService,
+  isModalOpen: propIsModalOpen,
+  setIsModalOpen: propSetIsModalOpen,
 }) => {
   const { showAlert, showConfirm } = useDialog()
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [internalModalOpen, setInternalModalOpen] = useState(false)
+  const isModalOpen = propIsModalOpen !== undefined ? propIsModalOpen : internalModalOpen
+  const setIsModalOpen = propSetIsModalOpen !== undefined ? propSetIsModalOpen : setInternalModalOpen
   const [editingService, setEditingService] = useState<AdminService | null>(null)
 
   const [formData, setFormData] = useState<Partial<AdminService>>({
@@ -210,27 +216,7 @@ export const Services: React.FC<ServicesProps> = ({
   })
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2.5">
-            <IconSparkles size={24} className="text-gold-400" />
-            Catálogo de Servicios y Tarifas
-          </h3>
-          <p className="text-xs text-gray-400">
-            Configura precios, duraciones, insignias y detalles incluidos en cada tratamiento.
-          </p>
-        </div>
-        <button
-          onClick={handleNew}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow self-start sm:self-auto"
-        >
-          <IconPlus size={16} />
-          <span>Añadir Servicio</span>
-        </button>
-      </div>
-
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
       {/* Filter and View Mode Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Category Filter Pills */}
@@ -315,11 +301,11 @@ export const Services: React.FC<ServicesProps> = ({
                 </div>
 
                 {/* Service Name & Price */}
-                <h4 className="text-sm font-bold font-serif text-white truncate" title={service.name}>
+                <h4 className="text-sm font-bold font-sans text-white truncate" title={service.name}>
                   {service.name}
                 </h4>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-lg font-bold font-serif text-gold-300">{service.price}</span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-lg font-bold font-sans text-gold-300">{service.price}</span>
                   <span className="text-[11px] text-gray-400 font-mono">/ {service.duration}</span>
                 </div>
 
@@ -424,7 +410,7 @@ export const Services: React.FC<ServicesProps> = ({
                   </td>
                   <td className="py-3 px-4 text-gray-400 font-mono text-[11px]">{service.categoryName}</td>
                   <td className="py-3 px-4 text-gray-300 font-mono">{service.duration}</td>
-                  <td className="py-3 px-4 text-gold-300 font-bold font-serif text-sm">{service.price}</td>
+                  <td className="py-3 px-4 text-gold-300 font-bold font-sans text-sm">{service.price}</td>
                   <td className="py-3 px-4 text-gray-400 max-w-xs truncate">
                     {service.includes.join(', ')}
                   </td>
@@ -472,7 +458,7 @@ export const Services: React.FC<ServicesProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="font-sans text-xl font-bold text-white flex items-center gap-2">
                 <IconSparkles size={20} className="text-gold-400" />
                 {editingService ? 'Editar Servicio' : 'Nuevo Servicio de Pestañas'}
               </h3>

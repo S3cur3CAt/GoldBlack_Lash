@@ -24,6 +24,8 @@ interface ClientsProps {
   config: StudioConfig
   onSaveClient: (client: Client) => void
   onDeleteClient: (id: string) => void
+  isModalOpen?: boolean
+  setIsModalOpen?: (open: boolean) => void
 }
 
 export const Clients: React.FC<ClientsProps> = ({
@@ -31,11 +33,36 @@ export const Clients: React.FC<ClientsProps> = ({
   config,
   onSaveClient,
   onDeleteClient,
+  isModalOpen: controlledModalOpen,
+  setIsModalOpen: setControlledModalOpen,
 }) => {
   const { showAlert, showConfirm } = useDialog()
   const [searchQuery, setSearchQuery] = useState('')
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [internalModalOpen, setInternalModalOpen] = useState(false)
+  const isModalOpen = controlledModalOpen !== undefined ? controlledModalOpen : internalModalOpen
+  const setIsModalOpen = (val: boolean) => {
+    if (setControlledModalOpen) {
+      setControlledModalOpen(val)
+    } else {
+      setInternalModalOpen(val)
+    }
+  }
+
   const [editingClient, setEditingClient] = useState<Client | null>(null)
+
+  React.useEffect(() => {
+    if (controlledModalOpen && !editingClient) {
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        allergies: 'Ninguna conocida',
+        preferredStyle: 'Cat Eye (Ojo de Gato)',
+        preferredCurl: 'D',
+        notes: '',
+      })
+    }
+  }, [controlledModalOpen])
 
   // View Mode: 'grid' (standard cards) | 'list' (table) | 'compact' (dense cards)
   const [viewMode, setViewMode] = useState<ClientsViewMode>(() => {
@@ -122,6 +149,7 @@ export const Clients: React.FC<ClientsProps> = ({
 
     onSaveClient(clientToSave)
     setIsModalOpen(false)
+    setEditingClient(null)
   }
 
   const nowMs = Date.now()
@@ -137,26 +165,6 @@ export const Clients: React.FC<ClientsProps> = ({
 
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2.5">
-            <IconUsers size={24} className="text-gold-400" />
-            Directorio y Fichas de Clientas
-          </h3>
-          <p className="text-xs text-gray-400">
-            Historial de sesiones, alergias, sensibilidades y avisos de retoque por correo corporativo.
-          </p>
-        </div>
-        <button
-          onClick={handleNew}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow self-start sm:self-auto cursor-pointer"
-        >
-          <IconPlus size={16} />
-          <span>Nueva Ficha</span>
-        </button>
-      </div>
-
       {/* Controls Bar: Search & View Mode Switcher */}
       <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
@@ -554,7 +562,7 @@ export const Clients: React.FC<ClientsProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
           <div className="w-full max-w-lg rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
             <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-serif text-xl font-bold text-white flex items-center gap-2">
+              <h3 className="font-sans text-xl font-bold tracking-tight text-white flex items-center gap-2">
                 <IconUsers size={20} className="text-gold-400" />
                 {editingClient ? 'Editar Ficha de Clienta' : 'Nueva Ficha de Clienta'}
               </h3>

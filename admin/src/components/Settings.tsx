@@ -211,17 +211,6 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="p-8 space-y-8 max-w-5xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
-      {/* Header */}
-      <div>
-        <h3 className="font-serif text-2xl font-bold text-white flex items-center gap-2.5">
-          <IconSettings size={24} className="text-gold-400" />
-          Ajustes del Estudio y Configuración
-        </h3>
-        <p className="text-xs text-gray-400">
-          Personaliza los datos de contacto, enlaces de reserva, copias de seguridad y compatibilidad.
-        </p>
-      </div>
-
       {saveSuccess && (
         <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
           <IconCheck size={16} />
@@ -248,7 +237,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <span className={`w-2.5 h-2.5 rounded-full ${
                   formData.maintenanceMode ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
                 }`} />
-                <h4 className="font-serif text-base font-bold text-white uppercase tracking-wider">
+                <h4 className="font-sans text-base font-bold tracking-tight text-white uppercase">
                   Modo Mantenimiento del Sitio Web
                 </h4>
                 <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
@@ -319,7 +308,7 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-gold-400" />
-                <h4 className="font-serif text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <h4 className="font-sans text-base font-bold tracking-tight text-white uppercase flex items-center gap-2">
                   <IconSparkles size={18} className="text-gold-400" />
                   Efectos Estacionales y Partículas en Vivo
                 </h4>
@@ -385,7 +374,7 @@ export const Settings: React.FC<SettingsProps> = ({
             )}
 
             <div className="relative z-10 pointer-events-none text-center max-w-sm mx-auto px-5 py-3 rounded-xl bg-black/75 border border-gold-500/25 backdrop-blur-md shadow-2xl">
-              <span className="font-serif text-sm font-bold text-gold-200 block tracking-wide">
+              <span className="font-sans text-sm font-bold text-gold-200 block tracking-wide">
                 GoldBlack Lash Atelier
               </span>
               <span className="text-[11px] text-gray-300 block mt-0.5">
@@ -454,7 +443,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {/* Contact and Business Details */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
-          <h4 className="font-serif text-base font-bold text-gold-300 uppercase tracking-wider">
+          <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase">
             Información del Estudio
           </h4>
 
@@ -545,7 +534,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {/* Studio Opening Hours */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
-          <h4 className="font-serif text-base font-bold text-gold-300 uppercase tracking-wider">
+          <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase">
             Horarios de Atención
           </h4>
           <div className="space-y-3">
@@ -585,7 +574,7 @@ export const Settings: React.FC<SettingsProps> = ({
         {/* Corporate Email Configuration (Resend + Vercel Domain) */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
           <div className="flex items-center justify-between">
-            <h4 className="font-serif text-base font-bold text-gold-300 uppercase tracking-wider flex items-center gap-2">
+            <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase flex items-center gap-2">
               <IconMail size={18} className="text-gold-400" />
               Configuración de Correo Corporativo (Resend + Dominio Vercel)
             </h4>
@@ -719,7 +708,7 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Real-time Vercel & Supabase Sync Section */}
       <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+          <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
             Sincronización en Tiempo Real (Vercel & Supabase)
           </h4>
@@ -782,7 +771,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* Backup and Restore Box */}
       <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
-        <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+        <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
           <IconDownload size={18} className="text-gold-400" />
           Copias de Seguridad (Backup y Restauración)
         </h4>
@@ -816,7 +805,7 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Updates and Sound/Visual Notification Section */}
       <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+          <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
             <IconRefreshCw size={18} className="text-gold-400" />
             Actualizaciones del Sistema (macOS & Windows)
           </h4>
@@ -853,7 +842,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* System & Architecture Info */}
       <div className="p-6 rounded-2xl bg-[#101016] border border-[#1e1e28] space-y-3 text-xs text-gray-400">
-        <h5 className="font-serif font-bold text-white text-sm">
+        <h5 className="font-sans font-bold tracking-tight text-white text-sm">
           Compatibilidad del Sistema y Versiones
         </h5>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
