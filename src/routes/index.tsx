@@ -6,6 +6,8 @@ import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   faqs,
+  galleryPieces,
+  serviceCategories,
 } from '#/data/site'
 
 export const Route = createFileRoute('/')({
@@ -207,6 +209,33 @@ function Hero() {
 }
 
 function ServicesPreview() {
+  const highlightImages = galleryPieces.filter((piece) =>
+    ['pieza-02', 'pieza-03'].includes(piece.id),
+  )
+
+  const facial = serviceCategories
+    .flatMap((category) => category.services)
+    .find((service) => service.id === 'limpieza-facial')
+
+  const highlights = [
+    ...highlightImages.map((piece) => ({
+      id: piece.id,
+      image: piece.image,
+      title: piece.title,
+      price: piece.price,
+      categoria: 'extensiones',
+    })),
+    facial
+      ? {
+          id: facial.id,
+          image: facial.image,
+          title: facial.name,
+          price: facial.price,
+          categoria: 'extras',
+        }
+      : null,
+  ].filter((item): item is NonNullable<typeof item> => item !== null)
+
   return (
     <section className="section">
       <div className="wrap">
@@ -226,6 +255,48 @@ function ServicesPreview() {
             desapercibido. Encontramos el efecto que mejor encaja contigo.
           </p>
         </header>
+
+        {highlights.length > 0 ? (
+          <div className="mt-11 grid gap-5 sm:grid-cols-3">
+            {highlights.map((item) => (
+              <Link
+                key={item.id}
+                to="/servicios"
+                search={{ categoria: item.categoria }}
+                hash={item.categoria}
+                className="group block rounded-4xl border border-line bg-white p-3 text-left shadow-soft transition-transform duration-300 hover:-translate-y-1"
+              >
+                <div className="relative overflow-hidden rounded-3xl">
+                  <StudioVisual
+                    src={item.image}
+                    alt={item.title}
+                    label={item.title}
+                    className="transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
+
+                  <span
+                    aria-hidden="true"
+                    className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-full bg-white text-lg text-rose shadow-soft transition-colors group-hover:bg-plum group-hover:text-white"
+                  >
+                    ↗
+                  </span>
+                </div>
+
+                <div className="flex items-baseline justify-between gap-2 px-2 pt-5 pb-3">
+                  <h3 className="font-display text-xl">
+                    {item.title}
+                  </h3>
+
+                  {item.price ? (
+                    <span className="shrink-0 font-display text-lg font-bold text-rose">
+                      {item.price}
+                    </span>
+                  ) : null}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : null}
 
         <div className="mt-9 text-center">
           <Link to="/servicios" className="button">
