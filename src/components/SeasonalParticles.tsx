@@ -1,18 +1,11 @@
 import { useEffect, useRef } from 'react'
+import { resolveSeasonalEffect, type SeasonalEffectType } from '../utils/seasonalCalendar'
 
-export type SeasonalEffectType =
-  | 'none'
-  | 'snow'
-  | 'sakura'
-  | 'leaves'
-  | 'rose_petals'
-  | 'gold_dust'
-  | 'new_year'
-  | 'halloween'
+export type { SeasonalEffectType }
 
 interface SeasonalParticlesProps {
   effect?: SeasonalEffectType
-  containerMode?: boolean // If true, sizes to container instead of fixed full viewport (useful for admin preview)
+  containerMode?: boolean
   className?: string
 }
 
@@ -22,7 +15,7 @@ interface Particle {
   vx: number
   vy: number
   size: number
-  layer: number // 0: far, 1: mid, 2: near
+  layer: number
   alpha: number
   maxAlpha: number
   rotation: number
@@ -37,15 +30,40 @@ interface Particle {
   shapeType?: number
 }
 
+// Fireworks structs
+interface FireworkRocket {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  targetY: number
+  color: string
+  trail: Array<{ x: number; y: number; alpha: number }>
+}
+
+interface FireworkSpark {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  alpha: number
+  color: string
+  decay: number
+  gravity: number
+  friction: number
+  history: Array<{ x: number; y: number }>
+}
+
 export function SeasonalParticles({
   effect = 'none',
   containerMode = false,
   className = '',
 }: SeasonalParticlesProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const activeEffect = resolveSeasonalEffect(effect)
 
   useEffect(() => {
-    if (!effect || effect === 'none') return
+    if (!activeEffect || activeEffect === 'none') return
 
     const canvas = canvasRef.current
     if (!canvas) return
@@ -59,48 +77,54 @@ export function SeasonalParticles({
     let particles: Particle[] = []
     let isVisible = true
 
-    // Palettes
+    // Fireworks state
+    let rockets: FireworkRocket[] = []
+    let sparks: FireworkSpark[] = []
+    let fireworkTimer = 0
+    const FIREWORK_INTERVAL = containerMode ? 55 : 65 // Frames between bursts
+
+    const fireworkPalettes = [
+      ['#ffd700', '#fef08a', '#ffffff', '#eab308'], // Imperial Gold
+      ['#38bdf8', '#0284c7', '#ffffff', '#bae6fd'], // Electric Ice Blue
+      ['#f43f5e', '#be123c', '#fda4af', '#ffffff'], // Ruby Rose
+      ['#10b981', '#059669', '#6ee7b7', '#ffd700'], // Emerald & Gold
+      ['#c084fc', '#7e22ce', '#f3e8ff', '#ffd700'], // Amethyst & Champagne
+    ]
+
     const leafColors = [
-      { fill: '#c2410c', alt: '#9a3412' }, // Terracotta rust
-      { fill: '#d97706', alt: '#b45309' }, // Warm amber
-      { fill: '#d4af37', alt: '#a16207' }, // Golden ochre
-      { fill: '#b91c1c', alt: '#7f1d1d' }, // Crimson maple
-      { fill: '#854d0e', alt: '#713f12' }, // Chestnut
+      { fill: '#c2410c', alt: '#9a3412' },
+      { fill: '#d97706', alt: '#b45309' },
+      { fill: '#d4af37', alt: '#a16207' },
+      { fill: '#b91c1c', alt: '#7f1d1d' },
+      { fill: '#854d0e', alt: '#713f12' },
     ]
 
     const sakuraColors = [
-      { fill: '#fbcfe8', alt: '#f472b6' }, // Soft blossom pink
-      { fill: '#fdf2f8', alt: '#f9a8d4' }, // Pure petal white-pink
-      { fill: '#f472b6', alt: '#db2777' }, // Rosy magenta
-      { fill: '#fda4af', alt: '#fb7185' }, // Blush coral
+      { fill: '#fbcfe8', alt: '#f472b6' },
+      { fill: '#fdf2f8', alt: '#f9a8d4' },
+      { fill: '#f472b6', alt: '#db2777' },
+      { fill: '#fda4af', alt: '#fb7185' },
     ]
 
     const roseColors = [
-      { fill: '#881337', alt: '#4c0519' }, // Deep velvet wine
-      { fill: '#9f1239', alt: '#700922' }, // Rich ruby
-      { fill: '#be123c', alt: '#831843' }, // Crimson rose
-      { fill: '#fb7185', alt: '#9f1239' }, // Soft petal highlight
+      { fill: '#881337', alt: '#4c0519' },
+      { fill: '#9f1239', alt: '#700922' },
+      { fill: '#be123c', alt: '#831843' },
+      { fill: '#fb7185', alt: '#9f1239' },
     ]
 
     const goldColors = [
-      { fill: '#fef08a', alt: '#eab308' }, // Light 24k gold
-      { fill: '#d4af37', alt: '#ca8a04' }, // Classic GoldBlack gold
-      { fill: '#e5c158', alt: '#a16207' }, // Champagne sparkle
-      { fill: '#ffffff', alt: '#fde047' }, // Pure light specular
-    ]
-
-    const newYearColors = [
-      { fill: '#d4af37', alt: '#a16207' }, // Gold
-      { fill: '#f8fafc', alt: '#cbd5e1' }, // Diamond white
-      { fill: '#f59e0b', alt: '#b45309' }, // Amber champagne
-      { fill: '#fb7185', alt: '#be123c' }, // Celebration rose
+      { fill: '#fef08a', alt: '#eab308' },
+      { fill: '#d4af37', alt: '#ca8a04' },
+      { fill: '#e5c158', alt: '#a16207' },
+      { fill: '#ffffff', alt: '#fde047' },
     ]
 
     const halloweenColors = [
-      { fill: '#f97316', alt: '#ea580c' }, // Jack-o'-lantern orange
-      { fill: '#fbbf24', alt: '#d97706' }, // Warm amber glow
-      { fill: '#c084fc', alt: '#9333ea' }, // Spooky mystic purple
-      { fill: '#2e2a3b', alt: '#1a1824' }, // Shadow bat
+      { fill: '#f97316', alt: '#ea580c' },
+      { fill: '#fbbf24', alt: '#d97706' },
+      { fill: '#c084fc', alt: '#9333ea' },
+      { fill: '#2e2a3b', alt: '#1a1824' },
     ]
 
     function initSize() {
@@ -125,9 +149,9 @@ export function SeasonalParticles({
 
     function createParticle(initialScatter = false): Particle {
       const pY = initialScatter ? Math.random() * height : -30 - Math.random() * 50
-      const layer = Math.random() < 0.4 ? 0 : Math.random() < 0.75 ? 1 : 2 // 0: far, 1: mid, 2: near
+      const layer = Math.random() < 0.4 ? 0 : Math.random() < 0.75 ? 1 : 2
 
-      if (effect === 'snow') {
+      if (activeEffect === 'snow') {
         const size = layer === 0 ? 1.2 + Math.random() * 1.2 : layer === 1 ? 2.2 + Math.random() * 1.8 : 3.8 + Math.random() * 2.4
         const speedMult = layer === 0 ? 0.6 : layer === 1 ? 1.0 : 1.4
         return {
@@ -150,7 +174,7 @@ export function SeasonalParticles({
         }
       }
 
-      if (effect === 'leaves') {
+      if (activeEffect === 'leaves') {
         const c = leafColors[Math.floor(Math.random() * leafColors.length)]
         const size = 11 + Math.random() * 13
         return {
@@ -165,7 +189,7 @@ export function SeasonalParticles({
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.03,
           wobble: Math.random() * Math.PI * 2,
-          wobbleSpeed: 0.025 + Math.random() * 0.035, // 3D tumble
+          wobbleSpeed: 0.025 + Math.random() * 0.035,
           swingAmp: 1.8 + Math.random() * 2.2,
           swingSpeed: 0.015 + Math.random() * 0.02,
           phase: Math.random() * Math.PI * 2,
@@ -175,13 +199,13 @@ export function SeasonalParticles({
         }
       }
 
-      if (effect === 'sakura') {
+      if (activeEffect === 'sakura') {
         const c = sakuraColors[Math.floor(Math.random() * sakuraColors.length)]
         const size = 8 + Math.random() * 8
         return {
           x: Math.random() * width,
           y: pY,
-          vx: 0.3 + Math.random() * 0.7, // gentle breeze to the right
+          vx: 0.3 + Math.random() * 0.7,
           vy: 0.8 + Math.random() * 1.0,
           size,
           layer,
@@ -199,7 +223,7 @@ export function SeasonalParticles({
         }
       }
 
-      if (effect === 'rose_petals') {
+      if (activeEffect === 'rose_petals') {
         const c = roseColors[Math.floor(Math.random() * roseColors.length)]
         const size = 10 + Math.random() * 10
         return {
@@ -223,10 +247,9 @@ export function SeasonalParticles({
         }
       }
 
-      if (effect === 'gold_dust') {
+      if (activeEffect === 'gold_dust') {
         const c = goldColors[Math.floor(Math.random() * goldColors.length)]
         const size = 1.5 + Math.random() * 3.5
-        // gold dust floats both upward and downward gently
         const floatUp = Math.random() < 0.4
         return {
           x: Math.random() * width,
@@ -240,18 +263,17 @@ export function SeasonalParticles({
           rotation: Math.random() * Math.PI * 2,
           rotationSpeed: (Math.random() - 0.5) * 0.03,
           wobble: Math.random() * Math.PI * 2,
-          wobbleSpeed: 0.03 + Math.random() * 0.04, // shimmer twinkle
+          wobbleSpeed: 0.03 + Math.random() * 0.04,
           swingAmp: 0.8 + Math.random() * 1.2,
           swingSpeed: 0.015 + Math.random() * 0.02,
           phase: Math.random() * Math.PI * 2,
           color: c.fill,
           colorAlt: c.alt,
-          shapeType: Math.random() < 0.35 ? 1 : 0, // 1: 4-point sparkle star, 0: soft glowing orb
+          shapeType: Math.random() < 0.35 ? 1 : 0,
         }
       }
 
-      // halloween
-      if (effect === 'halloween') {
+      if (activeEffect === 'halloween') {
         const isBat = Math.random() < 0.28
         const c = halloweenColors[Math.floor(Math.random() * halloweenColors.length)]
         if (isBat) {
@@ -268,16 +290,15 @@ export function SeasonalParticles({
             rotation: (Math.random() - 0.5) * 0.2,
             rotationSpeed: (Math.random() - 0.5) * 0.02,
             wobble: Math.random() * Math.PI * 2,
-            wobbleSpeed: 0.12 + Math.random() * 0.08, // wing flap frequency
+            wobbleSpeed: 0.12 + Math.random() * 0.08,
             swingAmp: 1.5 + Math.random() * 2.0,
             swingSpeed: 0.02 + Math.random() * 0.03,
             phase: Math.random() * Math.PI * 2,
             color: '#1a1824',
             colorAlt: '#2e2a3b',
-            shapeType: 1, // 1: flying bat
+            shapeType: 1,
           }
         } else {
-          // Glowing jack-o'-lantern ember / spirit particle
           const size = 2.0 + Math.random() * 3.5
           return {
             x: Math.random() * width,
@@ -297,47 +318,95 @@ export function SeasonalParticles({
             phase: Math.random() * Math.PI * 2,
             color: c.fill,
             colorAlt: c.alt,
-            shapeType: 0, // 0: glowing ember
+            shapeType: 0,
           }
         }
       }
 
-      // new_year default fallback
-      const c = newYearColors[Math.floor(Math.random() * newYearColors.length)]
-      const size = 2.5 + Math.random() * 4.5
+      // Default ambient gold stardust for new_year
       return {
         x: Math.random() * width,
-        y: pY,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: 0.8 + Math.random() * 1.3,
-        size,
-        layer,
-        alpha: 0.4 + Math.random() * 0.5,
-        maxAlpha: 0.95,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: 0.4 + Math.random() * 0.6,
+        size: 1.5 + Math.random() * 2.5,
+        layer: 1,
+        alpha: 0.3 + Math.random() * 0.4,
+        maxAlpha: 0.8,
         rotation: Math.random() * Math.PI * 2,
-        rotationSpeed: (Math.random() - 0.5) * 0.05,
+        rotationSpeed: 0.02,
         wobble: Math.random() * Math.PI * 2,
-        wobbleSpeed: 0.04 + Math.random() * 0.05,
-        swingAmp: 1.2 + Math.random() * 1.8,
-        swingSpeed: 0.02 + Math.random() * 0.03,
+        wobbleSpeed: 0.03,
+        swingAmp: 0.8,
+        swingSpeed: 0.02,
         phase: Math.random() * Math.PI * 2,
-        color: c.fill,
-        colorAlt: c.alt,
-        shapeType: Math.random() < 0.4 ? 1 : 0, // 1: diamond star, 0: shimmering ribbon/confetti
+        color: '#ffd700',
+        shapeType: 0,
+      }
+    }
+
+    function spawnRocket() {
+      const palette = fireworkPalettes[Math.floor(Math.random() * fireworkPalettes.length)]
+      const mainColor = palette[0]
+      const startX = width * (0.15 + Math.random() * 0.7)
+      const targetY = height * (containerMode ? 0.15 + Math.random() * 0.3 : 0.12 + Math.random() * 0.35)
+      const speed = containerMode ? 6.5 + Math.random() * 2.5 : 8.5 + Math.random() * 4.0
+
+      rockets.push({
+        x: startX,
+        y: height + 10,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: -speed,
+        targetY,
+        color: mainColor,
+        trail: [],
+      })
+    }
+
+    function detonateRocket(rocket: FireworkRocket) {
+      const palette = fireworkPalettes[Math.floor(Math.random() * fireworkPalettes.length)]
+      const sparkCount = containerMode ? 36 : 60 + Math.floor(Math.random() * 25)
+
+      for (let i = 0; i < sparkCount; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const speed = (containerMode ? 1.5 : 2.0) + Math.random() * (containerMode ? 3.5 : 5.5)
+        const sparkColor = palette[Math.floor(Math.random() * palette.length)]
+
+        sparks.push({
+          x: rocket.x,
+          y: rocket.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          color: sparkColor,
+          decay: 0.012 + Math.random() * 0.014,
+          gravity: 0.045 + Math.random() * 0.025,
+          friction: 0.965,
+          history: [{ x: rocket.x, y: rocket.y }],
+        })
       }
     }
 
     function initParticles() {
-      // Density according to screen width and container mode
+      if (activeEffect === 'new_year') {
+        // In new year mode, spawn ambient sparkles and immediate first firework!
+        particles = []
+        for (let i = 0; i < (containerMode ? 15 : 25); i++) {
+          particles.push(createParticle(true))
+        }
+        spawnRocket()
+        return
+      }
+
       let count = 45
       if (containerMode) {
         count = 25
       } else if (width < 640) {
-        count = effect === 'snow' ? 38 : effect === 'gold_dust' ? 32 : 22
+        count = activeEffect === 'snow' ? 38 : activeEffect === 'gold_dust' ? 32 : 22
       } else if (width < 1200) {
-        count = effect === 'snow' ? 65 : effect === 'gold_dust' ? 55 : 35
+        count = activeEffect === 'snow' ? 65 : activeEffect === 'gold_dust' ? 55 : 35
       } else {
-        count = effect === 'snow' ? 85 : effect === 'gold_dust' ? 70 : 45
+        count = activeEffect === 'snow' ? 85 : activeEffect === 'gold_dust' ? 70 : 45
       }
 
       particles = []
@@ -361,14 +430,12 @@ export function SeasonalParticles({
     window.addEventListener('resize', handleResize)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Render shapes
     function drawSnowflake(p: Particle) {
       if (!ctx) return
       ctx.save()
       ctx.translate(p.x, p.y)
 
       if (p.layer === 2) {
-        // Foreground soft radial glow
         const rad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 1.5)
         rad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha})`)
         rad.addColorStop(0.4, `rgba(240, 246, 255, ${p.alpha * 0.8})`)
@@ -378,7 +445,6 @@ export function SeasonalParticles({
         ctx.arc(0, 0, p.size * 1.5, 0, Math.PI * 2)
         ctx.fill()
       } else {
-        // Crisp mid/far flake with subtle crystalline soft edge
         ctx.fillStyle = `rgba(245, 248, 255, ${p.alpha})`
         ctx.beginPath()
         ctx.arc(0, 0, p.size, 0, Math.PI * 2)
@@ -393,25 +459,21 @@ export function SeasonalParticles({
       ctx.translate(p.x, p.y)
       ctx.rotate(p.rotation)
 
-      // 3D tumble scaling via cosine
       const scaleX = Math.cos(p.wobble)
       ctx.scale(scaleX, 1)
 
       const length = p.size * 1.6
       const widthL = p.size * 0.9
 
-      // Organic curved leaf path
       ctx.fillStyle = p.color
       ctx.globalAlpha = p.alpha
-
       ctx.beginPath()
-      ctx.moveTo(0, -length / 2) // leaf tip
-      ctx.bezierCurveTo(widthL / 2, -length / 4, widthL / 2, length / 4, 0, length / 2) // right curve
-      ctx.bezierCurveTo(-widthL / 2, length / 4, -widthL / 2, -length / 4, 0, -length / 2) // left curve
+      ctx.moveTo(0, -length / 2)
+      ctx.bezierCurveTo(widthL / 2, -length / 4, widthL / 2, length / 4, 0, length / 2)
+      ctx.bezierCurveTo(-widthL / 2, length / 4, -widthL / 2, -length / 4, 0, -length / 2)
       ctx.closePath()
       ctx.fill()
 
-      // Central stem / vein for realism
       if (Math.abs(scaleX) > 0.35 && p.colorAlt) {
         ctx.strokeStyle = p.colorAlt
         ctx.lineWidth = 0.8
@@ -420,7 +482,6 @@ export function SeasonalParticles({
         ctx.lineTo(0, length / 2 - 1)
         ctx.stroke()
       }
-
       ctx.restore()
     }
 
@@ -430,7 +491,6 @@ export function SeasonalParticles({
       ctx.translate(p.x, p.y)
       ctx.rotate(p.rotation)
 
-      // 3D pitch/roll tumbling
       const scaleX = Math.cos(p.wobble)
       const scaleY = 0.7 + Math.sin(p.wobble * 0.8) * 0.3
       ctx.scale(scaleX, scaleY)
@@ -439,15 +499,13 @@ export function SeasonalParticles({
       ctx.fillStyle = p.color
       ctx.globalAlpha = p.alpha
 
-      // Heart-notched delicate sakura petal
       ctx.beginPath()
-      ctx.moveTo(0, s * 0.7) // bottom petal base
+      ctx.moveTo(0, s * 0.7)
       ctx.bezierCurveTo(-s * 0.7, s * 0.3, -s * 0.8, -s * 0.4, -s * 0.3, -s * 0.8)
-      ctx.quadraticCurveTo(0, -s * 0.5, s * 0.3, -s * 0.8) // petal notch tip
+      ctx.quadraticCurveTo(0, -s * 0.5, s * 0.3, -s * 0.8)
       ctx.bezierCurveTo(s * 0.8, -s * 0.4, s * 0.7, s * 0.3, 0, s * 0.7)
       ctx.closePath()
       ctx.fill()
-
       ctx.restore()
     }
 
@@ -464,7 +522,6 @@ export function SeasonalParticles({
       ctx.fillStyle = p.color
       ctx.globalAlpha = p.alpha
 
-      // Velvet rounded rose petal
       ctx.beginPath()
       ctx.moveTo(0, s * 0.8)
       ctx.bezierCurveTo(-s * 0.9, s * 0.4, -s * 0.9, -s * 0.6, 0, -s * 0.8)
@@ -472,7 +529,6 @@ export function SeasonalParticles({
       ctx.closePath()
       ctx.fill()
 
-      // Subtle velvet gradient contour highlight
       if (Math.abs(scaleX) > 0.4 && p.colorAlt) {
         ctx.strokeStyle = p.colorAlt
         ctx.lineWidth = 0.7
@@ -480,7 +536,6 @@ export function SeasonalParticles({
         ctx.arc(0, 0, s * 0.45, -Math.PI * 0.3, Math.PI * 0.3)
         ctx.stroke()
       }
-
       ctx.restore()
     }
 
@@ -493,7 +548,6 @@ export function SeasonalParticles({
       const alpha = Math.min(1, p.alpha * twinkle)
 
       if (p.shapeType === 1) {
-        // 4-point sparkle star
         ctx.rotate(p.rotation)
         ctx.fillStyle = p.color
         ctx.globalAlpha = alpha
@@ -509,13 +563,11 @@ export function SeasonalParticles({
         ctx.closePath()
         ctx.fill()
 
-        // Center jewel spark
         ctx.fillStyle = '#ffffff'
         ctx.beginPath()
         ctx.arc(0, 0, thin, 0, Math.PI * 2)
         ctx.fill()
       } else {
-        // Soft glowing gold stardust orb
         const rad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 2)
         rad.addColorStop(0, `rgba(254, 240, 138, ${alpha})`)
         rad.addColorStop(0.4, `rgba(212, 175, 55, ${alpha * 0.7})`)
@@ -528,54 +580,18 @@ export function SeasonalParticles({
       ctx.restore()
     }
 
-    function drawNewYear(p: Particle) {
-      if (!ctx) return
-      ctx.save()
-      ctx.translate(p.x, p.y)
-      ctx.rotate(p.rotation)
-
-      const scaleX = Math.cos(p.wobble)
-      ctx.scale(scaleX, 1)
-
-      const alpha = p.alpha * (0.7 + Math.sin(p.wobble * 1.5) * 0.3)
-      ctx.globalAlpha = Math.max(0.2, Math.min(1, alpha))
-
-      if (p.shapeType === 1) {
-        // Diamond celebration sparkle
-        const r = p.size * 1.5
-        ctx.fillStyle = p.color
-        ctx.beginPath()
-        ctx.moveTo(0, -r)
-        ctx.lineTo(r * 0.7, 0)
-        ctx.lineTo(0, r)
-        ctx.lineTo(-r * 0.7, 0)
-        ctx.closePath()
-        ctx.fill()
-      } else {
-        // Shimmering confetti ribbon
-        const w = p.size * 1.4
-        const h = p.size * 0.7
-        ctx.fillStyle = p.color
-        ctx.fillRect(-w / 2, -h / 2, w, h)
-      }
-
-      ctx.restore()
-    }
-
     function drawHalloween(p: Particle) {
       if (!ctx) return
       ctx.save()
       ctx.translate(p.x, p.y)
 
       if (p.shapeType === 1) {
-        // Flying bat with animated wings
         ctx.rotate(p.rotation)
-        const flap = Math.sin(p.wobble) // wing flapping factor
+        const flap = Math.sin(p.wobble)
         const s = p.size
         ctx.fillStyle = p.color
         ctx.globalAlpha = p.alpha
 
-        // Bat body & ears
         ctx.beginPath()
         ctx.ellipse(0, 0, s * 0.22, s * 0.42, 0, 0, Math.PI * 2)
         ctx.moveTo(-s * 0.16, -s * 0.35)
@@ -586,7 +602,6 @@ export function SeasonalParticles({
         ctx.lineTo(s * 0.08, -s * 0.38)
         ctx.fill()
 
-        // Wings
         ctx.beginPath()
         ctx.moveTo(-s * 0.12, 0)
         ctx.quadraticCurveTo(-s * 0.65, -s * 0.75 * flap, -s * 1.25, -s * 0.3 * flap)
@@ -598,7 +613,6 @@ export function SeasonalParticles({
         ctx.quadraticCurveTo(s * 0.35, s * 0.25, s * 0.12, 0)
         ctx.fill()
       } else {
-        // Glowing jack-o'-lantern ember / spirit particle
         const rad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size * 2)
         rad.addColorStop(0, p.color)
         rad.addColorStop(0.4, p.colorAlt || p.color)
@@ -609,7 +623,6 @@ export function SeasonalParticles({
         ctx.arc(0, 0, p.size * 2, 0, Math.PI * 2)
         ctx.fill()
       }
-
       ctx.restore()
     }
 
@@ -623,42 +636,135 @@ export function SeasonalParticles({
         return
       }
 
-      const dt = Math.min((currentTime - lastTime) / 1000, 0.1) // clamp delta
+      const dt = Math.min((currentTime - lastTime) / 1000, 0.1)
       lastTime = currentTime
 
       if (!ctx) return
       ctx.clearRect(0, 0, width, height)
 
-      // Time-dependent wind variation
+      // FIREWORKS MODE (Fin de Año)
+      if (activeEffect === 'new_year') {
+        fireworkTimer++
+        if (fireworkTimer >= FIREWORK_INTERVAL) {
+          fireworkTimer = 0
+          spawnRocket()
+          // 25% chance of tandem rocket for double fireworks burst!
+          if (Math.random() < 0.25) {
+            setTimeout(() => spawnRocket(), 180)
+          }
+        }
+
+        // 1. Update and draw ascending rockets
+        for (let i = rockets.length - 1; i >= 0; i--) {
+          const r = rockets[i]
+          r.trail.push({ x: r.x, y: r.y, alpha: 1 })
+          if (r.trail.length > 7) r.trail.shift()
+
+          // Draw sparkling rocket trail
+          for (let t = 0; t < r.trail.length; t++) {
+            const pt = r.trail[t]
+            ctx.fillStyle = r.color
+            ctx.globalAlpha = (t / r.trail.length) * 0.6
+            ctx.beginPath()
+            ctx.arc(pt.x, pt.y, 1.5, 0, Math.PI * 2)
+            ctx.fill()
+          }
+
+          // Draw rocket tip
+          ctx.fillStyle = '#ffffff'
+          ctx.globalAlpha = 1
+          ctx.beginPath()
+          ctx.arc(r.x, r.y, 2.5, 0, Math.PI * 2)
+          ctx.fill()
+
+          r.x += r.vx
+          r.y += r.vy
+
+          // Check if reached apex / burst height
+          if (r.y <= r.targetY || r.vy >= -0.5) {
+            detonateRocket(r)
+            rockets.splice(i, 1)
+          }
+        }
+
+        // 2. Update and draw burst sparks with luminous light trails
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          const s = sparks[i]
+
+          s.history.push({ x: s.x, y: s.y })
+          if (s.history.length > 4) s.history.shift()
+
+          // Draw spark trail line
+          if (s.history.length > 1) {
+            ctx.strokeStyle = s.color
+            ctx.lineWidth = 1.8
+            ctx.globalAlpha = Math.max(0, s.alpha)
+            ctx.beginPath()
+            ctx.moveTo(s.history[0].x, s.history[0].y)
+            for (let h = 1; h < s.history.length; h++) {
+              ctx.lineTo(s.history[h].x, s.history[h].y)
+            }
+            ctx.stroke()
+          }
+
+          // Spark head
+          ctx.fillStyle = '#ffffff'
+          ctx.globalAlpha = Math.max(0, s.alpha)
+          ctx.beginPath()
+          ctx.arc(s.x, s.y, 1.2, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Physics: drag & gravity
+          s.vx *= s.friction
+          s.vy *= s.friction
+          s.vy += s.gravity
+          s.x += s.vx
+          s.y += s.vy
+          s.alpha -= s.decay
+
+          if (s.alpha <= 0 || s.y > height + 20) {
+            sparks.splice(i, 1)
+          }
+        }
+
+        // 3. Gentle ambient celebratory stardust
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i]
+          p.phase += p.swingSpeed
+          p.y += p.vy
+          p.x += Math.sin(p.phase) * 0.4
+          drawGoldDust(p)
+          if (p.y > height + 10) {
+            particles[i] = createParticle(false)
+          }
+        }
+        return
+      }
+
+      // STANDARD SEASONAL PARTICLES (Snow, Leaves, Sakura, Rose, Gold Dust, Halloween)
       const globalWind = Math.sin(currentTime * 0.0006) * 0.5
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i]
 
-        // Advance oscillation
         p.phase += p.swingSpeed
         p.wobble += p.wobbleSpeed
         p.rotation += p.rotationSpeed
 
-        // Compute physics
         const swing = Math.sin(p.phase) * p.swingAmp
         p.x += (p.vx + swing + globalWind) * (dt * 60)
         p.y += p.vy * (dt * 60)
 
-        // Draw particle based on active mode
-        if (effect === 'snow') drawSnowflake(p)
-        else if (effect === 'leaves') drawLeaf(p)
-        else if (effect === 'sakura') drawSakura(p)
-        else if (effect === 'rose_petals') drawRosePetal(p)
-        else if (effect === 'gold_dust') drawGoldDust(p)
-        else if (effect === 'new_year') drawNewYear(p)
-        else if (effect === 'halloween') drawHalloween(p)
+        if (activeEffect === 'snow') drawSnowflake(p)
+        else if (activeEffect === 'leaves') drawLeaf(p)
+        else if (activeEffect === 'sakura') drawSakura(p)
+        else if (activeEffect === 'rose_petals') drawRosePetal(p)
+        else if (activeEffect === 'gold_dust') drawGoldDust(p)
+        else if (activeEffect === 'halloween') drawHalloween(p)
 
-        // Wrap around boundaries
         if (p.y > height + 40) {
           particles[i] = createParticle(false)
         } else if (p.y < -50 && p.vy < 0) {
-          // Floating upward particles in gold dust
           particles[i] = createParticle(false)
           particles[i].y = height + 20
         }
@@ -678,9 +784,9 @@ export function SeasonalParticles({
       window.removeEventListener('resize', handleResize)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [effect, containerMode])
+  }, [activeEffect, containerMode])
 
-  if (!effect || effect === 'none') {
+  if (!activeEffect || activeEffect === 'none') {
     return null
   }
 

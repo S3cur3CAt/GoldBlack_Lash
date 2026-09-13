@@ -1,5 +1,5 @@
 import React from 'react'
-import type { SeasonalEffectType } from './SeasonalParticles'
+import { resolveSeasonalEffect, type SeasonalEffectType } from '../utils/seasonalCalendar'
 
 interface SeasonalCornerBadgeProps {
   effect?: SeasonalEffectType
@@ -16,7 +16,80 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
   className = '',
   position = 'top-right',
 }) => {
-  if (!effect || effect === 'none') return null
+  const activeEffect = resolveSeasonalEffect(effect)
+  if (!activeEffect || activeEffect === 'none') return null
+
+  if (activeEffect === 'snow') {
+    return (
+      <div
+        className={`absolute z-20 pointer-events-none select-none transition-transform duration-300 hover:scale-110 drop-shadow-[0_6px_14px_rgba(0,0,0,0.6)] ${className}`}
+        style={
+          position === 'top-right'
+            ? {
+                top: '-24px',
+                right: '-8px',
+                transformOrigin: '26px 42px',
+                transform: 'rotate(45deg)',
+              }
+            : {
+                top: '-24px',
+                left: '-8px',
+                transformOrigin: '26px 42px',
+                transform: 'rotate(-45deg) scaleX(-1)',
+              }
+        }
+        aria-hidden="true"
+      >
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Sombra base del gorro proyectada sobre la esquina de la tarjeta */}
+          <path
+            d="M 7 40 C 17 47, 35 47, 45 40 C 43 46, 33 51, 26 51 C 19 51, 9 46, 7 40 Z"
+            fill="rgba(0, 0, 0, 0.45)"
+          />
+          {/* Cono rojo del gorro de Papá Noel */}
+          <path
+            d="M 10 38 C 12 24, 21 12, 33 8 C 38 6, 42 11, 38 16 C 33 22, 37 31, 42 38 C 32 42, 20 42, 10 38 Z"
+            fill="url(#santaRedGrad)"
+          />
+          {/* Pliegue sombra terciopelo profundo */}
+          <path
+            d="M 26 22 C 33 19, 38 17, 37 20 C 33 25, 31 30, 33 36 C 30 37, 28 34, 26 22 Z"
+            fill="#7f1d1d"
+            opacity="0.4"
+          />
+          {/* Borde de pelo blanco que abraza ergonómicamente la curva de la esquina */}
+          <path
+            d="M 6 36 C 18 41.5, 34 41.5, 46 36 C 47 43.5, 35 48.5, 26 48.5 C 17 48.5, 5 43.5, 6 36 Z"
+            fill="url(#furWhiteGrad)"
+            stroke="#cbd5e1"
+            strokeWidth="0.8"
+          />
+          {/* Textura pomposa de pelo */}
+          <circle cx="11" cy="39.5" r="3.2" fill="#ffffff" />
+          <circle cx="18" cy="42" r="3.6" fill="#f8fafc" />
+          <circle cx="26" cy="43.5" r="3.8" fill="#ffffff" />
+          <circle cx="34" cy="42" r="3.6" fill="#f8fafc" />
+          <circle cx="41" cy="39.5" r="3.2" fill="#ffffff" />
+          {/* Borla blanca esponjosa en la punta */}
+          <circle cx="36" cy="11" r="5.5" fill="url(#furWhiteGrad)" stroke="#cbd5e1" strokeWidth="0.8" />
+          <circle cx="35" cy="10" r="2.2" fill="#ffffff" />
+          <defs>
+            <linearGradient id="santaRedGrad" x1="10" y1="8" x2="42" y2="38" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#f87171" />
+              <stop offset="25%" stopColor="#ef4444" />
+              <stop offset="70%" stopColor="#dc2626" />
+              <stop offset="100%" stopColor="#991b1b" />
+            </linearGradient>
+            <linearGradient id="furWhiteGrad" x1="6" y1="36" x2="46" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="60%" stopColor="#f8fafc" />
+              <stop offset="100%" stopColor="#e2e8f0" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    )
+  }
 
   const posClasses =
     position === 'top-right'
@@ -28,48 +101,8 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
       className={`absolute ${posClasses} z-20 pointer-events-none select-none transition-transform duration-300 hover:scale-110 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)] ${className}`}
       aria-hidden="true"
     >
-      {effect === 'snow' && (
-        /* Gorro de Papá Noel rojo con borla blanca para Navidad */
-        <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          {/* Sombra base */}
-          <ellipse cx="32" cy="54" rx="20" ry="4" fill="rgba(0,0,0,0.3)" />
-          {/* Cono rojo del gorro */}
-          <path
-            d="M14 48 C 18 36, 28 20, 48 16 C 54 15, 52 24, 46 28 C 38 34, 46 44, 48 48 Z"
-            fill="url(#santaRedGrad)"
-          />
-          {/* Pliegue sombra roja */}
-          <path
-            d="M34 26 C 42 22, 49 20, 48 24 C 42 29, 36 34, 38 42 Z"
-            fill="#991b1b"
-            opacity="0.4"
-          />
-          {/* Borde de pelo blanco inferior */}
-          <rect x="10" y="44" width="40" height="12" rx="6" fill="url(#furWhiteGrad)" stroke="#e2e8f0" strokeWidth="0.8" />
-          {/* Detalles textura pelaje */}
-          <circle cx="16" cy="50" r="2.5" fill="#ffffff" />
-          <circle cx="24" cy="49" r="3" fill="#f8fafc" />
-          <circle cx="32" cy="50" r="3.2" fill="#ffffff" />
-          <circle cx="40" cy="49" r="3" fill="#f8fafc" />
-          <circle cx="46" cy="50" r="2.5" fill="#ffffff" />
-          {/* Borla blanca de la punta */}
-          <circle cx="49" cy="18" r="6" fill="url(#furWhiteGrad)" stroke="#e2e8f0" strokeWidth="0.8" />
-          <circle cx="48" cy="17" r="2" fill="#ffffff" />
-          <defs>
-            <linearGradient id="santaRedGrad" x1="14" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ef4444" />
-              <stop offset="50%" stopColor="#dc2626" />
-              <stop offset="100%" stopColor="#991b1b" />
-            </linearGradient>
-            <linearGradient id="furWhiteGrad" x1="10" y1="44" x2="50" y2="56" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#e2e8f0" />
-            </linearGradient>
-          </defs>
-        </svg>
-      )}
 
-      {effect === 'halloween' && (
+      {activeEffect === 'halloween' && (
         /* Calabaza festiva de Halloween con ojos brillantes */
         <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           {/* Tallo verde */}
@@ -91,7 +124,7 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {effect === 'sakura' && (
+      {activeEffect === 'sakura' && (
         /* Ramo delicado de flor de cerezo de primavera */
         <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           {/* Tallo sutil */}
@@ -114,7 +147,7 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {effect === 'leaves' && (
+      {activeEffect === 'leaves' && (
         /* Hoja de otoño de arce en ámbar dorado */
         <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           {/* Tallo */}
@@ -138,7 +171,7 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {effect === 'rose_petals' && (
+      {activeEffect === 'rose_petals' && (
         /* Rosa roja aterciopelada de San Valentín */
         <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="32" cy="32" r="16" fill="#881337" />
@@ -149,7 +182,7 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {effect === 'gold_dust' && (
+      {activeEffect === 'gold_dust' && (
         /* Sello de Oro 24k GoldBlack Atelier */
         <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="32" cy="32" r="17" fill="#181824" stroke="#d4af37" strokeWidth="1.5" />
@@ -170,18 +203,25 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {effect === 'new_year' && (
-        /* Estrella diamantada de Fin de Año con destellos dorados */
-        <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {activeEffect === 'new_year' && (
+        /* Estrella diamantada de Fin de Año con destellos dorados y fuegos artificiales */
+        <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          {/* Chispas de fuegos artificiales alrededor */}
+          <circle cx="18" cy="18" r="2" fill="#38bdf8" />
+          <circle cx="48" cy="16" r="2.5" fill="#f43f5e" />
+          <circle cx="12" cy="42" r="1.8" fill="#eab308" />
+          <circle cx="50" cy="46" r="2.2" fill="#a855f7" />
+          <circle cx="32" cy="6" r="2" fill="#facc15" />
+          {/* Estrella principal brillante */}
           <path
-            d="M32 12 L36 26 L50 32 L36 38 L32 52 L28 38 L14 32 L28 26 Z"
+            d="M32 10 L36.5 24.5 L51 29 L36.5 33.5 L32 48 L27.5 33.5 L13 29 L27.5 24.5 Z"
             fill="url(#nyGrad)"
           />
-          <circle cx="32" cy="32" r="3" fill="#ffffff" />
+          <circle cx="32" cy="29" r="3.5" fill="#ffffff" />
           <defs>
-            <linearGradient id="nyGrad" x1="14" y1="12" x2="50" y2="52" gradientUnits="userSpaceOnUse">
+            <linearGradient id="nyGrad" x1="13" y1="10" x2="51" y2="48" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="40%" stopColor="#fef08a" />
+              <stop offset="35%" stopColor="#fef08a" />
               <stop offset="70%" stopColor="#d4af37" />
               <stop offset="100%" stopColor="#f59e0b" />
             </linearGradient>
@@ -200,9 +240,10 @@ interface SeasonalHeaderDecorProps {
  * Decoración sutil y festiva para el logotipo o barra del encabezado principal
  */
 export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect = 'none' }) => {
-  if (!effect || effect === 'none') return null
+  const activeEffect = resolveSeasonalEffect(effect)
+  if (!activeEffect || activeEffect === 'none') return null
 
-  if (effect === 'snow') {
+  if (activeEffect === 'snow') {
     // Gorrito navideño miniatura en el logo
     return (
       <span
@@ -218,8 +259,8 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'halloween') {
-    // Calabaza / murciélago miniatura
+  if (activeEffect === 'halloween') {
+    // Calabaza miniatura
     return (
       <span
         className="absolute -top-3 -right-2 z-20 pointer-events-none drop-shadow-md select-none transform rotate-6"
@@ -230,7 +271,7 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'sakura') {
+  if (activeEffect === 'sakura') {
     return (
       <span
         className="absolute -top-2.5 -right-2.5 z-20 pointer-events-none drop-shadow-md select-none"
@@ -241,7 +282,7 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'leaves') {
+  if (activeEffect === 'leaves') {
     return (
       <span
         className="absolute -top-2.5 -right-2.5 z-20 pointer-events-none drop-shadow-md select-none"
@@ -252,7 +293,7 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'rose_petals') {
+  if (activeEffect === 'rose_petals') {
     return (
       <span
         className="absolute -top-2.5 -right-2.5 z-20 pointer-events-none drop-shadow-md select-none"
@@ -263,7 +304,7 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'gold_dust') {
+  if (activeEffect === 'gold_dust') {
     return (
       <span
         className="absolute -top-2 -right-2 z-20 pointer-events-none drop-shadow-md select-none"
@@ -274,13 +315,13 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
     )
   }
 
-  if (effect === 'new_year') {
+  if (activeEffect === 'new_year') {
     return (
       <span
-        className="absolute -top-2.5 -right-2.5 z-20 pointer-events-none drop-shadow-md select-none"
-        title="¡Feliz Año Nuevo!"
+        className="absolute -top-3 -right-3 z-20 pointer-events-none drop-shadow-md select-none animate-pulse"
+        title="¡Feliz Año Nuevo! Fuegos Artificiales"
       >
-        <span className="text-sm" role="img" aria-label="Fin de Año">✨</span>
+        <span className="text-base" role="img" aria-label="Fuegos Artificiales Fin de Año">🎆</span>
       </span>
     )
   }

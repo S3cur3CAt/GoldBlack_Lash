@@ -13,14 +13,22 @@ import {
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
+import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
 
 const seasonalOptions = [
   {
-    id: 'none',
-    icon: '🚫',
-    label: 'Desactivado',
-    season: 'Estándar limpio',
-    desc: 'Sin efectos de partículas. Diseño original limpio y minimalista.',
+    id: 'auto',
+    icon: '📅',
+    label: 'Calendario Festivo Automático',
+    season: 'Inteligente 365 días',
+    desc: 'Se activa automáticamente una semana antes y durante cada festividad: Halloween, Navidad, Fin de Año, San Valentín, Primavera y Otoño.',
+  },
+  {
+    id: 'new_year',
+    icon: '🎆',
+    label: 'Fin de Año & Fuegos Artificiales',
+    season: 'Nochevieja y festividades',
+    desc: 'Fuegos artificiales con cohetes ascendentes, estelas luminosas y detonaciones esféricas doradas y multicolores.',
   },
   {
     id: 'snow',
@@ -28,20 +36,6 @@ const seasonalOptions = [
     label: 'Navidad & Invierno',
     season: 'Diciembre — Febrero',
     desc: 'Copos de nieve multicapa con profundidad de campo, balanceo suave por el viento y destellos helados.',
-  },
-  {
-    id: 'sakura',
-    icon: '🌸',
-    label: 'Primavera & Sakura',
-    season: 'Marzo — Mayo',
-    desc: 'Delicados pétalos de flor de cerezo en tonos rosa pastel cayendo con giro 3D en la brisa.',
-  },
-  {
-    id: 'leaves',
-    icon: '🍂',
-    label: 'Otoño Dorado',
-    season: 'Septiembre — Noviembre',
-    desc: 'Hojas de arce en tonos ámbar, cobrizo y oro que se mecen como un péndulo y voltean en 3D.',
   },
   {
     id: 'halloween',
@@ -58,6 +52,20 @@ const seasonalOptions = [
     desc: 'Pétalos aterciopelados de rosa roja y vino oscuro que planean con gracia y sensualidad.',
   },
   {
+    id: 'sakura',
+    icon: '🌸',
+    label: 'Primavera & Sakura',
+    season: 'Marzo — Mayo',
+    desc: 'Delicados pétalos de flor de cerezo en tonos rosa pastel cayendo con giro 3D en la brisa.',
+  },
+  {
+    id: 'leaves',
+    icon: '🍂',
+    label: 'Otoño Dorado',
+    season: 'Septiembre — Noviembre',
+    desc: 'Hojas de arce en tonos ámbar, cobrizo y oro que se mecen como un péndulo y voltean en 3D.',
+  },
+  {
     id: 'gold_dust',
     icon: '✨',
     label: 'Polvo de Oro GoldBlack',
@@ -65,11 +73,11 @@ const seasonalOptions = [
     desc: 'Micro-destellos y bokeh de oro 24k en suspensión etérea. La experiencia premium del atelier.',
   },
   {
-    id: 'new_year',
-    icon: '🎆',
-    label: 'Fin de Año & Celebración',
-    season: 'Nochevieja y aniversarios',
-    desc: 'Chispas metalizadas, destellos de diamante y confeti dorado para fechas festivas.',
+    id: 'none',
+    icon: '🚫',
+    label: 'Desactivado',
+    season: 'Estándar limpio',
+    desc: 'Sin efectos de partículas. Diseño original limpio y minimalista.',
   },
 ] as const
 
@@ -363,16 +371,49 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           {/* Live Preview Box */}
-          <div className="relative w-full h-40 rounded-xl overflow-hidden bg-[#08080c] border border-[#2b2b3d] flex items-center justify-center shadow-inner">
+          <div className="relative w-full h-44 rounded-xl overflow-hidden bg-[#08080c] border border-[#2b2b3d] flex items-center justify-center shadow-inner">
             <SeasonalPreviewCanvas effect={formData.seasonalEffect || 'none'} />
-            <div className="absolute top-2.5 left-3 text-[10px] uppercase font-mono tracking-widest text-gray-400 bg-black/75 px-2.5 py-1 rounded-md border border-white/10 pointer-events-none backdrop-blur-sm">
+            
+            <div className="absolute top-2.5 left-3 text-[10px] uppercase font-mono tracking-widest text-gray-400 bg-black/80 px-2.5 py-1 rounded-md border border-white/10 pointer-events-none backdrop-blur-sm z-20">
               Simulación en directo • {seasonalOptions.find((o) => o.id === (formData.seasonalEffect || 'none'))?.label}
             </div>
-            <div className="pointer-events-none text-center px-5 py-2.5 rounded-xl bg-black/60 border border-gold-500/20 backdrop-blur-md shadow-lg">
-              <span className="font-serif text-sm font-bold text-gold-200 block tracking-wide">GoldBlack Lash Atelier</span>
-              <span className="text-[11px] text-gray-400">Las partículas caen suavemente sobre el contenido sin bloquear botones</span>
+
+            {formData.seasonalEffect === 'auto' && (
+              <div className="absolute bottom-2.5 left-3 text-[10px] font-medium text-gold-300 bg-black/85 px-2.5 py-1 rounded-md border border-gold-500/30 pointer-events-none backdrop-blur-sm z-20 flex items-center gap-1.5 shadow-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-gray-400">Activo hoy:</span>
+                <span className="font-bold text-gold-200">{getCurrentSeasonalInfo().name}</span>
+                <span className="text-[9px] text-gray-400 font-mono">({getCurrentSeasonalInfo().dateRange})</span>
+              </div>
+            )}
+
+            <div className="relative z-10 pointer-events-none text-center max-w-sm mx-auto px-5 py-3 rounded-xl bg-black/75 border border-gold-500/25 backdrop-blur-md shadow-2xl">
+              <span className="font-serif text-sm font-bold text-gold-200 block tracking-wide">
+                GoldBlack Lash Atelier
+              </span>
+              <span className="text-[11px] text-gray-300 block mt-0.5">
+                {formData.seasonalEffect === 'auto'
+                  ? `Modo Calendario Activo: ${getCurrentSeasonalInfo().name}`
+                  : formData.seasonalEffect === 'new_year'
+                  ? 'Fuegos artificiales festivos iluminando el atelier'
+                  : 'Las partículas caen suavemente sobre el contenido sin bloquear botones'}
+              </span>
             </div>
           </div>
+
+          {formData.seasonalEffect === 'auto' && (
+            <div className="p-3.5 rounded-xl bg-gold-950/20 border border-gold-500/30 text-xs text-gold-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg shrink-0">📅</span>
+                <div>
+                  <span className="font-bold text-gold-300 block text-xs">Programación Automática de Festividades (7 días previos y fechas exactas):</span>
+                  <span className="text-[11px] text-gray-400 leading-relaxed block mt-0.5">
+                    🎃 Halloween (20 Oct — 2 Nov) • 🎆 Fin de Año Fuegos Artificiales (28 Dic — 2 Ene) • ❄️ Navidad y Reyes (1 Dic — 6 Ene) • 🌹 San Valentín (7 Feb — 16 Feb) • 🌸 Primavera Sakura (20 Mar — 31 May) • 🍂 Otoño Dorado (15 Sep — 30 Nov)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Grid of seasonal cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
