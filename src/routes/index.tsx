@@ -31,7 +31,6 @@ function Home() {
       <ServicesPreview />
       <Experience />
       <FaqSection />
-      <BookingSection />
     </>
   )
 }
@@ -148,59 +147,7 @@ function Hero() {
               alt="Detalle de lifting natural con efecto apertura"
             />
           </div>
-
-          <div className="floating-note note-left gentle-float">
-            <span
-              aria-hidden="true"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blush text-lg text-rose"
-            >
-              ♡
-            </span>
-
-            <div className="text-left">
-              <p className="text-xs font-bold">Tan tú.</p>
-
-              <p className="mt-1 text-[0.6rem] text-muted">
-                Diseño personalizado
-              </p>
-            </div>
-          </div>
-
-          <div className="floating-note note-right gentle-float">
-            <span
-              aria-hidden="true"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-lilac text-lg text-rose"
-            >
-              ✧
-            </span>
-
-            <div className="text-left">
-              <p className="text-xs font-bold">
-                Tu pequeño ritual
-              </p>
-
-              <p className="mt-1 text-[0.6rem] text-muted">
-                Relájate. Nos ocupamos de tu mirada.
-              </p>
-            </div>
-          </div>
         </div>
-
-        <ul className="mt-5 flex flex-wrap justify-center gap-x-8 gap-y-3 text-[0.65rem] font-semibold text-muted md:gap-x-14">
-          {[
-            'Diseño a medida',
-            'Atención con cita previa',
-            'Cuidado en cada detalle',
-          ].map((item) => (
-            <li key={item} className="flex items-center gap-2">
-              <span aria-hidden="true" className="text-rose">
-                ✧
-              </span>
-
-              {item}
-            </li>
-          ))}
-        </ul>
       </div>
     </section>
   )
@@ -388,58 +335,3 @@ function FaqSection() {
   )
 }
 
-function BookingSection() {
-  return (
-    <section className="pb-16 md:pb-24">
-      <div className="wrap">
-        <div className="booking-panel px-6 py-14 text-center md:px-12 md:py-20">
-          <div className="relative z-10 mx-auto max-w-2xl">
-            <span
-              aria-hidden="true"
-              className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-white/25 text-3xl text-accent"
-            >
-              ♡
-            </span>
-
-            <p className="mt-6 text-[0.65rem] font-semibold tracking-[0.2em] text-accent uppercase">
-              Te mereces este momento
-            </p>
-
-            <h2 className="section-title mt-5">
-              Tu próxima mirada
-              <br />
-              favorita es la tuya.
-            </h2>
-
-            <p className="mx-auto mt-6 max-w-lg text-sm leading-8 text-white/75">
-              Cuéntame qué tienes en mente y buscamos tu cita. Si no sabes
-              qué efecto elegir, lo descubrimos juntas.
-            </p>
-
-          <div className="mx-auto mt-8 flex w-full max-w-md flex-col justify-center gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => openReservationModal()}
-                className="button button-dark focus-visible:outline-accent cursor-pointer"
-              >
-                Reserva tu momento
-                <span aria-hidden="true">↗</span>
-              </button>
-
-              <Link
-                to="/contacto"
-                className="button border-white/30 text-white hover:bg-white/10 focus-visible:outline-accent"
-              >
-                Ver contacto
-              </Link>
-            </div>
-
-            <p className="mt-6 text-[0.65rem] text-white/65">
-              {business.city} · Atención personalizada · Cita previa
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}

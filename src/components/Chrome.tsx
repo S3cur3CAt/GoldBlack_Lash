@@ -2,7 +2,6 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { openReservationModal } from '#/components/ReservationModal'
-import { SeasonalHeaderDecor } from '#/components/SeasonalDecoration'
 import { useHeaderSubBar } from '#/context/HeaderContext'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 
@@ -72,7 +71,6 @@ export function Header() {
           className="group flex items-center gap-2.5 sm:gap-3 py-0.5"
         >
           <div className="relative shrink-0">
-            <SeasonalHeaderDecor effect={business.seasonalEffect} />
             {/* Elegant minimal luxury frame */}
             <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50 group-hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.9)]">
               <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#08080c] flex items-center justify-center">
@@ -90,9 +88,6 @@ export function Header() {
           <div className="flex flex-col text-left">
             <span className="font-display text-base sm:text-lg font-bold tracking-tight text-[#f5f5f7] group-hover:text-[#e5c158] transition-colors leading-none">
               GoldBlack <span className="text-[#e5c158] font-serif italic">Lash</span>
-            </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase text-[#9e9ea7] mt-0.5">
-              Studio de Miradas
             </span>
           </div>
         </Link>
@@ -229,9 +224,6 @@ export function Footer() {
                 <span className="font-display text-xl font-bold tracking-tight text-white block">
                   GoldBlack <span className="text-[#d4af37] font-serif italic">Lash</span>
                 </span>
-                <span className="text-[10px] font-semibold tracking-widest uppercase text-white/60">
-                  Studio de Miradas
-                </span>
               </div>
             </div>
 
@@ -315,14 +307,6 @@ export function Footer() {
                 </a>
               </li>
             </ul>
-
-            <button
-              type="button"
-              onClick={() => openReservationModal()}
-              className="button button-accent mt-7 focus-visible:outline-accent cursor-pointer"
-            >
-              Reservar cita ↗
-            </button>
           </div>
         </div>
 

@@ -1,11 +1,22 @@
-import { defineConfig, type Plugin } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
-
+import { createLogger, defineConfig, type Plugin } from 'vite'
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-
 import { nitro } from 'nitro/vite'
 import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+// Custom logger que silencia los avisos repetitivos del cliente que saturan y ralentizan la consola
+const customLogger = createLogger()
+const originalWarn = customLogger.warn
+customLogger.warn = (msg, options) => {
+  if (
+    msg.includes('(client)') ||
+    msg.includes('[console.warn]') ||
+    msg.includes('console.warn')
+  ) {
+    return
+  }
+  originalWarn(msg, options)
+}
 
 /**
  * En `vite dev` la server route de TanStack (src/routes/api.images.$key.ts)
@@ -87,10 +98,10 @@ function supabaseImagesDev(): Plugin {
 }
 
 const config = defineConfig(({ command }) => ({
+  customLogger,
   resolve: { tsconfigPaths: true },
   plugins: [
     supabaseImagesDev(),
-    devtools(),
     tailwindcss(),
     tanstackStart(),
     // Workaround nitrojs/nitro#4295 (dev en Windows: el dev-worker de Nitro

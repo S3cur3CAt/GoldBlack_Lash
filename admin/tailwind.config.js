@@ -32,7 +32,8 @@ export default {
       },
       fontFamily: {
         serif: ['Cormorant Garamond', 'Playfair Display', 'Georgia', 'serif'],
-        sans: ['Plus Jakarta Sans', 'Jost', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['"SF Pro Rounded"', '-apple-system', 'BlinkMacSystemFont', 'Nunito', 'Outfit', '"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        rounded: ['"SF Pro Rounded"', '-apple-system', 'BlinkMacSystemFont', 'Nunito', 'Outfit', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         'gold-glow': '0 2px 8px -1px rgba(0, 0, 0, 0.4)',

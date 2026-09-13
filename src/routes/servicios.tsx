@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
-import { SeasonalCornerBadge } from '#/components/SeasonalDecoration'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
@@ -203,8 +202,6 @@ function CategoryBlock({
   category: ServiceCategory
   index: number
 }) {
-  const symbols = ['✧', '♡', '❋']
-
   return (
     <section
       id={category.id}
@@ -212,14 +209,7 @@ function CategoryBlock({
     >
       <div className="grid items-start gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
         <header className="lg:sticky lg:top-44">
-          <span
-            aria-hidden="true"
-            className="grid h-16 w-16 place-items-center rounded-full bg-blush text-3xl text-rose"
-          >
-            {symbols[index % symbols.length]}
-          </span>
-
-          <p className="eyebrow mt-6">
+          <p className="eyebrow">
             Un cuidado para cada momento
           </p>
 
@@ -261,7 +251,6 @@ function ServiceCard({ service }: { service: Service }) {
           : 'border-line bg-surface'
       }`}
     >
-      <SeasonalCornerBadge effect={config.seasonalEffect} position="top-right" />
       {service.featured ? (
         <p className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
           <span aria-hidden="true" className="text-[#8a5a12]">★</span>
