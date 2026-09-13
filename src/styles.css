@@ -1,26 +1,43 @@
 @import 'tailwindcss';
 
+/* ============================================================
+   GOLDBLACK LASH — Luxury Black & Gold Design System
+   ============================================================ */
+
 @theme {
-  --color-paper: #fff9f7;
-  --color-surface: #ffffff;
-  --color-ink: #3f2932;
-  --color-muted: #826c73;
-  --color-line: #ecd9dc;
-  --color-accent: #d9a8ad;
+  /* ── Fondos ── */
+  --color-paper:   #0a0906;
+  --color-surface: #0f0d0a;
 
-  --color-blush: #f7e2e1;
-  --color-rose: #b66f79;
-  --color-plum: #3f2932;
-  --color-lilac: #f1e8e3;
+  /* ── Tintas ── */
+  --color-ink:     #f0e8d8;
+  --color-muted:   #9a8a70;
+  --color-line:    #2a2318;
 
-  --font-display: 'DM Serif Display', Georgia, serif;
-  --font-body: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  /* ── Paleta dorada ── */
+  --color-gold:        #c9a84c;
+  --color-gold-light:  #e8c97a;
+  --color-gold-dim:    #7a6030;
+  --color-gold-glow:   #d4af37;
 
-  --shadow-panel: 0 24px 70px -28px rgb(93 49 59 / 28%);
-  --shadow-soft: 0 14px 42px -22px rgb(93 49 59 / 18%);
-  --shadow-glass: 0 20px 60px -24px rgb(93 49 59 / 25%);
-  --shadow-card-hover: 0 32px 80px -28px rgb(93 49 59 / 38%);
-  --shadow-glow: 0 12px 40px -12px rgb(182 111 121 / 55%);
+  /* ── Aliases para compatibilidad con clases existentes ── */
+  --color-accent:  #c9a84c;
+  --color-blush:   #1a1610;
+  --color-rose:    #c9a84c;
+  --color-plum:    #f0e8d8;
+  --color-lilac:   #141108;
+
+  /* ── Tipografía ── */
+  --font-display: 'Cormorant Garamond', 'DM Serif Display', Georgia, serif;
+  --font-body:    'Jost', 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Sombras ── */
+  --shadow-panel:      0 24px 70px -28px rgb(0 0 0 / 80%);
+  --shadow-soft:       0 14px 42px -22px rgb(0 0 0 / 70%);
+  --shadow-glass:      0 20px 60px -24px rgb(0 0 0 / 75%);
+  --shadow-card-hover: 0 32px 80px -28px rgb(201 168 76 / 25%);
+  --shadow-glow:       0 12px 40px -12px rgb(201 168 76 / 55%);
+  --shadow-gold:       0 0 30px rgb(201 168 76 / 30%);
 }
 
 @layer base {
@@ -40,31 +57,19 @@
 
   body {
     margin: 0;
-    /* Base aurora: el cristal necesita color detrás para refractar. */
+    /* Fondo negro profundo con polvo dorado sutil */
     background:
-      radial-gradient(
-        1200px 600px at 85% -5%,
-        rgb(237 196 213 / 55%),
-        transparent 60%
-      ),
-      radial-gradient(
-        1000px 700px at -10% 20%,
-        rgb(247 226 225 / 70%),
-        transparent 60%
-      ),
-      radial-gradient(
-        900px 900px at 110% 60%,
-        rgb(241 232 227 / 80%),
-        transparent 60%
-      ),
-      linear-gradient(180deg, #fdf4f2 0%, #f9ebee 45%, #f4e6ef 100%);
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgb(201 168 76 / 8%)  0%, transparent 60%),
+      radial-gradient(ellipse 80%  50% at 0%   30%, rgb(201 168 76 / 5%)  0%, transparent 55%),
+      radial-gradient(ellipse 90%  70% at 100% 70%, rgb(201 168 76 / 4%)  0%, transparent 55%),
+      linear-gradient(180deg, #0a0906 0%, #0c0b08 50%, #0a0906 100%);
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Orbes acrílicos flotantes detrás de todo el contenido. */
+  /* Polvo dorado flotando como partículas */
   body::before {
     content: '';
     position: fixed;
@@ -72,22 +77,10 @@
     z-index: -1;
     pointer-events: none;
     background:
-      radial-gradient(
-        38rem 38rem at 12% 8%,
-        rgb(217 168 173 / 35%),
-        transparent 65%
-      ),
-      radial-gradient(
-        42rem 42rem at 88% 18%,
-        rgb(182 111 121 / 22%),
-        transparent 65%
-      ),
-      radial-gradient(
-        40rem 40rem at 50% 100%,
-        rgb(63 41 50 / 12%),
-        transparent 65%
-      );
-    animation: aurora-drift 22s ease-in-out infinite alternate;
+      radial-gradient(50rem 50rem at 15% 10%,  rgb(201 168 76 / 6%), transparent 65%),
+      radial-gradient(45rem 45rem at 85% 20%,  rgb(212 175 55 / 5%), transparent 65%),
+      radial-gradient(40rem 40rem at 50% 100%, rgb(201 168 76 / 4%), transparent 65%);
+    animation: aurora-drift 26s ease-in-out infinite alternate;
   }
 
   h1,
@@ -120,13 +113,13 @@
   }
 
   ::selection {
-    background: var(--color-rose);
-    color: white;
+    background: var(--color-gold);
+    color: #0a0906;
   }
 
   :focus-visible {
-    outline: 3px solid var(--color-rose);
-    outline-offset: 5px;
+    outline: 2px solid var(--color-gold);
+    outline-offset: 4px;
   }
 
   summary::-webkit-details-marker {
@@ -137,12 +130,15 @@
     max-width: calc(100% - 2rem);
     max-height: calc(100dvh - 2rem);
     border-radius: 2rem;
+    background: #100e09;
+    border: 1px solid rgb(201 168 76 / 20%);
+    color: var(--color-ink);
   }
 
   dialog::backdrop {
-    background: rgb(52 31 46 / 55%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    backdrop-filter: blur(14px) saturate(140%);
+    background: rgb(3 2 1 / 82%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
   }
 
   ::-webkit-scrollbar {
@@ -154,9 +150,11 @@
     background: transparent;
   }
 
+  ::-webkit-scrollbar-track { background: #0a0906; }
+
   ::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: linear-gradient(180deg, #d9a8ad, #b66f79);
+    background: linear-gradient(180deg, #c9a84c, #7a6030);
   }
 }
 
@@ -176,20 +174,20 @@
     align-items: center;
     gap: 0.65rem;
     width: fit-content;
-    border: 1px solid rgb(255 255 255 / 70%);
+    border: 1px solid rgb(201 168 76 / 28%);
     border-radius: 999px;
     padding: 0.45rem 0.95rem;
-    background: rgb(255 255 255 / 55%);
-    -webkit-backdrop-filter: blur(10px) saturate(150%);
-    backdrop-filter: blur(10px) saturate(150%);
+    background: rgb(201 168 76 / 8%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 85%),
-      0 8px 20px -12px rgb(93 49 59 / 25%);
-    color: var(--color-rose);
+      inset 0 1px 0 rgb(201 168 76 / 18%),
+      0 4px 16px -8px rgb(201 168 76 / 20%);
+    color: var(--color-gold);
     font-size: 0.65rem;
     font-weight: 700;
     line-height: 1.7;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
   }
 
@@ -199,12 +197,12 @@
 
   .eyebrow::before {
     content: '';
-    width: 0.4rem;
-    height: 0.4rem;
+    width: 0.38rem;
+    height: 0.38rem;
     flex-shrink: 0;
     border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 10px 2px rgb(182 111 121 / 55%);
+    background: var(--color-gold);
+    box-shadow: 0 0 8px 3px rgb(201 168 76 / 60%);
   }
 
   .section-title {
@@ -220,7 +218,7 @@
     line-height: 1.95;
   }
 
-  /* Botones píldora con brillo acrílico y diseño de lujo. */
+  /* Botón base — cristal oscuro con borde dorado */
   .button {
     position: relative;
     display: inline-flex;
@@ -229,19 +227,19 @@
     justify-content: center;
     gap: 0.65rem;
     overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 80%);
+    border: 1px solid rgb(201 168 76 / 25%);
     border-radius: 999px;
     padding: 0.65rem 1.4rem;
-    background: rgb(255 255 255 / 65%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-    backdrop-filter: blur(14px) saturate(160%);
+    background: rgb(201 168 76 / 7%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 95%),
-      0 4px 14px -3px rgb(93 49 59 / 12%);
+      inset 0 1px 0 rgb(201 168 76 / 12%),
+      0 4px 14px -3px rgb(0 0 0 / 40%);
     color: var(--color-ink);
     font-size: 0.8rem;
     font-weight: 700;
-    letter-spacing: 0.015em;
+    letter-spacing: 0.04em;
     line-height: 1.4;
     text-align: center;
     transition:
@@ -252,7 +250,7 @@
       color 220ms ease;
   }
 
-  /* Reflejo de seda brillante que barre el botón */
+  /* Barrido de luz dorada al pasar el cursor */
   .button::after {
     content: '';
     position: absolute;
@@ -261,7 +259,7 @@
     background: linear-gradient(
       105deg,
       transparent 35%,
-      rgb(255 255 255 / 55%) 50%,
+      rgb(201 168 76 / 20%) 50%,
       transparent 65%
     );
     transition: transform 650ms ease;
@@ -270,11 +268,12 @@
 
   .button:hover {
     transform: translateY(-2px);
-    background: rgb(255 255 255 / 85%);
-    border-color: rgb(255 255 255 / 95%);
+    border-color: rgb(201 168 76 / 55%);
+    background: rgb(201 168 76 / 12%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 100%),
-      0 8px 24px -4px rgb(93 49 59 / 18%);
+      inset 0 1px 0 rgb(201 168 76 / 22%),
+      0 8px 24px -4px rgb(0 0 0 / 50%),
+      0 0 20px rgb(201 168 76 / 10%);
   }
 
   .button:hover::after {
@@ -285,59 +284,66 @@
     transform: translateY(0);
   }
 
+  /* Botón oscuro sólido con CTA dorado */
   .button-dark {
-    border: 1px solid rgba(212, 175, 55, 0.45);
-    background: linear-gradient(135deg, #2b1a23 0%, #4a2839 50%, #b66f79 100%);
+    border: 1px solid rgb(201 168 76 / 50%);
+    background: linear-gradient(135deg, #1a1407 0%, #2e2110 50%, #c9a84c 100%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 30%),
-      0 6px 20px -4px rgb(182 111 121 / 50%);
-    color: white;
+      inset 0 1px 0 rgb(255 255 255 / 12%),
+      0 6px 20px -4px rgb(0 0 0 / 60%),
+      0 0 20px rgb(201 168 76 / 12%);
+    color: #0a0906;
   }
 
   .button-dark:hover {
-    background: linear-gradient(135deg, #38212e 0%, #593144 50%, #c47d87 100%);
-    border-color: rgba(212, 175, 55, 0.7);
-    color: white;
+    background: linear-gradient(135deg, #231c0a 0%, #3d2c14 50%, #d4b85a 100%);
+    border-color: rgb(212 184 90 / 80%);
+    color: #0a0906;
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 45%),
-      0 10px 28px -4px rgb(182 111 121 / 70%),
-      0 0 16px rgba(212, 175, 55, 0.35);
+      inset 0 1px 0 rgb(255 255 255 / 20%),
+      0 10px 28px -4px rgb(0 0 0 / 70%),
+      0 0 30px rgb(201 168 76 / 28%);
   }
 
+  /* Botón accent dorado brillante */
   .button-accent {
-    border: 1px solid rgb(255 255 255 / 90%);
-    background: linear-gradient(135deg, #fcedc7 0%, #e8b4bd 50%, #d99aa3 100%);
-    color: var(--color-plum);
+    border: 1px solid rgb(201 168 76 / 70%);
+    background: linear-gradient(135deg, #c9a84c 0%, #d4b85a 50%, #c9a84c 100%);
+    color: #0a0906;
+    font-weight: 800;
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 95%),
-      0 6px 20px -4px rgb(217 168 173 / 55%);
+      inset 0 1px 0 rgb(255 255 255 / 22%),
+      0 6px 20px -4px rgb(0 0 0 / 50%),
+      0 0 20px rgb(201 168 76 / 15%);
   }
 
   .button-accent:hover {
-    background: linear-gradient(135deg, #fff3d6 0%, #f0c3cb 50%, #e2a8b0 100%);
-    border-color: white;
+    background: linear-gradient(135deg, #d4b85a 0%, #e8ca72 50%, #d4b85a 100%);
+    border-color: rgb(232 202 114 / 90%);
+    color: #0a0906;
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 100%),
-      0 10px 28px -4px rgb(217 168 173 / 75%),
-      0 0 16px rgba(252, 237, 199, 0.4);
+      inset 0 1px 0 rgb(255 255 255 / 32%),
+      0 10px 28px -4px rgb(0 0 0 / 60%),
+      0 0 40px rgb(201 168 76 / 32%);
   }
 
+  /* Botón claro sobre fondo oscuro */
   .button-light {
-    border: 1px solid rgb(255 255 255 / 90%);
-    background: rgb(255 255 255 / 85%);
-    color: var(--color-plum);
+    border: 1px solid rgb(240 232 216 / 18%);
+    background: rgb(240 232 216 / 7%);
+    color: var(--color-ink);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 100%),
-      0 4px 14px -3px rgb(93 49 59 / 10%);
+      inset 0 1px 0 rgb(240 232 216 / 10%),
+      0 4px 14px -3px rgb(0 0 0 / 40%);
   }
 
   .button-light:hover {
-    background: #ffffff;
-    border-color: #ecd9dc;
-    color: var(--color-rose);
+    background: rgb(240 232 216 / 13%);
+    border-color: rgb(201 168 76 / 40%);
+    color: var(--color-gold);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 100%),
-      0 8px 24px -4px rgb(93 49 59 / 16%);
+      inset 0 1px 0 rgb(201 168 76 / 12%),
+      0 8px 24px -4px rgb(0 0 0 / 50%);
   }
 
   .text-link {
@@ -345,17 +351,16 @@
     align-items: center;
     gap: 0.65rem;
     padding-bottom: 0.2rem;
-    color: var(--color-rose);
+    color: var(--color-gold);
     font-size: 0.8rem;
     font-weight: 700;
-    transition:
-      gap 200ms ease,
-      color 200ms ease;
+    letter-spacing: 0.04em;
+    transition: gap 200ms ease, color 200ms ease;
   }
 
   .text-link:hover {
     gap: 1rem;
-    color: var(--color-plum);
+    color: var(--color-gold-light);
   }
 
   .nav-link {
@@ -365,58 +370,70 @@
     color: var(--color-muted);
     font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.03em;
     transition:
       background-color 200ms ease,
       color 200ms ease,
+      border-color 200ms ease,
       box-shadow 200ms ease;
   }
 
   .nav-link:hover {
-    background: rgb(255 255 255 / 80%);
-    color: var(--color-plum);
+    background: rgb(201 168 76 / 8%);
+    border-color: rgb(201 168 76 / 20%);
+    color: var(--color-gold);
   }
 
   .nav-link[data-status='active'] {
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    background: linear-gradient(135deg, #2b1a23 0%, #4a2839 50%, #b66f79 100%);
-    box-shadow: 0 4px 16px -3px rgb(182 111 121 / 50%);
-    color: white;
+    border: 1px solid rgb(201 168 76 / 40%);
+    background: linear-gradient(135deg, rgb(201 168 76 / 14%), rgb(201 168 76 / 7%));
+    box-shadow:
+      inset 0 1px 0 rgb(201 168 76 / 18%),
+      0 4px 16px -3px rgb(0 0 0 / 40%),
+      0 0 10px rgb(201 168 76 / 8%);
+    color: var(--color-gold);
   }
 
   .category-tab {
     display: block;
-    border: 1px solid rgb(255 255 255 / 75%);
+    border: 1px solid rgb(201 168 76 / 18%);
     border-radius: 999px;
     padding: 0.5rem 1.05rem;
-    background: rgb(255 255 255 / 55%);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
+    background: rgb(201 168 76 / 5%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 90%),
-      0 3px 10px -3px rgb(93 49 59 / 10%);
+      inset 0 1px 0 rgb(201 168 76 / 10%),
+      0 3px 10px -3px rgb(0 0 0 / 40%);
     color: var(--color-muted);
     font-size: 0.72rem;
     font-weight: 600;
+    letter-spacing: 0.04em;
     white-space: nowrap;
     transition:
       transform 200ms ease,
       background-color 200ms ease,
+      border-color 200ms ease,
       color 200ms ease,
       box-shadow 200ms ease;
   }
 
   .category-tab:hover {
     transform: translateY(-1px);
-    background: rgb(255 255 255 / 80%);
-    color: var(--color-plum);
-    box-shadow: 0 6px 16px -4px rgb(93 49 59 / 16%);
+    background: rgb(201 168 76 / 10%);
+    border-color: rgb(201 168 76 / 35%);
+    color: var(--color-gold);
+    box-shadow: 0 6px 16px -4px rgb(0 0 0 / 50%);
   }
 
   .category-tab.is-active {
-    border: 1px solid rgba(212, 175, 55, 0.4);
-    background: linear-gradient(135deg, #2b1a23 0%, #4a2839 50%, #b66f79 100%);
-    box-shadow: 0 6px 18px -4px rgb(182 111 121 / 55%);
-    color: white;
+    border: 1px solid rgb(201 168 76 / 50%);
+    background: linear-gradient(135deg, rgb(201 168 76 / 18%), rgb(201 168 76 / 8%));
+    box-shadow:
+      inset 0 1px 0 rgb(201 168 76 / 22%),
+      0 6px 18px -4px rgb(0 0 0 / 50%),
+      0 0 14px rgb(201 168 76 / 10%);
+    color: var(--color-gold);
   }
 
 
@@ -424,10 +441,10 @@
     display: block;
     width: 100%;
     margin-top: 0.65rem;
-    border: 1px solid rgb(255 255 255 / 70%);
+    border: 1px solid rgb(201 168 76 / 18%);
     border-radius: 1rem;
     padding: 1rem;
-    background: rgb(255 255 255 / 60%);
+    background: rgb(201 168 76 / 4%);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     color: var(--color-ink);
@@ -439,34 +456,37 @@
   }
 
   .field::placeholder {
-    color: #927e89;
+    color: var(--color-gold-dim);
   }
 
   .field:focus {
-    border-color: var(--color-rose);
-    background: rgb(255 255 255 / 85%);
-    box-shadow: 0 0 0 4px rgb(182 111 121 / 15%);
+    border-color: rgb(201 168 76 / 50%);
+    background: rgb(201 168 76 / 7%);
+    box-shadow: 0 0 0 3px rgb(201 168 76 / 10%);
+    outline: none;
   }
 
   .field-label {
     font-size: 0.74rem;
     font-weight: 700;
+    color: var(--color-gold);
+    letter-spacing: 0.05em;
   }
 
   .footer-link {
-    color: #ddccd6;
+    color: rgb(154 138 112 / 75%);
     overflow-wrap: anywhere;
     transition: color 180ms ease;
   }
 
   .footer-link:hover {
-    color: white;
+    color: var(--color-gold);
   }
 
-  /* Línea de brillo superior del pie oscuro. */
+  /* Línea dorada superior del pie de página */
   footer {
     position: relative;
-    box-shadow: 0 -20px 60px -30px rgb(63 41 50 / 50%);
+    box-shadow: 0 -20px 60px -30px rgb(0 0 0 / 80%);
   }
 
   footer::before {
@@ -479,7 +499,7 @@
     background: linear-gradient(
       90deg,
       transparent,
-      rgb(255 255 255 / 40%),
+      rgb(201 168 76 / 35%),
       transparent
     );
     pointer-events: none;
@@ -493,8 +513,9 @@
     transform: translateY(-160%);
     border-radius: 999px;
     padding: 1rem;
-    background: var(--color-plum);
-    color: white;
+    background: var(--color-gold);
+    color: #0a0906;
+    font-weight: 700;
   }
 
   .skip-link:focus {
@@ -537,6 +558,7 @@
     }
   }
 
+  /* Overlay oscuro-dorado sobre el vídeo del hero */
   .hero-video-overlay {
     position: absolute;
     inset: 0;
@@ -545,14 +567,14 @@
     background:
       linear-gradient(
         180deg,
-        rgb(255 249 247 / 70%) 0%,
-        rgb(255 249 247 / 8%) 22%,
-        rgb(255 249 247 / 12%) 65%,
-        rgb(255 249 247 / 88%) 100%
+        rgb(10 9 6 / 55%) 0%,
+        rgb(10 9 6 / 8%)  22%,
+        rgb(10 9 6 / 14%) 65%,
+        rgb(10 9 6 / 88%) 100%
       ),
       radial-gradient(
         ellipse 70% 45% at 50% 30%,
-        rgb(255 249 247 / 35%) 0%,
+        rgb(10 9 6 / 25%) 0%,
         transparent 65%
       );
   }
@@ -564,7 +586,6 @@
     border-radius: 50%;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.25;
   }
 
   .beauty-hero::before {
@@ -574,10 +595,10 @@
     aspect-ratio: 1;
     background: radial-gradient(
       closest-side,
-      rgb(217 168 173 / 45%),
+      rgb(201 168 76 / 12%),
       transparent
     );
-    filter: blur(40px);
+    filter: blur(50px);
   }
 
   .beauty-hero::after {
@@ -587,26 +608,29 @@
     aspect-ratio: 1;
     background: radial-gradient(
       closest-side,
-      rgb(182 111 121 / 30%),
+      rgb(201 168 76 / 8%),
       transparent
     );
-    filter: blur(50px);
+    filter: blur(60px);
   }
 
   .hero-title {
     font-size: clamp(3rem, 7.6vw, 7rem);
     line-height: 1.02;
-    letter-spacing: -0.045em;
+    letter-spacing: -0.04em;
     text-wrap: balance;
-    text-shadow: 0 2px 20px rgb(255 249 247 / 95%), 0 1px 2px rgb(255 255 255 / 80%);
+    color: var(--color-ink);
+    text-shadow: 0 2px 30px rgb(0 0 0 / 80%), 0 1px 4px rgb(0 0 0 / 60%);
   }
 
   .hero-title em {
     font-weight: 400;
     font-style: italic;
-    color: #be4d6c;
-    background: none;
-    -webkit-text-fill-color: #be4d6c;
+    color: transparent;
+    background: linear-gradient(135deg, #c9a84c 0%, #e8c97a 50%, #c9a84c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     text-shadow: none;
   }
 
@@ -623,29 +647,26 @@
 
   .hero-side {
     overflow: hidden;
-    border: 6px solid rgb(255 255 255 / 80%);
+    border: 4px solid rgb(201 168 76 / 28%);
     border-radius: 9rem 9rem 3rem 3rem;
     box-shadow:
-      0 0 0 1px rgb(255 255 255 / 50%),
-      0 30px 80px -30px rgb(182 111 121 / 50%),
+      0 0 0 1px rgb(201 168 76 / 12%),
+      0 30px 80px -30px rgb(0 0 0 / 70%),
+      0 0 30px rgb(201 168 76 / 6%),
       var(--shadow-panel);
   }
 
-  .hero-side-left {
-    transform: rotate(-8deg) translateY(1rem);
-  }
-
-  .hero-side-right {
-    transform: rotate(8deg) translateY(1rem);
-  }
+  .hero-side-left  { transform: rotate(-8deg) translateY(1rem); }
+  .hero-side-right { transform: rotate(8deg)  translateY(1rem); }
 
   .hero-center {
     overflow: hidden;
-    border: 8px solid rgb(255 255 255 / 85%);
+    border: 5px solid rgb(201 168 76 / 40%);
     border-radius: 12rem 12rem 4rem 4rem;
     box-shadow:
-      0 0 0 1px rgb(255 255 255 / 55%),
-      0 36px 90px -30px rgb(182 111 121 / 55%),
+      0 0 0 1px rgb(201 168 76 / 18%),
+      0 36px 90px -30px rgb(0 0 0 / 80%),
+      0 0 40px rgb(201 168 76 / 10%),
       var(--shadow-panel);
   }
 
@@ -655,15 +676,16 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    border: 1px solid rgb(255 255 255 / 70%);
+    border: 1px solid rgb(201 168 76 / 22%);
     border-radius: 1.3rem;
     padding: 1rem 1.25rem;
-    background: rgb(255 255 255 / 55%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    backdrop-filter: blur(16px) saturate(180%);
+    background: rgb(10 9 6 / 75%);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 85%),
-      var(--shadow-glass);
+      inset 0 1px 0 rgb(201 168 76 / 15%),
+      0 20px 60px -24px rgb(0 0 0 / 80%),
+      0 0 20px rgb(201 168 76 / 6%);
   }
 
   .note-left {
@@ -687,10 +709,10 @@
     overflow: hidden;
     border-radius: 1.25rem;
     background: var(--color-lilac);
-    color: var(--color-rose);
+    color: var(--color-gold);
   }
 
-  /* Reflejo de cristal sobre la imagen. */
+  /* Reflejo de luz dorada superior */
   .studio-visual::after {
     content: '';
     position: absolute;
@@ -698,14 +720,14 @@
     z-index: 3;
     background: linear-gradient(
       180deg,
-      rgb(255 255 255 / 26%),
+      rgb(201 168 76 / 8%),
       transparent 38%
     );
     pointer-events: none;
   }
 
   .studio-visual-image {
-    background: var(--color-blush);
+    background: #141108;
   }
 
   .studio-visual svg {
@@ -719,7 +741,7 @@
     position: absolute;
     width: 72%;
     aspect-ratio: 1;
-    border: 1px solid rgb(169 87 120 / 20%);
+    border: 1px solid rgb(201 168 76 / 15%);
     border-radius: 50%;
   }
 
@@ -729,17 +751,18 @@
     bottom: 1.5rem;
     left: 1.2rem;
     z-index: 2;
-    border: 1px solid rgb(255 255 255 / 65%);
+    border: 1px solid rgb(201 168 76 / 22%);
     border-radius: 999px;
     padding: 0.5rem 1rem;
-    background: rgb(255 255 255 / 55%);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgb(10 9 6 / 65%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     text-align: center;
     font-size: 0.6rem;
     font-weight: 700;
-    letter-spacing: 0.15em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
+    color: var(--color-gold);
   }
 
   .hero-gallery .studio-visual {
@@ -750,25 +773,25 @@
     display: none;
   }
 
-  /* Tarjeta de cristal esmerilado. */
+  /* Tarjeta de servicio — oscura con borde dorado */
   .beauty-card {
     position: relative;
     display: flex;
     height: 100%;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 85%);
+    border: 1px solid rgb(201 168 76 / 15%);
     border-radius: 2rem;
     background: linear-gradient(
       150deg,
-      rgb(255 255 255 / 78%),
-      rgb(255 255 255 / 45%)
+      rgb(20 17 8 / 90%),
+      rgb(15 13 10 / 95%)
     );
-    -webkit-backdrop-filter: blur(22px) saturate(170%);
-    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 95%),
-      0 12px 36px -12px rgb(93 49 59 / 10%);
+      inset 0 1px 0 rgb(201 168 76 / 8%),
+      0 12px 36px -12px rgb(0 0 0 / 60%);
     transition:
       transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
       box-shadow 260ms ease,
@@ -777,17 +800,17 @@
 
   .beauty-card:hover {
     transform: translateY(-6px);
-    border-color: rgb(255 255 255 / 95%);
+    border-color: rgb(201 168 76 / 35%);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 100%),
-      0 22px 55px -16px rgb(93 49 59 / 22%),
-      0 0 20px rgb(217 168 173 / 25%);
+      inset 0 1px 0 rgb(201 168 76 / 15%),
+      0 22px 55px -16px rgb(0 0 0 / 70%),
+      0 0 28px rgb(201 168 76 / 8%);
   }
 
   .beauty-card-visual {
     margin: 0.75rem;
     overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 60%);
+    border: 1px solid rgb(201 168 76 / 18%);
     border-radius: 1.5rem;
     box-shadow: var(--shadow-soft);
   }
@@ -797,38 +820,40 @@
     border-radius: 0;
   }
 
+  /* Panel suave — oscuro con borde dorado */
   .soft-panel {
-    border: 1px solid rgb(255 255 255 / 65%);
+    border: 1px solid rgb(201 168 76 / 15%);
     border-radius: 2rem;
     background: linear-gradient(
       150deg,
-      rgb(255 255 255 / 68%),
-      rgb(255 255 255 / 42%)
+      rgb(20 17 8 / 85%),
+      rgb(15 13 10 / 92%)
     );
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 85%),
+      inset 0 1px 0 rgb(201 168 76 / 8%),
       var(--shadow-glass);
   }
 
-  /* Panel oscuro: cristal ahumado con orbes de luz. */
+  /* Panel de reserva — negro profundo con orbes dorados */
   .booking-panel {
     position: relative;
     overflow: hidden;
-    border: 1px solid rgb(255 255 255 / 16%);
+    border: 1px solid rgb(201 168 76 / 20%);
     border-radius: 2rem;
     background: linear-gradient(
       140deg,
-      rgb(58 36 46 / 94%),
-      rgb(120 66 88 / 90%)
+      rgb(15 12 5 / 97%),
+      rgb(25 20 8 / 96%)
     );
-    -webkit-backdrop-filter: blur(24px) saturate(140%);
-    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
     box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 18%),
-      0 40px 90px -30px rgb(63 41 50 / 55%);
-    color: white;
+      inset 0 1px 0 rgb(201 168 76 / 15%),
+      0 40px 90px -30px rgb(0 0 0 / 80%),
+      0 0 60px rgb(201 168 76 / 4%);
+    color: var(--color-ink);
   }
 
   .booking-panel::before,
@@ -838,7 +863,7 @@
     border-radius: 50%;
     content: '';
     pointer-events: none;
-    filter: blur(50px);
+    filter: blur(55px);
   }
 
   .booking-panel::before {
@@ -847,7 +872,7 @@
     width: 22rem;
     background: radial-gradient(
       closest-side,
-      rgb(217 168 173 / 55%),
+      rgb(201 168 76 / 22%),
       transparent
     );
   }
@@ -858,7 +883,7 @@
     width: 22rem;
     background: radial-gradient(
       closest-side,
-      rgb(182 111 121 / 45%),
+      rgb(201 168 76 / 15%),
       transparent
     );
   }
@@ -874,36 +899,54 @@
   .gentle-float {
     animation: gentle-float 7s ease-in-out infinite;
   }
+
+  /* Shimmer dorado animado para títulos de lujo */
+  .gold-shimmer {
+    background: linear-gradient(
+      90deg,
+      #c9a84c 0%,
+      #f0d885 28%,
+      #c9a84c 48%,
+      #a07838 68%,
+      #c9a84c 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gold-shimmer 4s linear infinite;
+  }
+
+  /* Separador dorado */
+  .gold-divider {
+    width: 4rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+    margin: 0 auto;
+  }
 }
 
 @keyframes reveal-in {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0);    }
 }
 
 @keyframes gentle-float {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -8px;
-  }
+  0%, 100% { translate: 0 0;    }
+  50%       { translate: 0 -8px;}
 }
 
 @keyframes aurora-drift {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(2%, 2%, 0) scale(1.06);
-  }
+  from { transform: translate3d(-2%, -1%, 0) scale(1);   }
+  to   { transform: translate3d(2%, 2%, 0) scale(1.06);  }
+}
+
+@keyframes gold-shimmer {
+  to { background-position: 200% center; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (min-width: 768px) {
@@ -1020,9 +1063,9 @@
 }
 
 .reservation-modal-backdrop::backdrop {
-  background: rgba(30, 16, 22, 0.68);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgb(3 2 1 / 85%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   animation: modal-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1032,11 +1075,14 @@
   max-width: 760px;
   max-height: 90vh;
   overflow-y: auto;
-  background: #ffffff;
-  border: 1px solid var(--color-line);
+  background: linear-gradient(150deg, #100e09 0%, #0d0b07 100%);
+  border: 1px solid rgb(201 168 76 / 22%);
   border-radius: 1.75rem;
   padding: 2.25rem 2.25rem;
-  box-shadow: 0 25px 70px -15px rgba(63, 41, 50, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  box-shadow:
+    0 25px 70px -15px rgb(0 0 0 / 80%),
+    0 0 0 1px rgb(201 168 76 / 8%) inset,
+    0 0 60px rgb(201 168 76 / 5%);
   animation: modal-scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1089,16 +1135,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  border: 1px solid var(--color-line);
-  background: var(--color-paper);
+  border: 1px solid rgb(201 168 76 / 22%);
+  background: rgb(201 168 76 / 7%);
   color: var(--color-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .reservation-close-btn:hover {
-  background: var(--color-blush);
-  color: var(--color-plum);
+  background: rgb(201 168 76 / 15%);
+  border-color: rgb(201 168 76 / 45%);
+  color: var(--color-gold);
   transform: rotate(90deg);
 }
 
@@ -1106,10 +1153,11 @@
   display: inline-block;
   font-size: 0.7rem;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   font-weight: 700;
-  color: var(--color-rose);
-  background: var(--color-blush);
+  color: var(--color-gold);
+  background: rgb(201 168 76 / 10%);
+  border: 1px solid rgb(201 168 76 / 25%);
   padding: 0.3rem 0.75rem;
   border-radius: 9999px;
   margin-bottom: 0.6rem;
@@ -1144,10 +1192,11 @@
 }
 
 .reservation-label {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: var(--color-ink);
-  letter-spacing: -0.01em;
+  color: var(--color-gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .reservation-input-wrapper {
@@ -1159,7 +1208,7 @@
 .reservation-input-icon {
   position: absolute;
   left: 0.9rem;
-  color: var(--color-muted);
+  color: var(--color-gold-dim);
   pointer-events: none;
 }
 
@@ -1167,8 +1216,8 @@
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 2.5rem;
   border-radius: 0.875rem;
-  border: 1px solid var(--color-line);
-  background: var(--color-paper);
+  border: 1px solid rgb(201 168 76 / 18%);
+  background: rgb(201 168 76 / 5%);
   color: var(--color-ink);
   font-size: 0.9rem;
   font-family: var(--font-body);
@@ -1181,13 +1230,13 @@ textarea.reservation-input {
 }
 
 .reservation-input:focus {
-  border-color: var(--color-rose);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(182, 111, 121, 0.18);
+  border-color: rgb(201 168 76 / 50%);
+  background: rgb(201 168 76 / 8%);
+  box-shadow: 0 0 0 3px rgb(201 168 76 / 10%);
 }
 
 .reservation-input::placeholder {
-  color: #a8949a;
+  color: var(--color-gold-dim);
 }
 
 .reservation-error-box {
@@ -1196,9 +1245,9 @@ textarea.reservation-input {
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: #fff0f2;
-  border: 1px solid #fecdd3;
-  color: #be123c;
+  background: rgb(180 30 30 / 10%);
+  border: 1px solid rgb(180 30 30 / 25%);
+  color: #ff8080;
   font-size: 0.8rem;
   line-height: 1.4;
 }
@@ -1209,23 +1258,30 @@ textarea.reservation-input {
   justify-content: center;
   gap: 0.6rem;
   width: 100%;
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   border-radius: 9999px;
-  background: linear-gradient(135deg, #2b1a23 0%, #4a2839 50%, #b66f79 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #c9a84c 0%, #d4b85a 50%, #c9a84c 100%);
+  color: #0a0906;
   font-size: 0.88rem;
-  font-weight: 700;
-  border: 1px solid rgba(212, 175, 55, 0.35);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border: 1px solid rgb(212 184 90 / 60%);
   cursor: pointer;
-  box-shadow: 0 8px 24px -6px rgba(182, 111, 121, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 24px -6px rgb(0 0 0 / 60%),
+    inset 0 1px 0 rgb(255 255 255 / 25%),
+    0 0 20px rgb(201 168 76 / 15%);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reservation-submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #38212e 0%, #593144 50%, #c47d87 100%);
-  border-color: rgba(212, 175, 55, 0.6);
+  background: linear-gradient(135deg, #d4b85a 0%, #e8ca72 50%, #d4b85a 100%);
+  border-color: rgb(232 202 114 / 80%);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px -6px rgba(182, 111, 121, 0.7), 0 0 15px rgba(212, 175, 55, 0.3);
+  box-shadow:
+    0 12px 30px -6px rgb(0 0 0 / 70%),
+    inset 0 1px 0 rgb(255 255 255 / 35%),
+    0 0 40px rgb(201 168 76 / 30%);
 }
 
 .reservation-submit-btn:disabled {
@@ -1236,8 +1292,8 @@ textarea.reservation-input {
 .reservation-spinner {
   width: 1rem;
   height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
+  border: 2px solid rgb(10 9 6 / 30%);
+  border-top-color: #0a0906;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -1263,13 +1319,14 @@ textarea.reservation-input {
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 50%;
-  background: #f0fdf4;
-  border: 2px solid #bbf7d0;
-  color: #16a34a;
+  background: rgb(201 168 76 / 10%);
+  border: 2px solid rgb(201 168 76 / 35%);
+  color: var(--color-gold);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1.25rem;
+  box-shadow: 0 0 30px rgb(201 168 76 / 18%);
   animation: modal-scale-in 0.4s ease;
 }
 
@@ -1281,11 +1338,10 @@ textarea.reservation-input {
 }
 
 .reservation-notice-box {
-  background: var(--color-paper);
-  border: 1px dashed var(--color-line);
+  background: rgb(201 168 76 / 5%);
+  border: 1px dashed rgb(201 168 76 / 20%);
   border-radius: 1rem;
   padding: 0.85rem 1rem;
   margin-bottom: 1rem;
   width: 100%;
 }
-
