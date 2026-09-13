@@ -20,7 +20,6 @@ interface ReservationModalProps {
 
 const POPULAR_SERVICES = [
   'Volumen Ruso (Más Popular)',
-  'Volumen 3D, 4D, 5D y 6D',
   'Volumen 3D',
   'Volumen 4D',
   'Volumen 5D',
