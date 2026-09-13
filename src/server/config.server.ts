@@ -17,6 +17,7 @@ export interface StudioConfigData {
   senderEmail?: string
   hours: Array<{ days: string; time: string }>
   maintenanceMode?: boolean
+  seasonalEffect?: 'none' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'gold_dust' | 'new_year' | 'halloween'
 }
 
 let sqlPromise: Promise<any> | null = null
@@ -66,6 +67,7 @@ export async function fetchConfigFromDb(): Promise<StudioConfigData> {
         ...fallbackBusiness,
         ...data,
         maintenanceMode: typeof data.maintenanceMode === 'boolean' ? data.maintenanceMode : false,
+        seasonalEffect: data.seasonalEffect || 'none',
         phoneClean: data.phoneClean || (data.phoneDisplay ? data.phoneDisplay.replace(/\D/g, '') : fallbackBusiness.phoneClean),
       }
       cacheExpiresAt = now + CACHE_TTL_MS
@@ -88,6 +90,7 @@ export async function saveConfigToDb(config: Partial<StudioConfigData>): Promise
     ...current,
     ...config,
     maintenanceMode: typeof config.maintenanceMode === 'boolean' ? config.maintenanceMode : current.maintenanceMode || false,
+    seasonalEffect: config.seasonalEffect || current.seasonalEffect || 'none',
     phoneClean: cleanPhone,
   }
 

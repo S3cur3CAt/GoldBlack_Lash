@@ -9,6 +9,7 @@ import { MaintenanceScreen } from '#/components/MaintenanceScreen'
 import { ReservationModal } from '#/components/ReservationModal'
 import { HeaderProvider } from '#/context/HeaderContext'
 import { StudioConfigProvider } from '#/context/StudioConfigContext'
+import { SeasonalParticles } from '#/components/SeasonalParticles'
 import { business } from '#/data/site'
 
 import appCss from '../styles.css?url'
@@ -117,6 +118,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 
       <body className="bg-paper font-body text-ink antialiased">
         <StudioConfigProvider value={liveConfig}>
+          <SeasonalParticles effect={liveConfig.seasonalEffect} />
           {liveConfig.maintenanceMode ? (
             <MaintenanceScreen liveConfig={liveConfig} />
           ) : (

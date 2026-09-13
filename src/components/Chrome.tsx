@@ -2,6 +2,7 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 
 import { openReservationModal } from '#/components/ReservationModal'
+import { SeasonalHeaderDecor } from '#/components/SeasonalDecoration'
 import { useHeaderSubBar } from '#/context/HeaderContext'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 
@@ -71,6 +72,7 @@ export function Header() {
           className="group flex items-center gap-2.5 sm:gap-3 py-0.5"
         >
           <div className="relative shrink-0">
+            <SeasonalHeaderDecor effect={business.seasonalEffect} />
             {/* Elegant minimal luxury frame */}
             <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50 group-hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.9)]">
               <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#08080c] flex items-center justify-center">

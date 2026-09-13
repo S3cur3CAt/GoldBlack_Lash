@@ -29,6 +29,7 @@ export const business = {
     { days: 'Domingo', time: 'Cerrado' },
   ],
   maintenanceMode: false,
+  seasonalEffect: 'none' as 'none' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'gold_dust' | 'new_year' | 'halloween',
 } as const
 
 export type Service = {

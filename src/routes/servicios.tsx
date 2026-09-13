@@ -5,7 +5,9 @@ import { useEffect, useState } from 'react'
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
+import { SeasonalCornerBadge } from '#/components/SeasonalDecoration'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
+import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
   business,
   faqs,
@@ -250,14 +252,16 @@ function CategoryBlock({
 }
 
 function ServiceCard({ service }: { service: Service }) {
+  const config = useStudioConfig()
   return (
     <article
-      className={`rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
+      className={`relative rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
         service.featured
           ? 'border-rose/20 bg-blush'
           : 'border-line bg-surface'
       }`}
     >
+      <SeasonalCornerBadge effect={config.seasonalEffect} position="top-right" />
       {service.featured ? (
         <p className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
           <span aria-hidden="true" className="text-[#8a5a12]">★</span>

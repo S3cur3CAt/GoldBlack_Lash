@@ -12,6 +12,66 @@ import {
   IconAlertCircle,
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
+import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
+
+const seasonalOptions = [
+  {
+    id: 'none',
+    icon: '🚫',
+    label: 'Desactivado',
+    season: 'Estándar limpio',
+    desc: 'Sin efectos de partículas. Diseño original limpio y minimalista.',
+  },
+  {
+    id: 'snow',
+    icon: '❄️',
+    label: 'Navidad & Invierno',
+    season: 'Diciembre — Febrero',
+    desc: 'Copos de nieve multicapa con profundidad de campo, balanceo suave por el viento y destellos helados.',
+  },
+  {
+    id: 'sakura',
+    icon: '🌸',
+    label: 'Primavera & Sakura',
+    season: 'Marzo — Mayo',
+    desc: 'Delicados pétalos de flor de cerezo en tonos rosa pastel cayendo con giro 3D en la brisa.',
+  },
+  {
+    id: 'leaves',
+    icon: '🍂',
+    label: 'Otoño Dorado',
+    season: 'Septiembre — Noviembre',
+    desc: 'Hojas de arce en tonos ámbar, cobrizo y oro que se mecen como un péndulo y voltean en 3D.',
+  },
+  {
+    id: 'halloween',
+    icon: '🎃',
+    label: 'Halloween & Noche de Brujas',
+    season: 'Octubre — Noviembre',
+    desc: 'Murciélagos planeando en 3D, niebla mágica y chispas de calabaza brillantes con decoración temática en tarjetas.',
+  },
+  {
+    id: 'rose_petals',
+    icon: '🌹',
+    label: 'San Valentín & Romance',
+    season: 'San Valentín y especiales',
+    desc: 'Pétalos aterciopelados de rosa roja y vino oscuro que planean con gracia y sensualidad.',
+  },
+  {
+    id: 'gold_dust',
+    icon: '✨',
+    label: 'Polvo de Oro GoldBlack',
+    season: 'Firma Atelier Luxury',
+    desc: 'Micro-destellos y bokeh de oro 24k en suspensión etérea. La experiencia premium del atelier.',
+  },
+  {
+    id: 'new_year',
+    icon: '🎆',
+    label: 'Fin de Año & Celebración',
+    season: 'Nochevieja y aniversarios',
+    desc: 'Chispas metalizadas, destellos de diamante y confeti dorado para fechas festivas.',
+  },
+] as const
 
 interface SettingsProps {
   config: StudioConfig
@@ -246,6 +306,112 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
           )}
+        </div>
+
+        {/* Efectos Estacionales y Partículas Ambientales */}
+        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-gold-400" />
+                <h4 className="font-serif text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  <IconSparkles size={18} className="text-gold-400" />
+                  Efectos Estacionales y Partículas en Vivo
+                </h4>
+                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                  formData.seasonalEffect && formData.seasonalEffect !== 'none'
+                    ? 'bg-gold-950/60 text-gold-300 border-gold-500/40'
+                    : 'bg-gray-800 text-gray-400 border-gray-700'
+                }`}>
+                  {formData.seasonalEffect && formData.seasonalEffect !== 'none'
+                    ? '✨ Partículas Activas en el Sitio'
+                    : 'Modo Limpio (Sin Efectos)'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 max-w-2xl leading-relaxed">
+                Activa efectos visuales realistas que caen suavemente sobre el sitio web según la época del año o festividades. No bloquean clics y cuentan con física 3D a 60 FPS.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await onSaveConfig(formData)
+                  setSaveSuccess(true)
+                  setTimeout(() => setSaveSuccess(false), 4000)
+                  showAlert({
+                    title: 'Efecto Guardado',
+                    message: formData.seasonalEffect && formData.seasonalEffect !== 'none'
+                      ? `El efecto "${seasonalOptions.find((o) => o.id === formData.seasonalEffect)?.label}" se ha guardado y ya está activo en el sitio web.`
+                      : 'Los efectos de partículas han sido desactivados del sitio web.',
+                    type: 'success',
+                  })
+                } catch (err: any) {
+                  showAlert({
+                    title: 'Error al Guardar',
+                    message: `No se pudo guardar: ${err?.message ?? 'Error desconocido'}`,
+                    type: 'error',
+                  })
+                }
+              }}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 bg-gold-500/20 text-gold-300 hover:bg-gold-500/30 border border-gold-500/40"
+            >
+              <IconSparkles size={14} />
+              <span>Guardar y Aplicar Efecto</span>
+            </button>
+          </div>
+
+          {/* Live Preview Box */}
+          <div className="relative w-full h-40 rounded-xl overflow-hidden bg-[#08080c] border border-[#2b2b3d] flex items-center justify-center shadow-inner">
+            <SeasonalPreviewCanvas effect={formData.seasonalEffect || 'none'} />
+            <div className="absolute top-2.5 left-3 text-[10px] uppercase font-mono tracking-widest text-gray-400 bg-black/75 px-2.5 py-1 rounded-md border border-white/10 pointer-events-none backdrop-blur-sm">
+              Simulación en directo • {seasonalOptions.find((o) => o.id === (formData.seasonalEffect || 'none'))?.label}
+            </div>
+            <div className="pointer-events-none text-center px-5 py-2.5 rounded-xl bg-black/60 border border-gold-500/20 backdrop-blur-md shadow-lg">
+              <span className="font-serif text-sm font-bold text-gold-200 block tracking-wide">GoldBlack Lash Atelier</span>
+              <span className="text-[11px] text-gray-400">Las partículas caen suavemente sobre el contenido sin bloquear botones</span>
+            </div>
+          </div>
+
+          {/* Grid of seasonal cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {seasonalOptions.map((opt) => {
+              const isSelected = (formData.seasonalEffect || 'none') === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => {
+                    setFormData({ ...formData, seasonalEffect: opt.id as SeasonalEffectType })
+                  }}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                    isSelected
+                      ? 'bg-[#1e1b12] border-gold-400 shadow-[0_0_15px_rgba(212,175,55,0.15)] ring-1 ring-gold-400/50'
+                      : 'bg-[#181824] border-[#28283c] hover:border-gray-600 hover:bg-[#1f1f2e]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between w-full">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl shrink-0" aria-hidden="true">{opt.icon}</span>
+                      <div>
+                        <h5 className={`text-xs font-bold ${isSelected ? 'text-gold-300' : 'text-white'}`}>
+                          {opt.label}
+                        </h5>
+                        <span className="text-[10px] text-gray-400 font-medium">{opt.season}</span>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="w-5 h-5 rounded-full bg-gold-400 text-black grid place-items-center text-xs font-black shrink-0">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-400 leading-snug">{opt.desc}</p>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Contact and Business Details */}

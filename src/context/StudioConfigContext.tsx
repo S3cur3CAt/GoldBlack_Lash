@@ -17,6 +17,8 @@ export type StudioConfig = {
   mapsUrl: string
   mapsEmbed: string
   hours: readonly { days: string; time: string }[] | Array<{ days: string; time: string }>
+  maintenanceMode?: boolean
+  seasonalEffect?: 'none' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'gold_dust' | 'new_year' | 'halloween'
 }
 
 const StudioConfigContext = createContext<StudioConfig>(business as StudioConfig)

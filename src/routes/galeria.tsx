@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
+import { SeasonalCornerBadge } from '#/components/SeasonalDecoration'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
+import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
   business,
   galleryPieces as fallbackPieces,
@@ -253,14 +255,16 @@ function GalleryTile({
   piece: GalleryPiece
   onOpen: () => void
 }) {
+  const config = useStudioConfig()
   return (
     <button
       type="button"
       aria-haspopup="dialog"
       aria-label={`Ver ${piece.title}, ${piece.technique}`}
       onClick={onOpen}
-      className="group min-w-0 rounded-4xl border border-line bg-surface p-3 text-left shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-[#d4af37]/45 hover:shadow-card-hover cursor-pointer"
+      className="group relative min-w-0 rounded-4xl border border-line bg-surface p-3 text-left shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-[#d4af37]/45 hover:shadow-card-hover cursor-pointer"
     >
+      <SeasonalCornerBadge effect={config.seasonalEffect} position="top-right" />
       <div className="relative overflow-hidden rounded-3xl">
         <StudioVisual
           src={piece.image}
