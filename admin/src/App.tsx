@@ -43,6 +43,9 @@ import {
   fetchLiveAppointmentsFromVercel,
   syncAppointmentWithVercel,
   deleteAppointmentFromVercel,
+  fetchLiveInvoicesFromVercel,
+  syncInvoiceWithVercel,
+  deleteInvoiceFromVercel,
   syncStudioConfigWithVercel,
 } from './services/storage'
 
@@ -279,6 +282,20 @@ export const App: React.FC = () => {
         .catch(() => {
           clearTimeout(galleryTimeout)
         })
+
+      // Fetch live invoices from Supabase with 3s timeout
+      const invoicesController = new AbortController()
+      const invoicesTimeout = setTimeout(() => invoicesController.abort(), 3000)
+      fetchLiveInvoicesFromVercel()
+        .then((live) => {
+          clearTimeout(invoicesTimeout)
+          if (live && Array.isArray(live)) {
+            setInvoices(live)
+          }
+        })
+        .catch(() => {
+          clearTimeout(invoicesTimeout)
+        })
     }, 1500)
 
     const handleSync = (e: any) => {
@@ -453,8 +470,8 @@ export const App: React.FC = () => {
     await deleteGalleryItemFromVercel(id)
   }
 
-  // Invoices Actions
-  const handleSaveInvoice = (invoice: Invoice) => {
+  // Invoices Actions - Synchronized with Supabase Postgres & Vercel API
+  const handleSaveInvoice = async (invoice: Invoice) => {
     const existingIndex = invoices.findIndex((i) => i.id === invoice.id)
     let updated: Invoice[]
     if (existingIndex >= 0) {
@@ -465,12 +482,14 @@ export const App: React.FC = () => {
     }
     setInvoices(updated)
     saveInvoices(updated)
+    await syncInvoiceWithVercel(invoice)
   }
 
-  const handleDeleteInvoice = (id: string) => {
+  const handleDeleteInvoice = async (id: string) => {
     const updated = invoices.filter((i) => i.id !== id)
     setInvoices(updated)
     saveInvoices(updated)
+    await deleteInvoiceFromVercel(id)
   }
 
   // Config Action — saves locally and syncs to Supabase so the live website reflects changes immediately
@@ -678,6 +697,8 @@ export const App: React.FC = () => {
           {activeTab === 'billing' && (
             <Billing
               invoices={invoices}
+              clients={clients}
+              services={services}
               config={config}
               onSaveInvoice={handleSaveInvoice}
               onDeleteInvoice={handleDeleteInvoice}

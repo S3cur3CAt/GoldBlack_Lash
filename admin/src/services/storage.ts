@@ -289,108 +289,6 @@ export function saveClients(clients: Client[]): void {
   localStorage.setItem(STORAGE_KEYS.CLIENTS, JSON.stringify(clients))
 }
 
-export function getInvoices(): Invoice[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.INVOICES)
-    if (raw) {
-      return JSON.parse(raw)
-    }
-    const initial = generateInitialInvoices()
-    localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(initial))
-    return initial
-  } catch (e) {
-    console.error(e)
-    return []
-  }
-}
-
-export function saveInvoices(invoices: Invoice[]): void {
-  localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices))
-}
-
-function generateInitialInvoices(): Invoice[] {
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const todayStr = `${year}-${month}-${day}`
-
-  return [
-    {
-      id: `inv-${year}-001`,
-      number: `${year}-001`,
-      date: todayStr,
-      clientName: 'María García López',
-      clientNif: '48921045K',
-      clientPhone: '+34 612 345 678',
-      clientEmail: 'maria.garcia@email.com',
-      items: [
-        {
-          description: 'Volumen Ruso (3D - 5D) + Sellado Térmico',
-          quantity: 1,
-          unitPrice: 40.0,
-          total: 40.0,
-        },
-      ],
-      subtotal: 33.06,
-      taxRate: 21,
-      taxAmount: 6.94,
-      total: 40.0,
-      paymentMethod: 'bizum',
-      status: 'cobrada',
-      notes: 'Tratamiento completado y sellado.',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `inv-${year}-002`,
-      number: `${year}-002`,
-      date: todayStr,
-      clientName: 'Lucía Fernández Ramos',
-      clientNif: '28934512P',
-      clientPhone: '+34 620 987 654',
-      clientEmail: 'lucia.f@email.com',
-      items: [
-        {
-          description: 'Lifting de Pestañas + Tinte Negro Profundo',
-          quantity: 1,
-          unitPrice: 28.0,
-          total: 28.0,
-        },
-      ],
-      subtotal: 23.14,
-      taxRate: 21,
-      taxAmount: 4.86,
-      total: 28.0,
-      paymentMethod: 'tarjeta',
-      status: 'cobrada',
-      notes: 'Cobrado con datáfono TPV.',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: `inv-${year}-003`,
-      number: `${year}-003`,
-      date: todayStr,
-      clientName: 'Carmen Morales Silva',
-      clientPhone: '+34 655 432 109',
-      items: [
-        {
-          description: 'Mantenimiento Volumen (2-3 semanas)',
-          quantity: 1,
-          unitPrice: 22.0,
-          total: 22.0,
-        },
-      ],
-      subtotal: 18.18,
-      taxRate: 21,
-      taxAmount: 3.82,
-      total: 22.0,
-      paymentMethod: 'efectivo',
-      status: 'cobrada',
-      notes: 'Pago en metálico en estudio.',
-      createdAt: new Date().toISOString(),
-    },
-  ]
-}
 
 export function getApiBaseUrl(): string {
   try {
@@ -1082,6 +980,343 @@ export async function deleteAppointmentFromVercel(id: string): Promise<boolean> 
   }
 
   return false
+}
+
+// -------------------------------------------------------------
+// Invoices & Billing Management with Supabase Postgres & Resend
+// -------------------------------------------------------------
+
+export function getInvoices(): Invoice[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.INVOICES)
+    if (!raw) {
+      return []
+    }
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch (e) {
+    console.error(e)
+    return []
+  }
+}
+
+export function saveInvoices(invoices: Invoice[]): void {
+  localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices))
+}
+
+/** Fetch latest invoices from Vercel API / Supabase Postgres */
+export async function fetchLiveInvoicesFromVercel(): Promise<Invoice[] | null> {
+  const baseUrl = getApiBaseUrl()
+  let remoteList: any[] | null = null
+
+  try {
+    const res = await fetch(`${baseUrl}/api/invoices?_t=${Date.now()}`)
+    if (res.ok) {
+      const parsed = await res.json()
+      if (Array.isArray(parsed)) {
+        remoteList = parsed
+      }
+    }
+  } catch (e) {
+    console.warn('[Invoices fetch from Vercel failed, trying Supabase]', e)
+  }
+
+  if (!remoteList) {
+    try {
+      const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_invoices?select=*&order=date.desc`, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      })
+      if (sbRes.ok) {
+        const parsed = await sbRes.json()
+        if (Array.isArray(parsed)) {
+          remoteList = parsed
+        }
+      }
+    } catch (sbErr) {
+      console.warn('[Invoices fetch from Supabase failed]', sbErr)
+    }
+  }
+
+  if (Array.isArray(remoteList)) {
+    const mapped: Invoice[] = remoteList.map((r: any) => ({
+      id: r.id,
+      number: r.number,
+      date: r.date,
+      appointmentId: r.appointmentId || r.appointment_id || undefined,
+      clientName: r.clientName || r.client_name,
+      clientNif: r.clientNif || r.client_nif || undefined,
+      clientPhone: r.clientPhone || r.client_phone || undefined,
+      clientEmail: r.clientEmail || r.client_email || undefined,
+      items: Array.isArray(r.items)
+        ? r.items
+        : typeof r.items === 'string'
+        ? JSON.parse(r.items)
+        : [],
+      subtotal: Number(r.subtotal) || 0,
+      taxRate: Number(r.taxRate || r.tax_rate) || 21,
+      taxAmount: Number(r.taxAmount || r.tax_amount) || 0,
+      total: Number(r.total) || 0,
+      paymentMethod: r.paymentMethod || r.payment_method || 'bizum',
+      status: r.status || 'cobrada',
+      notes: r.notes || undefined,
+      createdAt: r.createdAt || r.created_at || new Date().toISOString(),
+    }))
+    saveInvoices(mapped)
+    return mapped
+  }
+  return null
+}
+
+/** Sync invoice with Supabase Postgres & Vercel API */
+export async function syncInvoiceWithVercel(invoice: Invoice): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  notifySyncEvent('syncing', `Sincronizando factura ${invoice.number}...`)
+
+  try {
+    const res = await fetch(`${baseUrl}/api/invoices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(invoice),
+    })
+    if (res.ok) {
+      notifySyncEvent('synced', `✓ Factura ${invoice.number} guardada en tiempo real`)
+      return true
+    }
+  } catch (err) {
+    console.warn('[Invoice Sync Error with Vercel, trying Supabase]', err)
+  }
+
+  // Direct Supabase fallback
+  try {
+    const sbPayload = {
+      id: invoice.id,
+      number: invoice.number,
+      date: invoice.date,
+      appointment_id: invoice.appointmentId || null,
+      client_name: invoice.clientName,
+      client_nif: invoice.clientNif || null,
+      client_phone: invoice.clientPhone || null,
+      client_email: invoice.clientEmail || null,
+      items: invoice.items || [],
+      subtotal: invoice.subtotal || 0,
+      tax_rate: invoice.taxRate || 21,
+      tax_amount: invoice.taxAmount || 0,
+      total: invoice.total || 0,
+      payment_method: invoice.paymentMethod || 'bizum',
+      status: invoice.status || 'cobrada',
+      notes: invoice.notes || null,
+      updated_at: new Date().toISOString(),
+    }
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_invoices`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify(sbPayload),
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', `✓ Factura ${invoice.number} guardada en tiempo real`)
+      return true
+    }
+  } catch (sbErr) {
+    console.warn('[Supabase Invoice Sync Error]', sbErr)
+  }
+
+  notifySyncEvent('error', `Guardada localmente`)
+  return false
+}
+
+/** Deletes an invoice from Supabase Postgres & Vercel API */
+export async function deleteInvoiceFromVercel(id: string): Promise<boolean> {
+  const baseUrl = getApiBaseUrl()
+  notifySyncEvent('syncing', 'Eliminando factura...')
+
+  try {
+    const res = await fetch(`${baseUrl}/api/invoices?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    if (res.ok) {
+      notifySyncEvent('synced', '✓ Factura eliminada en tiempo real')
+      return true
+    }
+  } catch (err) {
+    console.warn('[Invoice Delete Error with Vercel, trying Supabase]', err)
+  }
+
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_invoices?id=eq.${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (sbRes.ok) {
+      notifySyncEvent('synced', '✓ Factura eliminada en tiempo real')
+      return true
+    }
+  } catch (sbErr) {
+    console.warn('[Supabase Invoice Delete Error]', sbErr)
+  }
+
+  notifySyncEvent('error', 'Eliminada localmente')
+  return false
+}
+
+/** Dispatches a luxury styled invoice receipt directly to the client's email via Resend */
+export async function sendInvoiceEmail(
+  invoice: Invoice,
+  config: StudioConfig,
+  recipientEmail?: string,
+  customNote?: string
+): Promise<{ ok: boolean; id?: string; error?: string }> {
+  const targetEmail = (recipientEmail || invoice.clientEmail || '').trim()
+  if (!targetEmail) {
+    return { ok: false, error: 'Por favor indica un correo electrónico de destino.' }
+  }
+
+  const itemsHtml = (invoice.items || [])
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #262635; color: #f5f5f7; font-size: 13px;">${item.description}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #262635; color: #a1a1aa; font-size: 13px; text-align: center;">${item.quantity}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #262635; color: #a1a1aa; font-size: 13px; text-align: right;">${item.unitPrice.toFixed(2)} €</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #262635; color: #d4af37; font-size: 13px; font-weight: 700; text-align: right;">${item.total.toFixed(2)} €</td>
+      </tr>
+    `
+    )
+    .join('')
+
+  const isPaid = invoice.status === 'cobrada'
+  const statusBadge = isPaid
+    ? '<span style="background-color: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase;">PAGADA / COBRADA ✓</span>'
+    : '<span style="background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase;">PENDIENTE DE COBRO</span>'
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #08080c; color: #f5f5f7; margin: 0; padding: 24px; }
+        .card { max-width: 600px; margin: 0 auto; background-color: #12121a; border: 1px solid #252535; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #171722 0%, #1a1a28 100%); padding: 30px; border-bottom: 1px solid #252535; }
+        .brand { font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; }
+        .brand-accent { color: #d4af37; font-weight: 300; }
+        .title { color: #d4af37; font-size: 18px; font-weight: 700; margin-top: 15px; margin-bottom: 4px; }
+        .content { padding: 30px; }
+        .table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .table th { background-color: #181824; color: #d4af37; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; border-bottom: 1px solid #262635; }
+        .totals-table { width: 100%; max-width: 250px; margin-left: auto; border-collapse: collapse; margin-bottom: 25px; }
+        .totals-table td { padding: 6px 10px; font-size: 13px; }
+        .footer { background-color: #0d0d14; padding: 20px 30px; border-top: 1px solid #20202d; font-size: 11px; color: #71717a; text-align: center; line-height: 1.5; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="brand">GoldBlack <span class="brand-accent">Lash</span></div>
+            <div>${statusBadge}</div>
+          </div>
+          <div class="title">Factura / Recibo Oficial nº ${invoice.number}</div>
+          <div style="color: #a1a1aa; font-size: 12px;">Fecha de emisión: ${invoice.date}</div>
+        </div>
+
+        <div class="content">
+          ${customNote ? `<div style="background: rgba(212, 175, 55, 0.08); border: 1px solid rgba(212, 175, 55, 0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 25px; font-size: 13px; color: #f5f5f7;">${customNote}</div>` : ''}
+
+          <table style="width: 100%; margin-bottom: 25px;">
+            <tr>
+              <td style="vertical-align: top; width: 50%; font-size: 12px; line-height: 1.6; color: #a1a1aa;">
+                <strong style="color: #ffffff; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Datos del Estudio:</strong>
+                <span style="color: #ffffff; font-weight: 600;">${config.name}</span><br>
+                ${config.address}<br>
+                ${config.postalCode} ${config.city}<br>
+                Teléfono: ${config.phoneDisplay}<br>
+                Email: ${config.email}
+              </td>
+              <td style="vertical-align: top; width: 50%; font-size: 12px; line-height: 1.6; color: #a1a1aa; text-align: right;">
+                <strong style="color: #ffffff; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px; display: block; margin-bottom: 4px;">Facturado a:</strong>
+                <span style="color: #ffffff; font-weight: 600;">${invoice.clientName}</span><br>
+                ${invoice.clientNif ? `NIF/CIF: <strong style="color: #f5f5f7;">${invoice.clientNif}</strong><br>` : ''}
+                ${invoice.clientPhone ? `Tel: ${invoice.clientPhone}<br>` : ''}
+                ${invoice.clientEmail ? `Email: ${invoice.clientEmail}<br>` : ''}
+                Método de pago: <strong style="color: #d4af37; text-transform: uppercase;">${invoice.paymentMethod}</strong>
+              </td>
+            </tr>
+          </table>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="text-align: left;">Concepto / Tratamiento</th>
+                <th style="text-align: center;">Cant.</th>
+                <th style="text-align: right;">Precio</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsHtml}
+            </tbody>
+          </table>
+
+          <table class="totals-table">
+            <tr>
+              <td style="color: #a1a1aa; text-align: right;">Base Imponible:</td>
+              <td style="color: #ffffff; font-weight: 600; text-align: right;">${invoice.subtotal.toFixed(2)} €</td>
+            </tr>
+            <tr>
+              <td style="color: #a1a1aa; text-align: right;">IVA (${invoice.taxRate}%):</td>
+              <td style="color: #ffffff; font-weight: 600; text-align: right;">${invoice.taxAmount.toFixed(2)} €</td>
+            </tr>
+            <tr style="border-top: 1px solid #262635;">
+              <td style="color: #d4af37; font-weight: 800; font-size: 15px; text-align: right; padding-top: 8px;">TOTAL:</td>
+              <td style="color: #d4af37; font-weight: 800; font-size: 17px; text-align: right; padding-top: 8px;">${invoice.total.toFixed(2)} €</td>
+            </tr>
+          </table>
+
+          ${invoice.notes ? `<div style="font-size: 11px; color: #71717a; margin-top: 15px; border-top: 1px dashed #222230; padding-top: 10px;">Notas: ${invoice.notes}</div>` : ''}
+        </div>
+
+        <div class="footer">
+          Gracias por confiar en <strong>${config.name}</strong>.<br>
+          Este documento es un comprobante oficial de pago y factura simplificada emitida por el estudio.
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  const text = `
+Factura / Recibo nº ${invoice.number}
+${config.name}
+
+Fecha: ${invoice.date}
+Clienta: ${invoice.clientName} ${invoice.clientNif ? `(${invoice.clientNif})` : ''}
+Total: ${invoice.total.toFixed(2)} € (Base: ${invoice.subtotal.toFixed(2)} € + IVA 21%: ${invoice.taxAmount.toFixed(2)} €)
+Método de pago: ${invoice.paymentMethod}
+Estado: ${invoice.status.toUpperCase()}
+
+${customNote ? `${customNote}\n\n` : ''}
+¡Gracias por tu confianza!
+${config.name} • ${config.phoneDisplay}
+  `.trim()
+
+  return sendEmailViaResend({
+    to: targetEmail,
+    subject: `📄 Factura ${invoice.number} — ${config.name}`,
+    html,
+    text,
+    apiKey: config.resendApiKey,
+  })
 }
 
 export function getServices(): AdminService[] {

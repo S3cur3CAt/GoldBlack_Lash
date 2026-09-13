@@ -18,6 +18,7 @@ import { Route as ApiAppointmentsRouteImport } from './routes/api.appointments'
 import { Route as ApiConfigRouteImport } from './routes/api.config'
 import { Route as ApiEmailRouteImport } from './routes/api.email'
 import { Route as ApiGalleryRouteImport } from './routes/api.gallery'
+import { Route as ApiInvoicesRouteImport } from './routes/api.invoices'
 import { Route as ApiServicesRouteImport } from './routes/api.services'
 import { Route as ApiImagesKeyRouteImport } from './routes/api.images.$key'
 
@@ -66,6 +67,11 @@ const ApiGalleryRoute = ApiGalleryRouteImport.update({
   path: '/api/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInvoicesRoute = ApiInvoicesRouteImport.update({
+  id: '/api/invoices',
+  path: '/api/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiServicesRoute = ApiServicesRouteImport.update({
   id: '/api/services',
   path: '/api/services',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/api/config': typeof ApiConfigRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
+  '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/api/config': typeof ApiConfigRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
+  '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/api/config': typeof ApiConfigRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
+  '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/api/config'
     | '/api/email'
     | '/api/gallery'
+    | '/api/invoices'
     | '/api/services'
     | '/api/images/$key'
   fileRoutesByTo: FileRoutesByTo
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/api/config'
     | '/api/email'
     | '/api/gallery'
+    | '/api/invoices'
     | '/api/services'
     | '/api/images/$key'
   id:
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/api/config'
     | '/api/email'
     | '/api/gallery'
+    | '/api/invoices'
     | '/api/services'
     | '/api/images/$key'
   fileRoutesById: FileRoutesById
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   ApiConfigRoute: typeof ApiConfigRoute
   ApiEmailRoute: typeof ApiEmailRoute
   ApiGalleryRoute: typeof ApiGalleryRoute
+  ApiInvoicesRoute: typeof ApiInvoicesRoute
   ApiServicesRoute: typeof ApiServicesRoute
   ApiImagesKeyRoute: typeof ApiImagesKeyRoute
 }
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/invoices': {
+      id: '/api/invoices'
+      path: '/api/invoices'
+      fullPath: '/api/invoices'
+      preLoaderRoute: typeof ApiInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/services': {
       id: '/api/services'
       path: '/api/services'
@@ -265,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiConfigRoute: ApiConfigRoute,
   ApiEmailRoute: ApiEmailRoute,
   ApiGalleryRoute: ApiGalleryRoute,
+  ApiInvoicesRoute: ApiInvoicesRoute,
   ApiServicesRoute: ApiServicesRoute,
   ApiImagesKeyRoute: ApiImagesKeyRoute,
 }
