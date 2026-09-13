@@ -18,7 +18,7 @@ export const Route = createFileRoute('/')({
       {
         name: 'description',
         content:
-          'Extensiones de pestañas y lifting con diseño personalizado. Descubre tu efecto ideal y disfruta de un momento para ti en GoldBlack Lash.',
+          'Extensiones de pestañas y cuidado facial con diseño personalizado. Descubre tu efecto ideal y disfruta de un momento para ti en GoldBlack Lash.',
       },
     ],
   }),

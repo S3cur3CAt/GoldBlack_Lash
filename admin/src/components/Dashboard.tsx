@@ -4,6 +4,8 @@ import {
   Client,
   AdminService,
   StudioConfig,
+  Invoice,
+  PaymentMethod,
 } from '../types/admin'
 import {
   IconCalendar,
@@ -15,17 +17,30 @@ import {
   IconClock,
   IconAlertCircle,
   IconPlus,
+  IconReceipt,
 } from './Icons'
 import { EmailModal, EmailModalMode } from './EmailModal'
+import { FinalizeServiceModal } from './FinalizeServiceModal'
 
 interface DashboardProps {
   appointments: Appointment[]
   clients: Client[]
   services: AdminService[]
   config: StudioConfig
+  invoices?: Invoice[]
   onNewAppointment: () => void
   onSelectTab: (tab: 'appointments' | 'clients' | 'services') => void
   onUpdateAppointmentStatus: (id: string, status: Appointment['status']) => void
+  onFinalizeService?: (
+    apt: Appointment,
+    options: {
+      paymentMethod: PaymentMethod
+      clientEmail?: string
+      clientNif?: string
+      sendEmail?: boolean
+      customNotes?: string
+    }
+  ) => Promise<Invoice | null>
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -33,11 +48,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   clients,
   services,
   config,
+  invoices = [],
   onNewAppointment,
   onSelectTab,
   onUpdateAppointmentStatus,
+  onFinalizeService,
 }) => {
   const today = new Date().toISOString().split('T')[0]
+
+  // Finalize Service Modal State
+  const [finalizingApt, setFinalizingApt] = useState<Appointment | null>(null)
 
   // Email Modal State for direct Resend messaging
   const [emailModalOpen, setEmailModalOpen] = useState(false)
@@ -175,7 +195,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-xs text-emerald-400 font-medium">Servicios activos</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-2">
-            Volumen Ruso, Clásicas y Lifting
+            Volumen, Ruso, Retirada y Limpieza Facial
           </p>
         </div>
       </div>
@@ -258,8 +278,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     </div>
 
-                    {/* Actions: Email & Status Change */}
+                    {/* Actions: Finalize Service & Email */}
                     <div className="flex items-center gap-2 self-end sm:self-center">
+                      {apt.status !== 'completada' ? (
+                        <button
+                          type="button"
+                          onClick={() => setFinalizingApt(apt)}
+                          title="Finalizar servicio y emitir factura en Facturación & Caja"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/35 hover:border-gold-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                        >
+                          <IconCheck size={14} className="text-gold-400 stroke-[2.5]" />
+                          <span>Finalizar Servicio</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#14120c] border border-gold-500/25 text-gold-300 text-xs font-medium">
+                          <IconCheck size={13} className="text-gold-400 stroke-[2.5]" />
+                          <span>Finalizado</span>
+                          {(() => {
+                            const inv = invoices.find((i) => i.appointmentId === apt.id)
+                            return inv ? <span className="text-[10px] text-gold-400 font-mono">({inv.number})</span> : null
+                          })()}
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => {
@@ -273,16 +314,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       >
                         <IconMail size={16} />
                       </button>
-                      {apt.status !== 'completada' && (
-                        <button
-                          onClick={() => onUpdateAppointmentStatus(apt.id, 'completada')}
-                          title="Marcar como completada"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-colors"
-                        >
-                          <IconCheck size={14} />
-                          <span>Completar</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 )
@@ -390,6 +421,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
         client={selectedEmailClient}
         config={config}
         initialMode={emailModalMode}
+      />
+
+      {/* Finalize Service & Invoice Modal */}
+      <FinalizeServiceModal
+        isOpen={Boolean(finalizingApt)}
+        onClose={() => setFinalizingApt(null)}
+        appointment={finalizingApt}
+        config={config}
+        clients={clients}
+        onConfirm={async (options) => {
+          if (finalizingApt && onFinalizeService) {
+            await onFinalizeService(finalizingApt, options)
+          }
+        }}
       />
     </div>
   )

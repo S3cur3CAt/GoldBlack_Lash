@@ -315,7 +315,7 @@ export const Clients: React.FC<ClientsProps> = ({
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 font-medium">Estilo favorito:</span>
                       <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gray-200 border border-[#29293c]">
-                        {client.preferredStyle || 'Cat Eye'}
+                        {client.preferredStyle || 'Cat Eye (Ojo de Gato)'}
                       </span>
                       <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gold-300 font-mono border border-[#29293c]">
                         Curva {client.preferredCurl || 'D'}
@@ -417,7 +417,7 @@ export const Clients: React.FC<ClientsProps> = ({
                       </td>
                       <td className="px-4 py-3">
                         <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gray-200 border border-[#29293c] text-[10px] inline-block mr-1">
-                          {client.preferredStyle || 'Cat Eye'}
+                          {client.preferredStyle || 'Cat Eye (Ojo de Gato)'}
                         </span>
                         <span className="px-1.5 py-0.5 rounded bg-[#1c1c28] text-gold-300 font-mono text-[10px] border border-[#29293c]">
                           {client.preferredCurl || 'D'}
@@ -624,7 +624,6 @@ export const Clients: React.FC<ClientsProps> = ({
                     <option value="Cat Eye (Ojo de Gato)">Cat Eye (Ojo de Gato)</option>
                     <option value="Doll Eye (Muñeca)">Doll Eye (Muñeca)</option>
                     <option value="Ardilla (Squirrel)">Ardilla (Squirrel)</option>
-                    <option value="Efecto Kim / Híbrido">Efecto Kim / Híbrido</option>
                   </select>
                 </div>
 
@@ -636,11 +635,8 @@ export const Clients: React.FC<ClientsProps> = ({
                     className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400 font-mono"
                   >
                     <option value="C">C (Suave / Natural)</option>
-                    <option value="CC">CC (Curvatura Media)</option>
                     <option value="D">D (Marcada / Glamour)</option>
-                    <option value="DD">DD (Súper Curva)</option>
                     <option value="M">M (Efecto Lifting Elevado)</option>
-                    <option value="L">L (Párpado Encapotado)</option>
                   </select>
                 </div>
               </div>

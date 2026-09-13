@@ -66,9 +66,7 @@ export const Services: React.FC<ServicesProps> = ({
 
   const DEFAULT_CATEGORIES: { id: string; name: string }[] = [
     { id: 'extensiones', name: 'Extensiones de pestañas' },
-    { id: 'mantenimiento', name: 'Mantenimiento & Retoques' },
-    { id: 'lifting', name: 'Lifting & Tratamientos' },
-    { id: 'extras', name: 'Servicios Extras' },
+    { id: 'extras', name: 'Tratamientos y extras' },
   ]
 
   const allCategories = React.useMemo(() => {
@@ -109,7 +107,7 @@ export const Services: React.FC<ServicesProps> = ({
       categoryName: 'Extensiones de pestañas',
       price: '30 €',
       priceNumber: 30,
-      duration: '2 h',
+      duration: '1 h',
       badge: 'Nuevo',
       description: '',
       featured: false,
@@ -574,7 +572,7 @@ export const Services: React.FC<ServicesProps> = ({
                   <label className="block text-xs font-semibold text-gray-300 mb-1">Duración</label>
                   <input
                     type="text"
-                    placeholder="Ej. 1 h 30 min, 2 h"
+                    placeholder="Ej. 30 min, 1 h, 1 h 15 min"
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"

@@ -281,7 +281,14 @@ function BookingForm() {
         serviceId: 'web-contact-form',
         date: today,
         time: form.fecha.trim() || 'Por coordinar',
-        durationMinutes: 90,
+        durationMinutes: (() => {
+          const lower = (form.servicio || '').toLowerCase()
+          if (lower.includes('retirada')) return 30
+          if (lower.includes('limpieza') || lower.includes('facial')) return 60
+          if (lower.includes('volumen ruso') || lower.includes('ruso')) return 60
+          if (lower.includes('3d') || lower.includes('4d') || lower.includes('5d') || lower.includes('6d') || lower.includes('volumen')) return 75
+          return 60
+        })(),
         price: 30,
         status: 'pendiente',
         paymentStatus: 'pendiente',

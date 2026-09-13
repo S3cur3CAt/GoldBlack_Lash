@@ -47,7 +47,7 @@ export const Route = createFileRoute('/servicios')({
       {
         name: 'description',
         content:
-          'Descubre nuestros servicios de extensiones de pestañas, lifting y mantenimiento. Consulta precios, duración y reserva tu momento de cuidado.',
+          'Descubre nuestros servicios de extensiones de pestañas, retirada y limpieza facial profunda. Consulta precios, duración y reserva tu momento de cuidado.',
       },
     ],
   }),

@@ -40,7 +40,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'description',
-        content: `Extensiones de pestañas y lifting con diseño personalizado en ${business.city}. Descubre tu efecto ideal y disfruta de un momento para ti en ${business.name}.`,
+        content: `Extensiones de pestañas y cuidado facial con diseño personalizado en ${business.city}. Descubre tu efecto ideal y disfruta de un momento para ti en ${business.name}.`,
       },
       {
         name: 'theme-color',

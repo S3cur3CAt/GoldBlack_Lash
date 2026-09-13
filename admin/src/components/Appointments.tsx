@@ -4,11 +4,16 @@ import {
   Appointment,
   AppointmentStatus,
   PaymentStatus,
+  PaymentMethod,
   AdminService,
   StudioConfig,
+  Client,
+  Invoice,
   LashCurl,
   LashStyle,
+  AgendaDayNote,
 } from '../types/admin'
+import { getAgendaNotes, saveDayNote } from '../services/storage'
 import {
   IconCalendar,
   IconClock,
@@ -22,17 +27,31 @@ import {
   IconX,
   IconSparkles,
   IconMessageSquare,
+  IconReceipt,
 } from './Icons'
 import { EmailModal, EmailModalMode } from './EmailModal'
+import { FinalizeServiceModal } from './FinalizeServiceModal'
 
 interface AppointmentsProps {
   appointments: Appointment[]
   services: AdminService[]
+  clients?: Client[]
   config: StudioConfig
+  invoices?: Invoice[]
   onSaveAppointment: (apt: Appointment) => void
   onDeleteAppointment: (id: string) => void
   onUpdateStatus: (id: string, status: AppointmentStatus) => void
   onUpdatePayment: (id: string, payment: PaymentStatus) => void
+  onFinalizeService?: (
+    apt: Appointment,
+    options: {
+      paymentMethod: PaymentMethod
+      clientEmail?: string
+      clientNif?: string
+      sendEmail?: boolean
+      customNotes?: string
+    }
+  ) => Promise<Invoice | null>
   isModalOpen: boolean
   setIsModalOpen: (open: boolean) => void
   editingAppointment: Appointment | null
@@ -42,22 +61,104 @@ interface AppointmentsProps {
 export const Appointments: React.FC<AppointmentsProps> = ({
   appointments,
   services,
+  clients = [],
   config,
+  invoices = [],
   onSaveAppointment,
   onDeleteAppointment,
   onUpdateStatus,
   onUpdatePayment,
+  onFinalizeService,
   isModalOpen,
   setIsModalOpen,
   editingAppointment,
   setEditingAppointment,
 }) => {
   const { showAlert, showConfirm } = useDialog()
-  const [viewMode, setViewMode] = useState<'agenda' | 'list'>('agenda')
+  const [viewMode, setViewMode] = useState<'month' | 'agenda' | 'list'>('month')
   const [agendaDate, setAgendaDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [calYear, setCalYear] = useState<number>(() => new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState<number>(() => new Date().getMonth()) // 0 - 11
+  const [notes, setNotes] = useState<AgendaDayNote[]>(() => getAgendaNotes())
+
+  // Note Modal State
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [noteModalDate, setNoteModalDate] = useState(agendaDate)
+  const [noteModalContent, setNoteModalContent] = useState('')
+  const [noteModalColor, setNoteModalColor] = useState<AgendaDayNote['color']>('gold')
+
+  const MONTH_NAMES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ]
+
+  const AVAILABLE_YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032]
+
+  const handlePrevMonth = () => {
+    if (calMonth === 0) {
+      setCalMonth(11)
+      setCalYear((y) => y - 1)
+    } else {
+      setCalMonth((m) => m - 1)
+    }
+  }
+
+  const handleNextMonth = () => {
+    if (calMonth === 11) {
+      setCalMonth(0)
+      setCalYear((y) => y + 1)
+    } else {
+      setCalMonth((m) => m + 1)
+    }
+  }
+
+  const handleGoToday = () => {
+    const now = new Date()
+    setCalYear(now.getFullYear())
+    setCalMonth(now.getMonth())
+    setAgendaDate(now.toISOString().split('T')[0])
+  }
+
+  const handleOpenNoteModal = (dateStr: string) => {
+    const existing = notes.find((n) => n.date === dateStr)
+    setNoteModalDate(dateStr)
+    setNoteModalContent(existing?.content || '')
+    setNoteModalColor(existing?.color || 'gold')
+    setIsNoteModalOpen(true)
+  }
+
+  const handleSaveNoteModal = () => {
+    const updated = saveDayNote(noteModalDate, noteModalContent, noteModalColor)
+    setNotes([...updated])
+    setIsNoteModalOpen(false)
+    showAlert({
+      title: 'Nota Guardada',
+      message: `La nota para el día ${noteModalDate} se ha guardado en la agenda.`,
+      type: 'info',
+    })
+  }
+
+  const handleDeleteNoteModal = (dateStr: string) => {
+    showConfirm({
+      title: 'Eliminar Nota',
+      message: '¿Deseas eliminar la nota para esta fecha?',
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar',
+      danger: true,
+      onConfirm: () => {
+        const updated = saveDayNote(dateStr, '')
+        setNotes([...updated])
+        if (isNoteModalOpen) setIsNoteModalOpen(false)
+      },
+    })
+  }
+
   const [filterDate, setFilterDate] = useState<'all' | 'today' | 'tomorrow' | 'week'>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState<string>('')
+
+  // Finalize Service Modal State
+  const [finalizingApt, setFinalizingApt] = useState<Appointment | null>(null)
 
   // Email Custom Message Modal State
   const [emailModalOpen, setEmailModalOpen] = useState(false)
@@ -85,7 +186,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
     paymentStatus: 'pendiente',
     curl: 'D',
     length: '9 - 13 mm',
-    style: 'Volumen Ruso' as unknown as LashStyle,
+    style: 'Cat Eye (Ojo de Gato)',
     notes: '',
   })
 
@@ -96,16 +197,30 @@ export const Appointments: React.FC<AppointmentsProps> = ({
     setIsModalOpen(true)
   }
 
+  const parseDurationMinutes = (durationStr: string): number => {
+    const d = (durationStr || '').toLowerCase()
+    if (d.includes('30 min') || d.includes('30m')) return 30
+    if (d.includes('1 h 15') || d.includes('1h 15') || d.includes('75 min') || d.includes('75m')) return 75
+    if (d.includes('1 h 30') || d.includes('1h 30') || d.includes('90 min') || d.includes('90m')) return 90
+    if (d.includes('2 h 30') || d.includes('2h 30') || d.includes('150 min')) return 150
+    if (d.includes('2 h') || d.includes('2h') || d.includes('120 min')) return 120
+    if (d.includes('1 h') || d.includes('1h') || d.includes('60 min')) return 60
+    if (d.includes('45 min') || d.includes('45m')) return 45
+    return 60
+  }
+
   // Open modal for creating
   const handleNew = (defaultDate?: string, defaultTime?: string) => {
     setEditingAppointment(null)
+    const firstSrv = services[0]
+    const durMin = firstSrv ? parseDurationMinutes(firstSrv.duration) : 75
     setFormData({
       clientName: '',
       clientPhone: '',
       clientEmail: '',
       date: defaultDate || agendaDate || new Date().toISOString().split('T')[0],
       time: defaultTime || '11:00',
-      durationMinutes: services[0]?.duration.includes('2') ? 120 : 90,
+      durationMinutes: durMin,
       serviceId: services[0]?.id || '',
       serviceName: services[0]?.name || '',
       price: services[0]?.priceNumber || 30,
@@ -123,7 +238,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   const handleServiceChange = (serviceId: string) => {
     const s = services.find((srv) => srv.id === serviceId)
     if (!s) return
-    const durMin = s.duration.includes('2 h 30') ? 150 : s.duration.includes('2 h') ? 120 : s.duration.includes('1 h 30') ? 90 : 60
+    const durMin = parseDurationMinutes(s.duration)
     setFormData((prev) => ({
       ...prev,
       serviceId: s.id,
@@ -204,25 +319,37 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   return (
     <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
 
-      {/* View Switcher: Agenda Horaria vs Lista de Citas */}
+      {/* View Switcher: Calendario Mensual vs Horario Diario vs Lista */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#1f1f2c]">
-        <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#14141e] border border-[#242436]">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#14141e] border border-[#242436]">
           <button
             type="button"
-            onClick={() => setViewMode('agenda')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              viewMode === 'agenda'
+            onClick={() => setViewMode('month')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'month'
                 ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
                 : 'text-gray-400 hover:text-white'
             }`}
           >
             <IconCalendar size={15} />
-            <span>Vista Agenda (Horario)</span>
+            <span>Calendario Mensual</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('agenda')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              viewMode === 'agenda'
+                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
+                : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <IconClock size={15} />
+            <span>Horario del Día</span>
           </button>
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               viewMode === 'list'
                 ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
                 : 'text-gray-400 hover:text-white'
@@ -233,24 +360,101 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           </button>
         </div>
 
-        {/* Quick Date Navigator for Agenda */}
+        {/* Date / Month / Year Navigator depending on view */}
+        {viewMode === 'month' && (
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                title="Mes anterior"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={handleGoToday}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                Hoy
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                title="Mes siguiente"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+              >
+                ›
+              </button>
+            </div>
+
+            {/* Month selector */}
+            <select
+              value={calMonth}
+              onChange={(e) => setCalMonth(Number(e.target.value))}
+              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+            >
+              {MONTH_NAMES.map((m, idx) => (
+                <option key={m} value={idx}>
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            {/* Year selector */}
+            <select
+              value={calYear}
+              onChange={(e) => setCalYear(Number(e.target.value))}
+              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-gold-300 focus:outline-none focus:border-gold-500 cursor-pointer"
+            >
+              {AVAILABLE_YEARS.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => handleOpenNoteModal(agendaDate)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <span>📝</span>
+              <span>Nota del Día</span>
+            </button>
+          </div>
+        )}
+
         {viewMode === 'agenda' && (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setViewMode('month')}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#14141e] hover:bg-[#1f1f2e] text-gray-300 hover:text-white border border-[#242436] text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <IconCalendar size={14} />
+              <span>Ver Calendario Mensual</span>
+            </button>
+
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
               <button
                 type="button"
                 onClick={() => {
                   const d = new Date(agendaDate)
                   d.setDate(d.getDate() - 1)
-                  setAgendaDate(d.toISOString().split('T')[0])
+                  const newDate = d.toISOString().split('T')[0]
+                  setAgendaDate(newDate)
+                  setCalYear(d.getFullYear())
+                  setCalMonth(d.getMonth())
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
               >
                 ← Ayer
               </button>
               <button
                 type="button"
-                onClick={() => setAgendaDate(new Date().toISOString().split('T')[0])}
+                onClick={handleGoToday}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-[#1f1f2e] transition-colors cursor-pointer"
               >
                 Hoy
@@ -260,9 +464,12 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 onClick={() => {
                   const d = new Date(agendaDate)
                   d.setDate(d.getDate() + 1)
-                  setAgendaDate(d.toISOString().split('T')[0])
+                  const newDate = d.toISOString().split('T')[0]
+                  setAgendaDate(newDate)
+                  setCalYear(d.getFullYear())
+                  setCalMonth(d.getMonth())
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
               >
                 Mañana →
               </button>
@@ -271,12 +478,394 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             <input
               type="date"
               value={agendaDate}
-              onChange={(e) => e.target.value && setAgendaDate(e.target.value)}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setAgendaDate(e.target.value)
+                  const d = new Date(e.target.value)
+                  setCalYear(d.getFullYear())
+                  setCalMonth(d.getMonth())
+                }
+              }}
               className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
             />
+
+            <button
+              type="button"
+              onClick={() => handleOpenNoteModal(agendaDate)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <span>📝</span>
+              <span>Nota</span>
+            </button>
           </div>
         )}
       </div>
+
+      {/* 1. MONTHLY CALENDAR VIEW */}
+      {viewMode === 'month' && (() => {
+        const firstDayOfMonth = new Date(calYear, calMonth, 1)
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+        const startDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7
+        const daysInPrevMonth = new Date(calYear, calMonth, 0).getDate()
+
+        interface CalendarCell {
+          dayNumber: number
+          dateStr: string
+          isCurrentMonth: boolean
+          isToday: boolean
+          isSelected: boolean
+          apts: Appointment[]
+          note?: AgendaDayNote
+        }
+
+        const cells: CalendarCell[] = []
+
+        // Previous month padding
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+          const d = daysInPrevMonth - i
+          const pMonth = calMonth === 0 ? 11 : calMonth - 1
+          const pYear = calMonth === 0 ? calYear - 1 : calYear
+          const dStr = `${pYear}-${String(pMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+          cells.push({
+            dayNumber: d,
+            dateStr: dStr,
+            isCurrentMonth: false,
+            isToday: dStr === todayStr,
+            isSelected: dStr === agendaDate,
+            apts: appointments.filter((a) => a.date === dStr),
+            note: notes.find((n) => n.date === dStr),
+          })
+        }
+
+        // Current month days
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+          cells.push({
+            dayNumber: d,
+            dateStr: dStr,
+            isCurrentMonth: true,
+            isToday: dStr === todayStr,
+            isSelected: dStr === agendaDate,
+            apts: appointments.filter((a) => a.date === dStr),
+            note: notes.find((n) => n.date === dStr),
+          })
+        }
+
+        // Next month padding to reach 35 or 42
+        const totalTarget = cells.length > 35 ? 42 : 35
+        const remaining = totalTarget - cells.length
+        for (let d = 1; d <= remaining; d++) {
+          const nMonth = calMonth === 11 ? 0 : calMonth + 1
+          const nYear = calMonth === 11 ? calYear + 1 : calYear
+          const dStr = `${nYear}-${String(nMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+          cells.push({
+            dayNumber: d,
+            dateStr: dStr,
+            isCurrentMonth: false,
+            isToday: dStr === todayStr,
+            isSelected: dStr === agendaDate,
+            apts: appointments.filter((a) => a.date === dStr),
+            note: notes.find((n) => n.date === dStr),
+          })
+        }
+
+        // Month metrics
+        const monthPrefix = `${calYear}-${String(calMonth + 1).padStart(2, '0')}`
+        const monthApts = appointments.filter((a) => a.date.startsWith(monthPrefix))
+        const monthCompleted = monthApts.filter((a) => a.status === 'completada').length
+        const monthIncome = monthApts.reduce((sum, a) => sum + (Number(a.price) || 0), 0)
+        const monthNotesCount = notes.filter((n) => n.date.startsWith(monthPrefix)).length
+
+        // Selected day data
+        const selectedDayApts = appointments.filter((a) => a.date === agendaDate)
+        const selectedDayNote = notes.find((n) => n.date === agendaDate)
+        const selectedDateObj = new Date(agendaDate + 'T00:00:00')
+        const selectedDateFormatted = selectedDateObj.toLocaleDateString('es-ES', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Monthly KPI Header */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#151522] via-[#11111a] to-[#0c0c14] border border-gold-500/30 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+              <div>
+                <span className="text-[10px] uppercase tracking-widest text-gold-400 font-bold block">
+                  Resumen Mensual del Estudio
+                </span>
+                <h3 className="text-lg font-bold font-sans text-white capitalize mt-0.5">
+                  {MONTH_NAMES[calMonth]} de {calYear}
+                </h3>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+                <div className="px-3 py-1.5 rounded-xl bg-[#181826] border border-[#262638]">
+                  <span className="text-gray-400">Citas Mes: </span>
+                  <strong className="text-white">{monthApts.length}</strong>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                  <span>Completadas: </span>
+                  <strong>{monthCompleted}</strong>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300">
+                  <span>Previsión: </span>
+                  <strong>{monthIncome} €</strong>
+                </div>
+                {monthNotesCount > 0 && (
+                  <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1.5">
+                    <span>📝</span>
+                    <span>{monthNotesCount} notas</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Calendar 7-Day Grid */}
+            <div className="rounded-3xl bg-[#0f0f17] border border-[#1e1e2d] overflow-hidden shadow-2xl">
+              {/* Days of Week Header */}
+              <div className="grid grid-cols-7 border-b border-[#222234] bg-[#141420] text-center text-xs font-bold text-gray-400 py-3">
+                <div className="text-gray-300">Lunes</div>
+                <div className="text-gray-300">Martes</div>
+                <div className="text-gray-300">Miércoles</div>
+                <div className="text-gray-300">Jueves</div>
+                <div className="text-gray-300">Viernes</div>
+                <div className="text-gold-400/80">Sábado</div>
+                <div className="text-gold-400/80">Domingo</div>
+              </div>
+
+              {/* Grid Cells */}
+              <div className="grid grid-cols-7 divide-x divide-y divide-[#1c1c2a]">
+                {cells.map((cell) => {
+                  return (
+                    <div
+                      key={cell.dateStr}
+                      onClick={() => setAgendaDate(cell.dateStr)}
+                      className={`min-h-[105px] p-2 transition-all flex flex-col justify-between group cursor-pointer relative ${
+                        cell.isCurrentMonth ? 'bg-[#0f0f17] hover:bg-[#151524]' : 'bg-[#09090f]/60 opacity-40 hover:opacity-75'
+                      } ${
+                        cell.isSelected
+                          ? 'ring-2 ring-gold-400/80 bg-[#171728] z-10 shadow-lg'
+                          : ''
+                      }`}
+                    >
+                      {/* Cell Header: Day Number & Badges */}
+                      <div className="flex items-center justify-between gap-1">
+                        <span
+                          className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-mono font-bold transition-all ${
+                            cell.isToday
+                              ? 'bg-gradient-to-r from-gold-500 to-amber-400 text-black shadow-gold-glow font-black'
+                              : cell.isSelected
+                              ? 'text-gold-300 bg-gold-500/20'
+                              : cell.isCurrentMonth
+                              ? 'text-gray-200 group-hover:text-white'
+                              : 'text-gray-500'
+                          }`}
+                        >
+                          {cell.dayNumber}
+                        </span>
+
+                        <div className="flex items-center gap-1">
+                          {/* Quick add appointment button on hover */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleNew(cell.dateStr)
+                            }}
+                            title={`Agendar cita el ${cell.dateStr}`}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg bg-gold-500/15 hover:bg-gold-500/30 text-gold-300 transition-opacity cursor-pointer"
+                          >
+                            <IconPlus size={12} />
+                          </button>
+
+                          {/* Note Indicator */}
+                          {cell.note && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleOpenNoteModal(cell.dateStr)
+                              }}
+                              title={`Nota: ${cell.note.content}`}
+                              className="p-0.5 rounded text-xs hover:scale-125 transition-transform cursor-pointer"
+                            >
+                              📝
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Middle: Appointments Chips */}
+                      <div className="space-y-1 my-1 overflow-hidden flex-1">
+                        {cell.apts.slice(0, 2).map((apt) => (
+                          <div
+                            key={apt.id}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setAgendaDate(cell.dateStr)
+                              setViewMode('agenda')
+                            }}
+                            className={`flex items-center gap-1 text-[9.5px] px-1.5 py-0.5 rounded font-medium truncate cursor-pointer transition-all hover:scale-[1.02] ${
+                              apt.status === 'completada'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : apt.status === 'confirmada'
+                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            }`}
+                            title={`${apt.time} • ${apt.clientName} (${apt.serviceName})`}
+                          >
+                            <span className="font-mono font-bold shrink-0">{apt.time}</span>
+                            <span className="truncate">{apt.clientName}</span>
+                          </div>
+                        ))}
+
+                        {cell.apts.length > 2 && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setAgendaDate(cell.dateStr)
+                              setViewMode('agenda')
+                            }}
+                            className="text-[9px] text-gold-400 font-bold px-1 hover:underline cursor-pointer"
+                          >
+                            +{cell.apts.length - 2} citas más →
+                          </div>
+                        )}
+
+                        {cell.note && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenNoteModal(cell.dateStr)
+                            }}
+                            className="text-[9px] text-amber-300/90 italic truncate px-1 hover:text-amber-200 cursor-pointer"
+                            title={cell.note.content}
+                          >
+                            "{cell.note.content}"
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Cell Footer: Mini Status Bar if appointments */}
+                      <div className="h-1 flex rounded-full overflow-hidden bg-transparent">
+                        {cell.apts.length > 0 && (
+                          <div
+                            className={`h-full w-full rounded-full ${
+                              cell.apts.every((a) => a.status === 'completada')
+                                ? 'bg-emerald-500'
+                                : cell.apts.some((a) => a.status === 'completada')
+                                ? 'bg-gradient-to-r from-emerald-500 to-amber-400'
+                                : 'bg-gold-500'
+                            }`}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Selected Date Summary & Notes Drawer */}
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-[#141420] via-[#101018] to-[#0c0c14] border border-gold-500/35 shadow-xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#222232]">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-gold-400 block">
+                    Jornada Seleccionada
+                  </span>
+                  <h4 className="text-base font-bold font-sans text-white capitalize mt-0.5">
+                    {selectedDateFormatted}
+                  </h4>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('agenda')}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all cursor-pointer active:scale-95"
+                  >
+                    <IconClock size={14} />
+                    <span>Ver Horario del Día ({selectedDayApts.length} citas)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNew(agendaDate)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1b1b28] hover:bg-[#252538] text-white border border-[#2c2c40] text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <IconPlus size={14} />
+                    <span>Nueva Cita</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenNoteModal(agendaDate)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <span>📝</span>
+                    <span>{selectedDayNote ? 'Editar Nota' : 'Poner Nota del Día'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Day Note Display or Placeholder */}
+              {selectedDayNote ? (
+                <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">📝</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                          Nota del Estudio para este día
+                        </span>
+                        {selectedDayNote.updatedAt && (
+                          <span className="text-[10px] text-gray-500">
+                            (editada recientemente)
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">
+                        {selectedDayNote.content}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenNoteModal(agendaDate)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNoteModal(agendaDate)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar nota"
+                    >
+                      <IconTrash size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => handleOpenNoteModal(agendaDate)}
+                  className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#262638] hover:border-gold-500/40 flex items-center justify-between gap-3 text-xs text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm">📝</span>
+                    <span>No hay notas guardadas para este día. Pulsa para añadir recordatorios, stock o avisos.</span>
+                  </span>
+                  <span className="text-gold-400 font-bold text-xs shrink-0">+ Añadir Nota</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* AGENDA VIEW: Timeline by hours */}
       {viewMode === 'agenda' && (
@@ -324,6 +913,57 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <strong>{totalIncome} €</strong>
                   </div>
                 </div>
+              </div>
+            )
+          })()}
+
+          {/* Day Note Banner in Agenda View */}
+          {(() => {
+            const dayNote = notes.find((n) => n.date === agendaDate)
+            if (dayNote) {
+              return (
+                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/35 flex items-start justify-between gap-4 shadow-md animate-fadeIn">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">📝</span>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">
+                        Nota del Estudio para esta Jornada
+                      </span>
+                      <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">
+                        {dayNote.content}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenNoteModal(agendaDate)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Editar Nota
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNoteModal(agendaDate)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar nota"
+                    >
+                      <IconTrash size={14} />
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <div
+                onClick={() => handleOpenNoteModal(agendaDate)}
+                className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#242436] hover:border-gold-500/40 flex items-center justify-between text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <span>📝</span>
+                  <span>Sin notas para esta jornada. Pulsa aquí para añadir recordatorios o tareas del día.</span>
+                </span>
+                <span className="text-gold-400 font-bold">+ Añadir Nota</span>
               </div>
             )
           })()}
@@ -380,6 +1020,27 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      {matchedApt.status !== 'completada' ? (
+                        <button
+                          type="button"
+                          onClick={() => setFinalizingApt(matchedApt)}
+                          title="Finalizar servicio y emitir factura oficial a Facturación & Caja"
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/35 hover:border-gold-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                        >
+                          <IconCheck size={14} className="text-gold-400 stroke-[2.5]" />
+                          <span>Finalizar Servicio</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#14120c] border border-gold-500/25 text-gold-300 text-xs font-medium">
+                          <IconCheck size={13} className="text-gold-400 stroke-[2.5]" />
+                          <span>Finalizado</span>
+                          {(() => {
+                            const inv = invoices.find((i) => i.appointmentId === matchedApt.id)
+                            return inv ? <span className="text-[10.5px] text-gold-400 font-mono">({inv.number})</span> : null
+                          })()}
+                        </div>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => handleOpenEmail(matchedApt, 'confirmar')}
@@ -388,17 +1049,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       >
                         <IconMail size={15} />
                       </button>
-                      {matchedApt.status !== 'completada' && (
-                        <button
-                          type="button"
-                          onClick={() => onUpdateStatus(matchedApt.id, 'completada')}
-                          title="Marcar cita como completada"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-semibold transition-colors cursor-pointer"
-                        >
-                          <IconCheck size={14} />
-                          <span>Completar</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 )
@@ -605,8 +1255,30 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   </div>
                 </div>
 
-                {/* Right: Email Actions & Admin Controls */}
-                <div className="flex flex-wrap items-center gap-2 self-end lg:self-center">
+                {/* Right: Finalize Button, Email Actions & Admin Controls */}
+                <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-center">
+                  {/* Prominent "Finalizar Servicio" button */}
+                  {apt.status !== 'completada' ? (
+                    <button
+                      type="button"
+                      onClick={() => setFinalizingApt(apt)}
+                      title="Finalizar servicio y emitir factura automáticamente en Facturación & Caja"
+                      className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/35 hover:border-gold-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <IconCheck size={14} className="text-gold-400 stroke-[2.5]" />
+                      <span>Finalizar Servicio</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#14120c] border border-gold-500/25 text-gold-300 text-xs font-medium">
+                      <IconCheck size={13} className="text-gold-400 stroke-[2.5]" />
+                      <span>Servicio Finalizado</span>
+                      {(() => {
+                        const inv = invoices.find((i) => i.appointmentId === apt.id)
+                        return inv ? <span className="text-[10.5px] text-gold-400 font-mono">({inv.number})</span> : null
+                      })()}
+                    </div>
+                  )}
+
                   {/* Email Action Buttons - Sends luxury email via Resend */}
                   <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#242436]">
                     <button
@@ -835,23 +1507,33 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
                     >
                       <option value="C">Curva C (Natural)</option>
-                      <option value="CC">Curva CC (Elevación media)</option>
                       <option value="D">Curva D (Volumen glamuroso)</option>
-                      <option value="DD">Curva DD (Máxima elevación)</option>
                       <option value="M">Curva M (Efecto lifting)</option>
-                      <option value="L">Curva L (Párpado encapotado)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-[11px] text-gray-400 mb-1">Longitud de fibras</label>
-                    <input
-                      type="text"
-                      placeholder="Ej. 8 - 12 mm"
-                      value={formData.length || ''}
+                    <select
+                      value={formData.length || '9 - 13 mm'}
                       onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
-                    />
+                      className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white font-mono"
+                    >
+                      <option value="9 - 13 mm">9 - 13 mm (Longitud Media / Estándar)</option>
+                      <option value="8 - 12 mm">8 - 12 mm (Natural / Equilibrada)</option>
+                      <option value="10 - 14 mm">10 - 14 mm (Efecto Glamour)</option>
+                      <option value="7 - 11 mm">7 - 11 mm (Corta / Sutil)</option>
+                      <option value="11 - 15 mm">11 - 15 mm (Extra Longitud)</option>
+                      <option value="8 - 14 mm">8 - 14 mm (Graduado amplio)</option>
+                      <option value="8 mm">8 mm</option>
+                      <option value="9 mm">9 mm</option>
+                      <option value="10 mm">10 mm</option>
+                      <option value="11 mm">11 mm</option>
+                      <option value="12 mm">12 mm</option>
+                      <option value="13 mm">13 mm</option>
+                      <option value="14 mm">14 mm</option>
+                      <option value="15 mm">15 mm</option>
+                    </select>
                   </div>
 
                   <div>
@@ -865,7 +1547,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       <option value="Cat Eye (Ojo de Gato)">Cat Eye (Ojo de Gato)</option>
                       <option value="Doll Eye (Muñeca)">Doll Eye (Muñeca)</option>
                       <option value="Ardilla (Squirrel)">Ardilla (Squirrel)</option>
-                      <option value="Efecto Kim / Híbrido">Efecto Kim / Híbrido</option>
                     </select>
                   </div>
                 </div>
@@ -948,6 +1629,88 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           }
         }}
       />
+
+      {/* Smart Finalize Service & Invoicing Modal */}
+      <FinalizeServiceModal
+        isOpen={Boolean(finalizingApt)}
+        onClose={() => setFinalizingApt(null)}
+        appointment={finalizingApt}
+        config={config}
+        clients={clients}
+        onConfirm={async (options) => {
+          if (finalizingApt && onFinalizeService) {
+            await onFinalizeService(finalizingApt, options)
+          }
+        }}
+      />
+
+      {/* Note Modal: Add / Edit Day Note */}
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl bg-[#141420] border border-gold-500/40 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#242436]">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">📝</span>
+                <div>
+                  <h3 className="font-bold text-white text-base">Nota de la Jornada</h3>
+                  <span className="text-xs text-gold-300 font-mono">{noteModalDate}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNoteModalOpen(false)}
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252538] transition-colors cursor-pointer"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wider">
+                Contenido del Recordatorio / Nota
+              </label>
+              <textarea
+                rows={4}
+                value={noteModalContent}
+                onChange={(e) => setNoteModalContent(e.target.value)}
+                placeholder="Ejemplo: Llega pedido de adhesivo D-curl. Clienta María necesita prueba de parche. Horario intensivo 10:00 - 15:00."
+                className="w-full p-3.5 rounded-xl bg-[#0d0d14] border border-[#2b2b3d] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-gold-500 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-[#222232]">
+              {notes.some((n) => n.date === noteModalDate) ? (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteNoteModal(noteModalDate)}
+                  className="px-3.5 py-2 rounded-xl text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Eliminar
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNoteModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#1c1c28] hover:bg-[#252538] text-gray-300 text-xs font-semibold cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNoteModal}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow cursor-pointer active:scale-95"
+                >
+                  Guardar Nota
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

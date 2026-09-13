@@ -20,14 +20,13 @@ interface ReservationModalProps {
 
 const POPULAR_SERVICES = [
   'Volumen Ruso (Más Popular)',
+  'Volumen 3D, 4D, 5D y 6D',
   'Volumen 3D',
   'Volumen 4D',
   'Volumen 5D',
   'Volumen 6D',
-  'Mega Volumen Glam',
-  'Lifting de Pestañas con Tinte & Queratina',
-  'Retoque (2 a 3 semanas)',
-  'Retirada Profesional & Spa Ocular',
+  'Retirada de extensiones',
+  'Limpieza facial profunda',
   'Asesoramiento Personalizado',
 ]
 
@@ -139,6 +138,15 @@ export function ReservationModal({
       const appointmentId = `apt-web-${Date.now()}`
       const today = new Date().toISOString().split('T')[0]
 
+      const getServiceDurationMinutes = (name: string): number => {
+        const lower = (name || '').toLowerCase()
+        if (lower.includes('retirada')) return 30
+        if (lower.includes('limpieza') || lower.includes('facial')) return 60
+        if (lower.includes('volumen ruso')) return 60
+        if (lower.includes('3d') || lower.includes('4d') || lower.includes('5d') || lower.includes('6d') || lower.includes('volumen')) return 75
+        return 60
+      }
+
       const payload = {
         id: appointmentId,
         clientName: trimmedName,
@@ -148,7 +156,7 @@ export function ReservationModal({
         serviceId: initialServiceId || 'web-reservation',
         date: today,
         time: 'Por coordinar',
-        durationMinutes: 90,
+        durationMinutes: getServiceDurationMinutes(selectedService),
         price: 30,
         status: 'pendiente',
         paymentStatus: 'pendiente',

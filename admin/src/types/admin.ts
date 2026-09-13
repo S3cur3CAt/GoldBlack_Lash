@@ -1,8 +1,8 @@
 export type AppointmentStatus = 'pendiente' | 'confirmada' | 'completada' | 'cancelada'
 export type PaymentStatus = 'pendiente' | 'seña_pagada' | 'pagado'
 
-export type LashCurl = 'C' | 'CC' | 'D' | 'DD' | 'M' | 'L'
-export type LashStyle = 'Natural' | 'Cat Eye (Ojo de Gato)' | 'Doll Eye (Muñeca)' | 'Ardilla (Squirrel)' | 'Efecto Kim / Híbrido'
+export type LashCurl = 'C' | 'D' | 'M'
+export type LashStyle = 'Natural' | 'Cat Eye (Ojo de Gato)' | 'Doll Eye (Muñeca)' | 'Ardilla (Squirrel)'
 
 export interface Appointment {
   id: string
@@ -29,6 +29,7 @@ export interface Client {
   name: string
   phone: string
   email?: string
+  nif?: string
   allergies?: string // ej. "Sensibilidad a vapores de cianocrilato"
   preferredStyle?: LashStyle
   preferredCurl?: LashCurl
@@ -118,4 +119,14 @@ export interface Invoice {
   status: InvoiceStatus
   notes?: string
   createdAt: string
+}
+
+export interface AgendaDayNote {
+  id: string
+  date: string // YYYY-MM-DD
+  content: string
+  color?: 'gold' | 'rose' | 'amber' | 'blue' | 'emerald'
+  author?: string
+  createdAt: string
+  updatedAt?: string
 }

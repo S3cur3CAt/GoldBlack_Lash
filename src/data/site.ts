@@ -66,7 +66,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         badge: '3D, 4D, 5D y 6D',
         description:
           'Varias extensiones por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
-        duration: '1 h 30 min',
+        duration: '1 h 15 min',
         price: '27 €',
         includes: [
           'Efecto natural pelo a pelo',
@@ -79,7 +79,7 @@ export const serviceCategories: Array<ServiceCategory> = [
         name: 'Volumen ruso',
         description:
           'Abanicos de 3 a 5 pestañas ultrafinas por pestaña natural. Densidad y negro intenso sin peso.',
-        duration: '2 h',
+        duration: '1 h',
         price: '30 €',
         featured: true,
         includes: [

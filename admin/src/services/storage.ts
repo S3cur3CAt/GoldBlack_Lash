@@ -1,4 +1,4 @@
-import { Appointment, Client, AdminService, StudioConfig, GalleryItem, Invoice } from '../types/admin'
+import { Appointment, Client, AdminService, StudioConfig, GalleryItem, Invoice, AgendaDayNote } from '../types/admin'
 
 const STORAGE_KEYS = {
   APPOINTMENTS: 'goldblack_admin_appointments_v2',
@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   GALLERY: 'goldblack_admin_gallery_v2',
   CUSTOM_GALLERY_CATEGORIES: 'goldblack_admin_custom_gallery_categories_v2',
   INVOICES: 'goldblack_admin_invoices_v2',
+  AGENDA_NOTES: 'goldblack_admin_agenda_notes_v2',
 }
 
 // Initial Studio Config from site.ts
@@ -40,7 +41,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     name: 'Volumen (3D, 4D, 5D y 6D)',
     badge: '3D, 4D, 5D y 6D',
     description: 'Varias extensiones por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
-    duration: '1 h 30 min',
+    duration: '1 h 15 min',
     price: '27 €',
     priceNumber: 27,
     featured: false,
@@ -58,7 +59,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     name: 'Volumen Ruso',
     badge: 'Más Popular',
     description: 'Abanicos de 3 a 5 pestañas ultrafinas por pestaña natural. Densidad y negro intenso sin peso.',
-    duration: '2 h',
+    duration: '1 h',
     price: '30 €',
     priceNumber: 30,
     featured: true,
@@ -70,75 +71,39 @@ export const DEFAULT_SERVICES: AdminService[] = [
     ],
   },
   {
-    id: 'mega-volumen',
-    categoryId: 'extensiones',
-    categoryName: 'Extensiones de pestañas',
-    name: 'Mega Volumen Glam',
-    badge: 'Efecto Intenso',
-    description: 'Abanicos de 6 a 12 fibras finísimas. Mirada tupida, oscura y sofisticada para eventos y amantes del glamour.',
-    duration: '2 h 30 min',
-    price: '35 €',
-    priceNumber: 35,
-    featured: false,
-    active: true,
-    includes: [
-      'Máxima densidad y oscuridad',
-      'Retención prolongada',
-      'Cepillo especial de peinado de regalo',
-    ],
-  },
-  {
-    id: 'mantenimiento-2-3-semanas',
-    categoryId: 'mantenimiento',
-    categoryName: 'Mantenimiento & Retoques',
-    name: 'Retoque (2 a 3 semanas)',
-    badge: 'Imprescindible',
-    description: 'Relleno de las extensiones caídas por ciclo natural y recolocación de las crecidas para mantener el set perfecto.',
-    duration: '1 h',
-    price: '20 €',
-    priceNumber: 20,
-    featured: false,
-    active: true,
-    includes: [
-      'Retirada segura de extensiones desalineadas',
-      'Relleno de nuevas pestañas naturales',
-      'Limpieza y desinfección profunda con champú especial',
-    ],
-  },
-  {
-    id: 'lifting-pestanas',
-    categoryId: 'lifting',
-    categoryName: 'Lifting & Tratamientos',
-    name: 'Lifting de Pestañas con Tinte & Queratina',
-    badge: 'Pestaña Natural',
-    description: 'Eleva y curva tu pestaña natural desde la raíz, aportando longitud y color negro intenso sin extensiones.',
-    duration: '1 h',
-    price: '25 €',
-    priceNumber: 25,
-    featured: true,
-    active: true,
-    includes: [
-      'Moldeado anatómico con molde de silicona',
-      'Tinte negro carbón brillante',
-      'Tratamiento nutritivo de queratina botox',
-    ],
-  },
-  {
-    id: 'retirada-limpieza',
+    id: 'retirada',
     categoryId: 'extras',
-    categoryName: 'Servicios Extras',
-    name: 'Retirada Profesional & Spa Ocular',
-    badge: 'Cuidado Ocular',
-    description: 'Disolución química suave y segura del adhesivo sin dañar en absoluto la pestaña natural.',
+    categoryName: 'Tratamientos y extras',
+    name: 'Retirada de extensiones',
+    badge: 'Cuidado Pestaña',
+    description: 'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural.',
     duration: '30 min',
-    price: '10 €',
+    price: '5–10 €',
     priceNumber: 10,
     featured: false,
     active: true,
     includes: [
-      'Crema removedora hipoalergénica sin picor',
-      'Lavado con espuma micelar neutra',
-      'Aceite de ricino fortalecedor',
+      'Crema disolvente suave',
+      'Sin daño a la pestaña natural',
+      'Revisión incluida',
+    ],
+  },
+  {
+    id: 'limpieza-facial',
+    categoryId: 'extras',
+    categoryName: 'Tratamientos y extras',
+    name: 'Limpieza facial profunda',
+    badge: 'Piel Radiante',
+    description: 'Una limpieza a fondo que deja la piel respirando: extrae los puntos negros y las impurezas, retira las células muertas e hidrata en profundidad.',
+    duration: '1 h',
+    price: '30 €',
+    priceNumber: 30,
+    featured: true,
+    active: true,
+    includes: [
+      'Puntos negros e impurezas fuera',
+      'Hidratación profunda y luminosidad',
+      'Piel suave y descansada',
     ],
   },
 ]
@@ -736,8 +701,27 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
           })()
         : [],
     }))
-    saveServices(mapped)
-    return mapped
+    const cleanMapped: AdminService[] = mapped
+      .filter((s) => {
+        const name = (s.name || '').toLowerCase()
+        const id = (s.id || '').toLowerCase()
+        if (name.includes('mega') || id.includes('mega')) return false
+        if (name.includes('lifting') || id.includes('lifting')) return false
+        if (name.includes('retoque') || id.includes('mantenimiento')) return false
+        if (name.includes('spa ocular') || id.includes('retirada-limpieza')) return false
+        return true
+      })
+      .map((s) => {
+        const lower = s.name.toLowerCase()
+        if (lower.includes('volumen ruso')) return { ...s, duration: '1 h' }
+        if (lower.includes('3d') || lower.includes('4d') || lower.includes('5d') || lower.includes('6d')) return { ...s, duration: '1 h 15 min' }
+        if (lower.includes('retirada')) return { ...s, duration: '30 min' }
+        if (lower.includes('limpieza') || lower.includes('facial')) return { ...s, duration: '1 h' }
+        return s
+      })
+
+    saveServices(cleanMapped)
+    return cleanMapped
   }
   return null
 }
@@ -856,8 +840,8 @@ export async function fetchLiveAppointmentsFromVercel(): Promise<Appointment[] |
         phone: aptClientPhone,
         email: aptClientEmail || undefined,
         allergies: 'Ninguna conocida',
-        preferredStyle: r.style || 'Cat Eye (Ojo de Gato)',
-        preferredCurl: r.curl || 'D',
+        preferredStyle: (r.style as any) || 'Cat Eye (Ojo de Gato)',
+        preferredCurl: (r.curl === 'C' || r.curl === 'M') ? r.curl : 'D',
         totalVisits: 1,
         totalSpent: aptPrice,
         lastVisitDate: r.date,
@@ -993,7 +977,14 @@ export function getInvoices(): Invoice[] {
       return []
     }
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    if (!Array.isArray(parsed)) return []
+    // Remove IVA (0% VAT across application)
+    return parsed.map((inv) => ({
+      ...inv,
+      taxRate: 0,
+      taxAmount: 0,
+      subtotal: Number(inv.total) || Number(inv.subtotal) || 0,
+    }))
   } catch (e) {
     console.error(e)
     return []
@@ -1055,9 +1046,9 @@ export async function fetchLiveInvoicesFromVercel(): Promise<Invoice[] | null> {
         : typeof r.items === 'string'
         ? JSON.parse(r.items)
         : [],
-      subtotal: Number(r.subtotal) || 0,
-      taxRate: Number(r.taxRate || r.tax_rate) || 21,
-      taxAmount: Number(r.taxAmount || r.tax_amount) || 0,
+      subtotal: Number(r.total) || Number(r.subtotal) || 0,
+      taxRate: 0,
+      taxAmount: 0,
       total: Number(r.total) || 0,
       paymentMethod: r.paymentMethod || r.payment_method || 'bizum',
       status: r.status || 'cobrada',
@@ -1101,9 +1092,9 @@ export async function syncInvoiceWithVercel(invoice: Invoice): Promise<boolean> 
       client_phone: invoice.clientPhone || null,
       client_email: invoice.clientEmail || null,
       items: invoice.items || [],
-      subtotal: invoice.subtotal || 0,
-      tax_rate: invoice.taxRate || 21,
-      tax_amount: invoice.taxAmount || 0,
+      subtotal: invoice.total || invoice.subtotal || 0,
+      tax_rate: 0,
+      tax_amount: 0,
       total: invoice.total || 0,
       payment_method: invoice.paymentMethod || 'bizum',
       status: invoice.status || 'cobrada',
@@ -1269,14 +1260,6 @@ export async function sendInvoiceEmail(
           </table>
 
           <table class="totals-table">
-            <tr>
-              <td style="color: #a1a1aa; text-align: right;">Base Imponible:</td>
-              <td style="color: #ffffff; font-weight: 600; text-align: right;">${invoice.subtotal.toFixed(2)} €</td>
-            </tr>
-            <tr>
-              <td style="color: #a1a1aa; text-align: right;">IVA (${invoice.taxRate}%):</td>
-              <td style="color: #ffffff; font-weight: 600; text-align: right;">${invoice.taxAmount.toFixed(2)} €</td>
-            </tr>
             <tr style="border-top: 1px solid #262635;">
               <td style="color: #d4af37; font-weight: 800; font-size: 15px; text-align: right; padding-top: 8px;">TOTAL:</td>
               <td style="color: #d4af37; font-weight: 800; font-size: 17px; text-align: right; padding-top: 8px;">${invoice.total.toFixed(2)} €</td>
@@ -1301,7 +1284,7 @@ ${config.name}
 
 Fecha: ${invoice.date}
 Clienta: ${invoice.clientName} ${invoice.clientNif ? `(${invoice.clientNif})` : ''}
-Total: ${invoice.total.toFixed(2)} € (Base: ${invoice.subtotal.toFixed(2)} € + IVA 21%: ${invoice.taxAmount.toFixed(2)} €)
+Total: ${invoice.total.toFixed(2)} €
 Método de pago: ${invoice.paymentMethod}
 Estado: ${invoice.status.toUpperCase()}
 
@@ -1322,11 +1305,65 @@ ${config.name} • ${config.phoneDisplay}
 export function getServices(): AdminService[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SERVICES)
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(DEFAULT_SERVICES))
-      return DEFAULT_SERVICES
+    let services: AdminService[] = raw ? JSON.parse(raw) : DEFAULT_SERVICES
+
+    // 1. Purge eliminated services requested by user:
+    // "elimina mega volumen glam, lifting de pestañas con tinte y queratina, retoque dos o 3 semanas, retirada profesioonal y spa ocular"
+    const countBefore = services.length
+    services = services.filter((s) => {
+      const name = (s.name || '').toLowerCase()
+      const id = (s.id || '').toLowerCase()
+      if (name.includes('mega') || id.includes('mega')) return false
+      if (name.includes('lifting') || id.includes('lifting')) return false
+      if (name.includes('retoque') || id.includes('mantenimiento')) return false
+      if (name.includes('spa ocular') || id.includes('retirada-limpieza')) return false
+      return true
+    })
+
+    // 2. Ensure Retirada de extensiones and Limpieza facial profunda exist
+    const hasRetirada = services.some((s) => s.name.toLowerCase().includes('retirada'))
+    if (!hasRetirada) {
+      const defRetirada = DEFAULT_SERVICES.find((s) => s.id === 'retirada')
+      if (defRetirada) services.push(defRetirada)
     }
-    return JSON.parse(raw)
+
+    const hasLimpieza = services.some((s) => s.name.toLowerCase().includes('limpieza') || s.name.toLowerCase().includes('facial'))
+    if (!hasLimpieza) {
+      const defLimpieza = DEFAULT_SERVICES.find((s) => s.id === 'limpieza-facial')
+      if (defLimpieza) services.push(defLimpieza)
+    }
+
+    // 3. Migrate default service durations requested by user:
+    // - Retirada de extensiones: 30 min
+    // - Pestañas volumen ruso: 1 h
+    // - Volumen 3D, 4D, 5D y 6D: 1 h 15 min
+    // - Limpieza facial: 1 h
+    let modified = countBefore !== services.length
+    services = services.map((s) => {
+      const lower = s.name.toLowerCase()
+      if (lower.includes('volumen ruso') && s.duration !== '1 h') {
+        modified = true
+        return { ...s, duration: '1 h' }
+      }
+      if ((lower.includes('3d') || lower.includes('4d') || lower.includes('5d') || lower.includes('6d')) && s.duration !== '1 h 15 min') {
+        modified = true
+        return { ...s, duration: '1 h 15 min' }
+      }
+      if (lower.includes('retirada') && s.duration !== '30 min') {
+        modified = true
+        return { ...s, duration: '30 min' }
+      }
+      if ((lower.includes('limpieza') || lower.includes('facial')) && s.duration !== '1 h') {
+        modified = true
+        return { ...s, duration: '1 h' }
+      }
+      return s
+    })
+
+    if (modified || !raw) {
+      localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(services))
+    }
+    return services
   } catch (e) {
     console.error(e)
     return DEFAULT_SERVICES
@@ -1522,6 +1559,63 @@ export async function sendEmailViaResend(options: {
   }
 }
 
+// Agenda Notes Persistence
+export function getAgendaNotes(): AgendaDayNote[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.AGENDA_NOTES)
+    return raw ? JSON.parse(raw) : []
+  } catch (e) {
+    console.error('Error loading agenda notes:', e)
+    return []
+  }
+}
+
+export function saveAgendaNotes(notes: AgendaDayNote[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.AGENDA_NOTES, JSON.stringify(notes))
+  } catch (e) {
+    console.error('Error saving agenda notes:', e)
+  }
+}
+
+export function saveDayNote(
+  date: string,
+  content: string,
+  color: AgendaDayNote['color'] = 'gold'
+): AgendaDayNote[] {
+  const notes = getAgendaNotes()
+  const trimmed = content.trim()
+  const existingIndex = notes.findIndex((n) => n.date === date)
+
+  if (!trimmed) {
+    if (existingIndex >= 0) {
+      notes.splice(existingIndex, 1)
+      saveAgendaNotes(notes)
+    }
+    return notes
+  }
+
+  if (existingIndex >= 0) {
+    notes[existingIndex] = {
+      ...notes[existingIndex],
+      content: trimmed,
+      color,
+      updatedAt: new Date().toISOString(),
+    }
+  } else {
+    notes.push({
+      id: `note-${Date.now()}`,
+      date,
+      content: trimmed,
+      color,
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  saveAgendaNotes(notes)
+  return notes
+}
+
 // Backup and Restore
 export function exportBackupJSON(): string {
   const data = {
@@ -1533,6 +1627,7 @@ export function exportBackupJSON(): string {
     config: getStudioConfig(),
     gallery: getGalleryItems(),
     invoices: getInvoices(),
+    agendaNotes: getAgendaNotes(),
   }
   return JSON.stringify(data, null, 2)
 }
@@ -1546,9 +1641,11 @@ export function importBackupJSON(jsonStr: string): boolean {
     if (data.config) saveStudioConfig(data.config)
     if (data.gallery) saveGalleryItems(data.gallery)
     if (data.invoices) saveInvoices(data.invoices)
+    if (data.agendaNotes) saveAgendaNotes(data.agendaNotes)
     return true
   } catch (e) {
     console.error('Error importing backup:', e)
     return false
   }
 }
+

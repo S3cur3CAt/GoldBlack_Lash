@@ -20,6 +20,7 @@ import {
   IconSparkles,
   IconSend,
 } from './Icons'
+import { LogoBizum, LogoCreditCards, LogoCash, LogoBankTransfer } from './PaymentLogos'
 
 interface BillingProps {
   invoices: Invoice[]
@@ -85,9 +86,9 @@ export const Billing: React.FC<BillingProps> = ({
     clientEmail: '',
     date: new Date().toISOString().split('T')[0],
     items: [{ description: 'Servicio de Extensiones de Pestañas', quantity: 1, unitPrice: 30, total: 30 }],
-    subtotal: 24.79,
-    taxRate: 21,
-    taxAmount: 5.21,
+    subtotal: 30,
+    taxRate: 0,
+    taxAmount: 0,
     total: 30,
     paymentMethod: 'bizum',
     status: 'cobrada',
@@ -114,9 +115,9 @@ export const Billing: React.FC<BillingProps> = ({
         clientEmail: '',
         date: new Date().toISOString().split('T')[0],
         items: [{ description: 'Tratamiento de Pestañas', quantity: 1, unitPrice: 30, total: 30 }],
-        subtotal: 24.79,
-        taxRate: 21,
-        taxAmount: 5.21,
+        subtotal: 30,
+        taxRate: 0,
+        taxAmount: 0,
         total: 30,
         paymentMethod: 'bizum',
         status: 'cobrada',
@@ -137,9 +138,9 @@ export const Billing: React.FC<BillingProps> = ({
       clientEmail: inv.clientEmail || '',
       date: inv.date || new Date().toISOString().split('T')[0],
       items: inv.items && inv.items.length > 0 ? [...inv.items] : [{ description: 'Servicio', quantity: 1, unitPrice: inv.total, total: inv.total }],
-      subtotal: inv.subtotal || 0,
-      taxRate: inv.taxRate || 21,
-      taxAmount: inv.taxAmount || 0,
+      subtotal: inv.total || inv.subtotal || 0,
+      taxRate: 0,
+      taxAmount: 0,
       total: inv.total || 0,
       paymentMethod: inv.paymentMethod || 'bizum',
       status: inv.status || 'cobrada',
@@ -309,13 +310,10 @@ export const Billing: React.FC<BillingProps> = ({
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }, [invoices, filterStatus, filterPayment, searchQuery])
 
-  // Recalculate totals given items array and tax rate
-  const recalculateTotals = (items: InvoiceItem[], rate: number) => {
+  // Recalculate totals (Sin IVA / 0% VAT)
+  const recalculateTotals = (items: InvoiceItem[], _rate?: number) => {
     const total = items.reduce((acc, item) => acc + (Number(item.total) || 0), 0)
-    const r = Number(rate) || 0
-    const subtotal = Number((total / (1 + r / 100)).toFixed(2))
-    const taxAmount = Number((total - subtotal).toFixed(2))
-    return { subtotal, taxAmount, total }
+    return { subtotal: total, taxAmount: 0, total }
   }
 
   // Handle item change in modal
@@ -403,9 +401,9 @@ export const Billing: React.FC<BillingProps> = ({
       clientPhone: formData.clientPhone.trim() || undefined,
       clientEmail: formData.clientEmail.trim() || undefined,
       items: formData.items,
-      subtotal: Number(formData.subtotal) || 0,
-      taxRate: Number(formData.taxRate) || 21,
-      taxAmount: Number(formData.taxAmount) || 0,
+      subtotal: Number(formData.total) || Number(formData.subtotal) || 0,
+      taxRate: 0,
+      taxAmount: 0,
       total: Number(formData.total) || 0,
       paymentMethod: formData.paymentMethod,
       status: formData.status,
@@ -446,7 +444,7 @@ export const Billing: React.FC<BillingProps> = ({
       return
     }
 
-    const headers = ['Numero', 'Fecha', 'Clienta', 'NIF', 'Telefono', 'Email', 'Metodo_Pago', 'Base_Imponible', 'IVA_21', 'Total', 'Estado']
+    const headers = ['Numero', 'Fecha', 'Clienta', 'NIF', 'Telefono', 'Email', 'Metodo_Pago', 'Importe_Total', 'Estado']
     const rows = invoices.map((inv) => [
       inv.number,
       inv.date,
@@ -455,8 +453,6 @@ export const Billing: React.FC<BillingProps> = ({
       inv.clientPhone || '',
       inv.clientEmail || '',
       inv.paymentMethod,
-      inv.subtotal.toFixed(2),
-      inv.taxAmount.toFixed(2),
       inv.total.toFixed(2),
       inv.status,
     ])
@@ -675,9 +671,25 @@ export const Billing: React.FC<BillingProps> = ({
                       )}
                     </td>
                     <td className="py-4 px-4">
-                      <span className="px-2.5 py-1 rounded-full text-[10.5px] font-semibold uppercase tracking-wider bg-[#1c1c2a] border border-[#2b2b3e] text-gray-300">
-                        {inv.paymentMethod}
-                      </span>
+                      {inv.paymentMethod === 'bizum' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#00c4b4]/15 border border-[#00c4b4]/35 text-[#00e0cf]">
+                          <LogoBizum size={15} />
+                        </span>
+                      ) : inv.paymentMethod === 'tarjeta' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-blue-500/15 border border-blue-500/35 text-blue-300">
+                          <LogoCreditCards height={13} />
+                        </span>
+                      ) : inv.paymentMethod === 'efectivo' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/35 text-emerald-300">
+                          <LogoCash size={15} />
+                          <span>Efectivo</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-500/15 border border-purple-500/35 text-purple-300">
+                          <LogoBankTransfer size={15} />
+                          <span>Transferencia</span>
+                        </span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       <span
@@ -881,18 +893,35 @@ export const Billing: React.FC<BillingProps> = ({
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>
-                <div>
-                  <label className="block text-gray-400 mb-1 font-semibold">Método de Pago</label>
-                  <select
-                    value={formData.paymentMethod || 'bizum'}
-                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaymentMethod })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500"
-                  >
-                    <option value="bizum">Bizum</option>
-                    <option value="tarjeta">Tarjeta (TPV)</option>
-                    <option value="efectivo">Efectivo</option>
-                    <option value="transferencia">Transferencia</option>
-                  </select>
+                <div className="sm:col-span-2">
+                  <label className="block text-gray-400 mb-1.5 font-semibold text-xs uppercase tracking-wider">
+                    Método de Pago
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'bizum' as PaymentMethod, label: 'Bizum', logo: <LogoBizum size={20} /> },
+                      { id: 'tarjeta' as PaymentMethod, label: 'Tarjeta / TPV', logo: <LogoCreditCards height={16} /> },
+                      { id: 'efectivo' as PaymentMethod, label: 'Efectivo', logo: <LogoCash size={20} /> },
+                      { id: 'transferencia' as PaymentMethod, label: 'Transferencia', logo: <LogoBankTransfer size={20} /> },
+                    ].map((m) => {
+                      const isSel = (formData.paymentMethod || 'bizum') === m.id
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, paymentMethod: m.id })}
+                          className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
+                            isSel
+                              ? 'bg-gold-500/20 border-gold-400 text-white shadow-gold-glow'
+                              : 'bg-[#151520] border-[#252538] text-gray-400 hover:text-gray-200'
+                          }`}
+                        >
+                          <div className="h-6 flex items-center justify-center">{m.logo}</div>
+                          <span className="text-[11px] font-bold">{m.label}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
 
@@ -986,15 +1015,9 @@ export const Billing: React.FC<BillingProps> = ({
                     <span>Añadir otra línea</span>
                   </button>
 
-                  <div className="text-right space-y-0.5 text-[11px]">
-                    <div className="text-gray-400">
-                      Base Imponible: <strong className="text-white font-mono">{formData.subtotal.toFixed(2)} €</strong>
-                    </div>
-                    <div className="text-gray-400">
-                      IVA ({formData.taxRate}%): <strong className="text-white font-mono">{formData.taxAmount.toFixed(2)} €</strong>
-                    </div>
-                    <div className="text-base font-bold text-gold-300 pt-1 border-t border-[#252538]">
-                      Total: {formData.total.toFixed(2)} €
+                  <div className="text-right space-y-0.5 text-xs">
+                    <div className="text-base font-bold text-gold-300 pt-1">
+                      Total a Cobrar: {formData.total.toFixed(2)} €
                     </div>
                   </div>
                 </div>
@@ -1127,14 +1150,13 @@ export const Billing: React.FC<BillingProps> = ({
                 </table>
               </div>
 
-              {/* Economic Summary */}
-              <div className="p-3 rounded-xl bg-[#151522] border border-[#242436] flex justify-between items-center text-xs">
-                <div className="text-gray-400 space-y-0.5">
-                  <div>Base Imponible: <strong className="text-white font-mono">{detailInvoice.subtotal.toFixed(2)} €</strong></div>
-                  <div>IVA ({detailInvoice.taxRate}%): <strong className="text-white font-mono">{detailInvoice.taxAmount.toFixed(2)} €</strong></div>
+              {/* Economic Summary - Sin IVA */}
+              <div className="p-3.5 rounded-xl bg-[#151522] border border-[#242436] flex justify-between items-center text-xs">
+                <div>
+                  <span className="text-xs text-gray-400 font-medium">Tarifa neta (Sin IVA aplicado)</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-gray-400 uppercase block font-semibold">Total a Pagar</span>
+                  <span className="text-[10px] text-gray-400 uppercase block font-semibold">Total a Cobrar</span>
                   <span className="text-2xl font-bold font-sans tracking-tight text-gold-300">{detailInvoice.total.toFixed(2)} €</span>
                 </div>
               </div>
@@ -1260,7 +1282,7 @@ export const Billing: React.FC<BillingProps> = ({
                   <span className="text-gold-300 font-bold font-mono text-sm">{emailInvoice.total.toFixed(2)} €</span>
                 </div>
                 <p className="text-[10.5px] text-gray-500 pt-1 border-t border-[#1e1e2c]">
-                  Se enviará una plantilla de alta fidelidad con el membrete oficial del atelier, desglose de partidas e IVA desglosado.
+                  Se enviará un comprobante oficial de alta fidelidad con el membrete del atelier y el importe neto del servicio.
                 </p>
               </div>
 
@@ -1371,16 +1393,8 @@ export const Billing: React.FC<BillingProps> = ({
               ))}
             </div>
 
-            {/* Tax and Total */}
+            {/* Total */}
             <div className="py-3 space-y-1.5 text-xs">
-              <div className="flex justify-between text-gray-600 text-[11px]">
-                <span>Base Imponible:</span>
-                <span className="font-mono">{selectedInvoiceForPrint.subtotal.toFixed(2)} €</span>
-              </div>
-              <div className="flex justify-between text-gray-600 text-[11px]">
-                <span>IVA ({selectedInvoiceForPrint.taxRate}%):</span>
-                <span className="font-mono">{selectedInvoiceForPrint.taxAmount.toFixed(2)} €</span>
-              </div>
               <div className="flex justify-between text-base font-bold text-gray-900 pt-2 border-t border-gray-900">
                 <span>TOTAL:</span>
                 <span className="font-mono">{selectedInvoiceForPrint.total.toFixed(2)} €</span>

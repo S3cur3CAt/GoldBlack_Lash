@@ -18,6 +18,7 @@ import {
   GalleryItem,
   AppointmentStatus,
   PaymentStatus,
+  PaymentMethod,
   Invoice,
 } from './types/admin'
 
@@ -46,6 +47,7 @@ import {
   fetchLiveInvoicesFromVercel,
   syncInvoiceWithVercel,
   deleteInvoiceFromVercel,
+  sendInvoiceEmail,
   syncStudioConfigWithVercel,
 } from './services/storage'
 
@@ -331,8 +333,8 @@ export const App: React.FC = () => {
           name: apt.clientName,
           phone: apt.clientPhone,
           allergies: 'Ninguna conocida',
-          preferredStyle: apt.style || 'Cat Eye (Ojo de Gato)',
-          preferredCurl: apt.curl || 'D',
+          preferredStyle: (apt.style as any) || 'Cat Eye (Ojo de Gato)',
+          preferredCurl: (apt.curl === 'C' || apt.curl === 'M') ? apt.curl : 'D',
           totalVisits: 1,
           totalSpent: apt.price,
           lastVisitDate: apt.date,
@@ -492,6 +494,131 @@ export const App: React.FC = () => {
     await deleteInvoiceFromVercel(id)
   }
 
+  // Intelligent Service Finalization & Automatic Invoicing to Facturación & Caja
+  const handleFinalizeService = async (
+    apt: Appointment,
+    options: {
+      paymentMethod: PaymentMethod
+      clientEmail?: string
+      clientNif?: string
+      sendEmail?: boolean
+      customNotes?: string
+    }
+  ): Promise<Invoice | null> => {
+    // 1. Mark appointment as completed & paid
+    const updatedApt: Appointment = {
+      ...apt,
+      status: 'completada',
+      paymentStatus: 'pagado',
+    }
+    const aptIndex = appointments.findIndex((a) => a.id === apt.id)
+    let updatedApts: Appointment[]
+    if (aptIndex >= 0) {
+      updatedApts = [...appointments]
+      updatedApts[aptIndex] = updatedApt
+    } else {
+      updatedApts = [updatedApt, ...appointments]
+    }
+    setAppointments(updatedApts)
+    saveAppointments(updatedApts)
+    syncAppointmentWithVercel(updatedApt)
+
+    // 2. Generate sequential invoice number (e.g., 2026-001)
+    const now = new Date()
+    const year = now.getFullYear()
+    const yearPrefix = `${year}-`
+    const yearInvoices = invoices.filter((i) => i.number && i.number.startsWith(yearPrefix))
+    const nextSeq = yearInvoices.length + 1
+    const invoiceNumber = `${year}-${String(nextSeq).padStart(3, '0')}`
+
+    // 3. Calculation: Sin IVA (0%)
+    const total = Number(apt.price) || 0
+    const subtotal = total
+    const taxAmount = 0
+
+    const newInvoice: Invoice = {
+      id: `fac-${Date.now()}`,
+      number: invoiceNumber,
+      date: apt.date || now.toISOString().split('T')[0],
+      appointmentId: apt.id,
+      clientName: apt.clientName,
+      clientNif: options.clientNif || undefined,
+      clientPhone: apt.clientPhone || undefined,
+      clientEmail: options.clientEmail || apt.clientEmail || undefined,
+      items: [
+        {
+          description: apt.serviceName || 'Tratamiento de Pestañas',
+          quantity: 1,
+          unitPrice: total,
+          total: total,
+        },
+      ],
+      subtotal,
+      taxRate: 0,
+      taxAmount: 0,
+      total,
+      paymentMethod: options.paymentMethod || 'bizum',
+      status: 'cobrada',
+      notes: options.customNotes || `Servicio completado en estudio (${apt.date} ${apt.time})`,
+      createdAt: now.toISOString(),
+    }
+
+    // 4. Save Invoice to state, localStorage & Supabase Postgres
+    const updatedInvoices = [newInvoice, ...invoices]
+    setInvoices(updatedInvoices)
+    saveInvoices(updatedInvoices)
+    await syncInvoiceWithVercel(newInvoice)
+
+    // 5. Update client stats (visits, spent, lastVisitDate)
+    const existingClient = clients.find(
+      (c) =>
+        (apt.clientPhone && c.phone === apt.clientPhone) ||
+        c.name.toLowerCase() === apt.clientName.toLowerCase()
+    )
+    if (existingClient) {
+      const updatedClients = clients.map((c) =>
+        c.id === existingClient.id
+          ? {
+              ...c,
+              totalVisits: (c.totalVisits || 0) + 1,
+              totalSpent: Number(((c.totalSpent || 0) + total).toFixed(2)),
+              lastVisitDate: apt.date || now.toISOString().split('T')[0],
+              email: options.clientEmail || c.email || apt.clientEmail,
+              nif: options.clientNif || c.nif,
+            }
+          : c
+      )
+      setClients(updatedClients)
+      saveClients(updatedClients)
+    }
+
+    // 6. Play celebratory notification chime
+    playNotificationChime()
+
+    // 7. Send invoice email via Resend if option checked
+    if (options.sendEmail && (options.clientEmail || apt.clientEmail)) {
+      const targetEmail = (options.clientEmail || apt.clientEmail)!.trim()
+      try {
+        await sendInvoiceEmail(
+          newInvoice,
+          config,
+          targetEmail,
+          `Hola ${apt.clientName},\n\nTe adjuntamos el recibo oficial y desglose de tu servicio en ${config.name}.\n¡Muchas gracias por tu visita!`
+        )
+      } catch (err) {
+        console.warn('[Error sending automatic invoice email]:', err)
+      }
+    }
+
+    // 8. Visual toast
+    setSyncToast({
+      status: 'synced',
+      message: `✓ Servicio finalizado y Factura ${newInvoice.number} registrada en Caja (${total.toFixed(2)} €)`,
+    })
+
+    return newInvoice
+  }
+
   // Config Action — saves locally and syncs to Supabase so the live website reflects changes immediately
   const handleSaveConfig = async (newConfig: StudioConfig) => {
     setConfig(newConfig)
@@ -523,7 +650,7 @@ export const App: React.FC = () => {
     },
     services: {
       title: 'Catálogo de Servicios y Precios',
-      subtitle: 'Tarifas de extensiones, retoques y lifting de pestañas',
+      subtitle: 'Tarifas de extensiones de pestañas, retirada y limpieza facial profunda',
     },
     clients: {
       title: 'Ficha y Base de Clientas',
@@ -535,7 +662,7 @@ export const App: React.FC = () => {
     },
     billing: {
       title: 'Facturación & Control de Caja',
-      subtitle: 'Tickets oficiales, desglose de IVA, TPV/Bizum/Efectivo y balance de ingresos',
+      subtitle: 'Facturas oficiales, registro de cobros, TPV/Bizum/Efectivo y balance de caja',
     },
     settings: {
       title: 'Ajustes del Estudio',
@@ -637,6 +764,7 @@ export const App: React.FC = () => {
               clients={clients}
               services={services}
               config={config}
+              invoices={invoices}
               onNewAppointment={() => {
                 setEditingApt(null)
                 handleSelectTab('appointments')
@@ -644,6 +772,7 @@ export const App: React.FC = () => {
               }}
               onSelectTab={(tab) => handleSelectTab(tab)}
               onUpdateAppointmentStatus={handleUpdateStatus}
+              onFinalizeService={handleFinalizeService}
             />
           )}
 
@@ -651,11 +780,14 @@ export const App: React.FC = () => {
             <Appointments
               appointments={appointments}
               services={services}
+              clients={clients}
               config={config}
+              invoices={invoices}
               onSaveAppointment={handleSaveAppointment}
               onDeleteAppointment={handleDeleteAppointment}
               onUpdateStatus={handleUpdateStatus}
               onUpdatePayment={handleUpdatePayment}
+              onFinalizeService={handleFinalizeService}
               isModalOpen={isAptModalOpen}
               setIsModalOpen={setIsAptModalOpen}
               editingAppointment={editingApt}
