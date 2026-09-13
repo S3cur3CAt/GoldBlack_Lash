@@ -243,7 +243,7 @@ function CategoryBlock({
           {category.services.map((service) => (
             <div
               key={service.id}
-              className="w-[85vw] shrink-0 snap-start sm:w-[420px] lg:w-[440px]"
+              className="flex w-[85vw] shrink-0 snap-start sm:w-[420px] lg:w-[440px]"
             >
               <ServiceCard service={service} />
             </div>
@@ -257,7 +257,7 @@ function CategoryBlock({
 function ServiceCard({ service }: { service: Service }) {
   return (
     <article
-      className={`rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
+      className={`flex h-full w-full flex-col rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
         service.featured
           ? 'border-rose/20 bg-blush'
           : 'border-line bg-surface'
@@ -335,7 +335,7 @@ function ServiceCard({ service }: { service: Service }) {
         )
       })()}
 
-      <div className="mt-7 border-t border-rose/10 pt-6">
+      <div className="mt-auto pt-6 border-t border-rose/10">
         <button
           type="button"
           onClick={() => openReservationModal({ serviceName: service.name, serviceId: service.id })}
