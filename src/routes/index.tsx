@@ -102,7 +102,7 @@ function Hero() {
             <em>tu mirada.</em>
           </h1>
 
-          <p className="body-copy mx-auto mt-6 max-w-lg">
+          <p className="body-copy mx-auto mt-6 max-w-lg text-[#f5f5f7] font-medium text-[1.05rem] leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
             Pestañas que realzan lo que te hace única. Un diseño a tu
             medida y un momento de cuidado solo para ti.
           </p>

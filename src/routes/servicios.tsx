@@ -117,13 +117,13 @@ function Servicios() {
         crumbs={[{ label: 'Servicios' }]}
       >
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
+          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Diseño personalizado
           </span>
-          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
+          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Atención con cita previa
           </span>
-          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
+          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Asesoría de cuidados
           </span>
         </div>
@@ -132,7 +132,7 @@ function Servicios() {
       <HeaderSubBarPortal>
         <ul
           aria-label="Categorías de servicios"
-          className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
+          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1"
         >
           {categories.map((category) => (
             <li key={category.id} className="shrink-0">
@@ -143,9 +143,9 @@ function Servicios() {
                 aria-current={
                   visible === category.id ? 'location' : undefined
                 }
-                className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
+                className={`px-3 sm:px-3.5 py-1 rounded-xl text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                   visible === category.id
-                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
                     : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
                 }`}
               >
@@ -160,9 +160,9 @@ function Servicios() {
               search={{}}
               hash="faq"
               aria-current={visible === 'faq' ? 'location' : undefined}
-              className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
+              className={`px-3 sm:px-3.5 py-1 rounded-xl text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                 visible === 'faq'
-                  ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                  ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
                   : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
               }`}
             >
@@ -259,7 +259,7 @@ function ServiceCard({ service }: { service: Service }) {
       }`}
     >
       {service.featured ? (
-        <p className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
+        <p className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
           <span aria-hidden="true" className="text-[#8a5a12]">★</span>
           Favorito del estudio
         </p>
@@ -282,7 +282,7 @@ function ServiceCard({ service }: { service: Service }) {
               {service.name}
             </h3>
             {service.badge ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.72rem] font-extrabold tracking-wide text-[#08080a] border border-white/80 shadow-[0_2px_14px_rgba(229,193,88,0.5)]">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.72rem] font-extrabold tracking-wide text-[#08080a] border border-white/80 shadow-[0_2px_14px_rgba(229,193,88,0.5)]">
                 <span className="text-[0.65rem] text-[#8a5a12]">✦</span>
                 {service.badge}
               </span>

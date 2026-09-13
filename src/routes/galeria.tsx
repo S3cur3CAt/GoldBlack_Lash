@@ -127,7 +127,7 @@ function Galeria() {
       <HeaderSubBarPortal>
         <ul
           aria-label="Filtrar diseños por técnica"
-          className="no-scrollbar flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5 px-0.5"
+          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1"
         >
           {techniques.map((technique) => (
             <li key={technique} className="shrink-0">
@@ -138,9 +138,9 @@ function Galeria() {
                   setFilter(technique)
                   setOpenIndex(null)
                 }}
-                className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                className={`px-3 sm:px-3.5 py-1 rounded-xl text-xs font-semibold transition-all duration-200 cursor-pointer outline-none focus:outline-none ${
                   filter === technique
-                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_0_10px_rgba(212,175,55,0.45)] border border-[#fcedc7]/70'
                     : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
                 }`}
               >
@@ -276,7 +276,7 @@ function GalleryTile({
           className="transition-transform duration-500 group-hover:scale-[1.04]"
         />
 
-        <span className="absolute top-4 left-4 max-w-[calc(100%-2rem)] rounded-full bg-[#0c0c12]/90 border border-[#d4af37]/30 px-3 py-2 text-[0.6rem] font-bold text-[#e5c158] shadow-soft">
+        <span className="absolute top-4 left-4 max-w-[calc(100%-2rem)] rounded-lg bg-[#0c0c11]/90 border border-[#d4af37]/30 px-3 py-1.5 text-[0.6rem] font-bold text-[#e5c158] shadow-soft">
           {piece.technique}
         </span>
 
@@ -308,7 +308,7 @@ function GalleryTile({
             {piece.elements.map((el, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-2.5 py-0.5 text-[0.65rem] font-bold text-[#08080a] border border-white/60 shadow-xs"
+                className="inline-flex items-center gap-1 rounded-md bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-2.5 py-0.5 text-[0.65rem] font-bold text-[#08080a] border border-white/60 shadow-xs"
               >
                 <span className="text-[0.6rem] text-[#8a5a12]">✦</span>
                 <span>{el}</span>
@@ -458,7 +458,7 @@ function Lightbox({
                 {piece.elements.map((el, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3 py-1 text-xs font-bold text-[#08080a] border border-white/70 shadow-sm"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3 py-1 text-xs font-bold text-[#08080a] border border-white/70 shadow-sm"
                   >
                     <span className="text-[#8a5a12]">✦</span>
                     <span>{el}</span>
@@ -490,7 +490,7 @@ function Lightbox({
               type="button"
               onClick={onPrevious}
               disabled={total < 2}
-              className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted transition-colors hover:bg-blush disabled:opacity-40"
+              className="min-h-11 rounded-xl px-4 text-xs font-semibold text-muted transition-colors hover:bg-blush disabled:opacity-40"
             >
               ← Anterior
             </button>
@@ -499,7 +499,7 @@ function Lightbox({
               type="button"
               onClick={onNext}
               disabled={total < 2}
-              className="min-h-11 rounded-full px-4 text-xs font-semibold text-muted transition-colors hover:bg-blush disabled:opacity-40"
+              className="min-h-11 rounded-xl px-4 text-xs font-semibold text-muted transition-colors hover:bg-blush disabled:opacity-40"
             >
               Siguiente →
             </button>
