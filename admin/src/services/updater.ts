@@ -15,14 +15,63 @@ export interface UpdateInfo {
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
 
-export const CURRENT_APP_VERSION = '0.2.5'
+export const CURRENT_APP_VERSION = '0.2.6'
 export const GITHUB_REPO = 'S3cur3CAt/GoldBlack_Lash'
 const GITHUB_TOKEN = [103, 104, 112, 95, 57, 75, 74, 54, 114, 81, 75, 81, 105, 65, 50, 79, 115, 115, 52, 104, 65, 49, 102, 86, 50, 48, 75, 100, 65, 102, 100, 86, 81, 106, 49, 76, 116, 69, 118, 116].map(c => String.fromCharCode(c)).join('')
 
+/**
+ * Synthesizes a luxury studio celebratory chime for update notifications.
+ * 4-Tone ascending chord: C5 (523Hz) -> E5 (659Hz) -> G5 (784Hz) -> C6 (1046Hz)
+ * Uses Web Audio API with zero external dependencies and zero latency.
+ */
+export function playUpdateChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') {
+      ctx.resume()
+    }
+
+    const now = ctx.currentTime
+
+    const playTone = (freq: number, start: number, duration: number, peakGain: number) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, start)
+
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.linearRampToValueAtTime(peakGain, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(start)
+      osc.stop(start + duration)
+    }
+
+    playTone(523.25, now, 0.45, 0.28)
+    playTone(659.25, now + 0.11, 0.55, 0.32)
+    playTone(783.99, now + 0.22, 0.70, 0.35)
+    playTone(1046.50, now + 0.35, 0.95, 0.30)
+
+    setTimeout(() => {
+      try {
+        ctx.close()
+      } catch {}
+    }, 1800)
+  } catch (err) {
+    console.warn('[Audio Update Chime Error]', err)
+  }
+}
 
 export function useUpdater() {
   const [status, setStatus] = useState<UpdateStatus>('idle')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [receivedBytes, setReceivedBytes] = useState(0)
   const [totalBytes, setTotalBytes] = useState(0)
@@ -30,6 +79,7 @@ export function useUpdater() {
   const [isSimulated, setIsSimulated] = useState(false)
   const filePathRef = useRef<string | null>(null)
   const simulationTimerRef = useRef<any>(null)
+  const lastNotifiedVersionRef = useRef<string | null>(null)
 
   // Listen for real progress from Electron main process (monotonic: never goes backward)
   useEffect(() => {
@@ -39,6 +89,22 @@ export function useUpdater() {
         setProgress((prev) => Math.max(prev, newPercent))
         setReceivedBytes((prev) => Math.max(prev, data.receivedBytes || 0))
         setTotalBytes(data.totalBytes || 0)
+      })
+      return () => {
+        unsubscribe?.()
+      }
+    }
+  }, [])
+
+  // Listen for macOS dock or native notification clicks to open update modal
+  useEffect(() => {
+    if (window.electronAPI?.onOpenUpdateModal) {
+      const unsubscribe = window.electronAPI.onOpenUpdateModal((data) => {
+        if (data) {
+          setUpdateInfo(data)
+          setStatus('available')
+        }
+        setIsModalOpen(true)
       })
       return () => {
         unsubscribe?.()
@@ -73,9 +139,15 @@ export function useUpdater() {
       if (window.electronAPI?.checkForUpdates) {
         const result = await window.electronAPI.checkForUpdates(CURRENT_APP_VERSION)
         if (result && result.available) {
+          const isNew = lastNotifiedVersionRef.current !== result.latestVersion
           setUpdateInfo(result)
           setStatus('available')
           setIsSimulated(false)
+          if (isNew) {
+            lastNotifiedVersionRef.current = result.latestVersion
+            playUpdateChime()
+            setIsModalOpen(true)
+          }
           return result
         } else {
           if (statusRef.current !== 'available') {
@@ -114,9 +186,16 @@ export function useUpdater() {
               assetSize: validAsset.size || 0,
               htmlUrl: release.html_url,
             }
+            const isNew = lastNotifiedVersionRef.current !== tag
             setUpdateInfo(info)
             setStatus('available')
             setIsSimulated(false)
+            if (isNew) {
+              lastNotifiedVersionRef.current = tag
+              playUpdateChime()
+              setIsModalOpen(true)
+              window.electronAPI?.notifyUpdateAvailable?.(info)
+            }
             return info
           }
         }
@@ -215,11 +294,35 @@ export function useUpdater() {
       assetSize: 101655309, // ~97 MB installer
     })
     setStatus('available')
+    setIsModalOpen(true)
     setProgress(0)
+  }, [])
+
+  const testUpdateNotification = useCallback((fakeVersion = 'v0.2.7') => {
+    const isMac = typeof window !== 'undefined' && (window.electronAPI?.platform === 'darwin' || navigator.platform?.toLowerCase().includes('mac'))
+    const fakeInfo: UpdateInfo = {
+      available: true,
+      currentVersion: CURRENT_APP_VERSION,
+      latestVersion: fakeVersion,
+      releaseName: `GoldBlack Lash Admin ${fakeVersion} (Novedades de Estudio)`,
+      notes: '✨ Tipografía redondeada nativa de Apple incrustada.\n💎 Mejoras de rendimiento y carga instantánea.\n🔔 Notificaciones sonoras y visuales automáticas en macOS y Windows.',
+      assetName: isMac
+        ? `GoldBlack-Lash-Admin-${fakeVersion.replace(/^v/, '')}-macOS-Monterey.zip`
+        : `GoldBlack-Lash-Admin-Setup-${fakeVersion.replace(/^v/, '')}.exe`,
+      assetSize: isMac ? 220000000 : 101655309,
+    }
+
+    setIsSimulated(true)
+    setUpdateInfo(fakeInfo)
+    setStatus('available')
+    setIsModalOpen(true)
+    playUpdateChime()
+    window.electronAPI?.notifyUpdateAvailable?.(fakeInfo)
   }, [])
 
   const dismiss = useCallback(() => {
     setStatus('idle')
+    setIsModalOpen(false)
   }, [])
 
   // Auto-check on mount and poll every 5 seconds (authenticated with token to avoid rate limit)
@@ -243,6 +346,8 @@ export function useUpdater() {
   return {
     status,
     updateInfo,
+    isModalOpen,
+    setIsModalOpen,
     progress,
     receivedBytes,
     totalBytes,
@@ -252,6 +357,7 @@ export function useUpdater() {
     startDownload,
     applyAndRestart,
     simulateUpdate,
+    testUpdateNotification,
     dismiss,
   }
 }

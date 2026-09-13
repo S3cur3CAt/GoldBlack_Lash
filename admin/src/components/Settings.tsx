@@ -10,10 +10,13 @@ import {
   IconSend,
   IconSparkles,
   IconAlertCircle,
+  IconRefreshCw,
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
+import { useUpdaterContext } from '../context/UpdaterContext'
+import { CURRENT_APP_VERSION } from '../services/updater'
 
 const seasonalOptions = [
   {
@@ -86,6 +89,7 @@ export const Settings: React.FC<SettingsProps> = ({
   onRefreshAllData,
 }) => {
   const { showAlert } = useDialog()
+  const { checkUpdates, testUpdateNotification, status: updateStatus } = useUpdaterContext()
   const [formData, setFormData] = useState<StudioConfig>(config)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [importStatus, setImportStatus] = useState<string | null>(null)
@@ -806,6 +810,44 @@ export const Settings: React.FC<SettingsProps> = ({
               className="sr-only"
             />
           </label>
+        </div>
+      </div>
+
+      {/* Updates and Sound/Visual Notification Section */}
+      <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h4 className="font-serif text-base font-bold text-white flex items-center gap-2">
+            <IconRefreshCw size={18} className="text-gold-400" />
+            Actualizaciones del Sistema (macOS & Windows)
+          </h4>
+          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-gold-500/20 text-gold-300 border border-gold-500/30">
+            Versión actual: v{CURRENT_APP_VERSION}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 leading-relaxed">
+          El panel busca automáticamente nuevas versiones en GitHub en segundo plano. Al detectar una actualización disponible, el sistema emite una <strong>notificación nativa en macOS</strong> con sonido de campanilla (Glass), hace saltar el icono en el Dock con globo rojo, e ilumina la ventana con el asistente de actualización.
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => checkUpdates(true)}
+            disabled={updateStatus === 'checking'}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1e1e2c] hover:bg-[#2a2a3e] text-gold-300 border border-gold-500/30 text-xs font-semibold transition-all shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+          >
+            <IconRefreshCw size={14} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
+            <span>{updateStatus === 'checking' ? 'Buscando en GitHub...' : 'Buscar Actualizaciones'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => testUpdateNotification()}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500/20 via-amber-500/20 to-gold-500/10 hover:from-gold-500/30 hover:to-amber-500/20 text-gold-300 border border-gold-500/40 text-xs font-semibold transition-all shadow-gold-glow cursor-pointer active:scale-95"
+            title="Reproduce la campanilla de aviso de Apple, la notificación del sistema y la ventana de actualización"
+          >
+            <span className="text-sm">🔔</span>
+            <span>Probar Notificación Sonora & Visual en Mac</span>
+          </button>
         </div>
       </div>
 

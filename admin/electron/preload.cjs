@@ -13,10 +13,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
   // Real-time notifications (macOS / Win)
   notifyNewAppointment: (data) => ipcRenderer.send('notification:appointment', data),
+  notifyUpdateAvailable: (data) => ipcRenderer.send('notification:update-available', data),
+  clearDockBadge: () => ipcRenderer.send('dock:clear-badge'),
   onNavigateTab: (callback) => {
     const handler = (_event, tab) => callback(tab)
     ipcRenderer.on('navigate:tab', handler)
     return () => ipcRenderer.removeListener('navigate:tab', handler)
+  },
+  onOpenUpdateModal: (callback) => {
+    const handler = (_event, data) => callback(data)
+    ipcRenderer.on('updater:open-modal', handler)
+    return () => ipcRenderer.removeListener('updater:open-modal', handler)
   },
   // Auto-Updater from GitHub Releases
   checkForUpdates: (currentVersion) => ipcRenderer.invoke('updater:check', currentVersion),

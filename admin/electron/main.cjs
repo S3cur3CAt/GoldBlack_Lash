@@ -74,6 +74,13 @@ function createWindow() {
     mainWindow.show()
   })
 
+  // Clear dock notification badge on window focus
+  mainWindow.on('focus', () => {
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.setBadge('')
+    }
+  })
+
   // Initialize auto-updater IPC
   setupUpdaterIPC(mainWindow)
 

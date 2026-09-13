@@ -1,4 +1,4 @@
-const { app, ipcMain } = require('electron')
+const { app, ipcMain, Notification } = require('electron')
 const https = require('https')
 const http = require('http')
 const fs = require('fs')
@@ -183,6 +183,53 @@ async function checkGitHubRelease(currentVersion) {
   }
 }
 
+let lastNotifiedVersion = null
+
+/**
+ * Native macOS & Windows visual and audio notification for available updates
+ */
+function triggerUpdateNotification(mainWindow, updateInfo) {
+  try {
+    const version = updateInfo?.latestVersion || ''
+    const releaseName = updateInfo?.releaseName || version
+
+    // 1. macOS Dock Bounce: Critical bounce jumps until user activates the app
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.bounce('critical')
+      app.dock.setBadge('1')
+    }
+
+    // 2. Native System Notification with sound and click handling
+    if (Notification.isSupported()) {
+      const iconPath = path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+      const notif = new Notification({
+        title: '🎉 Actualización Disponible — GoldBlack Lash',
+        subtitle: version ? `Versión ${version} lista para instalar` : undefined,
+        body: `Hay una nueva versión disponible (${releaseName}). Haz clic para actualizar la app.`,
+        icon: iconPath,
+        silent: false, // Ensures audio alert plays on macOS & Windows
+        sound: process.platform === 'darwin' ? 'Glass' : undefined,
+      })
+
+      notif.on('click', () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          if (mainWindow.isMinimized()) mainWindow.restore()
+          mainWindow.show()
+          mainWindow.focus()
+          mainWindow.webContents.send('updater:open-modal', updateInfo)
+        }
+        if (process.platform === 'darwin' && app.dock) {
+          app.dock.setBadge('')
+        }
+      })
+
+      notif.show()
+    }
+  } catch (err) {
+    console.warn('[Update Notification Error]', err)
+  }
+}
+
 /**
  * Setup IPC handlers in Electron Main Process
  */
@@ -191,7 +238,27 @@ function setupUpdaterIPC(mainWindow) {
 
   // 1. Check for updates
   ipcMain.handle('updater:check', async (event, currentVersion = '1.0.0') => {
-    return await checkGitHubRelease(currentVersion)
+    const result = await checkGitHubRelease(currentVersion)
+    if (result && result.available && result.latestVersion && result.latestVersion !== lastNotifiedVersion) {
+      lastNotifiedVersion = result.latestVersion
+      triggerUpdateNotification(mainWindow, result)
+    }
+    return result
+  })
+
+  // Explicit update notification trigger from renderer
+  ipcMain.on('notification:update-available', (_event, updateInfo) => {
+    if (updateInfo) {
+      lastNotifiedVersion = updateInfo.latestVersion || 'test'
+      triggerUpdateNotification(mainWindow, updateInfo)
+    }
+  })
+
+  // Clear dock badge
+  ipcMain.on('dock:clear-badge', () => {
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.setBadge('')
+    }
   })
 
   // 2. Download update asset
@@ -256,6 +323,30 @@ function setupUpdaterIPC(mainWindow) {
                 totalBytes: totalBytes || receivedBytes,
               })
             }
+            try {
+              if (process.platform === 'darwin' && app.dock) {
+                app.dock.bounce('informational')
+              }
+              if (Notification.isSupported()) {
+                const iconPath = path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+                const doneNotif = new Notification({
+                  title: '✓ Actualización Descargada — GoldBlack Lash',
+                  body: 'La nueva versión está lista para instalar. Haz clic para reiniciar la aplicación.',
+                  icon: iconPath,
+                  silent: false,
+                  sound: process.platform === 'darwin' ? 'Glass' : undefined,
+                })
+                doneNotif.on('click', () => {
+                  if (mainWindow && !mainWindow.isDestroyed()) {
+                    if (mainWindow.isMinimized()) mainWindow.restore()
+                    mainWindow.show()
+                    mainWindow.focus()
+                    mainWindow.webContents.send('updater:open-modal')
+                  }
+                })
+                doneNotif.show()
+              }
+            } catch (e) {}
             resolve({ success: true, filePath: targetPath })
           })
         })
