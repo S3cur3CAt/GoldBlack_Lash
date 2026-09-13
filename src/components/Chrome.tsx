@@ -62,7 +62,7 @@ export function Header() {
     >
       <div className="pointer-events-auto max-w-6xl mx-auto flex flex-col items-center">
         {/* Main Floating Header Pill */}
-        <div className="w-full relative z-10 flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white/85 backdrop-blur-2xl border border-white/90 shadow-[0_12px_36px_-10px_rgba(93,49,59,0.12),0_0_0_1px_rgba(255,255,255,0.8)_inset]">
+        <div className="w-full relative z-10 flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#0c0c11]/85 backdrop-blur-2xl border border-[#d4af37]/25 shadow-[0_16px_40px_-10px_rgba(0,0,0,0.85),0_0_0_1px_rgba(212,175,55,0.15)_inset,0_0_20px_rgba(212,175,55,0.1)]">
         {/* Brand / Gleaming Rounded Logo */}
         <Link
           to="/"
@@ -72,7 +72,7 @@ export function Header() {
         >
           <div className="relative shrink-0">
             {/* Ambient luxury halo shimmer */}
-            <div className="absolute -inset-1 rounded-2xl bg-linear-to-tr from-[#d4af37] via-[#f3d997] to-rose opacity-70 blur-xs group-hover:opacity-100 group-hover:blur-[6px] transition-all duration-300" />
+            <div className="absolute -inset-1 rounded-2xl bg-linear-to-tr from-[#d4af37] via-[#f3d997] to-[#aa820a] opacity-70 blur-xs group-hover:opacity-100 group-hover:blur-[6px] transition-all duration-300" />
 
             {/* Rounded gleaming logo container */}
             <div className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-2xl p-[1.5px] bg-linear-to-b from-[#fcedc7] via-[#d4af37] to-[#8a5a36] shadow-[0_4px_12px_rgba(212,175,55,0.35)] transition-transform duration-300 group-hover:scale-105">
@@ -89,10 +89,10 @@ export function Header() {
           </div>
 
           <div className="flex flex-col text-left">
-            <span className="font-display text-base sm:text-lg font-bold tracking-tight text-[#3f2932] group-hover:text-rose transition-colors leading-none">
-              GoldBlack <span className="text-rose font-serif italic">Lash</span>
+            <span className="font-display text-base sm:text-lg font-bold tracking-tight text-[#f5f5f7] group-hover:text-[#e5c158] transition-colors leading-none">
+              GoldBlack <span className="text-[#e5c158] font-serif italic">Lash</span>
             </span>
-            <span className="text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase text-muted mt-0.5">
+            <span className="text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase text-[#9e9ea7] mt-0.5">
               Studio de Miradas
             </span>
           </div>
@@ -101,16 +101,16 @@ export function Header() {
         {/* Desktop Navigation Links */}
         <nav
           aria-label="Navegación principal"
-          className="hidden items-center gap-1 bg-black/3 p-1 rounded-full border border-black/4 lg:flex"
+          className="hidden items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10 lg:flex"
         >
           {tabs.map((tab) => (
             <Link
               key={tab.to}
               to={tab.to}
               activeOptions={{ exact: tab.to === '/' }}
-              className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-muted hover:text-[#3f2932] hover:bg-white/80 transition-all duration-200"
+              className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#9e9ea7] hover:text-[#f5f5f7] hover:bg-white/10 transition-all duration-200"
               activeProps={{
-                className: 'bg-linear-to-r from-[#3f2932] to-[#5c3a49] !text-white shadow-[0_3px_12px_-2px_rgba(63,41,50,0.35)]',
+                className: 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_3px_12px_-2px_rgba(212,175,55,0.5)]',
               }}
             >
               {tab.label}
@@ -123,12 +123,12 @@ export function Header() {
           <button
             type="button"
             onClick={() => openReservationModal()}
-            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-[#3f2932] via-[#4d323f] to-rose text-white text-xs font-bold tracking-wide shadow-[0_6px_20px_-4px_rgba(182,111,121,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_8px_25px_-4px_rgba(182,111,121,0.7)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/20"
+            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_6px_20px_-4px_rgba(212,175,55,0.6),inset_0_1px_0_rgba(255,255,255,0.6)] hover:shadow-[0_8px_25px_-4px_rgba(212,175,55,0.8),0_0_20px_rgba(229,193,88,0.4)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
           >
-            <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
-            <span className="relative flex h-1.5 w-1.5 rounded-full bg-[#f3d997] animate-pulse" />
+            <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <span className="relative flex h-1.5 w-1.5 rounded-full bg-[#08080a] animate-pulse" />
             <span className="relative">Reserva tu momento</span>
-            <span aria-hidden="true" className="relative text-[#f3d997] font-bold transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+            <span aria-hidden="true" className="relative text-[#08080a] font-black transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
           </button>
 
           {/* Mobile Hamburger Button */}
@@ -139,10 +139,10 @@ export function Header() {
             aria-expanded={open}
             aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
             onClick={() => setOpen((value) => !value)}
-            className="flex items-center gap-2 rounded-full border border-white/90 bg-white/70 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-[#3f2932] shadow-sm lg:hidden hover:bg-white transition-all cursor-pointer"
+            className="flex items-center gap-2 rounded-full border border-[#d4af37]/30 bg-[#121218]/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-[#f5f5f7] shadow-sm lg:hidden hover:bg-[#1c1c28] transition-all cursor-pointer"
           >
             <span>{open ? 'Cerrar' : 'Menú'}</span>
-            <span aria-hidden="true" className="text-base text-rose font-bold">
+            <span aria-hidden="true" className="text-base text-[#e5c158] font-bold">
               {open ? '✕' : '☰'}
             </span>
           </button>
@@ -152,7 +152,7 @@ export function Header() {
       {/* Fused U-Shape Bottom Tray — only appears on scroll */}
       {subBar && scrolled ? (
         <div className="relative -mt-2 z-0 flex justify-center w-full overflow-hidden pointer-events-auto animate-in fade-in slide-in-from-top-1 duration-300">
-          <div className="no-scrollbar flex items-center justify-center pt-3 pb-1.5 px-3 sm:px-6 bg-white/90 backdrop-blur-2xl border-x border-b border-white/90 rounded-b-2xl sm:rounded-b-3xl shadow-[0_16px_36px_-10px_rgba(93,49,59,0.14),0_0_0_1px_rgba(255,255,255,0.7)_inset] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto">
+          <div className="no-scrollbar flex items-center justify-center pt-3 pb-1.5 px-3 sm:px-6 bg-[#0c0c11]/90 backdrop-blur-2xl border-x border-b border-[#d4af37]/25 rounded-b-2xl sm:rounded-b-3xl shadow-[0_16px_36px_-10px_rgba(0,0,0,0.85),0_0_0_1px_rgba(212,175,55,0.12)_inset] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto">
             {subBar}
           </div>
         </div>
@@ -164,7 +164,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-white/90 bg-white/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(93,49,59,0.25)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-[#d4af37]/30 bg-[#0c0c11]/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="space-y-1">
             {tabs.map((tab) => (
@@ -173,11 +173,11 @@ export function Header() {
                 to={tab.to}
                 onClick={() => setOpen(false)}
                 activeOptions={{ exact: tab.to === '/' }}
-                className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-lg text-[#3f2932] hover:bg-blush/40 transition-colors"
-                activeProps={{ className: 'bg-[#f7e2e1] !text-[#b66f79] font-bold' }}
+                className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-lg text-[#f5f5f7] hover:bg-white/10 transition-colors"
+                activeProps={{ className: 'bg-[#d4af37]/20 !text-[#e5c158] font-bold border border-[#d4af37]/40' }}
               >
                 {tab.label}
-                <span aria-hidden="true" className="font-body text-xs text-muted">
+                <span aria-hidden="true" className="font-body text-xs text-[#9e9ea7]">
                   ↗
                 </span>
               </Link>
@@ -189,10 +189,10 @@ export function Header() {
                 setOpen(false)
                 openReservationModal()
               }}
-              className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-full bg-linear-to-r from-[#3f2932] via-[#4d323f] to-rose text-white text-xs font-bold tracking-wide shadow-md cursor-pointer"
+              className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-full bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-md cursor-pointer"
             >
               <span>Reserva tu momento</span>
-              <span aria-hidden="true" className="text-[#f3d997]">↗</span>
+              <span aria-hidden="true" className="text-[#08080a] font-black">↗</span>
             </button>
           </div>
         </nav>
@@ -204,7 +204,7 @@ export function Header() {
 export function Footer() {
   const business = useStudioConfig()
   return (
-    <footer className="rounded-t-[3rem] bg-plum text-white md:rounded-t-[5rem]">
+    <footer className="rounded-t-[3rem] bg-[#060608] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
       <div className="wrap pt-14 pb-7 md:pt-20">
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>

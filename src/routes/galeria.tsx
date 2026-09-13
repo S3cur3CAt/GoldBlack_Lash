@@ -140,8 +140,8 @@ function Galeria() {
                 }}
                 className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
                   filter === technique
-                    ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
-                    : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                    : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
                 }`}
               >
                 {technique}
@@ -183,7 +183,7 @@ function Galeria() {
           </div>
 
           {!pieces.length ? (
-            <div className="rounded-4xl border border-line bg-white px-6 py-14 text-center">
+            <div className="rounded-4xl border border-line bg-surface px-6 py-14 text-center">
               <span aria-hidden="true" className="text-3xl text-rose">
                 ✧
               </span>
@@ -208,7 +208,7 @@ function Galeria() {
           <div className="rounded-[2.5rem] bg-blush px-6 py-12 text-center md:py-16">
             <span
               aria-hidden="true"
-              className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white text-2xl text-rose"
+              className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
             >
               ♡
             </span>
@@ -266,7 +266,7 @@ function GalleryTile({
       aria-haspopup="dialog"
       aria-label={`Ver ${piece.title}, ${piece.technique}`}
       onClick={onOpen}
-      className="group min-w-0 rounded-4xl border border-line bg-white p-3 text-left shadow-soft transition-transform duration-300 hover:-translate-y-1"
+      className="group min-w-0 rounded-4xl border border-line bg-surface p-3 text-left shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-[#d4af37]/45 hover:shadow-card-hover cursor-pointer"
     >
       <div className="relative overflow-hidden rounded-3xl">
         <StudioVisual
@@ -276,13 +276,13 @@ function GalleryTile({
           className="transition-transform duration-500 group-hover:scale-[1.04]"
         />
 
-        <span className="absolute top-4 left-4 max-w-[calc(100%-2rem)] rounded-full bg-white/95 px-3 py-2 text-[0.6rem] font-semibold text-plum shadow-soft">
+        <span className="absolute top-4 left-4 max-w-[calc(100%-2rem)] rounded-full bg-[#0c0c12]/90 border border-[#d4af37]/30 px-3 py-2 text-[0.6rem] font-bold text-[#e5c158] shadow-soft">
           {piece.technique}
         </span>
 
         <span
           aria-hidden="true"
-          className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-full bg-white text-lg text-rose shadow-soft transition-colors group-hover:bg-plum group-hover:text-white"
+          className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft transition-all group-hover:bg-[#d4af37] group-hover:text-[#08080a]"
         >
           ↗
         </span>
@@ -426,7 +426,7 @@ function Lightbox({
               autoFocus
               onClick={onClose}
               aria-label="Cerrar visor"
-              className="grid h-11 w-11 place-items-center rounded-full border border-line bg-white text-2xl text-rose transition-colors hover:bg-blush"
+              className="grid h-11 w-11 place-items-center rounded-full border border-[#d4af37]/30 bg-[#161622] text-2xl text-rose transition-colors hover:bg-[#202030]"
             >
               ×
             </button>

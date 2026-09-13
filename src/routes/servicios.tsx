@@ -117,13 +117,13 @@ function Servicios() {
         crumbs={[{ label: 'Servicios' }]}
       >
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <span className="rounded-full border border-white bg-white/80 px-4 py-2 text-[0.65rem] text-muted">
+          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Diseño personalizado
           </span>
-          <span className="rounded-full border border-white bg-white/80 px-4 py-2 text-[0.65rem] text-muted">
+          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Atención con cita previa
           </span>
-          <span className="rounded-full border border-white bg-white/80 px-4 py-2 text-[0.65rem] text-muted">
+          <span className="rounded-full border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
             Asesoría de cuidados
           </span>
         </div>
@@ -145,8 +145,8 @@ function Servicios() {
                 }
                 className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
                   visible === category.id
-                    ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
-                    : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                    : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
                 }`}
               >
                 {category.name}
@@ -162,8 +162,8 @@ function Servicios() {
               aria-current={visible === 'faq' ? 'location' : undefined}
               className={`px-3 sm:px-3.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 inline-block ${
                 visible === 'faq'
-                  ? 'bg-linear-to-r from-[#2b1a23] via-[#4a2839] to-rose text-white shadow-sm border border-gold-400/40'
-                  : 'text-muted hover:text-[#3f2932] hover:bg-white/80 border border-transparent'
+                  ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-[0_2px_12px_rgba(212,175,55,0.4)] border border-[#d4af37]/50'
+                  : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
               }`}
             >
               Preguntas frecuentes
@@ -259,7 +259,7 @@ function ServiceCard({ service }: { service: Service }) {
       }`}
     >
       {service.featured ? (
-        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose/15 bg-white/80 px-3 py-1.5 text-[0.6rem] font-bold tracking-widest text-rose uppercase">
+        <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-rose/30 bg-[#161622] px-3 py-1.5 text-[0.6rem] font-bold tracking-widest text-rose uppercase">
           <span aria-hidden="true">♡</span>
           Favorito del estudio
         </p>
@@ -379,7 +379,7 @@ function ProcessBlock() {
         {steps.map((step, index) => (
           <li
             key={step.title}
-            className="rounded-4xl border border-line bg-white p-7 text-center shadow-soft"
+            className="rounded-4xl border border-line bg-surface p-7 text-center shadow-soft"
           >
             <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-blush font-display text-xl text-rose">
               {index + 1}
@@ -431,7 +431,7 @@ function FaqBlock() {
             {faqs.map((faq) => (
               <details
                 key={faq.q}
-                className="group rounded-[1.4rem] border border-white bg-white/85 px-5 py-5"
+                className="group rounded-[1.4rem] border border-line bg-surface px-5 py-5"
               >
                 <summary className="flex list-none items-center justify-between gap-5 text-sm font-semibold leading-6">
                   {faq.q}

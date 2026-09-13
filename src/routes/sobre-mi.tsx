@@ -70,7 +70,7 @@ function SobreMi() {
               />
             </div>
 
-            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-line bg-white px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
+            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0e0e14]/95 px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
               <p className="font-display text-2xl italic text-rose">
                 Belleza con calma,
                 <br />
@@ -145,7 +145,7 @@ function SobreMi() {
               {values.map((value) => (
                 <article
                   key={value.title}
-                  className="rounded-4xl border border-white bg-white/90 p-7 shadow-soft"
+                  className="rounded-4xl border border-line bg-surface p-7 shadow-soft"
                 >
                   <span
                     aria-hidden="true"
@@ -178,7 +178,7 @@ function SobreMi() {
               “
             </span>
 
-            <blockquote className="mt-1 font-display text-3xl leading-snug text-plum sm:text-4xl md:text-5xl">
+            <blockquote className="mt-1 font-display text-3xl leading-snug text-ink sm:text-4xl md:text-5xl">
               No se trata de cambiar tu mirada.
               Se trata de descubrir todo lo que ya tiene.
             </blockquote>
@@ -216,7 +216,7 @@ function SobreMi() {
               </Link>
             </div>
 
-            <div className="rounded-[2.5rem] border border-line bg-white p-7 shadow-soft sm:p-9">
+            <div className="rounded-[2.5rem] border border-line bg-surface p-7 shadow-soft sm:p-9">
               <h3 className="font-display text-2xl">
                 Algunas cosas que conviene contarme
               </h3>
@@ -277,7 +277,7 @@ function SobreMi() {
                 <button
                   type="button"
                   onClick={() => openReservationModal()}
-                  className="button button-light focus-visible:outline-accent cursor-pointer"
+                  className="button button-dark focus-visible:outline-accent cursor-pointer"
                 >
                   Reservar mi cita
                   <span aria-hidden="true">→</span>

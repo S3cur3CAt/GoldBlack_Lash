@@ -119,7 +119,7 @@ function Hero() {
 
             <Link
               to="/servicios"
-              className="button bg-white/70 sm:w-auto"
+              className="button sm:w-auto"
             >
               Descubre tu efecto
             </Link>
@@ -262,7 +262,7 @@ function Experience() {
       <div className="rounded-[3rem] bg-lilac/70 py-16 md:rounded-[4rem] md:py-20">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <div className="relative mx-auto w-full max-w-md pb-9">
-            <div className="overflow-hidden rounded-t-[12rem] rounded-b-[3rem] border-8 border-white shadow-panel">
+            <div className="overflow-hidden rounded-t-[12rem] rounded-b-[3rem] border-4 border-[#d4af37]/40 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -271,7 +271,7 @@ function Experience() {
               />
             </div>
 
-            <div className="absolute right-2 bottom-0 left-2 rounded-[1.8rem] border border-white bg-white/95 px-6 py-5 text-center shadow-soft sm:right-6 sm:left-6">
+            <div className="absolute right-2 bottom-0 left-2 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0e0e14]/95 px-6 py-5 text-center shadow-soft sm:right-6 sm:left-6">
               <p className="font-display text-2xl italic text-rose">
                 “Más que pestañas,
                 <br />
@@ -299,7 +299,7 @@ function Experience() {
             <ol className="mt-8 space-y-6">
               {details.map((item, index) => (
                 <li key={item.title} className="flex gap-4">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white font-display text-lg text-rose">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#161622] border border-[#d4af37]/30 font-display text-lg text-rose">
                     {index + 1}
                   </span>
 
@@ -370,7 +370,7 @@ function FaqSection() {
 
                   <span
                     aria-hidden="true"
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white text-lg text-rose transition-transform group-open:rotate-45"
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-lg text-rose transition-transform group-open:rotate-45"
                   >
                     +
                   </span>
@@ -420,7 +420,7 @@ function BookingSection() {
               <button
                 type="button"
                 onClick={() => openReservationModal()}
-                className="button button-light focus-visible:outline-accent cursor-pointer"
+                className="button button-dark focus-visible:outline-accent cursor-pointer"
               >
                 Reserva tu momento
                 <span aria-hidden="true">↗</span>

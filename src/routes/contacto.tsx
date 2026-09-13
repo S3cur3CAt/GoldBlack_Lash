@@ -49,12 +49,12 @@ function Contacto() {
 
       <section className="pb-16 md:pb-24">
         <div className="wrap">
-          <div className="rounded-[2.5rem] bg-lilac/60 p-6 md:p-10">
+          <div className="rounded-[2.5rem] bg-lilac/60 p-6 md:p-10 border border-line">
             <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr] md:gap-12">
               <div>
                 <span
                   aria-hidden="true"
-                  className="grid h-14 w-14 place-items-center rounded-full bg-white text-2xl text-rose"
+                  className="grid h-14 w-14 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
                 >
                   ♡
                 </span>
@@ -82,7 +82,7 @@ function Contacto() {
                 </a>
               </div>
 
-              <div className="overflow-hidden rounded-4xl border-4 border-white bg-white shadow-soft">
+              <div className="overflow-hidden rounded-4xl border-4 border-[#d4af37]/25 bg-surface shadow-soft">
                 <iframe
                   title={`Ubicación de ${business.name}`}
                   src={business.mapsEmbed}
@@ -105,7 +105,7 @@ function DirectContact() {
     <div className="rounded-4xl border border-rose/15 bg-blush p-7 md:p-8">
       <span
         aria-hidden="true"
-        className="grid h-12 w-12 place-items-center rounded-full bg-white text-2xl text-rose"
+        className="grid h-12 w-12 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/30 text-2xl text-rose"
       >
         ♡
       </span>
@@ -143,7 +143,7 @@ function DirectContact() {
 function ContactDetails() {
   const business = useStudioConfig()
   return (
-    <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
+    <div className="rounded-4xl border border-line bg-surface p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">También me encuentras aquí</h2>
 
       <dl className="mt-6 space-y-6 text-sm">
@@ -201,7 +201,7 @@ function ContactDetails() {
 function OpeningHours() {
   const business = useStudioConfig()
   return (
-    <div className="rounded-4xl border border-line bg-white p-7 shadow-soft md:p-8">
+    <div className="rounded-4xl border border-line bg-surface p-7 shadow-soft md:p-8">
       <h2 className="eyebrow">Horario del estudio</h2>
 
       <ul className="mt-6 space-y-4">
@@ -332,7 +332,7 @@ function BookingForm() {
       <div className="rounded-4xl border border-rose/20 bg-blush/40 p-8 shadow-soft sm:p-12 text-center">
         <span
           aria-hidden="true"
-          className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-white text-3xl text-rose shadow-sm"
+          className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/35 text-3xl text-rose shadow-sm"
         >
           ✓
         </span>
@@ -347,7 +347,7 @@ function BookingForm() {
           Tu solicitud para <strong>{form.servicio}</strong> ha quedado registrada en nuestra agenda.
         </p>
 
-        <div className="mt-6 p-5 rounded-2xl bg-white border border-rose/10 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
+        <div className="mt-6 p-5 rounded-2xl bg-surface border border-rose/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
           <p>
             ✉ Hemos enviado un correo de confirmación a <strong className="text-ink">{form.email}</strong>.
           </p>
