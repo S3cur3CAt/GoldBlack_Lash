@@ -1,11 +1,12 @@
 {
   "name": "goldblack-release-publisher",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "description": "Gestor de Actualizaciones y Publicador de Releases para GoldBlack Lash",
   "author": "GoldBlack Lash <citas@goldblacklash.com>",
   "private": true,
   "main": "main.cjs",
   "scripts": {
-    "start": "electron main.cjs"
+    "start": "electron main.cjs",
+    "build:installer": "node scripts/build-installer.mjs"
   }
 }

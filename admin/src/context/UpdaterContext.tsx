@@ -4,8 +4,6 @@ import { useUpdater, UpdateInfo, UpdateStatus } from '../services/updater'
 interface UpdaterContextType {
   status: UpdateStatus
   updateInfo: UpdateInfo | null
-  isModalOpen: boolean
-  setIsModalOpen: (open: boolean) => void
   progress: number
   receivedBytes: number
   totalBytes: number

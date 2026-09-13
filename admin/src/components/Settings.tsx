@@ -825,7 +825,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </span>
         </div>
         <p className="text-xs text-gray-400 leading-relaxed">
-          El panel busca automáticamente nuevas versiones en GitHub en segundo plano. Al detectar una actualización disponible, el sistema emite una <strong>notificación nativa en macOS</strong> con sonido de campanilla (Glass), hace saltar el icono en el Dock con globo rojo, e ilumina la ventana con el asistente de actualización.
+          El panel busca automáticamente nuevas versiones en GitHub en segundo plano. Al detectar una actualización disponible, macOS emite la <strong>tira de notificación del sistema de Apple</strong> con sonido de campanilla (Glass) y activa el salto en el Dock con globo de aviso.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -843,10 +843,10 @@ export const Settings: React.FC<SettingsProps> = ({
             type="button"
             onClick={() => testUpdateNotification()}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500/20 via-amber-500/20 to-gold-500/10 hover:from-gold-500/30 hover:to-amber-500/20 text-gold-300 border border-gold-500/40 text-xs font-semibold transition-all shadow-gold-glow cursor-pointer active:scale-95"
-            title="Reproduce la campanilla de aviso de Apple, la notificación del sistema y la ventana de actualización"
+            title="Dispara la tira de notificación nativa del sistema de Apple con sonido Glass"
           >
             <span className="text-sm">🔔</span>
-            <span>Probar Notificación Sonora & Visual en Mac</span>
+            <span>Probar Tira de Notificación en Mac</span>
           </button>
         </div>
       </div>

@@ -15,7 +15,8 @@
     "admin:package:win": "pnpm --filter goldblack-lash-admin package:win",
     "admin:package:mac": "pnpm --filter goldblack-lash-admin package:mac",
     "admin:package:all": "pnpm --filter goldblack-lash-admin package:all",
-    "publisher": "electron tools/release-manager/main.cjs"
+    "publisher": "electron tools/release-manager/main.cjs",
+    "publisher:package": "node tools/release-manager/scripts/build-installer.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
@@ -46,5 +47,5 @@
     ]
   },
   "packageManager": "pnpm@10.16.1+sha512.0e155aa2629db8672b49e8475da6226aa4bdea85fdcdfdc15350874946d4f3c91faaf64cbdc4a5d1ab8002f473d5c3fcedcd197989cf0390f9badd3c04678706",
-  "version": "0.2.6"
+  "version": "0.2.8"
 }

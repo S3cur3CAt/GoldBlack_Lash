@@ -8,7 +8,6 @@ import { Services } from './components/Services'
 import { Clients } from './components/Clients'
 import { GalleryManager } from './components/GalleryManager'
 import { Settings } from './components/Settings'
-import { UpdateModal } from './components/UpdateModal'
 
 import {
   Appointment,
@@ -632,9 +631,6 @@ export const App: React.FC = () => {
         )}
       </div>
       </div>
-
-      {/* Global Luxury Update Modal */}
-      <UpdateModal />
     </div>
   )
 }

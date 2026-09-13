@@ -13,7 +13,6 @@ interface Window {
     notifyUpdateAvailable?: (data: any) => void
     clearDockBadge?: () => void
     onNavigateTab?: (callback: (tab: string) => void) => () => void
-    onOpenUpdateModal?: (callback: (data?: any) => void) => () => void
     checkForUpdates?: (currentVersion: string) => Promise<any>
     downloadUpdate?: (url: string, assetName: string) => Promise<{ success: boolean; filePath: string }>
     installUpdate?: (filePath?: string) => Promise<{ success: boolean }>

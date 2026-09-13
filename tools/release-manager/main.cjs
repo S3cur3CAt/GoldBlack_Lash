@@ -41,10 +41,10 @@ function createWindow() {
     : path.join(adminRoot, 'build', 'icon.ico')
 
   mainWindow = new BrowserWindow({
-    width: 980,
-    height: 820,
-    minWidth: 840,
-    minHeight: 650,
+    width: 1380,
+    height: 760,
+    minWidth: 1100,
+    minHeight: 620,
     backgroundColor: '#0a0a0d',
     title: 'GoldBlack Lash — Gestor de Actualizaciones',
     frame: false,

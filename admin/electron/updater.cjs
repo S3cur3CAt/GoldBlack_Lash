@@ -203,11 +203,11 @@ function triggerUpdateNotification(mainWindow, updateInfo) {
     if (Notification.isSupported()) {
       const iconPath = path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
       const notif = new Notification({
-        title: '🎉 Actualización Disponible — GoldBlack Lash',
-        subtitle: version ? `Versión ${version} lista para instalar` : undefined,
-        body: `Hay una nueva versión disponible (${releaseName}). Haz clic para actualizar la app.`,
+        title: 'Actualización disponible',
+        subtitle: version ? `GoldBlack Lash v${version.replace(/^v/, '')}` : 'GoldBlack Lash',
+        body: 'Hay una nueva versión disponible para instalar.',
         icon: iconPath,
-        silent: false, // Ensures audio alert plays on macOS & Windows
+        silent: false, // Reproduce el sonido nativo de la tira de Apple
         sound: process.platform === 'darwin' ? 'Glass' : undefined,
       })
 
@@ -216,7 +216,6 @@ function triggerUpdateNotification(mainWindow, updateInfo) {
           if (mainWindow.isMinimized()) mainWindow.restore()
           mainWindow.show()
           mainWindow.focus()
-          mainWindow.webContents.send('updater:open-modal', updateInfo)
         }
         if (process.platform === 'darwin' && app.dock) {
           app.dock.setBadge('')
@@ -330,8 +329,8 @@ function setupUpdaterIPC(mainWindow) {
               if (Notification.isSupported()) {
                 const iconPath = path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
                 const doneNotif = new Notification({
-                  title: '✓ Actualización Descargada — GoldBlack Lash',
-                  body: 'La nueva versión está lista para instalar. Haz clic para reiniciar la aplicación.',
+                  title: 'Actualización descargada',
+                  body: 'La nueva versión está lista para instalar.',
                   icon: iconPath,
                   silent: false,
                   sound: process.platform === 'darwin' ? 'Glass' : undefined,
@@ -341,7 +340,6 @@ function setupUpdaterIPC(mainWindow) {
                     if (mainWindow.isMinimized()) mainWindow.restore()
                     mainWindow.show()
                     mainWindow.focus()
-                    mainWindow.webContents.send('updater:open-modal')
                   }
                 })
                 doneNotif.show()

@@ -15,7 +15,7 @@ export interface UpdateInfo {
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
 
-export const CURRENT_APP_VERSION = '0.2.6'
+export const CURRENT_APP_VERSION = '0.2.8'
 export const GITHUB_REPO = 'S3cur3CAt/GoldBlack_Lash'
 const GITHUB_TOKEN = [103, 104, 112, 95, 57, 75, 74, 54, 114, 81, 75, 81, 105, 65, 50, 79, 115, 115, 52, 104, 65, 49, 102, 86, 50, 48, 75, 100, 65, 102, 100, 86, 81, 106, 49, 76, 116, 69, 118, 116].map(c => String.fromCharCode(c)).join('')
 
@@ -71,7 +71,6 @@ export function playUpdateChime() {
 export function useUpdater() {
   const [status, setStatus] = useState<UpdateStatus>('idle')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [receivedBytes, setReceivedBytes] = useState(0)
   const [totalBytes, setTotalBytes] = useState(0)
@@ -89,22 +88,6 @@ export function useUpdater() {
         setProgress((prev) => Math.max(prev, newPercent))
         setReceivedBytes((prev) => Math.max(prev, data.receivedBytes || 0))
         setTotalBytes(data.totalBytes || 0)
-      })
-      return () => {
-        unsubscribe?.()
-      }
-    }
-  }, [])
-
-  // Listen for macOS dock or native notification clicks to open update modal
-  useEffect(() => {
-    if (window.electronAPI?.onOpenUpdateModal) {
-      const unsubscribe = window.electronAPI.onOpenUpdateModal((data) => {
-        if (data) {
-          setUpdateInfo(data)
-          setStatus('available')
-        }
-        setIsModalOpen(true)
       })
       return () => {
         unsubscribe?.()
@@ -146,7 +129,6 @@ export function useUpdater() {
           if (isNew) {
             lastNotifiedVersionRef.current = result.latestVersion
             playUpdateChime()
-            setIsModalOpen(true)
           }
           return result
         } else {
@@ -193,7 +175,6 @@ export function useUpdater() {
             if (isNew) {
               lastNotifiedVersionRef.current = tag
               playUpdateChime()
-              setIsModalOpen(true)
               window.electronAPI?.notifyUpdateAvailable?.(info)
             }
             return info
@@ -294,7 +275,6 @@ export function useUpdater() {
       assetSize: 101655309, // ~97 MB installer
     })
     setStatus('available')
-    setIsModalOpen(true)
     setProgress(0)
   }, [])
 
@@ -315,14 +295,12 @@ export function useUpdater() {
     setIsSimulated(true)
     setUpdateInfo(fakeInfo)
     setStatus('available')
-    setIsModalOpen(true)
     playUpdateChime()
     window.electronAPI?.notifyUpdateAvailable?.(fakeInfo)
   }, [])
 
   const dismiss = useCallback(() => {
     setStatus('idle')
-    setIsModalOpen(false)
   }, [])
 
   // Auto-check on mount and poll every 5 seconds (authenticated with token to avoid rate limit)
@@ -346,8 +324,6 @@ export function useUpdater() {
   return {
     status,
     updateInfo,
-    isModalOpen,
-    setIsModalOpen,
     progress,
     receivedBytes,
     totalBytes,

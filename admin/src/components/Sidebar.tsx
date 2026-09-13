@@ -40,7 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     startDownload,
     applyAndRestart,
     dismiss,
-    setIsModalOpen,
   } = useUpdaterContext()
   const menuItems = [
     {
@@ -176,14 +175,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-gold-400"></span>
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="text-[11px] font-bold text-gold-300 hover:text-gold-200 text-left hover:underline cursor-pointer"
-                  title="Ver detalles de la actualización"
-                >
+                <span className="text-[11px] font-bold text-gold-300">
                   {status === 'downloaded' ? 'Actualización lista' : `Nueva versión ${updateInfo?.latestVersion || ''}`}
-                </button>
+                </span>
               </div>
               <button
                 type="button"

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="h-full bg-[#0a0a0d] text-white">
+<html lang="es" class="h-full bg-[#08080c] text-white">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,6 +16,10 @@
               500: '#d4af37',
               600: '#b89228',
             }
+          },
+          boxShadow: {
+            'gold-glow': '0 0 20px -5px rgba(212, 175, 55, 0.4)',
+            'gold-glow-lg': '0 0 30px -5px rgba(212, 175, 55, 0.55)',
           }
         }
       }
@@ -31,14 +35,14 @@
       font-family: 'Playfair Display', serif;
     }
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: #0d0d12;
+      background: #0d0d14;
     }
     ::-webkit-scrollbar-thumb {
-      background: #252536;
+      background: #232334;
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
@@ -54,295 +58,324 @@
 </head>
 <body class="h-full flex flex-col overflow-hidden bg-[#08080c] text-gray-200">
 
-  <!-- Custom TitleBar -->
-  <header class="drag-region h-11 bg-[#0d0d14] border-b border-[#1c1c28] flex items-center justify-between px-3 select-none shrink-0">
-    <div class="flex items-center gap-2.5">
-      <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 p-[1px] flex items-center justify-center">
+  <!-- TOP HEADER BAR: Sleek Horizontal Header with integrated Status Indicators -->
+  <header class="drag-region h-12 bg-[#0c0c14] border-b border-[#1c1c28] flex items-center justify-between px-4 select-none shrink-0 z-30">
+    <!-- Left: Branding -->
+    <div class="flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-gold-400 via-amber-500 to-gold-600 p-[1px] flex items-center justify-center shadow-gold-glow">
         <div class="w-full h-full bg-[#0a0a0d] rounded-[7px] flex items-center justify-center text-[11px] font-serif font-bold text-gold-400">
           GB
         </div>
       </div>
-      <span class="text-xs font-semibold text-gray-300 tracking-wide">
-        GoldBlack Lash <span class="text-gold-400 font-normal">| Gestor de Actualizaciones</span>
-      </span>
-      <span class="text-[9.5px] px-2 py-0.5 rounded-full bg-gold-500/15 text-gold-300 border border-gold-500/30 uppercase tracking-widest font-mono">
-        Windows Tool
-      </span>
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-white tracking-wide">
+          GoldBlack Lash <span class="text-gold-400 font-normal">| Gestor de Actualizaciones</span>
+        </span>
+        <span class="text-[9px] px-2 py-0.5 rounded-full bg-gold-500/15 text-gold-300 border border-gold-500/30 uppercase tracking-widest font-mono font-semibold">
+          Horizontal Studio
+        </span>
+      </div>
     </div>
 
-    <!-- Window Controls -->
+    <!-- Center: Live Repo & Version Status Pill -->
+    <div class="no-drag flex items-center gap-2 bg-[#12121c] border border-[#222234] px-3 py-1 rounded-xl shadow-inner">
+      <div class="flex items-center gap-1.5 text-[11px] text-gray-400 pr-2.5 border-r border-[#222234]">
+        <svg class="text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+        <span class="font-mono text-[10.5px] text-gray-300">S3cur3CAt/GoldBlack_Lash</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 text-[11px] px-2 border-r border-[#222234]">
+        <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Local Admin:</span>
+        <span id="txtLocalVersion" class="text-xs font-mono font-bold text-gold-400 bg-[#1a1a28] px-2 py-0.5 rounded border border-gold-500/30">v0.2.7</span>
+      </div>
+
+      <div class="flex items-center gap-1.5 text-[11px] px-2">
+        <span class="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">En GitHub:</span>
+        <span id="txtGitHubVersion" class="text-xs font-mono font-bold text-gray-300 bg-[#161622] px-2 py-0.5 rounded">Comprobando...</span>
+      </div>
+
+      <button id="btnRefreshStatus" title="Refrescar versiones y conexión con GitHub" class="p-1 rounded-lg bg-[#181826] hover:bg-[#252538] text-gray-400 hover:text-gold-300 border border-[#2b2b3d] transition-colors ml-1 cursor-pointer">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+      </button>
+    </div>
+
+    <!-- Right: Window Controls -->
     <div class="no-drag flex items-center gap-1">
-      <button id="btnMinimize" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a26] transition-colors">
+      <button id="btnMinimize" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a26] transition-colors cursor-pointer" title="Minimizar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
       </button>
-      <button id="btnMaximize" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a26] transition-colors">
+      <button id="btnMaximize" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a26] transition-colors cursor-pointer" title="Maximizar / Restaurar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
       </button>
-      <button id="btnClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-300 hover:bg-red-950/80 transition-colors">
+      <button id="btnClose" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-300 hover:bg-red-950/80 transition-colors cursor-pointer" title="Cerrar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
   </header>
 
-  <!-- Main Content Container -->
-  <main class="flex-1 overflow-y-auto p-6 space-y-5 max-w-4xl w-full mx-auto">
+  <!-- HORIZONTAL WORKSPACE: 3 Horizontal Columns side-by-side (No vertical stacking) -->
+  <main class="flex-1 flex flex-row gap-4 p-4 overflow-x-auto overflow-y-hidden w-full h-[calc(100vh-48px)]">
 
-    <!-- Top Status Banner -->
-    <div class="rounded-2xl bg-gradient-to-r from-[#14141e] via-[#101018] to-[#0c0c12] border border-[#232332] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/30 flex items-center justify-center text-gold-400 shrink-0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x1="12" y1="15" y2="3"/></svg>
-        </div>
-        <div>
-          <h2 class="text-sm font-bold text-white flex items-center gap-2">
-            Publicador de Releases en GitHub
-            <span class="text-[10px] text-gray-400 font-mono">S3cur3CAt/GoldBlack_Lash</span>
-          </h2>
-          <p class="text-xs text-gray-400">
-            Lanza nuevas versiones a GitHub para que la aplicación de administración se actualice automáticamente.
-          </p>
-        </div>
-      </div>
+    <!-- ========================================================================= -->
+    <!-- COLUMN 1 (LEFT ~360px): GitHub Authentication + Release Versioning         -->
+    <!-- ========================================================================= -->
+    <section class="w-[370px] min-w-[340px] max-w-[400px] flex flex-col gap-3.5 h-full overflow-y-auto pr-1 shrink-0">
 
-      <div class="flex items-center gap-2">
-        <div class="text-right">
-          <span class="text-[10px] uppercase tracking-wider text-gray-400 block font-semibold">Versión Local Admin</span>
-          <span id="txtLocalVersion" class="text-xs font-mono font-bold text-gold-400 bg-[#1a1a28] px-2 py-0.5 rounded border border-gold-500/30">v0.0.1</span>
+      <!-- Step 1: GitHub Access Token -->
+      <div class="rounded-2xl bg-[#101018] border border-[#20202e] p-4 space-y-3 shadow-lg flex flex-col shrink-0">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-[11px] font-bold flex items-center justify-center border border-gold-500/30">1</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Autenticación GitHub</h3>
+          </div>
+          <button id="btnOpenTokenHelp" class="text-[10.5px] text-gold-400 hover:text-gold-300 hover:underline flex items-center gap-1 cursor-pointer">
+            <span>Crear Token</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </button>
         </div>
-        <div class="text-right pl-3 border-l border-[#232332]">
-          <span class="text-[10px] uppercase tracking-wider text-gray-400 block font-semibold">Última en GitHub</span>
-          <span id="txtGitHubVersion" class="text-xs font-mono font-bold text-gray-300 bg-[#161622] px-2 py-0.5 rounded">Comprobando...</span>
-        </div>
-        <button id="btnRefreshStatus" title="Refrescar estado" class="p-2 rounded-xl bg-[#181824] hover:bg-[#232334] text-gray-400 hover:text-gold-300 border border-[#2b2b3d] transition-colors ml-1">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-        </button>
-      </div>
-    </div>
 
-    <!-- Step 1: GitHub Authentication -->
-    <div class="rounded-2xl bg-[#111118] border border-[#222230] p-5 space-y-3 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs font-bold flex items-center justify-center border border-gold-500/30">1</span>
-          <h3 class="text-sm font-bold text-white">Autenticación con GitHub</h3>
-        </div>
-        <button id="btnOpenTokenHelp" class="text-[11px] text-gold-400 hover:text-gold-300 hover:underline flex items-center gap-1 cursor-pointer">
-          <span>Crear Token en GitHub (permiso "repo")</span>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </button>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="block text-xs text-gray-400 font-medium">
-          GitHub Personal Access Token (Classic o Fine-Grained con permiso de repositorio)
-        </label>
-        <div class="flex items-center gap-2">
-          <div class="relative flex-1">
+        <div class="space-y-1.5">
+          <label class="block text-[11px] text-gray-400 font-medium">
+            Token de Acceso Personal (permiso "repo"):
+          </label>
+          <div class="relative">
             <input
               id="inputToken"
               type="password"
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              class="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 font-mono tracking-wider"
+              class="w-full px-3 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 font-mono tracking-wider pr-14"
             />
-            <button id="btnToggleToken" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-xs">
+            <button id="btnToggleToken" type="button" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-[11px] font-semibold px-1.5 py-0.5 rounded hover:bg-[#252536] cursor-pointer">
               Ver
             </button>
           </div>
-          <button id="btnSaveToken" class="px-4 py-2.5 rounded-xl bg-[#202030] hover:bg-[#2a2a40] text-gray-200 hover:text-white text-xs font-semibold border border-[#34344e] transition-colors shrink-0">
-            Guardar
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnSaveToken" class="flex-1 py-2 rounded-xl bg-[#1c1c2a] hover:bg-[#26263a] text-gray-200 hover:text-white text-xs font-semibold border border-[#303046] transition-colors cursor-pointer">
+            Guardar Token
           </button>
-          <button id="btnVerifyToken" class="px-4 py-2.5 rounded-xl bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 text-xs font-bold border border-gold-500/40 transition-colors shrink-0 flex items-center gap-1.5">
+          <button id="btnVerifyToken" class="flex-1 py-2 rounded-xl bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 text-xs font-bold border border-gold-500/40 transition-colors flex items-center justify-center gap-1.5 cursor-pointer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
             <span>Verificar</span>
           </button>
         </div>
-        <div id="tokenStatusMsg" class="text-[11px] text-gray-500 min-h-[16px]"></div>
-      </div>
-    </div>
 
-    <!-- Step 2: New Release Details -->
-    <div class="rounded-2xl bg-[#111118] border border-[#222230] p-5 space-y-4 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs font-bold flex items-center justify-center border border-gold-500/30">2</span>
-          <h3 class="text-sm font-bold text-white">Detalles de la Nueva Versión</h3>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-[10px] text-gray-500">Sugerir:</span>
-          <button id="btnBumpPatch" class="px-2 py-0.5 rounded bg-[#1c1c2a] hover:bg-[#252538] text-gold-300 text-[10px] font-mono border border-[#303046]">
-            Patch (+0.0.1)
-          </button>
-          <button id="btnBumpMinor" class="px-2 py-0.5 rounded bg-[#1c1c2a] hover:bg-[#252538] text-gold-300 text-[10px] font-mono border border-[#303046]">
-            Minor (+0.1.0)
-          </button>
-        </div>
+        <div id="tokenStatusMsg" class="text-[10.5px] text-gray-500 min-h-[15px] leading-tight"></div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-xs text-gray-400 font-medium mb-1">
-            Número de Versión *
+      <!-- Step 2: Version and Title -->
+      <div class="rounded-2xl bg-[#101018] border border-[#20202e] p-4 space-y-3 shadow-lg flex flex-col shrink-0">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-[11px] font-bold flex items-center justify-center border border-gold-500/30">2</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Nueva Versión</h3>
+          </div>
+          <div class="flex items-center gap-1">
+            <button id="btnBumpPatch" class="px-2 py-0.5 rounded-lg bg-[#1c1c2a] hover:bg-[#26263a] text-gold-300 text-[10px] font-mono font-semibold border border-[#303046] transition-colors cursor-pointer" title="Incrementa +0.0.1">
+              + Patch
+            </button>
+            <button id="btnBumpMinor" class="px-2 py-0.5 rounded-lg bg-[#1c1c2a] hover:bg-[#26263a] text-gold-300 text-[10px] font-mono font-semibold border border-[#303046] transition-colors cursor-pointer" title="Incrementa +0.1.0">
+              + Minor
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="block text-[11px] text-gray-400 font-medium">
+            Número de Versión:
           </label>
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">v</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs font-bold">v</span>
             <input
               id="inputVersion"
               type="text"
-              placeholder="0.0.2"
-              class="w-full pl-7 pr-3.5 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 font-mono font-bold"
+              placeholder="0.2.8"
+              class="w-full pl-7 pr-3 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 font-mono font-bold"
             />
           </div>
         </div>
 
-        <div class="sm:col-span-2">
-          <label class="block text-xs text-gray-400 font-medium mb-1">
-            Título de la Release
+        <div class="space-y-1.5">
+          <label class="block text-[11px] text-gray-400 font-medium">
+            Título de la Release en GitHub:
           </label>
           <input
             id="inputTitle"
             type="text"
-            placeholder="GoldBlack Lash Admin v0.0.2"
-            class="w-full px-3.5 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400"
+            placeholder="GoldBlack Lash Admin v0.2.8"
+            class="w-full px-3 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400"
           />
+        </div>
+
+        <!-- Auto sync notice pill -->
+        <div class="flex items-start gap-2 text-[10.5px] bg-[#141420] p-2.5 rounded-xl border border-gold-500/20 text-gray-300 leading-snug">
+          <svg class="text-gold-400 shrink-0 mt-0.5" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>La versión se sincroniza automáticamente en <strong class="text-white font-mono">admin/package.json</strong>, <strong class="text-white font-mono">updater.ts</strong> y paquetes raíz al compilar o publicar.</span>
         </div>
       </div>
 
-      <!-- Automatic package.json sync notice -->
-      <div class="flex items-center gap-2.5 text-[11px] bg-[#141420] px-3.5 py-2.5 rounded-xl border border-gold-500/20 text-gray-300">
-        <svg class="text-gold-400 shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-        <span>Al pulsar <strong class="text-white">Compilar Instalador Ahora</strong> o <strong class="text-white">Publicar Actualización</strong>, esta versión se aplica automáticamente a todos los <strong class="text-gold-300 font-mono">package.json</strong> y archivos del proyecto.</span>
-      </div>
+    </section>
 
-      <!-- Notes / Changelog -->
-      <div class="space-y-1.5">
-        <div class="flex items-center justify-between">
-          <label class="block text-xs text-gray-400 font-medium">
-            Notas de la Versión (Changelog para las clientas/administradoras)
-          </label>
+    <!-- ========================================================================= -->
+    <!-- COLUMN 2 (CENTER ~420px): Full-Height Release Notes & Changelog Editor    -->
+    <!-- ========================================================================= -->
+    <section class="w-[420px] min-w-[340px] max-w-[480px] flex flex-col h-full shrink-0">
+
+      <div class="rounded-2xl bg-[#101018] border border-[#20202e] p-4 shadow-lg flex flex-col h-full space-y-3">
+        <div class="flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-[11px] font-bold flex items-center justify-center border border-gold-500/30">3</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Notas de la Versión (Changelog)</h3>
+          </div>
           <div class="flex items-center gap-1.5">
-            <button id="btnTemplateFixes" type="button" class="text-[10px] px-2 py-0.5 rounded bg-[#191926] hover:bg-[#222234] text-gray-400 hover:text-white">
-              + Corrección de errores
+            <button id="btnTemplateFixes" type="button" class="text-[10px] px-2 py-1 rounded-lg bg-[#191926] hover:bg-[#242436] text-gray-300 hover:text-white border border-[#28283c] transition-colors cursor-pointer">
+              + Errores
             </button>
-            <button id="btnTemplateFeatures" type="button" class="text-[10px] px-2 py-0.5 rounded bg-[#191926] hover:bg-[#222234] text-gray-400 hover:text-white">
-              + Nuevas funciones
+            <button id="btnTemplateFeatures" type="button" class="text-[10px] px-2 py-1 rounded-lg bg-[#191926] hover:bg-[#242436] text-gray-300 hover:text-white border border-[#28283c] transition-colors cursor-pointer">
+              + Funciones
             </button>
           </div>
         </div>
-        <textarea
-          id="inputNotes"
-          rows="3"
-          placeholder="Escribe los cambios principales de esta versión..."
-          class="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 leading-relaxed font-sans"
-        >### Novedades en esta versión:
-- Correcciones y mejoras en la previsualización de fotografías.
-- Sincronización automática de citas y servicios en tiempo real con Supabase Postgres.</textarea>
-      </div>
-    </div>
 
-    <!-- Step 3: Multiplatform Installers Binary (.exe and .zip) -->
-    <div class="rounded-2xl bg-[#111118] border border-[#222230] p-5 space-y-4 shadow-lg">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full bg-gold-500/20 text-gold-400 text-xs font-bold flex items-center justify-center border border-gold-500/30">3</span>
-          <h3 class="text-sm font-bold text-white">Instaladores Multiplataforma (Windows y macOS)</h3>
+        <p class="text-[11px] text-gray-400 shrink-0 leading-tight">
+          Estas notas se presentarán visualmente a las clientas y administradoras en el aviso de actualización en Mac y Windows.
+        </p>
+
+        <!-- Flexible height Textarea taking remaining column height -->
+        <div class="flex-1 flex flex-col min-h-0">
+          <textarea
+            id="inputNotes"
+            placeholder="Escribe las mejoras y cambios de esta versión..."
+            class="w-full flex-1 p-3 rounded-xl bg-[#141420] border border-[#262638] text-xs text-white placeholder-gray-600 focus:outline-none focus:border-gold-400 leading-relaxed font-mono resize-none overflow-y-auto"
+          >### Novedades en esta versión:
+- ✨ Tipografía redondeada nativa de Apple incrustada para máxima fidelidad visual.
+- 🔔 Notificaciones sonoras y visuales automáticas en macOS y Windows.
+- 🚀 Corrección de errores y optimización de rendimiento en citas y catálogo.</textarea>
         </div>
-        <button id="btnBuildInstaller" class="px-3 py-1.5 rounded-xl bg-[#202030] hover:bg-[#2c2c42] text-gold-300 text-xs font-semibold border border-gold-500/30 transition-colors flex items-center gap-1.5 cursor-pointer">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Compilar Instaladores Ahora</span>
-        </button>
+
+        <div class="flex items-center justify-between text-[10px] text-gray-500 font-mono shrink-0 pt-1">
+          <span>Formato Markdown compatible</span>
+          <span>Soporta emojis y viñetas</span>
+        </div>
       </div>
 
-      <div class="space-y-2">
-        <label class="block text-xs text-gray-400 font-medium">
-          Archivos ejecutables detectados en admin/dist-installers (.exe para Windows y .zip para macOS):
-        </label>
-        <div class="flex items-center gap-2">
-          <select id="selectInstaller" class="flex-1 px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400">
-            <option value="">Buscando instaladores disponibles...</option>
-          </select>
-          <button id="btnBrowseInstaller" type="button" class="px-3.5 py-2.5 rounded-xl bg-[#202030] hover:bg-[#2c2c42] text-gray-200 hover:text-white text-xs font-semibold border border-[#34344e] transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-            <span>Examinar...</span>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- COLUMN 3 (RIGHT ~flex-1): Multiplatform Installers + Live GitHub Publish   -->
+    <!-- ========================================================================= -->
+    <section class="flex-1 min-w-[380px] flex flex-col gap-3.5 h-full overflow-y-auto pl-1">
+
+      <!-- Step 4: Multiplatform Installers (.exe and .zip) -->
+      <div class="rounded-2xl bg-[#101018] border border-[#20202e] p-4 space-y-3 shadow-lg flex flex-col shrink-0">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full bg-gold-500/20 text-gold-400 text-[11px] font-bold flex items-center justify-center border border-gold-500/30">4</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Instaladores Multiplataforma</h3>
+          </div>
+          <button id="btnBuildInstaller" class="px-3 py-1.5 rounded-xl bg-[#1c1c2a] hover:bg-[#26263a] text-gold-300 text-xs font-semibold border border-gold-500/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <span>Compilar Instaladores Ahora</span>
           </button>
         </div>
-        <div id="selectedInstallerInfo" class="text-[11px] text-gray-500 font-mono"></div>
-      </div>
 
-      <!-- Build Terminal Output (Hidden by default, shown during build) -->
-      <div id="buildOutputContainer" class="hidden rounded-xl bg-[#09090e] border border-[#202030] p-3 space-y-1 font-mono text-[10.5px]">
-        <div class="flex items-center justify-between text-gray-400 border-b border-[#1c1c28] pb-1.5">
-          <span class="flex items-center gap-1.5 text-gold-300 font-bold">
-            <span class="inline-block w-2 h-2 rounded-full bg-gold-400 animate-ping"></span>
-            Compilando instaladores (Windows NSIS + macOS Monterey)...
-          </span>
-          <span id="buildStatusBadge" class="text-[10px] text-gray-500">En progreso</span>
-        </div>
-        <pre id="buildLogText" class="max-h-40 overflow-y-auto text-gray-300 whitespace-pre-wrap leading-tight pt-1"></pre>
-      </div>
-    </div>
-
-    <!-- Step 4: Publish Action & Live Progress -->
-    <div class="rounded-2xl bg-gradient-to-b from-[#181826] to-[#12121c] border border-gold-500/40 p-5 space-y-4 shadow-2xl">
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            🚀 Publicar y Notificar Actualización
-          </h3>
-          <p class="text-xs text-gray-400 mt-0.5">
-            Crea la Release oficial en GitHub y sube los instaladores de Windows (.exe) y macOS (.zip).
-          </p>
-          <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-300 hover:text-white transition-colors mt-2">
-            <input type="checkbox" id="checkAutoBuild" checked class="rounded text-gold-500 focus:ring-0 cursor-pointer" />
-            <span>Compilar instaladores (Windows y Mac) automáticamente con la nueva versión antes de subir</span>
+        <div class="space-y-1.5">
+          <label class="block text-[11px] text-gray-400 font-medium">
+            Archivos detectados en <span class="font-mono text-gray-300">admin/dist-installers</span> (.exe Windows & .zip Mac):
           </label>
+          <div class="flex items-center gap-2">
+            <select id="selectInstaller" class="flex-1 px-3 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400">
+              <option value="">Buscando instaladores disponibles...</option>
+            </select>
+            <button id="btnBrowseInstaller" type="button" class="px-3 py-2 rounded-xl bg-[#1e1e2c] hover:bg-[#28283c] text-gray-200 hover:text-white text-xs font-semibold border border-[#303046] transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+              <span>Examinar...</span>
+            </button>
+          </div>
+          <div id="selectedInstallerInfo" class="text-[10.5px] text-gray-500 font-mono truncate"></div>
         </div>
 
+        <!-- Build Terminal Output Drawer -->
+        <div id="buildOutputContainer" class="hidden rounded-xl bg-[#09090e] border border-[#202030] p-3 space-y-1 font-mono text-[10px]">
+          <div class="flex items-center justify-between text-gray-400 border-b border-[#1c1c28] pb-1">
+            <span class="flex items-center gap-1.5 text-gold-300 font-bold">
+              <span class="inline-block w-2 h-2 rounded-full bg-gold-400 animate-ping"></span>
+              Terminal de Compilación (Windows NSIS + macOS Monterey)
+            </span>
+            <span id="buildStatusBadge" class="text-[9.5px] text-gray-500">En progreso</span>
+          </div>
+          <pre id="buildLogText" class="max-h-32 overflow-y-auto text-gray-300 whitespace-pre-wrap leading-tight pt-1"></pre>
+        </div>
+      </div>
+
+      <!-- Step 5: Publish Action & Live Upload Progress -->
+      <div class="rounded-2xl bg-gradient-to-br from-[#161624] via-[#12121c] to-[#0d0d14] border border-gold-500/40 p-4 space-y-3.5 shadow-gold-glow flex flex-col shrink-0">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <span>🚀</span> Publicar y Notificar a Clientes
+            </h3>
+            <p class="text-[11px] text-gray-400 mt-0.5">
+              Crea la Release oficial en GitHub y sube los paquetes de Windows y Mac.
+            </p>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer text-[11px] text-gray-300 hover:text-white transition-colors">
+          <input type="checkbox" id="checkAutoBuild" checked class="rounded text-gold-500 focus:ring-0 cursor-pointer" />
+          <span>Compilar instaladores (Windows y Mac) automáticamente con la nueva versión antes de subir</span>
+        </label>
+
+        <!-- CTA Big Gold Button -->
         <button
           id="btnPublishRelease"
-          class="w-full sm:w-auto px-7 py-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-black font-extrabold text-xs uppercase tracking-wider shadow-gold-glow transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 via-amber-400 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-black font-extrabold text-xs uppercase tracking-wider shadow-gold-glow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
-          <span>Publicar Actualización Ahora</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+          <span>Publicar Actualización Oficial en GitHub</span>
         </button>
+
+        <!-- Upload Progress Container (Shown during upload) -->
+        <div id="uploadProgressContainer" class="hidden rounded-xl bg-[#0b0b12] border border-[#222234] p-3 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span id="uploadStatusText" class="text-gold-300 font-semibold flex items-center gap-2 text-[11px]">
+              <svg class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              Subiendo instaladores a GitHub...
+            </span>
+            <span id="uploadPercentText" class="font-mono font-bold text-gold-400 text-xs">0%</span>
+          </div>
+
+          <div class="w-full h-2.5 rounded-full bg-[#181824] overflow-hidden border border-[#2b2b3d] p-[1px]">
+            <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-gold-500 via-amber-400 to-gold-300 rounded-full transition-all duration-200 shadow-gold-glow" style="width: 0%"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[10px] text-gray-500 font-mono">
+            <span id="uploadBytesText">0 MB / 0 MB</span>
+            <span>Mantén la ventana abierta durante la subida</span>
+          </div>
+        </div>
+
+        <!-- Success Notification Box (Shown when finished) -->
+        <div id="successBox" class="hidden rounded-xl bg-emerald-950/50 border border-emerald-500/40 p-3 space-y-2">
+          <div class="flex items-center gap-2 text-emerald-300 text-xs font-bold">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+            <span id="successTitleText">¡Release publicada con éxito en GitHub!</span>
+          </div>
+          <p class="text-[11px] text-emerald-200/80 leading-relaxed">
+            La release ya está publicada en GitHub. La aplicación de administración de GoldBlack Lash detectará esta nueva versión, emitirá la campanilla y mostrará la alerta visual.
+          </p>
+          <div class="pt-1 flex items-center gap-2">
+            <button id="btnOpenReleaseInBrowser" class="px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold border border-emerald-500/40 transition-colors flex items-center gap-1.5 cursor-pointer">
+              <span>Ver Release en GitHub</span>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </button>
+          </div>
+        </div>
+
       </div>
 
-      <!-- Upload Progress Container (Shown during upload) -->
-      <div id="uploadProgressContainer" class="hidden rounded-xl bg-[#0e0e16] border border-[#272738] p-4 space-y-2">
-        <div class="flex items-center justify-between text-xs">
-          <span id="uploadStatusText" class="text-gold-300 font-semibold flex items-center gap-2">
-            <svg class="animate-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-            Subiendo instaladores a GitHub...
-          </span>
-          <span id="uploadPercentText" class="font-mono font-bold text-gold-400">0%</span>
-        </div>
-
-        <div class="w-full h-3 rounded-full bg-[#181824] overflow-hidden border border-[#2b2b3d] p-[1.5px]">
-          <div id="uploadProgressBar" class="h-full bg-gradient-to-r from-gold-500 via-amber-400 to-gold-300 rounded-full transition-all duration-200 shadow-gold-glow" style="width: 0%"></div>
-        </div>
-
-        <div class="flex items-center justify-between text-[10.5px] text-gray-500 font-mono">
-          <span id="uploadBytesText">0 MB / 0 MB</span>
-          <span>Por favor no cierres la ventana</span>
-        </div>
-      </div>
-
-      <!-- Success Notification Box (Shown when finished) -->
-      <div id="successBox" class="hidden rounded-xl bg-emerald-950/40 border border-emerald-500/40 p-4 space-y-2">
-        <div class="flex items-center gap-2 text-emerald-300 text-xs font-bold">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-          <span id="successTitleText">¡Actualización v0.0.2 publicada con éxito en GitHub!</span>
-        </div>
-        <p class="text-[11.5px] text-emerald-200/80 leading-relaxed">
-          La release ya está en línea en GitHub. La aplicación de administración de GoldBlack Lash detectará esta nueva versión en su barra lateral y mostrará el botón de actualización con la barra de descarga automática.
-        </p>
-        <div class="pt-1 flex items-center gap-3">
-          <button id="btnOpenReleaseInBrowser" class="px-4 py-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-semibold border border-emerald-500/40 transition-colors flex items-center gap-1.5 cursor-pointer">
-            <span>Ver Release en GitHub</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </button>
-        </div>
-      </div>
-
-    </div>
+    </section>
 
   </main>
 

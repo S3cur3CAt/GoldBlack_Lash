@@ -20,11 +20,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('navigate:tab', handler)
     return () => ipcRenderer.removeListener('navigate:tab', handler)
   },
-  onOpenUpdateModal: (callback) => {
-    const handler = (_event, data) => callback(data)
-    ipcRenderer.on('updater:open-modal', handler)
-    return () => ipcRenderer.removeListener('updater:open-modal', handler)
-  },
   // Auto-Updater from GitHub Releases
   checkForUpdates: (currentVersion) => ipcRenderer.invoke('updater:check', currentVersion),
   downloadUpdate: (url, assetName) => ipcRenderer.invoke('updater:download', { url, assetName }),
