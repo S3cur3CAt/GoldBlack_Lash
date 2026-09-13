@@ -13,7 +13,7 @@ import {
   LashStyle,
   AgendaDayNote,
 } from '../types/admin'
-import { getAgendaNotes, saveDayNote, addDayNote, deleteDayNoteById, updateDayNoteById } from '../services/storage'
+import { getAgendaNotes, saveDayNote } from '../services/storage'
 import {
   IconCalendar,
   IconClock,
@@ -81,12 +81,11 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   const [calMonth, setCalMonth] = useState<number>(() => new Date().getMonth()) // 0 - 11
   const [notes, setNotes] = useState<AgendaDayNote[]>(() => getAgendaNotes())
 
-  // Notes Side Panel State (replaces modal — supports multiple notes per day)
-  const [notesPanelDate, setNotesPanelDate] = useState<string | null>(null)
-  const [notePanelInput, setNotePanelInput] = useState('')
-  const [notePanelColor, setNotePanelColor] = useState<AgendaDayNote['color']>('gold')
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
-  const [editingNoteText, setEditingNoteText] = useState('')
+  // Note Modal State
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [noteModalDate, setNoteModalDate] = useState(agendaDate)
+  const [noteModalContent, setNoteModalContent] = useState('')
+  const [noteModalColor, setNoteModalColor] = useState<AgendaDayNote['color']>('gold')
 
   const MONTH_NAMES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -120,48 +119,25 @@ export const Appointments: React.FC<AppointmentsProps> = ({
     setAgendaDate(now.toISOString().split('T')[0])
   }
 
-  /** Open notes side panel for a day */
-  const handleOpenNotesPanel = (dateStr: string) => {
-    setNotesPanelDate(dateStr)
-    setNotePanelInput('')
-    setEditingNoteId(null)
-    setEditingNoteText('')
+  const handleOpenNoteModal = (dateStr: string) => {
+    const existing = notes.find((n) => n.date === dateStr)
+    setNoteModalDate(dateStr)
+    setNoteModalContent(existing?.content || '')
+    setNoteModalColor(existing?.color || 'gold')
+    setIsNoteModalOpen(true)
   }
 
-  /** Add a new note to the panel date */
-  const handleAddNote = () => {
-    if (!notesPanelDate || !notePanelInput.trim()) return
-    const updated = addDayNote(notesPanelDate, notePanelInput, notePanelColor)
+  const handleSaveNoteModal = () => {
+    const updated = saveDayNote(noteModalDate, noteModalContent, noteModalColor)
     setNotes([...updated])
-    setNotePanelInput('')
-  }
-
-  /** Delete a note by id */
-  const handleDeleteNote = (id: string) => {
-    showConfirm({
-      title: 'Eliminar Nota',
-      message: '¿Eliminar esta nota?',
-      confirmText: 'Sí, eliminar',
-      cancelText: 'Cancelar',
-      danger: true,
-      onConfirm: () => {
-        const updated = deleteDayNoteById(id)
-        setNotes([...updated])
-        if (editingNoteId === id) setEditingNoteId(null)
-      },
+    setIsNoteModalOpen(false)
+    showAlert({
+      title: 'Nota Guardada',
+      message: `La nota para el día ${noteModalDate} se ha guardado en la agenda.`,
+      type: 'info',
     })
   }
 
-  /** Save inline edit of a note */
-  const handleSaveEditNote = (id: string) => {
-    if (!editingNoteText.trim()) return
-    const updated = updateDayNoteById(id, editingNoteText)
-    setNotes([...updated])
-    setEditingNoteId(null)
-    setEditingNoteText('')
-  }
-
-  // Keep saveDayNote for agenda view banner (legacy single-note display)
   const handleDeleteNoteModal = (dateStr: string) => {
     showConfirm({
       title: 'Eliminar Nota',
@@ -172,6 +148,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
       onConfirm: () => {
         const updated = saveDayNote(dateStr, '')
         setNotes([...updated])
+        if (isNoteModalOpen) setIsNoteModalOpen(false)
       },
     })
   }
@@ -438,7 +415,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               ))}
             </select>
 
-
+            <button
+              type="button"
+              onClick={() => handleOpenNoteModal(agendaDate)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <span>📝</span>
+              <span>Nota del Día</span>
+            </button>
           </div>
         )}
 
@@ -505,7 +489,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
             />
 
-
+            <button
+              type="button"
+              onClick={() => handleOpenNoteModal(agendaDate)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <span>📝</span>
+              <span>Nota</span>
+            </button>
           </div>
         )}
       </div>
@@ -598,7 +589,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
         return (
           <div className="space-y-6 animate-fadeIn">
-            {/* Notes Side Panel + Calendar layout */}
             {/* Monthly KPI Header */}
             <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#151522] via-[#11111a] to-[#0c0c14] border border-gold-500/30 flex flex-wrap items-center justify-between gap-4 shadow-xl">
               <div>
@@ -632,26 +622,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               </div>
             </div>
 
-            {/* Calendar + Notes Side Panel */}
-            <div className={`flex gap-4 ${notesPanelDate ? 'items-start' : ''}`}>
             {/* Calendar 7-Day Grid */}
-            <div className={`rounded-3xl bg-[#0f0f17] border border-[#1e1e2d] overflow-hidden shadow-2xl transition-all ${notesPanelDate ? 'flex-1 min-w-0' : 'w-full'}`}>
+            <div className="rounded-3xl bg-[#0f0f17] border border-[#1e1e2d] overflow-hidden shadow-2xl">
               {/* Days of Week Header */}
               <div className="grid grid-cols-7 border-b border-[#222234] bg-[#141420] text-center text-xs font-bold text-gray-400 py-3">
-                <div className="text-gray-300 hidden sm:block">Lunes</div>
-                <div className="text-gray-300 hidden sm:block">Martes</div>
-                <div className="text-gray-300 hidden sm:block">Miércoles</div>
-                <div className="text-gray-300 hidden sm:block">Jueves</div>
-                <div className="text-gray-300 hidden sm:block">Viernes</div>
-                <div className="text-gold-400/80 hidden sm:block">Sábado</div>
-                <div className="text-gold-400/80 hidden sm:block">Domingo</div>
-                <div className="text-gray-300 sm:hidden">Lu</div>
-                <div className="text-gray-300 sm:hidden">Ma</div>
-                <div className="text-gray-300 sm:hidden">Mi</div>
-                <div className="text-gray-300 sm:hidden">Ju</div>
-                <div className="text-gray-300 sm:hidden">Vi</div>
-                <div className="text-gold-400/80 sm:hidden">Sa</div>
-                <div className="text-gold-400/80 sm:hidden">Do</div>
+                <div className="text-gray-300">Lunes</div>
+                <div className="text-gray-300">Martes</div>
+                <div className="text-gray-300">Miércoles</div>
+                <div className="text-gray-300">Jueves</div>
+                <div className="text-gray-300">Viernes</div>
+                <div className="text-gold-400/80">Sábado</div>
+                <div className="text-gold-400/80">Domingo</div>
               </div>
 
               {/* Grid Cells */}
@@ -686,37 +667,29 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                         </span>
 
                         <div className="flex items-center gap-1">
-                          {/* Quick notes panel button on hover */}
+                          {/* Quick add appointment button on hover */}
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (notesPanelDate === cell.dateStr) {
-                                setNotesPanelDate(null)
-                              } else {
-                                handleOpenNotesPanel(cell.dateStr)
-                              }
+                              handleNew(cell.dateStr)
                             }}
-                            title={`Notas del ${cell.dateStr}`}
-                            className={`p-1 rounded-lg transition-all cursor-pointer ${
-                              notesPanelDate === cell.dateStr
-                                ? 'opacity-100 bg-amber-500/30 text-amber-200'
-                                : 'opacity-0 group-hover:opacity-100 bg-amber-500/15 hover:bg-amber-500/30 text-amber-300'
-                            }`}
+                            title={`Agendar cita el ${cell.dateStr}`}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded-lg bg-gold-500/15 hover:bg-gold-500/30 text-gold-300 transition-opacity cursor-pointer"
                           >
                             <IconPlus size={12} />
                           </button>
 
-                          {/* Note count indicator */}
-                          {notes.filter((n) => n.date === cell.dateStr).length > 0 && (
+                          {/* Note Indicator */}
+                          {cell.note && (
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleOpenNotesPanel(cell.dateStr)
+                                handleOpenNoteModal(cell.dateStr)
                               }}
-                              title={`${notes.filter((n) => n.date === cell.dateStr).length} nota(s)`}
-                              className="p-0.5 rounded text-xs hover:scale-125 transition-transform cursor-pointer leading-none"
+                              title={`Nota: ${cell.note.content}`}
+                              className="p-0.5 rounded text-xs hover:scale-125 transition-transform cursor-pointer"
                             >
                               📝
                             </button>
@@ -761,22 +734,18 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                           </div>
                         )}
 
-                        {(() => {
-                          const dayNotes = notes.filter((n) => n.date === cell.dateStr)
-                          if (dayNotes.length === 0) return null
-                          return (
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleOpenNotesPanel(cell.dateStr)
-                              }}
-                              className="text-[9px] text-amber-300/90 italic truncate px-1 hover:text-amber-200 cursor-pointer"
-                              title={dayNotes.map((n) => n.content).join(' | ')}
-                            >
-                              {dayNotes.length === 1 ? `"${dayNotes[0].content}"` : `${dayNotes.length} notas`}
-                            </div>
-                          )
-                        })()}
+                        {cell.note && (
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenNoteModal(cell.dateStr)
+                            }}
+                            className="text-[9px] text-amber-300/90 italic truncate px-1 hover:text-amber-200 cursor-pointer"
+                            title={cell.note.content}
+                          >
+                            "{cell.note.content}"
+                          </div>
+                        )}
                       </div>
 
                       {/* Cell Footer: Mini Status Bar if appointments */}
@@ -799,117 +768,6 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               </div>
             </div>
 
-            {/* ── Notes Side Panel ── */}
-            {notesPanelDate && (
-              <div className="w-72 shrink-0 rounded-3xl bg-[#0f0f17] border border-amber-500/30 shadow-2xl flex flex-col overflow-hidden animate-fadeIn">
-                {/* Panel Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e1e2d] bg-[#141420]">
-                  <div>
-                    <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold block">Notas</span>
-                    <span className="text-xs font-mono font-bold text-white">{notesPanelDate}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setNotesPanelDate(null)}
-                    className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252538] transition-colors cursor-pointer"
-                  >
-                    <IconX size={16} />
-                  </button>
-                </div>
-
-                {/* Existing Notes List */}
-                <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-72">
-                  {notes.filter((n) => n.date === notesPanelDate).length === 0 && (
-                    <p className="text-xs text-gray-500 italic text-center py-4">Sin notas para este día.<br />Escribe abajo para añadir.</p>
-                  )}
-                  {notes.filter((n) => n.date === notesPanelDate).map((note) => (
-                    <div key={note.id} className="group rounded-xl bg-[#1a1a26] border border-[#2a2a3d] p-3 space-y-1.5">
-                      {editingNoteId === note.id ? (
-                        <>
-                          <textarea
-                            rows={3}
-                            value={editingNoteText}
-                            onChange={(e) => setEditingNoteText(e.target.value)}
-                            autoFocus
-                            className="w-full bg-[#0d0d14] border border-[#2b2b3d] rounded-lg p-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
-                          />
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <button
-                              type="button"
-                              onClick={() => { setEditingNoteId(null); setEditingNoteText('') }}
-                              className="px-2.5 py-1 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-[#252538] cursor-pointer"
-                            >Cancelar</button>
-                            <button
-                              type="button"
-                              onClick={() => handleSaveEditNote(note.id)}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 cursor-pointer"
-                            >Guardar</button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">{note.content}</p>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
-                            <button
-                              type="button"
-                              onClick={() => { setEditingNoteId(note.id); setEditingNoteText(note.content) }}
-                              className="p-1 rounded-lg text-gray-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors cursor-pointer"
-                              title="Editar"
-                            ><IconEdit size={12} /></button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteNote(note.id)}
-                              className="p-1 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                              title="Eliminar"
-                            ><IconTrash size={12} /></button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Add Note Input */}
-                <div className="p-3 border-t border-[#1e1e2d] space-y-2 bg-[#0c0c12]">
-                  <textarea
-                    rows={3}
-                    value={notePanelInput}
-                    onChange={(e) => setNotePanelInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAddNote() }}
-                    placeholder="Nueva nota... (Ctrl+Enter para guardar)"
-                    className="w-full bg-[#0d0d14] border border-[#2b2b3d] rounded-xl p-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
-                  />
-                  {/* Color selector */}
-                  <div className="flex items-center gap-1.5">
-                    {(['gold', 'rose', 'amber', 'blue', 'emerald'] as const).map((c) => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setNotePanelColor(c)}
-                        title={c}
-                        className={`w-4 h-4 rounded-full transition-transform cursor-pointer ${
-                          c === 'gold' ? 'bg-yellow-400' :
-                          c === 'rose' ? 'bg-rose-400' :
-                          c === 'amber' ? 'bg-amber-400' :
-                          c === 'blue' ? 'bg-blue-400' : 'bg-emerald-400'
-                        } ${notePanelColor === c ? 'ring-2 ring-white scale-125' : 'opacity-60 hover:opacity-100'}`}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      onClick={handleAddNote}
-                      disabled={!notePanelInput.trim()}
-                      className="ml-auto flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-40 text-amber-300 border border-amber-500/30 text-xs font-bold transition-all cursor-pointer"
-                    >
-                      <IconPlus size={12} />
-                      Añadir
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-            </div>
-
             {/* Selected Date Summary & Notes Drawer */}
             <div className="p-5 rounded-3xl bg-gradient-to-r from-[#141420] via-[#101018] to-[#0c0c14] border border-gold-500/35 shadow-xl space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#222232]">
@@ -929,7 +787,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all cursor-pointer active:scale-95"
                   >
                     <IconClock size={14} />
-                    <span>Ver Horario ({selectedDayApts.length} citas)</span>
+                    <span>Ver Horario del Día ({selectedDayApts.length} citas)</span>
                   </button>
 
                   <button
@@ -943,53 +801,67 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => handleOpenNotesPanel(agendaDate)}
+                    onClick={() => handleOpenNoteModal(agendaDate)}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/35 text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <span>📝</span>
-                    <span>Notas ({notes.filter((n) => n.date === agendaDate).length})</span>
+                    <span>{selectedDayNote ? 'Editar Nota' : 'Poner Nota del Día'}</span>
                   </button>
                 </div>
               </div>
 
-              {/* Day Notes Summary */}
-              {(() => {
-                const dayNotes = notes.filter((n) => n.date === agendaDate)
-                if (dayNotes.length === 0) return (
-                  <div
-                    onClick={() => handleOpenNotesPanel(agendaDate)}
-                    className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#262638] hover:border-amber-500/40 flex items-center justify-between gap-3 text-xs text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span className="text-sm">📝</span>
-                      <span>Sin notas para este día. Pulsa para añadir recordatorios, stock o avisos.</span>
-                    </span>
-                    <span className="text-amber-400 font-bold text-xs shrink-0">+ Añadir Nota</span>
-                  </div>
-                )
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase tracking-widest text-amber-400 font-bold">📝 Notas del Día ({dayNotes.length})</span>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenNotesPanel(agendaDate)}
-                        className="text-[10px] text-amber-300 hover:text-amber-200 font-semibold cursor-pointer"
-                      >+ Añadir nota</button>
-                    </div>
-                    {dayNotes.map((note) => (
-                      <div key={note.id} className="flex items-start justify-between gap-3 p-3 rounded-xl bg-amber-950/20 border border-amber-500/25">
-                        <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed flex-1">{note.content}</p>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteNote(note.id)}
-                          className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
-                        ><IconTrash size={12} /></button>
+              {/* Day Note Display or Placeholder */}
+              {selectedDayNote ? (
+                <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">📝</span>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                          Nota del Estudio para este día
+                        </span>
+                        {selectedDayNote.updatedAt && (
+                          <span className="text-[10px] text-gray-500">
+                            (editada recientemente)
+                          </span>
+                        )}
                       </div>
-                    ))}
+                      <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">
+                        {selectedDayNote.content}
+                      </p>
+                    </div>
                   </div>
-                )
-              })()}
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenNoteModal(agendaDate)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNoteModal(agendaDate)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar nota"
+                    >
+                      <IconTrash size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => handleOpenNoteModal(agendaDate)}
+                  className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#262638] hover:border-gold-500/40 flex items-center justify-between gap-3 text-xs text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm">📝</span>
+                    <span>No hay notas guardadas para este día. Pulsa para añadir recordatorios, stock o avisos.</span>
+                  </span>
+                  <span className="text-gold-400 font-bold text-xs shrink-0">+ Añadir Nota</span>
+                </div>
+              )}
             </div>
           </div>
         )
@@ -1045,47 +917,53 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             )
           })()}
 
-          {/* Day Notes Banner in Agenda View */}
+          {/* Day Note Banner in Agenda View */}
           {(() => {
-            const dayNotes = notes.filter((n) => n.date === agendaDate)
-            if (dayNotes.length > 0) {
+            const dayNote = notes.find((n) => n.date === agendaDate)
+            if (dayNote) {
               return (
-                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/35 shadow-md animate-fadeIn space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                      📝 Notas de la Jornada ({dayNotes.length})
-                    </span>
+                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/35 flex items-start justify-between gap-4 shadow-md animate-fadeIn">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">📝</span>
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block">
+                        Nota del Estudio para esta Jornada
+                      </span>
+                      <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed">
+                        {dayNote.content}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={() => handleOpenNotesPanel(agendaDate)}
+                      onClick={() => handleOpenNoteModal(agendaDate)}
                       className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition-colors cursor-pointer"
                     >
-                      + Añadir / Gestionar
+                      Editar Nota
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNoteModal(agendaDate)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      title="Eliminar nota"
+                    >
+                      <IconTrash size={14} />
                     </button>
                   </div>
-                  {dayNotes.map((note) => (
-                    <div key={note.id} className="flex items-start gap-2">
-                      <p className="text-xs text-gray-200 whitespace-pre-wrap leading-relaxed flex-1">• {note.content}</p>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer shrink-0"
-                      ><IconTrash size={12} /></button>
-                    </div>
-                  ))}
                 </div>
               )
             }
             return (
               <div
-                onClick={() => handleOpenNotesPanel(agendaDate)}
-                className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#242436] hover:border-amber-500/40 flex items-center justify-between text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+                onClick={() => handleOpenNoteModal(agendaDate)}
+                className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#242436] hover:border-gold-500/40 flex items-center justify-between text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <span>📝</span>
                   <span>Sin notas para esta jornada. Pulsa aquí para añadir recordatorios o tareas del día.</span>
                 </span>
-                <span className="text-amber-400 font-bold">+ Añadir Nota</span>
+                <span className="text-gold-400 font-bold">+ Añadir Nota</span>
               </div>
             )
           })()}
@@ -1766,7 +1644,73 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         }}
       />
 
-      {/* Notes side panel is now rendered inline inside the calendar layout */}
+      {/* Note Modal: Add / Edit Day Note */}
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl bg-[#141420] border border-gold-500/40 shadow-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#242436]">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">📝</span>
+                <div>
+                  <h3 className="font-bold text-white text-base">Nota de la Jornada</h3>
+                  <span className="text-xs text-gold-300 font-mono">{noteModalDate}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsNoteModalOpen(false)}
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252538] transition-colors cursor-pointer"
+              >
+                <IconX size={18} />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wider">
+                Contenido del Recordatorio / Nota
+              </label>
+              <textarea
+                rows={4}
+                value={noteModalContent}
+                onChange={(e) => setNoteModalContent(e.target.value)}
+                placeholder="Ejemplo: Llega pedido de adhesivo D-curl. Clienta María necesita prueba de parche. Horario intensivo 10:00 - 15:00."
+                className="w-full p-3.5 rounded-xl bg-[#0d0d14] border border-[#2b2b3d] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-gold-500 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-[#222232]">
+              {notes.some((n) => n.date === noteModalDate) ? (
+                <button
+                  type="button"
+                  onClick={() => handleDeleteNoteModal(noteModalDate)}
+                  className="px-3.5 py-2 rounded-xl text-red-400 hover:bg-red-500/10 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Eliminar
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNoteModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#1c1c28] hover:bg-[#252538] text-gray-300 text-xs font-semibold cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNoteModal}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow cursor-pointer active:scale-95"
+                >
+                  Guardar Nota
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
