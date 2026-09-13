@@ -344,7 +344,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => onSelectTab('clients')}
                 className="text-[11px] text-gray-400 hover:text-white"
               >
-                Ver CRM
+                Ver Clientas
               </button>
             </div>
             <p className="text-xs text-gray-400 mb-3">

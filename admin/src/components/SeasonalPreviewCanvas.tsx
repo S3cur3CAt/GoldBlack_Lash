@@ -240,7 +240,7 @@ export const SeasonalPreviewCanvas: React.FC<SeasonalPreviewCanvasProps> = ({
         }
       }
 
-      if (activeEffect === 'gold_dust' || activeEffect === 'new_year') {
+      if (activeEffect === 'new_year') {
         const c = goldColors[Math.floor(Math.random() * goldColors.length)]
         const size = 1.5 + Math.random() * 3.0
         const floatUp = Math.random() < 0.4
@@ -701,7 +701,6 @@ export const SeasonalPreviewCanvas: React.FC<SeasonalPreviewCanvasProps> = ({
         else if (activeEffect === 'leaves') drawLeaf(p)
         else if (activeEffect === 'sakura') drawSakura(p)
         else if (activeEffect === 'rose_petals') drawRosePetal(p)
-        else if (activeEffect === 'gold_dust') drawGoldDust(p)
         else if (activeEffect === 'halloween') drawHalloween(p)
 
         if (p.y > height + 30) {

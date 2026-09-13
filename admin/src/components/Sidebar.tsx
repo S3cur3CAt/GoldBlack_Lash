@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'clients' as TabId,
-      label: 'Clientas CRM',
+      label: 'Ficha de Clientas',
       subtitle: 'Fichas y fidelización',
       icon: IconUsers,
       badge: clientsRecallCount > 0 ? `${clientsRecallCount} retoques` : undefined,

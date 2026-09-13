@@ -1,4 +1,46 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
+
+/* Genuine Apple SF Pro Rounded Fonts Embedded Directly */
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('./assets/fonts/SF-Pro-Rounded-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('./assets/fonts/SF-Pro-Rounded-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('./assets/fonts/SF-Pro-Rounded-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('./assets/fonts/SF-Pro-Rounded-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('./assets/fonts/SF-Pro-Rounded-Heavy.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,10 +61,9 @@
     color: #e5e5eb;
     margin: 0;
     padding: 0;
-    font-family: 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Nunito', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'SF Pro Rounded', 'Nunito', 'Outfit', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.012em;
     user-select: none;
     overflow: hidden;
   }

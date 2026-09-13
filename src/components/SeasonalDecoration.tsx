@@ -182,27 +182,6 @@ export const SeasonalCornerBadge: React.FC<SeasonalCornerBadgeProps> = ({
         </svg>
       )}
 
-      {activeEffect === 'gold_dust' && (
-        /* Sello de Oro 24k GoldBlack Atelier */
-        <svg width="42" height="42" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="32" cy="32" r="17" fill="#181824" stroke="#d4af37" strokeWidth="1.5" />
-          <circle cx="32" cy="32" r="14" fill="#08080a" stroke="#d4af37" strokeWidth="0.8" strokeDasharray="2 2" />
-          {/* Estrella dorada de 4 puntas */}
-          <path
-            d="M32 20 L34 29 L43 32 L34 35 L32 44 L30 35 L21 32 L30 29 Z"
-            fill="url(#goldBadgeGrad)"
-          />
-          <circle cx="32" cy="32" r="1.5" fill="#ffffff" />
-          <defs>
-            <linearGradient id="goldBadgeGrad" x1="21" y1="20" x2="43" y2="44" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#fef08a" />
-              <stop offset="50%" stopColor="#d4af37" />
-              <stop offset="100%" stopColor="#ca8a04" />
-            </linearGradient>
-          </defs>
-        </svg>
-      )}
-
       {activeEffect === 'new_year' && (
         /* Estrella diamantada de Fin de Año con destellos dorados y fuegos artificiales */
         <svg width="44" height="44" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -300,17 +279,6 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
         title="San Valentín en GoldBlack Lash"
       >
         <span className="text-sm" role="img" aria-label="San Valentín">🌹</span>
-      </span>
-    )
-  }
-
-  if (activeEffect === 'gold_dust') {
-    return (
-      <span
-        className="absolute -top-2 -right-2 z-20 pointer-events-none drop-shadow-md select-none"
-        title="Firma Atelier GoldBlack"
-      >
-        <span className="text-xs text-gold-400">✦</span>
       </span>
     )
   }

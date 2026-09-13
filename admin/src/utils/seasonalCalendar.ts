@@ -5,7 +5,6 @@ export type SeasonalEffectType =
   | 'sakura'
   | 'leaves'
   | 'rose_petals'
-  | 'gold_dust'
   | 'new_year'
   | 'halloween'
 
@@ -62,13 +61,6 @@ export const SEASONAL_SCHEDULE: SeasonalScheduleItem[] = [
     period: '15 de septiembre — 19 de octubre / 3 — 30 de noviembre',
     description: 'Hojas de arce en ámbar y oro con balanceo pendular.',
   },
-  {
-    effect: 'gold_dust',
-    name: 'Polvo de Oro Atelier',
-    icon: '✨',
-    period: 'Resto del año (Firma de la casa)',
-    description: 'Elegantes micro-destellos de oro 24k en suspensión de lujo.',
-  },
 ]
 
 export function resolveSeasonalEffect(
@@ -120,8 +112,8 @@ export function resolveSeasonalEffect(
     return 'leaves'
   }
 
-  // 7. Resto del año: Polvo de oro atelier
-  return 'gold_dust'
+  // 7. Resto del año: sin partículas estacionales activas
+  return 'none'
 }
 
 export function getCurrentSeasonalInfo(currentDate: Date = new Date()): {
@@ -132,13 +124,22 @@ export function getCurrentSeasonalInfo(currentDate: Date = new Date()): {
   description: string
 } {
   const effect = resolveSeasonalEffect('auto', currentDate)
+  if (effect === 'none') {
+    return {
+      effect: 'none',
+      name: 'Sin festividad activa hoy',
+      icon: '🌿',
+      dateRange: 'Fuera de temporada festiva',
+      description: 'Diseño limpio y minimalista hasta la próxima festividad del año.',
+    }
+  }
   const item = SEASONAL_SCHEDULE.find((s) => s.effect === effect)
   return {
     effect,
-    name: item?.name || 'Polvo de Oro Atelier',
+    name: item?.name || 'Festividad Estacional',
     icon: item?.icon || '✨',
-    dateRange: item?.period || 'Todo el año',
-    description: item?.description || 'Efecto estacional de lujo',
+    dateRange: item?.period || 'En temporada',
+    description: item?.description || 'Efecto estacional activo',
   }
 }
 

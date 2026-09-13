@@ -18,7 +18,7 @@ export type StudioConfig = {
   mapsEmbed: string
   hours: readonly { days: string; time: string }[] | Array<{ days: string; time: string }>
   maintenanceMode?: boolean
-  seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'gold_dust' | 'new_year' | 'halloween'
+  seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
 }
 
 const StudioConfigContext = createContext<StudioConfig>(business as StudioConfig)

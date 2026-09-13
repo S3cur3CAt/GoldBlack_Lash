@@ -66,13 +66,6 @@ const seasonalOptions = [
     desc: 'Hojas de arce en tonos ámbar, cobrizo y oro que se mecen como un péndulo y voltean en 3D.',
   },
   {
-    id: 'gold_dust',
-    icon: '✨',
-    label: 'Polvo de Oro GoldBlack',
-    season: 'Firma Atelier Luxury',
-    desc: 'Micro-destellos y bokeh de oro 24k en suspensión etérea. La experiencia premium del atelier.',
-  },
-  {
     id: 'none',
     icon: '🚫',
     label: 'Desactivado',

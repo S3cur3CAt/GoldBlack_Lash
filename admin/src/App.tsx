@@ -477,7 +477,7 @@ export const App: React.FC = () => {
       subtitle: 'Tarifas de extensiones, retoques y lifting de pestañas',
     },
     clients: {
-      title: 'Base de Datos de Clientas (CRM)',
+      title: 'Ficha y Base de Clientas',
       subtitle: 'Fichas personales, historial de visitas y alertas de mantenimiento',
     },
     gallery: {

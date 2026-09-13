@@ -247,32 +247,6 @@ export function SeasonalParticles({
         }
       }
 
-      if (activeEffect === 'gold_dust') {
-        const c = goldColors[Math.floor(Math.random() * goldColors.length)]
-        const size = 1.5 + Math.random() * 3.5
-        const floatUp = Math.random() < 0.4
-        return {
-          x: Math.random() * width,
-          y: initialScatter ? Math.random() * height : floatUp ? height + 20 : -20,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: floatUp ? -(0.3 + Math.random() * 0.5) : 0.4 + Math.random() * 0.6,
-          size,
-          layer,
-          alpha: 0.2 + Math.random() * 0.6,
-          maxAlpha: 0.9,
-          rotation: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 0.03,
-          wobble: Math.random() * Math.PI * 2,
-          wobbleSpeed: 0.03 + Math.random() * 0.04,
-          swingAmp: 0.8 + Math.random() * 1.2,
-          swingSpeed: 0.015 + Math.random() * 0.02,
-          phase: Math.random() * Math.PI * 2,
-          color: c.fill,
-          colorAlt: c.alt,
-          shapeType: Math.random() < 0.35 ? 1 : 0,
-        }
-      }
-
       if (activeEffect === 'halloween') {
         const isBat = Math.random() < 0.28
         const c = halloweenColors[Math.floor(Math.random() * halloweenColors.length)]
@@ -402,11 +376,11 @@ export function SeasonalParticles({
       if (containerMode) {
         count = 25
       } else if (width < 640) {
-        count = activeEffect === 'snow' ? 38 : activeEffect === 'gold_dust' ? 32 : 22
+        count = activeEffect === 'snow' ? 38 : 22
       } else if (width < 1200) {
-        count = activeEffect === 'snow' ? 65 : activeEffect === 'gold_dust' ? 55 : 35
+        count = activeEffect === 'snow' ? 65 : 35
       } else {
-        count = activeEffect === 'snow' ? 85 : activeEffect === 'gold_dust' ? 70 : 45
+        count = activeEffect === 'snow' ? 85 : 45
       }
 
       particles = []
@@ -539,7 +513,7 @@ export function SeasonalParticles({
       ctx.restore()
     }
 
-    function drawGoldDust(p: Particle) {
+    function drawCelebrationSparkle(p: Particle) {
       if (!ctx) return
       ctx.save()
       ctx.translate(p.x, p.y)
@@ -733,7 +707,7 @@ export function SeasonalParticles({
           p.phase += p.swingSpeed
           p.y += p.vy
           p.x += Math.sin(p.phase) * 0.4
-          drawGoldDust(p)
+          drawCelebrationSparkle(p)
           if (p.y > height + 10) {
             particles[i] = createParticle(false)
           }
@@ -759,7 +733,6 @@ export function SeasonalParticles({
         else if (activeEffect === 'leaves') drawLeaf(p)
         else if (activeEffect === 'sakura') drawSakura(p)
         else if (activeEffect === 'rose_petals') drawRosePetal(p)
-        else if (activeEffect === 'gold_dust') drawGoldDust(p)
         else if (activeEffect === 'halloween') drawHalloween(p)
 
         if (p.y > height + 40) {

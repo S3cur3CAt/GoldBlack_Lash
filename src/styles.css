@@ -1,6 +1,47 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600;1,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap');
 @import 'tailwindcss';
 
+/* Official Apple SF Pro Rounded Webfonts */
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SF Pro Rounded';
+  src: url('/fonts/SF-Pro-Rounded-Heavy.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
   --color-paper: #08080c;
   --color-surface: #111117;
@@ -15,10 +56,10 @@
   --color-lilac: rgba(212, 175, 55, 0.06);
 
   --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  --font-body: 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Nunito', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'SF Pro Rounded', 'Nunito', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
   --font-serif: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-  --font-sans: 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Nunito', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-rounded: 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Nunito', 'Outfit', system-ui, sans-serif;
+  --font-sans: 'SF Pro Rounded', 'Nunito', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-rounded: 'SF Pro Rounded', 'Nunito', 'Outfit', system-ui, sans-serif;
 
   --shadow-panel: 0 24px 70px -28px rgba(0, 0, 0, 0.85), 0 0 30px -10px rgba(212, 175, 55, 0.14);
   --shadow-soft: 0 14px 42px -22px rgba(0, 0, 0, 0.65);
