@@ -208,45 +208,40 @@ function CategoryBlock({
       id={category.id}
       className="section scroll-mt-40 border-b border-line"
     >
-      <header className="max-w-2xl">
-        <span
-          aria-hidden="true"
-          className="grid h-16 w-16 place-items-center rounded-full bg-blush text-3xl text-rose"
-        >
-          {symbols[index % symbols.length]}
-        </span>
+      <div className="grid items-start gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:gap-16">
+        <header className="lg:sticky lg:top-44">
+          <span
+            aria-hidden="true"
+            className="grid h-16 w-16 place-items-center rounded-full bg-blush text-3xl text-rose"
+          >
+            {symbols[index % symbols.length]}
+          </span>
 
-        <p className="eyebrow mt-6">
-          Un cuidado para cada momento
-        </p>
+          <p className="eyebrow mt-6">
+            Un cuidado para cada momento
+          </p>
 
-        <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
-          {category.name}
-        </h2>
+          <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
+            {category.name}
+          </h2>
 
-        <p className="body-copy mt-5 max-w-sm">
-          {category.blurb}
-        </p>
+          <p className="body-copy mt-5 max-w-sm">
+            {category.blurb}
+          </p>
 
-        <button
-          type="button"
-          onClick={() => openReservationModal({ serviceName: `Asesoramiento: ${category.name}` })}
-          className="text-link mt-6 inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-left"
-        >
-          Ayúdame a elegir
-          <span aria-hidden="true">↗</span>
-        </button>
-      </header>
+          <button
+            type="button"
+            onClick={() => openReservationModal({ serviceName: `Asesoramiento: ${category.name}` })}
+            className="text-link mt-6 inline-flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0 text-left"
+          >
+            Ayúdame a elegir
+            <span aria-hidden="true">↗</span>
+          </button>
+        </header>
 
-      <div className="relative mt-10 -mx-6 sm:-mx-8 lg:mx-0">
-        <div className="no-scrollbar flex snap-x snap-mandatory gap-6 overflow-x-auto px-6 pb-4 sm:px-8 lg:px-0">
+        <div className="space-y-6">
           {category.services.map((service) => (
-            <div
-              key={service.id}
-              className="flex w-[85vw] shrink-0 snap-start sm:w-[420px] lg:w-[440px]"
-            >
-              <ServiceCard service={service} />
-            </div>
+            <ServiceCard key={service.id} service={service} />
           ))}
         </div>
       </div>
@@ -257,7 +252,7 @@ function CategoryBlock({
 function ServiceCard({ service }: { service: Service }) {
   return (
     <article
-      className={`flex h-full w-full flex-col rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
+      className={`rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
         service.featured
           ? 'border-rose/20 bg-blush'
           : 'border-line bg-surface'
@@ -335,7 +330,7 @@ function ServiceCard({ service }: { service: Service }) {
         )
       })()}
 
-      <div className="mt-auto pt-6 border-t border-rose/10">
+      <div className="mt-7 border-t border-rose/10 pt-6">
         <button
           type="button"
           onClick={() => openReservationModal({ serviceName: service.name, serviceId: service.id })}
