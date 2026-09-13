@@ -16,6 +16,7 @@ export interface StudioConfigData {
   mapsEmbed?: string
   senderEmail?: string
   hours: Array<{ days: string; time: string }>
+  maintenanceMode?: boolean
 }
 
 let sqlPromise: Promise<any> | null = null
@@ -64,6 +65,7 @@ export async function fetchConfigFromDb(): Promise<StudioConfigData> {
       cachedConfig = {
         ...fallbackBusiness,
         ...data,
+        maintenanceMode: typeof data.maintenanceMode === 'boolean' ? data.maintenanceMode : false,
         phoneClean: data.phoneClean || (data.phoneDisplay ? data.phoneDisplay.replace(/\D/g, '') : fallbackBusiness.phoneClean),
       }
       cacheExpiresAt = now + CACHE_TTL_MS
@@ -85,6 +87,7 @@ export async function saveConfigToDb(config: Partial<StudioConfigData>): Promise
   const updated: StudioConfigData = {
     ...current,
     ...config,
+    maintenanceMode: typeof config.maintenanceMode === 'boolean' ? config.maintenanceMode : current.maintenanceMode || false,
     phoneClean: cleanPhone,
   }
 

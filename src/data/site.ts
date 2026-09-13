@@ -28,6 +28,7 @@ export const business = {
     { days: 'Sábado', time: '10:00 – 15:00' },
     { days: 'Domingo', time: 'Cerrado' },
   ],
+  maintenanceMode: false,
 } as const
 
 export type Service = {

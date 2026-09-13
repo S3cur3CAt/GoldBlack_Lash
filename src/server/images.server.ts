@@ -29,6 +29,8 @@ const LOCAL_FILES: Record<string, { file: string; mime: string }> = {
   'pieza-03': { file: 'galeria/pieza-03.jpg', mime: 'image/jpeg' },
   'pieza-04': { file: 'galeria/pieza-04.jpg', mime: 'image/jpeg' },
   'pieza-05': { file: 'galeria/pieza-05.jpg', mime: 'image/jpeg' },
+  maintenance: { file: 'Mantenimiento.png', mime: 'image/png' },
+  mantenimiento: { file: 'Mantenimiento.png', mime: 'image/png' },
 }
 
 async function tryReadLocalFile(key: string): Promise<StoredImage | null> {

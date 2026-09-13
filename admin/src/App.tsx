@@ -519,6 +519,24 @@ export const App: React.FC = () => {
           }}
         />
 
+        {config.maintenanceMode && (
+          <div className="bg-amber-500/15 border-b border-amber-500/30 px-6 py-2.5 flex items-center justify-between gap-4 text-xs text-amber-200 shrink-0 z-20">
+            <div className="flex items-center gap-2.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
+              <span>
+                <strong>Modo Mantenimiento Activo:</strong> El sitio web público está mostrando la pantalla de mantenimiento con la imagen <code className="font-mono text-amber-300">Mantenimiento.png</code>.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSaveConfig({ ...config, maintenanceMode: false })}
+              className="px-3 py-1 rounded-lg bg-amber-500 text-black font-bold hover:bg-amber-400 transition-colors cursor-pointer text-[11px] shrink-0"
+            >
+              Reabrir Sitio Web
+            </button>
+          </div>
+        )}
+
         <main className="flex-1 overflow-hidden relative">
           {activeTab === 'dashboard' && (
             <Dashboard

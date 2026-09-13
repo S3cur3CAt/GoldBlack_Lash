@@ -157,6 +157,83 @@ export const Settings: React.FC<SettingsProps> = ({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Modo Mantenimiento Card */}
+        <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+          formData.maintenanceMode
+            ? 'bg-[#1c1408] border-amber-500/50 shadow-[0_4px_25px_rgba(245,158,11,0.15)]'
+            : 'bg-[#12121a] border-[#222230]'
+        }`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${
+                  formData.maintenanceMode ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
+                }`} />
+                <h4 className="font-serif text-base font-bold text-white uppercase tracking-wider">
+                  Modo Mantenimiento del Sitio Web
+                </h4>
+                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                  formData.maintenanceMode
+                    ? 'bg-amber-950/60 text-amber-300 border-amber-500/40'
+                    : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                }`}>
+                  {formData.maintenanceMode ? '⚠️ En Mantenimiento' : '✓ Sitio Activo y en Línea'}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 max-w-xl leading-relaxed">
+                Si activas esta opción, el sitio web público quedará bloqueado temporalmente y mostrará la pantalla oficial con la imagen <code className="text-amber-300/90 font-mono text-[11px]">Mantenimiento.png</code>.
+              </p>
+            </div>
+
+            {/* Switch button */}
+            <button
+              type="button"
+              onClick={() => {
+                const updatedMode = !formData.maintenanceMode
+                const updatedConfig = { ...formData, maintenanceMode: updatedMode }
+                setFormData(updatedConfig)
+                onSaveConfig(updatedConfig)
+                showAlert({
+                  title: updatedMode ? 'Modo Mantenimiento Activado' : 'Sitio Web Reabierto',
+                  message: updatedMode
+                    ? 'El sitio web ahora muestra la pantalla de mantenimiento para todos los visitantes.'
+                    : 'El sitio web vuelve a estar completamente visible y disponible al público.',
+                  type: updatedMode ? 'warning' : 'success',
+                })
+              }}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                formData.maintenanceMode
+                  ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-md'
+                  : 'bg-[#1e1e2c] text-gray-200 hover:bg-[#28283c] border border-gray-700'
+              }`}
+            >
+              <span>{formData.maintenanceMode ? 'Desactivar Mantenimiento' : 'Activar Mantenimiento'}</span>
+            </button>
+          </div>
+
+          {/* Maintenance image preview */}
+          {formData.maintenanceMode && (
+            <div className="mt-4 pt-4 border-t border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="w-48 h-28 rounded-xl overflow-hidden border border-amber-500/30 bg-black/50 shrink-0">
+                <img
+                  src="/Mantenimiento.png"
+                  alt="Vista previa de mantenimiento"
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://goldblacklash.com/Mantenimiento.png'
+                  }}
+                />
+              </div>
+              <div className="text-xs text-amber-200/80 space-y-1">
+                <p className="font-semibold text-amber-300">Imagen configurada: Mantenimiento.png</p>
+                <p className="text-[11px] text-gray-400">
+                  Los clientes verán esta imagen en pantalla completa junto a los accesos directos de WhatsApp e Instagram para que no pierdas reservas.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Contact and Business Details */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
           <h4 className="font-serif text-base font-bold text-gold-300 uppercase tracking-wider">

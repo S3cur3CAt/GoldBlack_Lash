@@ -5,6 +5,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { ReactNode } from 'react'
 
 import { Footer, Header } from '#/components/Chrome'
+import { MaintenanceScreen } from '#/components/MaintenanceScreen'
 import { ReservationModal } from '#/components/ReservationModal'
 import { HeaderProvider } from '#/context/HeaderContext'
 import { StudioConfigProvider } from '#/context/StudioConfigContext'
@@ -116,21 +117,25 @@ function RootDocument({ children }: { children: ReactNode }) {
 
       <body className="bg-paper font-body text-ink antialiased">
         <StudioConfigProvider value={liveConfig}>
-          <HeaderProvider>
-            <a href="#contenido" className="skip-link">
-              Saltar al contenido
-            </a>
+          {liveConfig.maintenanceMode ? (
+            <MaintenanceScreen liveConfig={liveConfig} />
+          ) : (
+            <HeaderProvider>
+              <a href="#contenido" className="skip-link">
+                Saltar al contenido
+              </a>
 
-            <Header />
+              <Header />
 
-            <main id="contenido" tabIndex={-1}>
-              {children}
-            </main>
+              <main id="contenido" tabIndex={-1}>
+                {children}
+              </main>
 
-            <Footer />
+              <Footer />
 
-            <ReservationModal />
-          </HeaderProvider>
+              <ReservationModal />
+            </HeaderProvider>
+          )}
         </StudioConfigProvider>
 
         {import.meta.env.DEV ? (

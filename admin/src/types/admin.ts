@@ -72,6 +72,7 @@ export interface StudioConfig {
   resendApiKey?: string
   senderEmail?: string
   alertEmail?: string
+  maintenanceMode?: boolean
 }
 
 export interface GalleryItem {
