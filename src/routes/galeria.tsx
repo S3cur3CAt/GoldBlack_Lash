@@ -419,9 +419,22 @@ function Lightbox({
               autoFocus
               onClick={onClose}
               aria-label="Cerrar visor"
-              className="grid h-11 w-11 place-items-center rounded-full border border-[#d4af37]/30 bg-[#161622] text-2xl text-rose transition-colors hover:bg-[#202030]"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d4af37]/30 bg-[#161622] text-rose transition-all duration-200 hover:bg-[#202030] hover:text-white cursor-pointer"
             >
-              ×
+              <svg
+                aria-hidden="true"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
             </button>
           </div>
 
