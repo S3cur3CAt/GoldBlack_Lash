@@ -96,7 +96,14 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status, apiKey])
 
+  // Track status in a ref so callbacks can read it without triggering re-renders
+  const statusRef = useRef<VoiceStatus>(status)
+  useEffect(() => { statusRef.current = status }, [status])
+
   // Continuous background hands-free listener ("Oye Sofi" / "Sofi")
+  // IMPORTANT: `status` is NOT in the dependency array on purpose!
+  // When onWake fires and changes status to 'recording', we must NOT re-run this effect
+  // because the cleanup would cancel the recorder that is actively recording the user's command.
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
       if (wakeWordListenerRef.current) {
@@ -110,89 +117,141 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       return
     }
 
-    // Only engage standby listening when in idle mode
-    if (status === 'idle') {
-      let isCancelled = false
+    // Only start standby if currently idle
+    if (statusRef.current !== 'idle') return
 
-      const startVADStandby = () => {
-        if (isCancelled) return
-        console.log('[Sofi] 🎧 Iniciando escucha VAD en segundo plano (standby=0.02, speech=0.02)...')
-        const recorder = new AudioRecorder()
-        recorderRef.current = recorder
+    let isCancelled = false
 
-        recorder
-          .startStandby({
-            standbyThreshold: 0.02,
-            speechThreshold: 0.02,
-            silenceMs: 1200,
-            onWake: () => {
-              if (isCancelled) return
-              console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
-              setIsExpanded(true)
-              setStatus('recording')
-              setErrorMessage(null)
-              setLastActionText('Escuchando a Sofi...')
-            },
-            onVolumeChange: (vol) => {
-              if (!isCancelled) setLiveVolume(vol)
-            },
-            onSilence: () => {
-              if (!isCancelled) stopAndProcess()
-            },
-            onTimeout: () => {
-              if (!isCancelled) handleCancel()
-            },
-          })
-          .catch((err) => {
-            console.warn('[Standby Mic Start Error]', err)
-          })
-      }
+    const startVADStandby = () => {
+      if (isCancelled) return
+      console.log('[Sofi] 🎧 Iniciando escucha VAD en segundo plano (standby=0.02, speech=0.02)...')
+      const recorder = new AudioRecorder()
+      recorderRef.current = recorder
 
-      if (isSpeechRecognitionSupported()) {
-        const listener = new WakeWordListener()
-        wakeWordListenerRef.current = listener
-
-        listener.start(
-          async (commandText) => {
+      recorder
+        .startStandby({
+          standbyThreshold: 0.02,
+          speechThreshold: 0.02,
+          silenceMs: 1200,
+          onWake: () => {
             if (isCancelled) return
-            console.log('[Sofi] Wake word detectado:', commandText)
-            if (commandText && commandText.trim().length > 1) {
-              // Spoke "Oye Sofi, abre la agenda" all in one
-              playWakeChime()
-              await handleExecuteCommandText(commandText.trim())
-            } else {
-              // Spoke "Oye Sofi" alone -> Sofi speaks out loud: "Dime, te escucho."!
-              await handleWakeGreeting()
+            console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
+            setIsExpanded(true)
+            setStatus('recording')
+            setErrorMessage(null)
+            setLastActionText('Escuchando a Sofi...')
+          },
+          onVolumeChange: (vol) => {
+            if (!isCancelled) setLiveVolume(vol)
+          },
+          onSilence: () => {
+            if (!isCancelled) {
+              console.log('[Sofi] 🔇 Silencio detectado — procesando audio automáticamente...')
+              stopAndProcess()
             }
           },
-          () => {
-            // SpeechRecognition failed or unsupported -> graceful fallback to local Web Audio VAD
-            console.log('[Sofi] SpeechRecognition no disponible, activando VAD local.')
-            if (!isCancelled && status === 'idle') {
-              startVADStandby()
+          onTimeout: () => {
+            if (!isCancelled) {
+              console.log('[Sofi] ⏱️ Timeout — no se detectó voz suficiente.')
+              handleCancel()
             }
-          }
-        )
+          },
+        })
+        .catch((err) => {
+          console.warn('[Standby Mic Start Error]', err)
+        })
+    }
 
-        return () => {
-          isCancelled = true
-          listener.stop()
-          wakeWordListenerRef.current = null
+    if (isSpeechRecognitionSupported()) {
+      const listener = new WakeWordListener()
+      wakeWordListenerRef.current = listener
+
+      listener.start(
+        async (commandText) => {
+          if (isCancelled) return
+          console.log('[Sofi] Wake word detectado:', commandText)
+          if (commandText && commandText.trim().length > 1) {
+            playWakeChime()
+            await handleExecuteCommandText(commandText.trim())
+          } else {
+            await handleWakeGreeting()
+          }
+        },
+        () => {
+          console.log('[Sofi] SpeechRecognition no disponible, activando VAD local.')
+          if (!isCancelled && statusRef.current === 'idle') {
+            startVADStandby()
+          }
         }
-      } else {
-        // Direct local Web Audio Standby VAD (macOS Electron / Windows Electron / Safari)
-        startVADStandby()
+      )
 
-        return () => {
-          isCancelled = true
-          if (recorderRef.current) {
-            recorderRef.current.cancel()
-            recorderRef.current = null
-          }
+      return () => {
+        isCancelled = true
+        listener.stop()
+        wakeWordListenerRef.current = null
+      }
+    } else {
+      // Direct local Web Audio Standby VAD (macOS Electron / Windows Electron / Safari)
+      startVADStandby()
+
+      return () => {
+        isCancelled = true
+        // ONLY cancel if still in standby — do NOT cancel if the recorder transitioned to recording!
+        // This prevents destroying the active recording when the effect re-runs.
+        if (recorderRef.current && statusRef.current === 'idle') {
+          console.log('[Sofi] Cleanup: cancelando VAD standby (estado idle).')
+          recorderRef.current.cancel()
+          recorderRef.current = null
+        } else {
+          console.log('[Sofi] Cleanup: preservando recorder activo (estado:', statusRef.current, ')')
         }
       }
     }
-  }, [isHandsFree, wakeWordEnabled, status, apiKey])
+  }, [isHandsFree, wakeWordEnabled, apiKey])
+
+  // Re-engage VAD standby when status returns to 'idle' after processing a command
+  // This is separate from the main effect above so that it can depend on `status`
+  // without causing the cleanup-during-recording bug
+  useEffect(() => {
+    if (status === 'idle' && isHandsFree && wakeWordEnabled && !recorderRef.current) {
+      // Small delay to avoid re-entrance issues
+      const restartTimer = setTimeout(() => {
+        if (statusRef.current === 'idle' && !recorderRef.current) {
+          console.log('[Sofi] 🔄 Re-activando escucha VAD en segundo plano...')
+          const recorder = new AudioRecorder()
+          recorderRef.current = recorder
+
+          recorder
+            .startStandby({
+              standbyThreshold: 0.02,
+              speechThreshold: 0.02,
+              silenceMs: 1200,
+              onWake: () => {
+                console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
+                setIsExpanded(true)
+                setStatus('recording')
+                setErrorMessage(null)
+                setLastActionText('Escuchando a Sofi...')
+              },
+              onVolumeChange: (vol) => setLiveVolume(vol),
+              onSilence: () => {
+                console.log('[Sofi] 🔇 Silencio detectado — procesando audio automáticamente...')
+                stopAndProcess()
+              },
+              onTimeout: () => {
+                console.log('[Sofi] ⏱️ Timeout — no se detectó voz suficiente.')
+                handleCancel()
+              },
+            })
+            .catch((err) => {
+              console.warn('[Standby Re-engage Error]', err)
+            })
+        }
+      }, 500)
+
+      return () => clearTimeout(restartTimer)
+    }
+  }, [status, isHandsFree, wakeWordEnabled])
 
   // Handles when user says "Oye Sofi" alone: speaks out loud "Dime, te escucho." and listens!
   const handleWakeGreeting = async () => {
