@@ -257,9 +257,9 @@ ipcMain.on('notification:appointment', (_event, data) => {
 
 let currentSayProcess = null
 
-// Native macOS Monterey Siri Speech Synthesis via Apple 'say' engine
-// When 'say' is invoked without -v, macOS uses the exact System Voice
-// selected in System Preferences > Accessibility > Spoken Content (Siri)
+// Native macOS Monterey Siri Speech Synthesis via Apple 'say' / osascript engine
+// Passing text as arguments directly to /usr/bin/say without -v uses the exact
+// System Voice selected in System Preferences > Accessibility > Spoken Content (Siri)
 ipcMain.handle('voice:speak-siri', async (_event, text) => {
   if (process.platform !== 'darwin' || !text) return false
   return new Promise((resolve) => {
@@ -272,28 +272,68 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         currentSayProcess = null
       }
 
-      // Spawn native macOS 'say' command without -v to use the user's selected Siri voice
-      const sayProc = spawn('say')
+      const cleanText = String(text).trim()
+      if (!cleanText) {
+        resolve(false)
+        return
+      }
+
+      // 1. Try native /usr/bin/say passing text as argument directly
+      const sayProc = spawn('/usr/bin/say', [cleanText])
       currentSayProcess = sayProc
 
-      sayProc.stdin.on('error', (err) => {
-        console.warn('[say stdin error]', err?.message || err)
-      })
+      let hasExited = false
 
       sayProc.on('error', (err) => {
-        console.warn('[macOS say process error]', err?.message || err)
+        console.warn('[/usr/bin/say error, falling back to osascript]', err?.message || err)
+        if (hasExited) return
+        hasExited = true
         currentSayProcess = null
-        resolve(false)
+
+        // 2. AppleScript fallback with native system voice
+        try {
+          const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+          const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
+          currentSayProcess = osaProc
+          osaProc.on('close', (code) => {
+            currentSayProcess = null
+            resolve(code === 0)
+          })
+          osaProc.on('error', () => {
+            currentSayProcess = null
+            resolve(false)
+          })
+        } catch {
+          resolve(false)
+        }
       })
 
       sayProc.on('close', (code) => {
+        if (hasExited) return
+        hasExited = true
         currentSayProcess = null
-        resolve(code === 0)
-      })
 
-      // Pipe clean text with full UTF-8 encoding directly to stdin
-      sayProc.stdin.write(text, 'utf8')
-      sayProc.stdin.end()
+        if (code === 0) {
+          resolve(true)
+        } else {
+          // If say exited with non-zero, try osascript fallback
+          try {
+            const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+            const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
+            currentSayProcess = osaProc
+            osaProc.on('close', (c) => {
+              currentSayProcess = null
+              resolve(c === 0)
+            })
+            osaProc.on('error', () => {
+              currentSayProcess = null
+              resolve(false)
+            })
+          } catch {
+            resolve(false)
+          }
+        }
+      })
     } catch (err) {
       console.warn('[macOS Say Exception]', err?.message || err)
       currentSayProcess = null

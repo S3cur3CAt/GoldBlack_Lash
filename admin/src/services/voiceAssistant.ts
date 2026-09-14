@@ -367,7 +367,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
       const selectFemaleSpanishVoice = () => {
         const voices = window.speechSynthesis.getVoices()
 
-        // 1st Priority: Siri Spanish voice in system voices
+        // 1st Priority: Siri Spanish voice in system voices (if exposed)
         const siriVoice = voices.find(
           (v) =>
             (v.lang.startsWith('es') || v.lang === '') &&
@@ -378,13 +378,32 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
           return
         }
 
-        // 2nd Priority: Apple's natural Spanish female voices (Mónica, Paulina, Alba, Victoria)
-        const femaleKeywords = [
-          'monica',
-          'mónica',
+        // 2nd Priority: Modern Neural / Natural / Enhanced / Google / Online Spanish voices
+        const hqVoice = voices.find((v) => {
+          const name = v.name.toLowerCase()
+          const isSpanish = v.lang.startsWith('es') || v.lang === ''
+          const isHQ =
+            name.includes('natural') ||
+            name.includes('neural') ||
+            name.includes('enhanced') ||
+            name.includes('premium') ||
+            name.includes('online') ||
+            name.includes('google')
+          return isSpanish && isHQ
+        })
+        if (hqVoice) {
+          utterance.voice = hqVoice
+          return
+        }
+
+        // 3rd Priority: High-quality Apple natural female voices (Paulina, Alba, Victoria, etc.)
+        // Notice: Legacy robotic 'Mónica' is intentionally excluded so only natural voices are used
+        const preferredFemaleKeywords = [
           'paulina',
           'alba',
           'victoria',
+          'elvira',
+          'paloma',
           'laura',
           'helena',
           'sabina',
@@ -396,7 +415,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
           const name = v.name.toLowerCase()
           return (
             v.lang.startsWith('es') &&
-            femaleKeywords.some((keyword) => name.includes(keyword))
+            preferredFemaleKeywords.some((keyword) => name.includes(keyword))
           )
         })
 
@@ -430,6 +449,9 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
   })
 }
 
+// Available Gemini Flash models in order of priority (Google AI Studio Free Tier 0€)
+export const GEMINI_FLASH_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+
 /**
  * Automatically announces a new incoming real-time appointment from goldblacklash.com
  * with natural female voice, stating client name, service, and phone number.
@@ -450,7 +472,6 @@ export async function announceNewAppointmentVoice(
   // If Gemini API Key is available, generate a personalized luxury concierge announcement
   if (apiKey && apiKey.trim()) {
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`
       const prompt = `Eres la recepcionista ejecutiva de GoldBlack Lash Studio. Acaba de entrar una nueva reserva en tiempo real desde el sitio web oficial https://www.goldblacklash.com.
 Clienta: "${apt.clientName}"
 Servicio: "${apt.serviceName}"
@@ -463,29 +484,35 @@ Redacta en una sola frase breve, fluida, natural y elegante lo que le dirás en 
 4. Su teléfono de contacto pronunciable: "${formattedPhone}".
 Responde únicamente con el texto a pronunciar en voz alta, sin comillas ni aclaraciones.`
 
-      const res = await Promise.race([
-        fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          }),
-        }),
-        new Promise<Response>((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 1800)
-        ),
-      ])
+      let success = false
+      for (const model of GEMINI_FLASH_MODELS) {
+        if (success) break
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`
+          const res = await Promise.race([
+            fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+              }),
+            }),
+            new Promise<Response>((_, reject) =>
+              setTimeout(() => reject(new Error('timeout')), 2500)
+            ),
+          ])
 
-      if (res.ok) {
-        const data = await res.json()
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-        if (text && text.trim().length > 10) {
-          announcement = text.trim().replace(/^["']|["']$/g, '')
-        }
+          if (res.ok) {
+            const data = await res.json()
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+            if (text && text.trim()) {
+              announcement = text.trim()
+              success = true
+            }
+          }
+        } catch {}
       }
-    } catch (e) {
-      // Fallback silently to template announcement
-    }
+    } catch {}
   }
 
   await speakWithFemaleVoice(announcement)
@@ -549,9 +576,6 @@ REGLAS DE ACTUACIÓN:
     throw new Error('No se proporcionó audio ni texto para procesar.')
   }
 
-  // Use gemini-2.0-flash (fastest, multimodal audio native, 0€ free tier)
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey.trim()}`
-
   const requestBody = {
     contents: [
       {
@@ -570,21 +594,57 @@ REGLAS DE ACTUACIÓN:
     },
   }
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  })
+  // Iterate through available Gemini Flash models (prioritizing gemini-3.6-flash)
+  let data: any = null
+  let lastErrorMsg = ''
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    const msg = errorData?.error?.message || `Error en la API de Gemini (${response.status})`
-    throw new Error(msg)
+  for (const model of GEMINI_FLASH_MODELS) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        const msg = errorData?.error?.message || `Error en la API de Gemini (${response.status})`
+        lastErrorMsg = msg
+        // If the model is not found or deprecated, try the next model in GEMINI_FLASH_MODELS
+        if (
+          response.status === 404 ||
+          msg.toLowerCase().includes('no longer available') ||
+          msg.toLowerCase().includes('not found')
+        ) {
+          console.warn(`[Gemini Flash] Model ${model} is not available, trying next fallback...`)
+          continue
+        }
+        throw new Error(msg)
+      }
+
+      data = await response.json()
+      if (data?.candidates?.[0]?.content?.parts) {
+        break
+      }
+    } catch (err: any) {
+      lastErrorMsg = err?.message || String(err)
+      if (
+        lastErrorMsg.toLowerCase().includes('no longer available') ||
+        lastErrorMsg.toLowerCase().includes('not found')
+      ) {
+        continue
+      }
+      throw err
+    }
   }
 
-  const data = await response.json()
+  if (!data) {
+    throw new Error(lastErrorMsg || 'No se pudo conectar con la API de Gemini.')
+  }
+
   const candidate = data?.candidates?.[0]
   if (!candidate || !candidate.content || !candidate.content.parts) {
     throw new Error('Gemini no devolvió una respuesta válida.')
