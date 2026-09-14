@@ -1,10 +1,10 @@
 /**
- * GoldBlack Lash Studio — Asistente de Voz Inteligente con Gemini Flash + Web Speech (0€ / 1.500 peticiones/día)
+ * GoldBlack Lash Studio — Asistente de Voz Inteligente Sofi (100% Nativo en macOS • 0€)
  *
- * Funciona de forma 100% nativa en macOS (Electron) y Web:
- * 1. Captura de audio estándar con HTML5 MediaRecorder (sin dependencias externas).
- * 2. Comprensión multimodal ultra-rápida y Function Calling con Gemini 2.0 / 1.5 Flash (Google AI Studio Free Tier).
- * 3. Síntesis de voz hablada de alta fidelidad con Web Speech Synthesis nativo de macOS (voces en español de Apple/Siri).
+ * Funciona de forma 100% nativa e ilimitada en macOS (Electron) y Web:
+ * 1. Reconocimiento de voz nativo de Apple (SFSpeechRecognizer) en macOS y Web Speech API.
+ * 2. Comprensión semántica y ejecución de comandos local directa (0€ / sin APIs externas).
+ * 3. Síntesis de voz hablada de alta fidelidad con voces de Siri en español (Mónica / Paulina).
  */
 
 export interface VoiceToolCall {
@@ -49,177 +49,6 @@ export interface VoiceActionHandlers {
   getStudioContext?: () => string
 }
 
-// Function Calling schema for Gemini Flash
-const GEMINI_TOOLS = [
-  {
-    functionDeclarations: [
-      {
-        name: 'navigate_tab',
-        description: 'Navega a una pestaña del panel de administración.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            tab: {
-              type: 'STRING',
-              enum: ['dashboard', 'appointments', 'services', 'clients', 'gallery', 'billing', 'settings'],
-              description: 'La pestaña a la que navegar en la aplicación (dashboard, appointments, services, clients, gallery, billing, settings).',
-            },
-          },
-          required: ['tab'],
-        },
-      },
-      {
-        name: 'query_agenda',
-        description: 'Consulta las citas y reservas programadas en la agenda del estudio.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            date: {
-              type: 'STRING',
-              description: 'Fecha a consultar en formato YYYY-MM-DD o términos relativos como "today" (hoy) o "tomorrow" (mañana).',
-            },
-            status: {
-              type: 'STRING',
-              enum: ['todas', 'pendiente', 'confirmada', 'completada', 'cancelada'],
-              description: 'Filtrar por estado de las citas si se especifica.',
-            },
-          },
-        },
-      },
-      {
-        name: 'create_appointment',
-        description: 'Crea o agenda una nueva cita para una clienta en el estudio.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            clientName: {
-              type: 'STRING',
-              description: 'Nombre completo o de pila de la clienta.',
-            },
-            serviceName: {
-              type: 'STRING',
-              description: 'Nombre del servicio (ej. "Volumen Ruso", "Pestañas Clásicas 1D", "Lifting de Pestañas", "Diseño de Cejas").',
-            },
-            date: {
-              type: 'STRING',
-              description: 'Fecha de la cita en formato YYYY-MM-DD.',
-            },
-            time: {
-              type: 'STRING',
-              description: 'Hora de inicio de la cita en formato HH:MM (24 horas, ej. "17:00").',
-            },
-            phone: {
-              type: 'STRING',
-              description: 'Teléfono de contacto de la clienta si lo mencionó.',
-            },
-            notes: {
-              type: 'STRING',
-              description: 'Notas adicionales, estilo o curvatura si se menciona.',
-            },
-          },
-          required: ['clientName'],
-        },
-      },
-      {
-        name: 'update_appointment',
-        description: 'Actualiza el estado de una cita existente (por ejemplo marcarla como completada, cobrada, confirmada o cancelada).',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            clientName: {
-              type: 'STRING',
-              description: 'Nombre de la clienta cuya cita se desea actualizar.',
-            },
-            status: {
-              type: 'STRING',
-              enum: ['pendiente', 'confirmada', 'completada', 'cancelada'],
-              description: 'Nuevo estado de la cita.',
-            },
-            paymentStatus: {
-              type: 'STRING',
-              enum: ['pendiente', 'seña_pagada', 'pagado'],
-              description: 'Nuevo estado de pago de la cita.',
-            },
-          },
-          required: ['clientName'],
-        },
-      },
-      {
-        name: 'delete_appointment',
-        description: 'Elimina o borra permanentemente una cita de la agenda de citas diciendo el nombre de la persona o clienta (ej: "elimina la cita de Rocío", "borra la cita de María", "elimina la cita de hoy de Carmen", "cancela y borra la cita de Laura").',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            clientName: {
-              type: 'STRING',
-              description: 'Nombre de la clienta o persona cuya cita se debe eliminar.',
-            },
-            date: {
-              type: 'STRING',
-              description: 'Fecha opcional de la cita (ej. "today", "hoy", "mañana", "YYYY-MM-DD").',
-            },
-            deleteAll: {
-              type: 'BOOLEAN',
-              description: 'True si el usuario pidió expresamente eliminar todas las citas de esa clienta.',
-            },
-          },
-          required: ['clientName'],
-        },
-      },
-      {
-        name: 'search_client',
-        description: 'Busca una clienta en el sistema para consultar su historial, teléfono, alergias o notas.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            query: {
-              type: 'STRING',
-              description: 'Nombre o teléfono de la clienta a buscar.',
-            },
-          },
-          required: ['query'],
-        },
-      },
-      {
-        name: 'query_finance',
-        description: 'Consulta los ingresos, facturación o cobros del estudio en un período determinado.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            period: {
-              type: 'STRING',
-              enum: ['today', 'this_week', 'this_month', 'all'],
-              description: 'Período financiero a consultar (today = hoy, this_week = esta semana, this_month = este mes).',
-            },
-          },
-        },
-      },
-      {
-        name: 'open_modal',
-        description: 'Abre un modal o diálogo para crear manualmente una nueva cita, servicio, clienta o factura.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {
-            modal: {
-              type: 'STRING',
-              enum: ['new_appointment', 'new_service', 'new_client', 'new_invoice', 'gallery'],
-              description: 'El modal o sección que abrir.',
-            },
-          },
-          required: ['modal'],
-        },
-      },
-      {
-        name: 'check_updates',
-        description: 'Comprueba si hay nuevas versiones o actualizaciones de software disponibles para la aplicación GoldBlack Lash.',
-        parameters: {
-          type: 'OBJECT',
-          properties: {},
-        },
-      },
-    ],
-  },
-]
 
 export interface AudioRecorderOptions {
   onSilence?: () => void
@@ -1017,9 +846,6 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
   })
 }
 
-// Available Gemini Flash models in order of priority (Google AI Studio Free Tier 0€)
-export const GEMINI_FLASH_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
-
 /**
  * Automatically announces a new incoming real-time appointment from goldblacklash.com
  * with natural female voice, stating client name, service, and phone number.
@@ -1032,252 +858,32 @@ export async function announceNewAppointmentVoice(
     date?: string
     time?: string
   },
-  apiKey?: string
+  _apiKey?: string
 ): Promise<void> {
   const formattedPhone = formatPhoneForSpeech(apt.clientPhone)
-  let announcement = `Atención: Tienes una nueva reserva desde el sitio web. La clienta ${apt.clientName} ha solicitado el servicio de ${apt.serviceName}, y su número de teléfono es ${formattedPhone}.`
-
-  // If Gemini API Key is available, generate a personalized luxury concierge announcement
-  if (apiKey && apiKey.trim()) {
-    try {
-      const prompt = `Eres la recepcionista ejecutiva de GoldBlack Lash Studio. Acaba de entrar una nueva reserva en tiempo real desde el sitio web oficial https://www.goldblacklash.com.
-Clienta: "${apt.clientName}"
-Servicio: "${apt.serviceName}"
-Teléfono: "${apt.clientPhone}"
-
-Redacta en una sola frase breve, fluida, natural y elegante lo que le dirás en voz alta a la lash artist para avisarle de inmediato. Debes mencionar obligatoriamente:
-1. Que tiene un nuevo servicio de esa clienta desde la web.
-2. El nombre de la clienta.
-3. El servicio seleccionado.
-4. Su teléfono de contacto pronunciable: "${formattedPhone}".
-Responde únicamente con el texto a pronunciar en voz alta, sin comillas ni aclaraciones.`
-
-      let success = false
-      for (const model of GEMINI_FLASH_MODELS) {
-        if (success) break
-        try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`
-          const res = await Promise.race([
-            fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: prompt }] }],
-              }),
-            }),
-            new Promise<Response>((_, reject) =>
-              setTimeout(() => reject(new Error('timeout')), 2500)
-            ),
-          ])
-
-          if (res.ok) {
-            const data = await res.json()
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-            if (text && text.trim()) {
-              announcement = text.trim()
-              success = true
-            }
-          }
-        } catch {}
-      }
-    } catch {}
-  }
-
+  const templates = [
+    `Atención: Tienes una nueva reserva desde el sitio web. La clienta ${apt.clientName} ha solicitado el servicio de ${apt.serviceName}, y su número de teléfono es ${formattedPhone}.`,
+    `Nueva cita confirmada desde la web: ${apt.clientName} para ${apt.serviceName}. Su teléfono de contacto es ${formattedPhone}.`,
+    `Aviso de GoldBlack Lash: Acaba de entrar una reserva de ${apt.clientName} para ${apt.serviceName}. Puedes contactarla al ${formattedPhone}.`,
+  ]
+  const announcement = templates[Math.floor(Math.random() * templates.length)]
   await speakWithFemaleVoice(announcement)
 }
 
 /**
- * Send voice audio or text to Gemini Flash with Function Calling
+ * Executes direct voice or text commands with 0€ local processing (Zero external APIs).
  */
 export async function processVoiceWithGemini(
   input: { base64Audio?: string; mimeType?: string; textQuery?: string; isStandbyWakeCheck?: boolean },
-  apiKey: string,
+  _apiKey: string,
   handlers: VoiceActionHandlers
 ): Promise<VoiceAssistantResponse> {
-  if (!apiKey || !apiKey.trim()) {
-    throw new Error('Falta la clave de API de Gemini. Por favor configúrala en Ajustes (es 100% gratis en Google AI Studio).')
-  }
-
-  const today = new Date().toISOString().split('T')[0]
-  const currentYear = new Date().getFullYear()
-  const studioContext = handlers.getStudioContext ? handlers.getStudioContext() : ''
-  const isStandby = Boolean(input.isStandbyWakeCheck)
-
-  const systemInstructionText = `
-Eres Sofi, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
-Tu nombre oficial es Sofi. Los administradores y artistas del estudio se dirigirán a ti diciendo «Sofi», «Oye Sofi» o pronunciando directamente su orden.
-
-${
-  isStandby
-    ? `REGLAS ESTRICTAS DE ESCUCHA EN SEGUNDO PLANO (STANDBY):
-El audio ha sido capturado automáticamente en segundo plano.
-1. OBLIGATORIO: El usuario DEBE haber dicho explícitamente «Oye Sofi» o «Sofi» (o «Hola Sofi», «Hey Sofi»).
-2. Si el audio NO contiene «Oye Sofi» ni «Sofi», responde ÚNICAMENTE con la palabra exacta: [IGNORAR].
-   Bajo ninguna circunstancia te actives si son ruidos de fondo, música, tos, teclados o charlas entre personas del salón que no van dirigidas a Sofi.
-3. Si el audio dice «Oye Sofi» o «Sofi» solo como saludo o llamada: responde EXACTAMENTE: «Dime, te escucho.».
-4. Si el audio dice «Oye Sofi» o «Sofi» seguido de una orden para la app:
-   - ELIMINAR/BORRAR/CANCELAR CITA: Si pide eliminar, borrar o cancelar la cita de una persona (ej: «Oye Sofi, elimina la cita de Rocío», «Sofi, borra la cita de María», «elimina la cita de hoy de Carmen»), invoca OBLIGATORIAMENTE la herramienta delete_appointment con el nombre de la clienta.
-   - OTRAS ACCIONES: invoca la herramienta correspondiente y confirma la acción en una breve oración en español.`
-    : `REGLAS DE PROCESAMIENTO DIRECTO (BOTÓN O TEXTO):
-El usuario ha presionado el botón del micrófono o ha escrito una orden en la app.
-1. ELIMINAR/BORRAR/CANCELAR CITA: Si pide eliminar, borrar o cancelar la cita de una persona (ej: «elimina la cita de Rocío», «borra la cita de María», «cancela la cita de Laura»), invoca OBLIGATORIAMENTE delete_appointment con el clientName.
-2. Si el usuario solo dice «Sofi» u «Oye Sofi»: responde «Dime, te escucho.».
-3. Si pide cualquier otra orden del estudio: invoca la herramienta adecuada y confirma en una breve oración elegante.`
-}
-
-Fecha actual: ${today} (Año ${currentYear}).
-${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
-`
-
-  const parts: any[] = []
-
-  if (input.base64Audio && input.mimeType) {
-    parts.push({
-      inlineData: {
-        mimeType: input.mimeType,
-        data: input.base64Audio,
-      },
-    })
-    parts.push({
-      text: 'Escucha atentamente el audio en español. Si el usuario te llama diciendo «Sofi» u «Oye Sofi», responde «Dime, te escucho.». Si pide una acción de la app, invoca la herramienta adecuada. Si es ruido o silencio no dirigido a ti, responde [IGNORAR].',
-    })
-  } else if (input.textQuery) {
-    parts.push({
-      text: input.textQuery,
-    })
-  } else {
-    throw new Error('No se proporcionó audio ni texto para procesar.')
-  }
-
-  const requestBody = {
-    contents: [
-      {
-        role: 'user',
-        parts,
-      },
-    ],
-    systemInstruction: {
-      parts: [{ text: systemInstructionText }],
-    },
-    tools: GEMINI_TOOLS,
-    toolConfig: {
-      functionCallingConfig: {
-        mode: 'AUTO',
-      },
-    },
-  }
-
-  // Iterate through available Gemini Flash models (prioritizing gemini-3.6-flash)
-  let data: any = null
-  let lastErrorMsg = ''
-
-  for (const model of GEMINI_FLASH_MODELS) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const msg = errorData?.error?.message || `Error en la API de Gemini (${response.status})`
-        lastErrorMsg = msg
-        // If the model is not found or deprecated, try the next model in GEMINI_FLASH_MODELS
-        if (
-          response.status === 404 ||
-          msg.toLowerCase().includes('no longer available') ||
-          msg.toLowerCase().includes('not found')
-        ) {
-          console.warn(`[Gemini Flash] Model ${model} is not available, trying next fallback...`)
-          continue
-        }
-        throw new Error(msg)
-      }
-
-      data = await response.json()
-      if (data?.candidates?.[0]?.content?.parts) {
-        break
-      }
-    } catch (err: any) {
-      lastErrorMsg = err?.message || String(err)
-      if (
-        lastErrorMsg.toLowerCase().includes('no longer available') ||
-        lastErrorMsg.toLowerCase().includes('not found')
-      ) {
-        continue
-      }
-      throw err
-    }
-  }
-
-  if (!data) {
-    throw new Error(lastErrorMsg || 'No se pudo conectar con la API de Gemini.')
-  }
-
-  const candidate = data?.candidates?.[0]
-  if (!candidate || !candidate.content || !candidate.content.parts) {
-    throw new Error('Gemini no devolvió una respuesta válida.')
-  }
-
-  let spokenText = ''
-  let toolCall: VoiceToolCall | undefined = undefined
-
-  for (const part of candidate.content.parts) {
-    if (part.text) {
-      spokenText += part.text + ' '
-    }
-    if (part.functionCall) {
-      toolCall = {
-        name: part.functionCall.name,
-        args: part.functionCall.args || {},
-      }
-    }
-  }
-
-  spokenText = spokenText.trim()
-
-  // If Gemini determined this audio was background salon noise or unrelated conversation
-  if (spokenText.toUpperCase().includes('[IGNORAR]')) {
-    return {
-      spokenText: '',
-      ignored: true,
-    }
-  }
-
-  // Execute tool call if returned
-  if (toolCall) {
-    try {
-      const executionResult = await executeVoiceTool(toolCall, handlers)
-      if (executionResult && !spokenText) {
-        spokenText = executionResult
-      }
-    } catch (toolError: any) {
-      console.error('[Tool Execution Error]', toolError)
-      spokenText = `Hubo un inconveniente al ejecutar la acción: ${toolError.message || 'error desconocido'}`
-    }
-  }
-
-  if (!spokenText) {
-    spokenText = 'Acción procesada con éxito.'
-  }
-
-  // Detect if user solely prompted the wake word/greeting ("Dime, te escucho")
-  const isWakeGreetingOnly =
-    !toolCall &&
-    Boolean(
-      spokenText.match(
-        /(?:te escucho|dime|en qué te puedo ayudar|en qué puedo ayudarte|aquí estoy|a tu disposición|qué necesitas)/i
-      )
-    )
-
+  const query = input.textQuery || ''
+  const localRes = await executeLocalVoiceCommand(query, handlers)
   return {
-    spokenText,
-    toolCall,
-    isWakeGreetingOnly,
+    spokenText: localRes.spokenText || 'Acción procesada.',
+    isWakeGreetingOnly: localRes.isWakeGreetingOnly,
+    ignored: localRes.ignored,
   }
 }
 
@@ -1372,19 +978,76 @@ async function executeVoiceTool(tool: VoiceToolCall, handlers: VoiceActionHandle
 }
 
 /**
- * Executes direct studio commands locally (0€ / offline) without calling any external API.
- * Handles deleting appointments, navigation, agenda queries, creation modals, etc.
+ * Normalizes text removing accents for reliable comparison
+ */
+function normalizeText(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+/**
+ * Executes studio commands locally (0€ / offline) without calling any external API.
+ * Handles deleting appointments, navigation, agenda queries, creation modals, searches, and greetings.
  */
 export async function executeLocalVoiceCommand(
   text: string,
   handlers: VoiceActionHandlers
-): Promise<{ handled: boolean; spokenText?: string }> {
-  if (!text || !text.trim()) return { handled: false }
-  const clean = text.trim().toLowerCase()
+): Promise<{ handled: boolean; spokenText?: string; isWakeGreetingOnly?: boolean; ignored?: boolean }> {
+  if (!text || !text.trim()) return { handled: false, ignored: true }
+  let raw = text.trim()
+  let norm = normalizeText(raw)
 
-  // 1. Eliminar cita por nombre de persona
-  const deleteMatch = clean.match(
+  // Strip leading greetings / wake word prefixes: "oye sofi", "hola sofi", "hey sofi", "sofi"
+  const wakePrefixRegex = /^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i
+  const hadWakePrefix = wakePrefixRegex.test(norm)
+  if (hadWakePrefix) {
+    norm = norm.replace(wakePrefixRegex, '').trim()
+    raw = raw.replace(/^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i, '').trim()
+  }
+
+  // If user only called the wake word ("Oye Sofi" / "Sofi")
+  if (!norm) {
+    return {
+      handled: true,
+      spokenText: 'Dime, te escucho.',
+      isWakeGreetingOnly: true,
+    }
+  }
+
+  // General greetings & questions
+  if (norm.match(/^(?:hola|buenos dias|buenas tardes|buenas)$/i)) {
+    return {
+      handled: true,
+      spokenText: '¡Hola! Estoy lista para ayudarte con la gestión de GoldBlack Lash.',
+    }
+  }
+  if (norm.match(/^(?:quien eres|como te llamas)$/i)) {
+    return {
+      handled: true,
+      spokenText: 'Soy Sofi, tu asistente de voz de GoldBlack Lash Studio.',
+    }
+  }
+  if (norm.match(/^(?:gracias|muchas gracias)$/i)) {
+    return {
+      handled: true,
+      spokenText: 'Un placer ayudarte. Aquí estaré.',
+    }
+  }
+  if (norm.match(/^(?:que puedes hacer|ayuda|comandos)$/i)) {
+    return {
+      handled: true,
+      spokenText: 'Puedo eliminar citas diciendo el nombre de la clienta, informarte sobre tus citas de hoy o de mañana, abrir formularios para nuevas citas o clientas, y llevarte a cualquier sección del estudio.',
+    }
+  }
+
+  // 1. Eliminar / Borrar / Cancelar cita por nombre de persona
+  const deleteMatch = norm.match(
     /(?:elimina|eliminar|borra|borrar|cancela|cancelar|quita|quitar)\s+(?:la\s+)?cita\s+(?:de\s+)?(.+)/i
+  ) || norm.match(
+    /(?:elimina|eliminar|borra|borrar|cancela|cancelar)\s+(?:a\s+)?(.+?)(?:\s+de\s+la\s+agenda)?$/i
   )
   if (deleteMatch && handlers.onDeleteAppointment) {
     const rawName = deleteMatch[1].replace(/[.,!?;]+$/, '').trim()
@@ -1393,71 +1056,94 @@ export async function executeLocalVoiceCommand(
   }
 
   // 2. Navegar a pestañas
-  if (clean.includes('agenda') || clean.includes('citas')) {
+  if (norm.includes('agenda') || norm.includes('citas') || norm.includes('calendario')) {
     handlers.onNavigateTab('appointments')
     return { handled: true, spokenText: 'Te he llevado a la Agenda de Citas.' }
   }
-  if (clean.includes('clienta')) {
+  if (norm.includes('clienta') || norm.includes('cliente') || norm.includes('fichas')) {
     handlers.onNavigateTab('clients')
     return { handled: true, spokenText: 'Te he llevado a la Ficha de Clientas.' }
   }
-  if (clean.includes('servicio')) {
+  if (norm.includes('servicio') || norm.includes('catalogo') || norm.includes('precios')) {
     handlers.onNavigateTab('services')
     return { handled: true, spokenText: 'Te he llevado al Catálogo de Servicios.' }
   }
-  if (clean.includes('factura') || clean.includes('caja') || clean.includes('ingreso')) {
+  if (norm.includes('factura') || norm.includes('caja') || norm.includes('ingreso') || norm.includes('cobro')) {
     handlers.onNavigateTab('billing')
     return { handled: true, spokenText: 'Te he llevado a Facturación y Control de Caja.' }
   }
-  if (clean.includes('galer')) {
+  if (norm.includes('galer') || norm.includes('fotos') || norm.includes('trabajos')) {
     handlers.onNavigateTab('gallery')
-    return { handled: true, spokenText: 'Te he llevado a la Galería.' }
+    return { handled: true, spokenText: 'Te he llevado a la Galería de Trabajos.' }
   }
-  if (clean.includes('ajuste') || clean.includes('configura')) {
+  if (norm.includes('ajuste') || norm.includes('configura')) {
     handlers.onNavigateTab('settings')
     return { handled: true, spokenText: 'Te he llevado a los Ajustes del Estudio.' }
   }
-  if (clean.includes('panel') || clean.includes('inicio') || clean.includes('dashboard')) {
+  if (norm.includes('panel') || norm.includes('inicio') || norm.includes('dashboard') || norm.includes('principal')) {
     handlers.onNavigateTab('dashboard')
     return { handled: true, spokenText: 'Te he llevado al Panel Principal.' }
   }
 
-  // 3. Consultar citas de hoy / mañana
-  if (clean.includes('cita') && (clean.includes('hoy') || clean.includes('tengo hoy'))) {
+  // 3. Consultar citas de hoy / mañana / pendientes
+  if (norm.includes('hoy') && (norm.includes('cita') || norm.includes('tengo') || norm.includes('agenda'))) {
     const res = await handlers.onQueryAgenda('today')
     return { handled: true, spokenText: res }
   }
-  if (clean.includes('cita') && (clean.includes('mañana') || clean.includes('tengo mañana'))) {
+  if (norm.includes('manana') && (norm.includes('cita') || norm.includes('tengo') || norm.includes('agenda'))) {
     const res = await handlers.onQueryAgenda('tomorrow')
+    return { handled: true, spokenText: res }
+  }
+  if (norm.includes('pendiente')) {
+    const res = await handlers.onQueryAgenda(undefined, 'pendiente')
     return { handled: true, spokenText: res }
   }
 
   // 4. Modales de creación
-  if (clean.includes('nueva cita') || clean.includes('crear cita') || clean.includes('añadir cita')) {
+  if (norm.includes('nueva cita') || norm.includes('crear cita') || norm.includes('anadir cita') || norm.includes('agendar cita')) {
     handlers.onOpenModal('new_appointment')
-    return { handled: true, spokenText: 'He abierto el formulario para nueva cita.' }
+    return { handled: true, spokenText: 'He abierto el formulario para agendar una nueva cita.' }
   }
-  if (clean.includes('nueva clienta') || clean.includes('crear clienta') || clean.includes('añadir clienta')) {
+  if (norm.includes('nueva clienta') || norm.includes('crear clienta') || norm.includes('anadir clienta') || norm.includes('registrar clienta')) {
     handlers.onOpenModal('new_client')
-    return { handled: true, spokenText: 'He abierto el formulario para nueva clienta.' }
+    return { handled: true, spokenText: 'He abierto el formulario para registrar una nueva clienta.' }
   }
-  if (clean.includes('nuevo servicio') || clean.includes('añadir servicio')) {
+  if (norm.includes('nuevo servicio') || norm.includes('anadir servicio') || norm.includes('crear servicio')) {
     handlers.onOpenModal('new_service')
-    return { handled: true, spokenText: 'He abierto el formulario para nuevo servicio.' }
+    return { handled: true, spokenText: 'He abierto el formulario para crear un nuevo servicio.' }
   }
-  if (clean.includes('nueva factura') || clean.includes('emitir factura')) {
+  if (norm.includes('nueva factura') || norm.includes('emitir factura') || norm.includes('crear factura')) {
     handlers.onOpenModal('new_invoice')
-    return { handled: true, spokenText: 'He abierto el formulario para emitir factura.' }
+    return { handled: true, spokenText: 'He abierto el formulario para emitir una nueva factura.' }
   }
 
-  // 5. Comprobar actualizaciones
-  if (clean.includes('actualiza')) {
+  // 5. Búsqueda de clientas
+  const searchMatch = norm.match(/(?:busca|buscar|encuentra|ver)\s+(?:a\s+)?(?:la\s+clienta\s+)?(.+)/i)
+  if (searchMatch) {
+    const query = searchMatch[1].trim()
+    if (query && query.length > 2) {
+      const res = await handlers.onSearchClient(query)
+      return { handled: true, spokenText: res }
+    }
+  }
+
+  // 6. Consultas financieras / Caja
+  if (norm.includes('facturado') || norm.includes('ingresos') || norm.includes('caja')) {
+    const res = await handlers.onQueryFinance()
+    return { handled: true, spokenText: res }
+  }
+
+  // 7. Comprobar actualizaciones
+  if (norm.includes('actualiza') || norm.includes('version')) {
     if (handlers.onCheckUpdates) {
       const res = await handlers.onCheckUpdates()
       return { handled: true, spokenText: res || 'Comprobando actualizaciones de software.' }
     }
   }
 
-  return { handled: false }
+  return {
+    handled: true,
+    spokenText: 'No he entendido esa orden. Puedes pedirme por ejemplo: «elimina la cita de Rocío», «qué citas tengo hoy», «abrir nueva cita» o «ir a clientas».',
+  }
 }
 

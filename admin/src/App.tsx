@@ -244,16 +244,13 @@ export const App: React.FC = () => {
                 if (currentConfig.voiceAnnounceNewAppointments ?? true) {
                   const newestApt = newApts[0]
                   setTimeout(() => {
-                    announceNewAppointmentVoice(
-                      {
-                        clientName: newestApt.clientName,
-                        serviceName: newestApt.serviceName,
-                        clientPhone: newestApt.clientPhone,
-                        date: newestApt.date,
-                        time: newestApt.time,
-                      },
-                      currentConfig.geminiApiKey
-                    )
+                    announceNewAppointmentVoice({
+                      clientName: newestApt.clientName,
+                      serviceName: newestApt.serviceName,
+                      clientPhone: newestApt.clientPhone,
+                      date: newestApt.date,
+                      time: newestApt.time,
+                    })
                   }, 650)
                 }
 
@@ -1168,10 +1165,9 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* AI Voice Assistant Widget (Gemini Flash + Web Speech) */}
+        {/* AI Voice Assistant Widget (Siri Nativo macOS / 0€) */}
         {(config.voiceAssistantEnabled ?? true) && (
           <VoiceAssistantWidget
-            apiKey={config.geminiApiKey}
             voiceAutoSpeak={config.voiceAutoSpeak ?? true}
             wakeWordEnabled={config.voiceWakeWordEnabled ?? true}
             handlers={voiceHandlers}

@@ -4,7 +4,6 @@ import {
   IconMicOff,
   IconSparkles,
   IconVolume2,
-  IconVolumeX,
   IconX,
 } from './Icons'
 import {
@@ -12,7 +11,6 @@ import {
   executeLocalVoiceCommand,
   isSpeechRecognitionSupported,
   playWakeChime,
-  processVoiceWithGemini,
   speakWithNativeVoice,
   VoiceActionHandlers,
   WakeWordListener,
@@ -30,11 +28,9 @@ interface VoiceAssistantWidgetProps {
 type VoiceStatus = 'idle' | 'recording' | 'processing' | 'speaking' | 'error'
 
 export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
-  apiKey,
   voiceAutoSpeak = true,
   wakeWordEnabled = true,
   handlers,
-  onOpenSettings,
 }) => {
   const [status, setStatus] = useState<VoiceStatus>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -43,6 +39,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [showCommandsModal, setShowCommandsModal] = useState(false)
   const [liveVolume, setLiveVolume] = useState<number>(0)
+  const [liveTranscript, setLiveTranscript] = useState<string>('')
   const [isHandsFree, setIsHandsFree] = useState<boolean>(() => {
     const saved = localStorage.getItem('goldblack_voice_handsfree')
     return saved !== null ? saved === 'true' : wakeWordEnabled
@@ -56,9 +53,16 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   }, [wakeWordEnabled])
 
   const recorderRef = useRef<AudioRecorder | null>(null)
+  const speechRecognitionRef = useRef<any>(null)
   const wakeWordListenerRef = useRef<WakeWordListener | null>(null)
   const timerRef = useRef<any>(null)
   const autoCloseTimerRef = useRef<any>(null)
+
+  // Track status in a ref so callbacks can read it without triggering re-renders
+  const statusRef = useRef<VoiceStatus>(status)
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   // Unlock Web Audio API context on first interaction to avoid browser/Chromium autoplay blocks
   useEffect(() => {
@@ -95,97 +99,58 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [status, apiKey])
+  }, [status])
 
-  // Track status in a ref so callbacks can read it without triggering re-renders
-  const statusRef = useRef<VoiceStatus>(status)
-  useEffect(() => { statusRef.current = status }, [status])
+  // Native macOS Siri Speech events from Electron
+  useEffect(() => {
+    if (typeof window === 'undefined' || !(window as any).electronAPI) return
 
-  // Continuous background hands-free listener ("Oye Sofi" / "Sofi")
-  // IMPORTANT: `status` is NOT in the dependency array on purpose!
-  // When onWake fires and changes status to 'recording', we must NOT re-run this effect
-  // because the cleanup would cancel the recorder that is actively recording the user's command.
+    const unsubTranscript = (window as any).electronAPI.onNativeTranscript?.((text: string) => {
+      console.log('[Native Siri Speech Partial]:', text)
+      setLiveTranscript(text)
+    })
+
+    const unsubResult = (window as any).electronAPI.onNativeResult?.(async (text: string) => {
+      console.log('[Native Siri Speech Final]:', text)
+      if (!text || !text.trim()) return
+
+      if (statusRef.current === 'recording') {
+        await handleExecuteCommandText(text)
+      } else if (isHandsFree && wakeWordEnabled) {
+        // In standby check if it contains wake word "sofi"
+        const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        if (norm.includes('sofi')) {
+          playWakeChime()
+          setIsExpanded(true)
+          const command = norm.replace(/^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i, '').trim()
+          if (command.length > 1) {
+            await handleExecuteCommandText(command)
+          } else {
+            await handleWakeGreeting()
+          }
+        }
+      }
+    })
+
+    return () => {
+      unsubTranscript?.()
+      unsubResult?.()
+    }
+  }, [isHandsFree, wakeWordEnabled])
+
+  // Hands-free Wake Word listener ("Oye Sofi" / "Sofi")
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
       if (wakeWordListenerRef.current) {
         wakeWordListenerRef.current.stop()
         wakeWordListenerRef.current = null
       }
-      if (recorderRef.current) {
-        recorderRef.current.cancel()
-        recorderRef.current = null
-      }
       return
     }
 
-    // Only start standby if currently idle
     if (statusRef.current !== 'idle') return
 
     let isCancelled = false
-
-    const startVADStandby = () => {
-      if (isCancelled) return
-      console.log('[Sofi] 🎧 Iniciando escucha pasiva en segundo plano (esperando «Oye Sofi»)...')
-      const recorder = new AudioRecorder()
-      recorderRef.current = recorder
-
-      recorder
-        .startStandby({
-          standbyThreshold: 0.038,
-          speechThreshold: 0.025,
-          onStandbyUtterance: async (audioData) => {
-            if (isCancelled || statusRef.current !== 'idle') return
-            const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-            if (!effectiveApiKey.trim()) return
-
-            try {
-              console.log('[Sofi] 🔍 Verificando audio en segundo plano con Gemini Flash...')
-              const res = await processVoiceWithGemini(
-                {
-                  base64Audio: audioData.base64,
-                  mimeType: audioData.mimeType,
-                  isStandbyWakeCheck: true,
-                },
-                effectiveApiKey,
-                handlers
-              )
-
-              if (res.ignored) {
-                console.log('[Sofi] 🔇 Audio ignorado (ruido ambiental o charla sin «Sofi»). Sin abrir interfaz.')
-                return
-              }
-
-              // ¡El usuario ha dicho «Oye Sofi» o una orden directa!
-              playWakeChime()
-              setIsExpanded(true)
-              setErrorMessage(null)
-
-              if (res.isWakeGreetingOnly) {
-                console.log('[Sofi] 🌟 Wake word «Oye Sofi» detectado, saludando...')
-                await handleWakeGreeting()
-              } else {
-                console.log('[Sofi] ⚡ Orden directa detectada en standby:', res.spokenText)
-                setStatus('speaking')
-                setLastActionText(res.spokenText)
-                if (voiceAutoSpeak && res.spokenText) {
-                  await speakWithNativeVoice(res.spokenText)
-                }
-
-                if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
-                autoCloseTimerRef.current = setTimeout(() => {
-                  setStatus('idle')
-                  setIsExpanded(false)
-                }, 4000)
-              }
-            } catch (err: any) {
-              console.warn('[Standby Utterance Process Error]', err?.message || err)
-            }
-          },
-        })
-        .catch((err) => {
-          console.warn('[Standby Mic Start Error]', err)
-        })
-    }
 
     if (isSpeechRecognitionSupported()) {
       const listener = new WakeWordListener()
@@ -195,18 +160,16 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         async (commandText) => {
           if (isCancelled) return
           console.log('[Sofi] Wake word detectado:', commandText)
+          playWakeChime()
+          setIsExpanded(true)
           if (commandText && commandText.trim().length > 1) {
-            playWakeChime()
             await handleExecuteCommandText(commandText.trim())
           } else {
             await handleWakeGreeting()
           }
         },
         () => {
-          console.log('[Sofi] SpeechRecognition no disponible, activando VAD local.')
-          if (!isCancelled && statusRef.current === 'idle') {
-            startVADStandby()
-          }
+          console.log('[Sofi] Fallback standby activo.')
         }
       )
 
@@ -215,97 +178,8 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         listener.stop()
         wakeWordListenerRef.current = null
       }
-    } else {
-      // Direct local Web Audio Standby VAD (macOS Electron / Windows Electron / Safari)
-      startVADStandby()
-
-      return () => {
-        isCancelled = true
-        // ONLY cancel if still in standby — do NOT cancel if the recorder transitioned to recording!
-        // This prevents destroying the active recording when the effect re-runs.
-        if (recorderRef.current && statusRef.current === 'idle') {
-          console.log('[Sofi] Cleanup: cancelando VAD standby (estado idle).')
-          recorderRef.current.cancel()
-          recorderRef.current = null
-        } else {
-          console.log('[Sofi] Cleanup: preservando recorder activo (estado:', statusRef.current, ')')
-        }
-      }
     }
-  }, [isHandsFree, wakeWordEnabled, apiKey])
-
-  // Re-engage VAD standby when status returns to 'idle' after processing a command
-  // This is separate from the main effect above so that it can depend on `status`
-  // without causing the cleanup-during-recording bug
-  useEffect(() => {
-    if (status === 'idle' && isHandsFree && wakeWordEnabled && !recorderRef.current) {
-      // Small delay to avoid re-entrance issues
-      const restartTimer = setTimeout(() => {
-        if (statusRef.current === 'idle' && !recorderRef.current) {
-          console.log('[Sofi] 🔄 Re-activando escucha VAD en segundo plano...')
-          const recorder = new AudioRecorder()
-          recorderRef.current = recorder
-
-          recorder
-            .startStandby({
-              standbyThreshold: 0.038,
-              speechThreshold: 0.025,
-              onStandbyUtterance: async (audioData) => {
-                if (statusRef.current !== 'idle') return
-                const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-                if (!effectiveApiKey.trim()) return
-
-                try {
-                  const res = await processVoiceWithGemini(
-                    {
-                      base64Audio: audioData.base64,
-                      mimeType: audioData.mimeType,
-                      isStandbyWakeCheck: true,
-                    },
-                    effectiveApiKey,
-                    handlers
-                  )
-
-                  if (res.ignored) {
-                    console.log('[Sofi] 🔇 Audio ignorado en segundo plano (sin «Sofi»).')
-                    return
-                  }
-
-                  playWakeChime()
-                  setIsExpanded(true)
-                  setErrorMessage(null)
-
-                  if (res.isWakeGreetingOnly) {
-                    console.log('[Sofi] 🌟 Wake word «Oye Sofi» detectado...')
-                    await handleWakeGreeting()
-                  } else {
-                    console.log('[Sofi] ⚡ Orden ejecutada:', res.spokenText)
-                    setStatus('speaking')
-                    setLastActionText(res.spokenText)
-                    if (voiceAutoSpeak && res.spokenText) {
-                      await speakWithNativeVoice(res.spokenText)
-                    }
-
-                    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
-                    autoCloseTimerRef.current = setTimeout(() => {
-                      setStatus('idle')
-                      setIsExpanded(false)
-                    }, 4000)
-                  }
-                } catch (err: any) {
-                  console.warn('[Standby Process Error]', err?.message || err)
-                }
-              },
-            })
-            .catch((err) => {
-              console.warn('[Standby Re-engage Error]', err)
-            })
-        }
-      }, 500)
-
-      return () => clearTimeout(restartTimer)
-    }
-  }, [status, isHandsFree, wakeWordEnabled])
+  }, [isHandsFree, wakeWordEnabled, status])
 
   // Handles when user says "Oye Sofi" alone: speaks out loud "Dime, te escucho." and listens!
   const handleWakeGreeting = async () => {
@@ -345,90 +219,100 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }, [status])
 
-  // Stop listening and process audio with Gemini Flash
+  // Stop listening and process command
   const stopAndProcess = async () => {
-    if (!recorderRef.current) return
-    setStatus('processing')
-    setLiveVolume(0)
-
-    try {
-      const { base64, mimeType } = await recorderRef.current.stop()
+    if (recorderRef.current) {
+      try {
+        await recorderRef.current.stop()
+      } catch {}
       recorderRef.current = null
-
-      const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-      if (!effectiveApiKey.trim()) {
-        setStatus('error')
-        setErrorMessage('Configura tu API Key gratuita de Gemini en Ajustes.')
-        return
-      }
-
-      const response = await processVoiceWithGemini(
-        { base64Audio: base64, mimeType },
-        effectiveApiKey,
-        handlers
-      )
-
-      // If Gemini determined this audio was background salon noise or unrelated conversation
-      if (response.ignored) {
-        console.log('[Sofi] Audio ignorado (no dirigido a Sofi ni comando de la app).')
-        setStatus('idle')
-        setIsExpanded(false)
-        return
-      }
-
-      // If user only said "Oye Sofi" without giving a command yet:
-      if (response.isWakeGreetingOnly) {
-        setLastActionText(response.spokenText)
-        setStatus('speaking')
-        if (voiceAutoSpeak && response.spokenText) {
-          await speakWithNativeVoice(response.spokenText)
-        }
-        // Immediately re-open the mic for their command!
-        await startListening()
-        return
-      }
-
-      setLastActionText(response.spokenText)
-      setStatus('speaking')
-
-      // Speak response automatically with Siri / macOS native voice
-      if (voiceAutoSpeak && response.spokenText) {
-        await speakWithNativeVoice(response.spokenText)
-      }
-
-      // Auto-collapse after 4.5 seconds and return to idle standby
-      autoCloseTimerRef.current = setTimeout(() => {
-        setStatus('idle')
-        setIsExpanded(false)
-      }, 4500)
-    } catch (err: any) {
-      console.error('[Voice Assistant Error]', err)
-      setStatus('error')
-      setErrorMessage(err.message || 'Error al procesar el comando de voz.')
-      if (voiceAutoSpeak) {
-        speakWithNativeVoice('No pude entender la orden. Inténtalo de nuevo.')
-      }
     }
-  }
 
-  // Start listening with real-time VAD for automatic zero-click execution
-  const startListening = async () => {
-    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
-
-    // Check if API key is present
-    const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-    if (!effectiveApiKey.trim()) {
-      setIsExpanded(true)
-      setStatus('error')
-      setErrorMessage('Necesitas una API Key gratuita de Gemini (0€ / 1.500 peticiones/día).')
+    if (liveTranscript && liveTranscript.trim()) {
+      await handleExecuteCommandText(liveTranscript.trim())
       return
     }
+
+    setStatus('idle')
+    setIsExpanded(false)
+  }
+
+  // Start listening with real-time Apple Siri or Web Speech
+  const startListening = async () => {
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
 
     setIsExpanded(true)
     setErrorMessage(null)
     setLastActionText(null)
+    setLiveTranscript('')
     setLiveVolume(0)
 
+    // 1. macOS Native Apple Speech Recognition (via Swift in Electron)
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.startNativeListen) {
+      try {
+        const res = await (window as any).electronAPI.startNativeListen()
+        if (res?.supported) {
+          setStatus('recording')
+          console.log('[Sofi] 🎙️ Escucha nativa Siri iniciada en macOS...')
+          return
+        }
+      } catch (e) {
+        console.warn('[Native Listen Start Exception]', e)
+      }
+    }
+
+    // 2. Web SpeechRecognition API (Chromium / Safari)
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (SpeechRecognition) {
+      try {
+        if (speechRecognitionRef.current) {
+          try {
+            speechRecognitionRef.current.stop()
+          } catch {}
+        }
+        const recognition = new SpeechRecognition()
+        speechRecognitionRef.current = recognition
+        recognition.lang = 'es-ES'
+        recognition.interimResults = true
+        recognition.continuous = false
+
+        recognition.onstart = () => {
+          setStatus('recording')
+        }
+
+        recognition.onresult = (event: any) => {
+          let current = ''
+          for (let i = 0; i < event.results.length; i++) {
+            current += event.results[i][0].transcript
+          }
+          setLiveTranscript(current)
+          if (event.results[0].isFinal) {
+            recognition.stop()
+            handleExecuteCommandText(current)
+          }
+        }
+
+        recognition.onerror = (err: any) => {
+          console.warn('[SpeechRecognition Error]', err)
+          if (statusRef.current === 'recording') {
+            setStatus('idle')
+          }
+        }
+
+        recognition.onend = () => {
+          if (statusRef.current === 'recording' && !liveTranscript) {
+            setStatus('idle')
+          }
+        }
+
+        recognition.start()
+        return
+      } catch (srErr) {
+        console.warn('[SpeechRecognition Init Error]', srErr)
+      }
+    }
+
+    // 3. Fallback VAD Audio Recorder
     try {
       let recorder = recorderRef.current
       if (!recorder) {
@@ -441,30 +325,39 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         speechThreshold: 0.02,
         onVolumeChange: (vol) => setLiveVolume(vol),
         onSilence: () => {
-          // Automatic hands-free confirmation and execution upon silence (0 clicks required)
-          console.log('[Mónica] Silencio detectado tras hablar -> Ejecución automática sin clics')
           stopAndProcess()
         },
         onTimeout: () => {
-          console.log('[Mónica] Tiempo de espera agotado sin voz detectada.')
           handleCancel()
         },
       })
       setStatus('recording')
     } catch (err: any) {
-      console.error('[Mic Permission Error]', err)
+      console.error('[Start Listening Error]', err)
       setStatus('error')
-      setErrorMessage(
-        err.message ||
-          'No se pudo acceder al micrófono. Verifica los permisos en los Ajustes del Sistema de tu Mac.'
-      )
+      setErrorMessage(err.message || 'No se pudo activar el micrófono.')
     }
   }
 
-  // Toggle listening manually
   const toggleListening = async () => {
     if (status === 'recording') {
+      if ((window as any).electronAPI?.stopNativeListen) {
+        await (window as any).electronAPI.stopNativeListen()
+      }
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.stop()
+        } catch {}
+      }
       await stopAndProcess()
+    } else if (status === 'speaking') {
+      if ((window as any).electronAPI?.stopSiri) {
+        await (window as any).electronAPI.stopSiri()
+      }
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.cancel()
+      }
+      setStatus('idle')
     } else {
       await startListening()
     }
@@ -478,44 +371,19 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     setIsExpanded(true)
     setErrorMessage(null)
     setLiveVolume(0)
+    setLiveTranscript('')
 
-    // 1. Prioridad: Comprobación local directa (0€ / 100% offline sin consumir API)
-    const localRes = await executeLocalVoiceCommand(cleanText, handlers)
-    if (localRes.handled && localRes.spokenText) {
-      console.log('[Sofi] ⚡ Comando ejecutado localmente (0€ / sin API):', cleanText)
-      setLastActionText(localRes.spokenText)
-      setStatus('speaking')
-      if (voiceAutoSpeak && localRes.spokenText) {
-        await speakWithNativeVoice(localRes.spokenText)
-      }
-      autoCloseTimerRef.current = setTimeout(() => {
-        setStatus('idle')
-        setIsExpanded(false)
-      }, 4500)
-      return
-    }
-
-    // 2. Si no es un patrón local reconocido, procesar con Gemini Flash
+    // Ejecución 100% nativa y local con Siri (0€ / sin API externa)
     setStatus('processing')
     try {
-      const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-      if (!effectiveApiKey.trim()) {
-        setStatus('error')
-        setErrorMessage('Configura tu API Key gratuita de Gemini en Ajustes.')
-        return
-      }
-
-      const response = await processVoiceWithGemini(
-        { textQuery: cleanText },
-        effectiveApiKey,
-        handlers
-      )
-
-      setLastActionText(response.spokenText)
+      const localRes = await executeLocalVoiceCommand(cleanText, handlers)
+      const spoken = localRes.spokenText || 'Comando procesado.'
+      console.log('[Sofi] ⚡ Orden ejecutada con Siri:', cleanText, '->', spoken)
+      setLastActionText(spoken)
       setStatus('speaking')
 
-      if (voiceAutoSpeak && response.spokenText) {
-        await speakWithNativeVoice(response.spokenText)
+      if (voiceAutoSpeak && spoken) {
+        await speakWithNativeVoice(spoken)
       }
 
       autoCloseTimerRef.current = setTimeout(() => {
@@ -523,7 +391,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         setIsExpanded(false)
       }, 4500)
     } catch (err: any) {
-      console.error('[Voice Assistant Text Command Error]', err)
+      console.error('[Voice Assistant Command Error]', err)
       setStatus('error')
       setErrorMessage(err.message || 'Error al procesar el comando.')
       if (voiceAutoSpeak) {
@@ -547,7 +415,13 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     if (typeof window !== 'undefined' && (window as any).electronAPI?.stopNativeListen) {
       ;(window as any).electronAPI.stopNativeListen()
     }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop()
+      } catch {}
+    }
     setLiveVolume(0)
+    setLiveTranscript('')
     setStatus('idle')
     setIsExpanded(false)
     setErrorMessage(null)
@@ -568,7 +442,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 <h4 className="text-xs font-semibold tracking-wide uppercase text-amber-300/90 font-mono">
                   Sofi • Asistente de Voz
                 </h4>
-                <p className="text-[10px] text-zinc-400">Gemini Flash • Voz Siri</p>
+                <p className="text-[10px] text-zinc-400">Siri Nativo (macOS • 0€)</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -586,7 +460,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 }`}
                 title={
                   isHandsFree
-                    ? 'Manos libres activado: Di «Sofi» en cualquier momento'
+                    ? 'Manos libres activado: Di «Oye Sofi» en cualquier momento'
                     : 'Manos libres pausado: Haz clic para reactivar escucha continua'
                 }
               >
@@ -616,27 +490,36 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           <div className="py-3">
             {status === 'recording' && (
               <div className="flex flex-col items-center justify-center py-3 space-y-3">
-                {/* Dynamic Real-time Soundwave reacting to live mic volume */}
-                <div className="flex items-center justify-center gap-1.5 h-12">
-                  {[0.6, 1.0, 1.4, 0.9, 0.5].map((multiplier, idx) => {
-                    const heightPx = Math.max(8, Math.min(42, Math.round(8 + liveVolume * 45 * multiplier)))
-                    return (
-                      <span
-                        key={idx}
-                        style={{ height: `${heightPx}px` }}
-                        className="w-1.5 bg-gradient-to-t from-amber-500 via-amber-400 to-amber-200 rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(212,175,55,0.4)]"
-                      />
-                    )
-                  })}
-                </div>
+                {/* Dynamic Real-time Soundwave or Live Transcript */}
+                {liveTranscript ? (
+                  <div className="w-full px-3 py-2 rounded-xl bg-zinc-900/90 border border-amber-500/30 text-amber-200 text-xs italic text-center animate-pulse">
+                    &ldquo;{liveTranscript}&rdquo;
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-1.5 h-12">
+                    {[0.6, 1.0, 1.4, 0.9, 0.5].map((multiplier, idx) => {
+                      const heightPx = Math.max(
+                        8,
+                        Math.min(42, Math.round(8 + (liveVolume || 0.3) * 45 * multiplier))
+                      )
+                      return (
+                        <span
+                          key={idx}
+                          style={{ height: `${heightPx}px` }}
+                          className="w-1.5 bg-gradient-to-t from-amber-500 via-amber-400 to-amber-200 rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+                        />
+                      )
+                    })}
+                  </div>
+                )}
                 <div className="text-center">
                   <p className="text-sm font-semibold text-amber-200">Sofi escuchando tu orden...</p>
                   <p className="text-xs text-amber-400 font-medium mt-0.5 flex items-center justify-center gap-1">
                     <span>⚡</span>
-                    <span>Se confirmará y ejecutará automáticamente al callar</span>
+                    <span>Se confirmará y ejecutará automáticamente con Siri</span>
                   </p>
                   <p className="text-[11px] text-zinc-400 mt-1">
-                    {recordingSeconds}s • Habla normalmente, no tienes que presionar nada
+                    {recordingSeconds}s • Di por ejemplo «elimina la cita de Rocío»
                   </p>
                 </div>
               </div>
@@ -645,8 +528,8 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             {status === 'processing' && (
               <div className="flex flex-col items-center justify-center py-3 space-y-2 text-center">
                 <div className="w-8 h-8 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
-                <p className="text-xs font-medium text-amber-200">Sofi interpretando orden con Gemini...</p>
-                <p className="text-[11px] text-zinc-400">Analizando intención y ejecutando herramientas</p>
+                <p className="text-xs font-medium text-amber-200">Sofi procesando orden con Siri...</p>
+                <p className="text-[11px] text-zinc-400">Ejecutando acción local inmediata</p>
               </div>
             )}
 
@@ -668,17 +551,6 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                   <IconMicOff size={16} className="shrink-0 mt-0.5" />
                   <p className="leading-snug">{errorMessage}</p>
                 </div>
-                {(!apiKey || !apiKey.trim()) && (
-                  <button
-                    onClick={() => {
-                      onOpenSettings()
-                      handleCancel()
-                    }}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all text-center shadow-[0_0_12px_rgba(212,175,55,0.25)] cursor-pointer"
-                  >
-                    ⚙️ Configurar Clave de Gemini en Ajustes
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -697,7 +569,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           {/* Quick Examples footer */}
           <div className="pt-2 border-t border-zinc-800/60 text-[10px] text-zinc-400 flex items-center justify-between">
             <span>Atajo: ⌘ + Shift + V</span>
-            <span className="text-zinc-500">Google AI Studio 0€</span>
+            <span className="text-zinc-500">Siri macOS 0€</span>
           </div>
         </div>
       )}
@@ -720,7 +592,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             ? 'bg-[#1a1a24] text-amber-300 border border-amber-500/50 shadow-[0_0_20px_rgba(212,175,55,0.3)]'
             : 'bg-gradient-to-r from-[#171722] to-[#0d0d12] text-amber-400 border border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_25px_rgba(212,175,55,0.4)]'
         }`}
-        title="Control por voz con IA (Di «Sofi» o pulsa Cmd+Shift+V)"
+        title="Control por voz con Siri (Di «Oye Sofi» o pulsa Cmd+Shift+V)"
       >
         {/* Pulsing ring when recording */}
         {status === 'recording' && (
@@ -739,7 +611,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         {status === 'idle' && isHandsFree && (
           <span
             className="absolute -top-1 -right-1 flex h-4 w-4"
-            title="Escucha activa en segundo plano: Di «Sofi»"
+            title="Escucha activa en segundo plano: Di «Oye Sofi»"
           >
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[8px] font-bold text-zinc-950 items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.8)]">

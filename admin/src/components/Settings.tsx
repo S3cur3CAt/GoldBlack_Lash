@@ -16,7 +16,6 @@ import {
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
 import {
-  processVoiceWithGemini,
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
 } from '../services/voiceAssistant'
@@ -165,58 +164,22 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   }
 
-  // Gemini Assistant Live Test State
-  const [showApiKey, setShowApiKey] = useState(false)
-  const [isTestingGemini, setIsTestingGemini] = useState(false)
-  const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  // Siri Voice Live Test
+  const [isTestingSiri, setIsTestingSiri] = useState(false)
 
-  const handleTestGemini = async () => {
-    const key = formData.geminiApiKey?.trim() || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
-    if (!key) {
-      showAlert({
-        title: 'Clave API requerida',
-        message: 'Por favor ingresa tu API Key gratuita de Gemini para verificar la conexión.',
-        type: 'warning',
-      })
-      return
-    }
-    setIsTestingGemini(true)
-    setGeminiTestResult(null)
+  const handleTestSiriVoice = async () => {
+    setIsTestingSiri(true)
     try {
-      const response = await processVoiceWithGemini(
-        { textQuery: 'Confirma en una frase breve y elegante que la conexión con el Asistente de GoldBlack Lash está funcionando.' },
-        key,
-        {
-          onNavigateTab: () => {},
-          onQueryAgenda: async () => '',
-          onCreateAppointment: async () => '',
-          onUpdateAppointment: async () => '',
-          onSearchClient: async () => '',
-          onQueryFinance: async () => '',
-          onOpenModal: () => {},
-        }
+      await speakWithFemaleVoice(
+        'Hola, soy Sofi. Tu asistente ejecutiva de GoldBlack Lash Studio. El sistema de voz nativo de Siri está funcionando a la perfección.'
       )
-      setGeminiTestResult({
-        success: true,
-        message: `✓ Conexión con Gemini Flash exitosa: "${response.spokenText}"`,
-      })
       showAlert({
-        title: 'Conexión Exitosa con Gemini',
-        message: '¡Gemini Flash respondió a la perfección! El control por voz está listo para usar.',
+        title: 'Voz Nativa Siri Activa',
+        message: 'La voz nativa de Siri ha reproducido la prueba con éxito.',
         type: 'success',
       })
-    } catch (err: any) {
-      setGeminiTestResult({
-        success: false,
-        message: `❌ Error al conectar con Gemini: ${err.message || 'Verifica tu API Key'}`,
-      })
-      showAlert({
-        title: 'Error de Conexión',
-        message: `No se pudo conectar con Gemini: ${err.message || 'Verifica que la clave sea válida.'}`,
-        type: 'error',
-      })
     } finally {
-      setIsTestingGemini(false)
+      setIsTestingSiri(false)
     }
   }
 
@@ -226,16 +189,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleTestAnnouncement = async () => {
     setIsPlayingSampleAnnouncement(true)
     try {
-      await announceNewAppointmentVoice(
-        {
-          clientName: 'Elena Morales',
-          serviceName: 'Volumen Ruso',
-          clientPhone: '612345678',
-          date: new Date().toISOString().split('T')[0],
-          time: '17:00',
-        },
-        formData.geminiApiKey
-      )
+      await announceNewAppointmentVoice({
+        clientName: 'Elena Morales',
+        serviceName: 'Volumen Ruso',
+        clientPhone: '612345678',
+        date: new Date().toISOString().split('T')[0],
+        time: '17:00',
+      })
     } finally {
       setIsPlayingSampleAnnouncement(false)
     }
@@ -828,59 +788,18 @@ export const Settings: React.FC<SettingsProps> = ({
             </button>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-3 text-xs text-gray-400">
+          {/* Native Siri Integration Banner */}
+          <div className="p-4 rounded-xl bg-[#151520] border border-amber-500/20 space-y-2 text-xs text-gray-400">
             <div className="flex items-center gap-2 text-amber-400 font-semibold">
               <IconSparkles size={16} />
-              <span>¿Cómo obtener tu clave gratuita de Google AI Studio en 1 minuto?</span>
+              <span>Asistente Sofi con Voz Nativa de Siri (macOS • 0€)</span>
             </div>
-            <ol className="list-decimal list-inside space-y-1 text-gray-300 pl-1">
-              <li>
-                Entra gratis en{' '}
-                <a
-                  href="https://aistudio.google.com/app/apikey"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-amber-400 underline font-medium"
-                >
-                  aistudio.google.com/app/apikey
-                </a>{' '}
-                con tu cuenta de Google.
-              </li>
-              <li>
-                Haz clic en <strong className="text-white">Create API Key</strong> y cópiala.
-              </li>
-              <li>
-                Pégala a continuación. Disfrutarás de <strong className="text-white">1.500 peticiones diarias gratis para siempre</strong>.
-              </li>
-            </ol>
+            <p className="text-gray-300 leading-relaxed text-[11px]">
+              El asistente funciona de forma 100% nativa e ilimitada integrándose con el sintetizador y reconocedor de voz de Apple en macOS (Siri). No requiere saldo ni claves de API externas, garantizando privacidad total y 0€ de coste.
+            </p>
           </div>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
-                Clave de API de Google Gemini (Gemini 2.0 / 1.5 Flash)
-              </label>
-              <div className="relative">
-                <input
-                  type={showApiKey ? 'text' : 'password'}
-                  placeholder="Pega tu clave AIzaSy..."
-                  value={formData.geminiApiKey || ''}
-                  onChange={(e) => setFormData({ ...formData, geminiApiKey: e.target.value.trim() })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 pr-20 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-2.5 text-xs text-amber-400/80 hover:text-amber-300 cursor-pointer select-none"
-                >
-                  {showApiKey ? 'Ocultar' : 'Mostrar'}
-                </button>
-              </div>
-              <p className="text-[11px] text-gray-500 mt-1">
-                También puedes definir la variable de entorno <code className="text-amber-400 font-mono">VITE_GEMINI_API_KEY</code> en tu archivo <code className="text-gray-400">.env</code>.
-              </p>
-            </div>
-
             {/* Checkbox for Voice Auto Speak (Text to speech) */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
               <input
@@ -891,7 +810,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAutoSpeak" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Respuesta hablada por voz (Text-To-Speech)</span> — La app te confirmará las acciones hablándote con las voces nativas en español de tu Mac / ordenador.
+                <span className="font-semibold text-white">Respuesta hablada por voz (Siri Text-To-Speech)</span> — La app te confirmará las acciones hablándote con las voces nativas en español de Siri en tu Mac.
               </label>
             </div>
 
@@ -910,7 +829,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar reservas web en tiempo real con voz femenina</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la IA avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
+                <span className="font-semibold text-white">Anunciar reservas web en tiempo real con voz de Siri</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
               </label>
             </div>
 
@@ -933,7 +852,7 @@ export const Settings: React.FC<SettingsProps> = ({
               </label>
             </div>
 
-            {/* Checkbox for Wake-Word Hands-Free Activation (Mónica) */}
+            {/* Checkbox for Wake-Word Hands-Free Activation (Sofi) */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
               <input
                 type="checkbox"
@@ -948,7 +867,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceWakeWordEnabled" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Escucha continua por voz («Oye Mónica» / «Mónica»)</span> — En cuanto digas «Mónica», comenzará a escuchar automáticamente esperando tu orden, y al callar confirmará y ejecutará la acción de inmediato con Siri, sin necesidad de presionar ningún botón.
+                <span className="font-semibold text-white">Escucha continua por voz («Oye Sofi» / «Sofi»)</span> — En cuanto digas «Oye Sofi», comenzará a escuchar automáticamente esperando tu orden, y al callar confirmará y ejecutará la acción de inmediato con Siri, sin necesidad de presionar ningún botón.
               </label>
             </div>
 
@@ -956,17 +875,17 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Comprobar conexión con Gemini Flash</span>
-                  <p className="text-[11px] text-gray-500">Envía un mensaje de prueba para verificar que tu clave de Google AI Studio es válida.</p>
+                  <span className="font-semibold text-white">Probar Voz de Siri (macOS)</span>
+                  <p className="text-[11px] text-gray-500">Reproduce una locución de prueba de Sofi con la voz nativa de Siri de tu Mac.</p>
                 </div>
                 <button
                   type="button"
-                  onClick={handleTestGemini}
-                  disabled={isTestingGemini}
+                  onClick={handleTestSiriVoice}
+                  disabled={isTestingSiri}
                   className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 disabled:opacity-50 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)] shrink-0"
                 >
                   <IconSparkles size={14} />
-                  <span>{isTestingGemini ? 'Conectando...' : 'Probar Conexión con Gemini'}</span>
+                  <span>{isTestingSiri ? 'Reproduciendo...' : '🔊 Probar Voz de Siri'}</span>
                 </button>
               </div>
 
@@ -1000,22 +919,10 @@ export const Settings: React.FC<SettingsProps> = ({
                   <IconVolume2 size={14} />
                   <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
                 </button>
-              </div>
-
-              {geminiTestResult && (
-                <div
-                  className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                    geminiTestResult.success
-                      ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
-                      : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
-                  }`}
-                >
-                  <span>{geminiTestResult.message}</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
+      </div>
 
         {/* Save Settings Button */}
         <div className="flex justify-end">

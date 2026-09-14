@@ -264,13 +264,18 @@ export function getApiBaseUrl(): string {
   try {
     const saved = localStorage.getItem('goldblack_admin_api_url')
     if (saved && saved.trim().startsWith('http')) {
-      return saved.trim().replace(/\/+$/, '')
+      let cleanUrl = saved.trim().replace(/\/+$/, '')
+      if (cleanUrl === 'https://goldblacklash.com') {
+        cleanUrl = 'https://www.goldblacklash.com'
+        localStorage.setItem('goldblack_admin_api_url', cleanUrl)
+      }
+      return cleanUrl
     }
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '3000') {
       return 'http://localhost:3000'
     }
   } catch (e) {}
-  return 'https://goldblacklash.com'
+  return 'https://www.goldblacklash.com'
 }
 
 export function setApiBaseUrl(url: string): void {
