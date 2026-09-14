@@ -18,6 +18,7 @@ import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../servi
 import {
   processVoiceWithGemini,
   announceNewAppointmentVoice,
+  speakWithFemaleVoice,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -237,6 +238,18 @@ export const Settings: React.FC<SettingsProps> = ({
       )
     } finally {
       setIsPlayingSampleAnnouncement(false)
+    }
+  }
+
+  // Live Test of Update Voice Announcement
+  const [isPlayingUpdateVoiceTest, setIsPlayingUpdateVoiceTest] = useState(false)
+
+  const handleTestUpdateVoice = async () => {
+    setIsPlayingUpdateVoiceTest(true)
+    try {
+      await speakWithFemaleVoice('Tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
+    } finally {
+      setIsPlayingUpdateVoiceTest(false)
     }
   }
 
@@ -901,6 +914,25 @@ export const Settings: React.FC<SettingsProps> = ({
               </label>
             </div>
 
+            {/* Checkbox for Announcing App Updates with voice */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+              <input
+                type="checkbox"
+                id="voiceAnnounceUpdates"
+                checked={formData.voiceAnnounceUpdates ?? true}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    voiceAnnounceUpdates: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+              />
+              <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
+                <span className="font-semibold text-white">Anunciar actualizaciones disponibles por voz</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará en voz alta diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
+              </label>
+            </div>
+
             {/* Live Test Buttons */}
             <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -931,7 +963,23 @@ export const Settings: React.FC<SettingsProps> = ({
                   className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#1f1f2e] hover:bg-[#28283d] border border-amber-500/30 text-amber-300 font-medium text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
                 >
                   <IconVolume2 size={14} />
-                  <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : '🔊 Escuchar Anuncio de Prueba'}</span>
+                  <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : '🔊 Escuchar Anuncio de Reserva'}</span>
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-300">
+                  <span className="font-semibold text-white">Probar Aviso de Actualización (Voz Siri)</span>
+                  <p className="text-[11px] text-gray-500">Escucha la locución cuando la aplicación detecta una nueva actualización disponible.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestUpdateVoice}
+                  disabled={isPlayingUpdateVoiceTest}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#1f1f2e] hover:bg-[#28283d] border border-amber-500/30 text-amber-300 font-medium text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                >
+                  <IconVolume2 size={14} />
+                  <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
                 </button>
               </div>
 

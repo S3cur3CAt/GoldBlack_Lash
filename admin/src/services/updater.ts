@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { speakWithFemaleVoice } from './voiceAssistant'
+import { getStudioConfig } from './storage'
 
 export interface UpdateInfo {
   available: boolean
@@ -129,6 +131,19 @@ export function useUpdater() {
           if (isNew) {
             lastNotifiedVersionRef.current = result.latestVersion
             playUpdateChime()
+
+            // Anuncio por voz con Siri / voz natural femenina
+            try {
+              const conf = getStudioConfig()
+              if (conf.voiceAnnounceUpdates ?? conf.voiceAutoSpeak ?? true) {
+                setTimeout(() => {
+                  const versionClean = (result.latestVersion || '').replace(/^v/, '')
+                  speakWithFemaleVoice(
+                    `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
+                  )
+                }, 650)
+              }
+            } catch {}
           }
           return result
         } else {
@@ -176,6 +191,19 @@ export function useUpdater() {
               lastNotifiedVersionRef.current = tag
               playUpdateChime()
               window.electronAPI?.notifyUpdateAvailable?.(info)
+
+              // Anuncio por voz con Siri / voz natural femenina
+              try {
+                const conf = getStudioConfig()
+                if (conf.voiceAnnounceUpdates ?? conf.voiceAutoSpeak ?? true) {
+                  setTimeout(() => {
+                    const versionClean = tag.replace(/^v/, '')
+                    speakWithFemaleVoice(
+                      `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
+                    )
+                  }, 650)
+                }
+              } catch {}
             }
             return info
           }
@@ -297,6 +325,14 @@ export function useUpdater() {
     setStatus('available')
     playUpdateChime()
     window.electronAPI?.notifyUpdateAvailable?.(fakeInfo)
+
+    // Reproducir anuncio de prueba por voz
+    setTimeout(() => {
+      const versionClean = fakeVersion.replace(/^v/, '')
+      speakWithFemaleVoice(
+        `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
+      )
+    }, 650)
   }, [])
 
   const dismiss = useCallback(() => {

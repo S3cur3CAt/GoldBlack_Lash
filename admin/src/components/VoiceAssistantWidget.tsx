@@ -13,6 +13,7 @@ import {
   speakWithNativeVoice,
   VoiceActionHandlers,
 } from '../services/voiceAssistant'
+import { VoiceCommandsModal } from './VoiceCommandsModal'
 
 interface VoiceAssistantWidgetProps {
   apiKey?: string
@@ -34,6 +35,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   const [lastActionText, setLastActionText] = useState<string | null>(null)
   const [isExpanded, setIsExpanded] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [showCommandsModal, setShowCommandsModal] = useState(false)
 
   const recorderRef = useRef<AudioRecorder | null>(null)
   const timerRef = useRef<any>(null)
@@ -148,6 +150,47 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }
 
+  const handleExecuteCommandText = async (text: string) => {
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+    setIsExpanded(true)
+    setStatus('processing')
+    setErrorMessage(null)
+
+    try {
+      const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
+      if (!effectiveApiKey.trim()) {
+        setStatus('error')
+        setErrorMessage('Configura tu API Key gratuita de Gemini en Ajustes.')
+        return
+      }
+
+      const response = await processVoiceWithGemini(
+        { textQuery: text },
+        effectiveApiKey,
+        handlers
+      )
+
+      setLastActionText(response.spokenText)
+      setStatus('speaking')
+
+      if (voiceAutoSpeak && response.spokenText) {
+        await speakWithNativeVoice(response.spokenText)
+      }
+
+      autoCloseTimerRef.current = setTimeout(() => {
+        setStatus('idle')
+        setIsExpanded(false)
+      }, 5000)
+    } catch (err: any) {
+      console.error('[Voice Assistant Text Command Error]', err)
+      setStatus('error')
+      setErrorMessage(err.message || 'Error al procesar el comando.')
+      if (voiceAutoSpeak) {
+        speakWithNativeVoice('No pude procesar el comando. Inténtalo de nuevo.')
+      }
+    }
+  }
+
   const handleCancel = () => {
     if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
     if (recorderRef.current) {
@@ -169,7 +212,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto">
       {/* Expanded Interactive Card */}
       {isExpanded && (
-        <div className="mb-3 w-84 max-w-[90vw] bg-[#121218]/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(212,175,55,0.15)] text-zinc-100 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3">
+        <div className="mb-3 w-88 max-w-[90vw] bg-[#121218]/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(212,175,55,0.15)] text-zinc-100 transition-all duration-300 animate-in fade-in slide-in-from-bottom-3">
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800/80">
             <div className="flex items-center gap-2">
@@ -178,18 +221,28 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-semibold tracking-wide uppercase text-amber-300/90 font-mono">
-                  GoldBlack Voice IA
+                  Mónica • Asistente de Voz
                 </h4>
-                <p className="text-[10px] text-zinc-400">Gemini Flash • 0€</p>
+                <p className="text-[10px] text-zinc-400">Gemini Flash • Voz Siri</p>
               </div>
             </div>
-            <button
-              onClick={handleCancel}
-              className="text-zinc-500 hover:text-zinc-200 transition-colors p-1 rounded-lg hover:bg-zinc-800/60"
-              title="Cerrar asistente"
-            >
-              <IconX size={16} />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowCommandsModal(true)}
+                className="px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+                title="Ver todos los comandos disponibles"
+              >
+                <span>📖</span>
+                <span>Comandos</span>
+              </button>
+              <button
+                onClick={handleCancel}
+                className="text-zinc-500 hover:text-zinc-200 transition-colors p-1 rounded-lg hover:bg-zinc-800/60 cursor-pointer"
+                title="Cerrar asistente"
+              >
+                <IconX size={16} />
+              </button>
+            </div>
           </div>
 
           {/* Body Content by Status */}
@@ -205,14 +258,14 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                   <span className="w-1.5 h-3 bg-amber-400 rounded-full animate-[pulse_0.9s_ease-in-out_infinite]" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-amber-200">Te escucho atentamente...</p>
+                  <p className="text-sm font-medium text-amber-200">Mónica te escucha atentamente...</p>
                   <p className="text-xs text-zinc-400 mt-0.5">
-                    {recordingSeconds}s • Di tu orden (ej. &ldquo;Ve a facturación&rdquo;, &ldquo;Crea cita para Laura&rdquo;)
+                    {recordingSeconds}s • Di «Mónica, ...» (ej. &ldquo;Mónica, abre la agenda&rdquo;, &ldquo;Mónica, busca a Carmen&rdquo;)
                   </p>
                 </div>
                 <button
                   onClick={stopAndProcess}
-                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)]"
+                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)] cursor-pointer"
                 >
                   ✓ Terminar y Ejecutar
                 </button>
@@ -222,7 +275,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             {status === 'processing' && (
               <div className="flex flex-col items-center justify-center py-3 space-y-2 text-center">
                 <div className="w-8 h-8 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
-                <p className="text-xs font-medium text-amber-200">Gemini Flash interpretando orden...</p>
+                <p className="text-xs font-medium text-amber-200">Mónica interpretando orden con Gemini...</p>
                 <p className="text-[11px] text-zinc-400">Analizando intención y ejecutando herramientas</p>
               </div>
             )}
@@ -239,7 +292,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 <div className="flex justify-end pt-1">
                   <button
                     onClick={toggleListening}
-                    className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors underline underline-offset-2"
+                    className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors underline underline-offset-2 cursor-pointer"
                   >
                     Dar otra orden
                   </button>
@@ -259,13 +312,24 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                       onOpenSettings()
                       handleCancel()
                     }}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all text-center shadow-[0_0_12px_rgba(212,175,55,0.25)]"
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all text-center shadow-[0_0_12px_rgba(212,175,55,0.25)] cursor-pointer"
                   >
                     ⚙️ Configurar Clave de Gemini en Ajustes
                   </button>
                 )}
               </div>
             )}
+          </div>
+
+          {/* Botón principal para abrir catálogo de comandos */}
+          <div className="pt-2 pb-1 border-t border-zinc-800/60">
+            <button
+              onClick={() => setShowCommandsModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[#1b1b28] hover:bg-[#232334] border border-amber-500/30 hover:border-amber-400/50 text-amber-300 text-xs font-semibold transition-all cursor-pointer shadow-sm active:scale-98"
+            >
+              <span>✨</span>
+              <span>Ver todos los comandos disponibles</span>
+            </button>
           </div>
 
           {/* Quick Examples footer */}
@@ -275,6 +339,13 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal de Comandos Disponibles de Mónica */}
+      <VoiceCommandsModal
+        isOpen={showCommandsModal}
+        onClose={() => setShowCommandsModal(false)}
+        onExecuteCommand={handleExecuteCommandText}
+      />
 
       {/* Floating Main Mic Button */}
       <button

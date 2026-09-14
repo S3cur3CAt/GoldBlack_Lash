@@ -407,3 +407,12 @@ export function IconVolumeX({ size = 20, className = '', ...props }: IconProps) 
   )
 }
 
+export function IconPlay({ size = 20, className = '', ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none" className={className} {...props}>
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  )
+}
+
+

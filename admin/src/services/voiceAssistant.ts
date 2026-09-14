@@ -38,6 +38,7 @@ export interface VoiceActionHandlers {
   onSearchClient: (query: string) => Promise<string>
   onQueryFinance: (period?: string) => Promise<string>
   onOpenModal: (modal: string) => void
+  onCheckUpdates?: () => Promise<string> | void
   getStudioContext?: () => string
 }
 
@@ -177,6 +178,14 @@ const GEMINI_TOOLS = [
             },
           },
           required: ['modal'],
+        },
+      },
+      {
+        name: 'check_updates',
+        description: 'Comprueba si hay nuevas versiones o actualizaciones de software disponibles para la aplicación GoldBlack Lash.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {},
         },
       },
     ],
@@ -499,18 +508,25 @@ export async function processVoiceWithGemini(
   const studioContext = handlers.getStudioContext ? handlers.getStudioContext() : ''
 
   const systemInstructionText = `
-Eres el Asistente de Voz inteligente y exclusivo de GoldBlack Lash Studio (estudio de lujo de extensiones de pestañas, cejas y estética).
-Tu objetivo es ayudar al administrador/lash artist a controlar la aplicación por voz en tiempo real con las manos libres.
+Eres Mónica, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
+Tu nombre oficial es Mónica. Los administradores y artistas del estudio se dirigirán a ti diciendo «Mónica» o pronunciando directamente su orden (por ejemplo: «Mónica, abre la agenda», «Mónica, ¿qué citas tengo hoy?», «Mónica, busca a Carmen», «Mónica, crea una cita para Laura mañana», «Mónica, comprueba si hay actualizaciones», «Mónica, ve a facturación»).
+
+IDENTIDAD Y TONO DE MÓNICA:
+- Tu nombre es Mónica y te identificas con orgullo y calidez como tal.
+- Eres elegante, refinada, ejecutiva, servicial y extremadamente eficiente.
+- Si el usuario te saluda o pregunta por ti («Hola Mónica», «Mónica», «¿Mónica estás ahí?», «¿Quién eres?»), saluda cordialmente presentándote como Mónica y preguntando en qué puedes ayudar hoy en el estudio.
+- Si el usuario comienza su orden diciendo «Mónica, ...», interpreta y ejecuta la orden solicitada de inmediato.
 
 Fecha actual: ${today} (Año ${currentYear}).
 ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
 
 REGLAS DE ACTUACIÓN:
-1. Si el usuario pide cualquier acción de la app (cambiar de pantalla, consultar agenda, crear cita, cancelar cita, buscar clienta, consultar ingresos, etc.), DEBES invocar la herramienta correspondiente con los parámetros exactos.
+1. Si el usuario pide cualquier acción de la app (cambiar de pantalla, consultar agenda, crear cita, cancelar cita, buscar clienta, consultar ingresos, comprobar actualizaciones, etc.), DEBES invocar la herramienta correspondiente con los parámetros exactos.
 2. Si el usuario pide agendar o crear una cita:
    - Si no indica fecha, asume hoy o pregunta brevemente.
    - Si no indica hora exacta, usa una hora razonable de apertura (ej. 10:00 o 16:00) o abre el modal.
-3. Responde SIEMPRE de forma oral concisa, elegante y directa en español (1 o 2 oraciones máximo), confirmando la acción de forma natural como un mayordomo o recepcionista de lujo.
+3. Si el usuario pregunta por actualizaciones («Mónica, ¿hay actualizaciones?», «Mónica, busca actualizaciones», «comprobar novedades»), invoca la herramienta check_updates.
+4. Responde SIEMPRE de forma oral concisa, elegante y directa en español (1 o 2 oraciones máximo), confirmando la acción de forma natural como Mónica.
 `
 
   const parts: any[] = []
@@ -678,6 +694,14 @@ async function executeVoiceTool(tool: VoiceToolCall, handlers: VoiceActionHandle
         gallery: 'galería',
       }
       return `He abierto el formulario para ${modalNames[args.modal] || args.modal}.`
+    }
+
+    case 'check_updates': {
+      if (handlers.onCheckUpdates) {
+        const res = await handlers.onCheckUpdates()
+        return res || 'Buscando actualizaciones de software para GoldBlack Lash...'
+      }
+      return 'Comprobando si hay actualizaciones disponibles...'
     }
 
     default:

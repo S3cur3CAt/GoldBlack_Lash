@@ -14,6 +14,7 @@ import {
   VoiceActionHandlers,
   announceNewAppointmentVoice,
 } from './services/voiceAssistant'
+import { useUpdaterContext } from './context/UpdaterContext'
 
 import {
   Appointment,
@@ -120,6 +121,7 @@ export const App: React.FC = () => {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false)
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
+  const { checkUpdates } = useUpdaterContext()
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
 
   // Sidebar reorder state - persistido en localStorage para personalización del orden del menú
@@ -919,6 +921,11 @@ export const App: React.FC = () => {
       else if (modal === 'new_client') setIsClientModalOpen(true)
       else if (modal === 'new_invoice') setIsBillingModalOpen(true)
       else if (modal === 'gallery') setIsGalleryModalOpen(true)
+    },
+
+    onCheckUpdates: async () => {
+      checkUpdates(true)
+      return 'Comprobando si hay actualizaciones disponibles en el servidor de GoldBlack Lash.'
     },
 
     getStudioContext: () => {

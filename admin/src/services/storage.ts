@@ -30,6 +30,10 @@ export const DEFAULT_CONFIG: StudioConfig = {
     { days: 'Sábado', time: '10:00 – 15:00' },
     { days: 'Domingo', time: 'Cerrado' },
   ],
+  voiceAssistantEnabled: true,
+  voiceAutoSpeak: true,
+  voiceAnnounceNewAppointments: true,
+  voiceAnnounceUpdates: true,
 }
 
 // Initial Services matching site.ts

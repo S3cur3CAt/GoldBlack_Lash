@@ -79,6 +79,7 @@ export interface StudioConfig {
   voiceAssistantEnabled?: boolean
   voiceAutoSpeak?: boolean
   voiceAnnounceNewAppointments?: boolean
+  voiceAnnounceUpdates?: boolean
 }
 
 export interface GalleryItem {
