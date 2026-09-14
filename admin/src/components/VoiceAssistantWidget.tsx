@@ -96,7 +96,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status, apiKey])
 
-  // Continuous background hands-free listener ("Oye Mónica" / "Mónica")
+  // Continuous background hands-free listener ("Oye Sofi" / "Sofi")
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
       if (wakeWordListenerRef.current) {
@@ -116,21 +116,22 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
       const startVADStandby = () => {
         if (isCancelled) return
+        console.log('[Sofi] 🎧 Iniciando escucha VAD en segundo plano (standby=0.02, speech=0.02)...')
         const recorder = new AudioRecorder()
         recorderRef.current = recorder
 
         recorder
           .startStandby({
-            standbyThreshold: 0.038,
-            speechThreshold: 0.035,
+            standbyThreshold: 0.02,
+            speechThreshold: 0.02,
             silenceMs: 1200,
             onWake: () => {
               if (isCancelled) return
-              console.log('[Mónica] ¡Voz detectada en segundo plano!')
+              console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
               setIsExpanded(true)
               setStatus('recording')
               setErrorMessage(null)
-              setLastActionText('Escuchando a Mónica...')
+              setLastActionText('Escuchando a Sofi...')
             },
             onVolumeChange: (vol) => {
               if (!isCancelled) setLiveVolume(vol)
@@ -154,19 +155,19 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         listener.start(
           async (commandText) => {
             if (isCancelled) return
-            console.log('[Mónica] Wake word detectado:', commandText)
+            console.log('[Sofi] Wake word detectado:', commandText)
             if (commandText && commandText.trim().length > 1) {
-              // Spoke "Oye Mónica, abre la agenda" all in one
+              // Spoke "Oye Sofi, abre la agenda" all in one
               playWakeChime()
               await handleExecuteCommandText(commandText.trim())
             } else {
-              // Spoke "Oye Mónica" alone -> Mónica speaks out loud: "Dime, te escucho."!
+              // Spoke "Oye Sofi" alone -> Sofi speaks out loud: "Dime, te escucho."!
               await handleWakeGreeting()
             }
           },
           () => {
             // SpeechRecognition failed or unsupported -> graceful fallback to local Web Audio VAD
-            console.log('[Mónica] SpeechRecognition no disponible, activando VAD local.')
+            console.log('[Sofi] SpeechRecognition no disponible, activando VAD local.')
             if (!isCancelled && status === 'idle') {
               startVADStandby()
             }
@@ -193,7 +194,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }, [isHandsFree, wakeWordEnabled, status, apiKey])
 
-  // Handles when user says "Oye Mónica" alone: speaks out loud "Dime, te escucho." and listens!
+  // Handles when user says "Oye Sofi" alone: speaks out loud "Dime, te escucho." and listens!
   const handleWakeGreeting = async () => {
     if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
     if (recorderRef.current) {
@@ -256,13 +257,13 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
       // If Gemini determined this audio was background salon noise or unrelated conversation
       if (response.ignored) {
-        console.log('[Mónica] Audio ignorado (no dirigido a Mónica ni comando de la app).')
+        console.log('[Sofi] Audio ignorado (no dirigido a Sofi ni comando de la app).')
         setStatus('idle')
         setIsExpanded(false)
         return
       }
 
-      // If user only said "Oye Mónica" without giving a command yet:
+      // If user only said "Oye Sofi" without giving a command yet:
       if (response.isWakeGreetingOnly) {
         setLastActionText(response.spokenText)
         setStatus('speaking')
@@ -324,7 +325,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
       await recorder.start({
         silenceMs: 1200,
-        speechThreshold: 0.038,
+        speechThreshold: 0.02,
         onVolumeChange: (vol) => setLiveVolume(vol),
         onSilence: () => {
           // Automatic hands-free confirmation and execution upon silence (0 clicks required)
@@ -429,7 +430,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-semibold tracking-wide uppercase text-amber-300/90 font-mono">
-                  Mónica • Asistente de Voz
+                  Sofi • Asistente de Voz
                 </h4>
                 <p className="text-[10px] text-zinc-400">Gemini Flash • Voz Siri</p>
               </div>
@@ -449,12 +450,12 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 }`}
                 title={
                   isHandsFree
-                    ? 'Manos libres activado: Di «Mónica» en cualquier momento'
+                    ? 'Manos libres activado: Di «Sofi» en cualquier momento'
                     : 'Manos libres pausado: Haz clic para reactivar escucha continua'
                 }
               >
                 <span className={isHandsFree ? 'animate-pulse' : ''}>🎙️</span>
-                <span>{isHandsFree ? 'Oye Mónica: ON' : 'Oye Mónica: OFF'}</span>
+                <span>{isHandsFree ? 'Oye Sofi: ON' : 'Oye Sofi: OFF'}</span>
               </button>
 
               <button
@@ -493,7 +494,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                   })}
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-amber-200">Mónica escuchando tu orden...</p>
+                  <p className="text-sm font-semibold text-amber-200">Sofi escuchando tu orden...</p>
                   <p className="text-xs text-amber-400 font-medium mt-0.5 flex items-center justify-center gap-1">
                     <span>⚡</span>
                     <span>Se confirmará y ejecutará automáticamente al callar</span>
@@ -508,7 +509,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             {status === 'processing' && (
               <div className="flex flex-col items-center justify-center py-3 space-y-2 text-center">
                 <div className="w-8 h-8 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
-                <p className="text-xs font-medium text-amber-200">Mónica interpretando orden con Gemini...</p>
+                <p className="text-xs font-medium text-amber-200">Sofi interpretando orden con Gemini...</p>
                 <p className="text-[11px] text-zinc-400">Analizando intención y ejecutando herramientas</p>
               </div>
             )}
@@ -565,7 +566,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         </div>
       )}
 
-      {/* Modal de Comandos Disponibles de Mónica */}
+      {/* Modal de Comandos Disponibles de Sofi */}
       <VoiceCommandsModal
         isOpen={showCommandsModal}
         onClose={() => setShowCommandsModal(false)}
@@ -583,7 +584,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             ? 'bg-[#1a1a24] text-amber-300 border border-amber-500/50 shadow-[0_0_20px_rgba(212,175,55,0.3)]'
             : 'bg-gradient-to-r from-[#171722] to-[#0d0d12] text-amber-400 border border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_25px_rgba(212,175,55,0.4)]'
         }`}
-        title="Control por voz con IA (Di «Mónica» o pulsa Cmd+Shift+V)"
+        title="Control por voz con IA (Di «Sofi» o pulsa Cmd+Shift+V)"
       >
         {/* Pulsing ring when recording */}
         {status === 'recording' && (
@@ -598,11 +599,11 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           <IconMic size={22} className="text-amber-400 group-hover:scale-110 transition-transform" />
         )}
 
-        {/* Indicator badge: Green pulse if Hands-Free ("Oye Mónica") is actively listening */}
+        {/* Indicator badge: Green pulse if Hands-Free ("Oye Sofi") is actively listening */}
         {status === 'idle' && isHandsFree && (
           <span
             className="absolute -top-1 -right-1 flex h-4 w-4"
-            title="Escucha activa en segundo plano: Di «Mónica»"
+            title="Escucha activa en segundo plano: Di «Sofi»"
           >
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[8px] font-bold text-zinc-950 items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.8)]">

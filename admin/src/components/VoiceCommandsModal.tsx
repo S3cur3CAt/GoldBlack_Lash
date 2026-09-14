@@ -20,49 +20,49 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // 🧭 Navegación
   {
     id: 'nav-agenda',
-    phrase: 'Mónica, abre la agenda',
+    phrase: 'Sofi, abre la agenda',
     description: 'Navega inmediatamente a la vista de calendario y citas.',
     category: 'navigation',
     actionHint: 'Ir a Agenda',
   },
   {
     id: 'nav-clients',
-    phrase: 'Mónica, muéstrame las clientas',
+    phrase: 'Sofi, muéstrame las clientas',
     description: 'Abre la lista y fichas completas de clientas registradas.',
     category: 'navigation',
     actionHint: 'Ir a Clientas',
   },
   {
     id: 'nav-services',
-    phrase: 'Mónica, ve a catálogo de servicios',
+    phrase: 'Sofi, ve a catálogo de servicios',
     description: 'Muestra los tratamientos de pestañas, cejas y precios.',
     category: 'navigation',
     actionHint: 'Ir a Servicios',
   },
   {
     id: 'nav-billing',
-    phrase: 'Mónica, abre facturación',
+    phrase: 'Sofi, abre facturación',
     description: 'Accede al panel de finanzas, ingresos y cobros.',
     category: 'navigation',
     actionHint: 'Ir a Facturación',
   },
   {
     id: 'nav-gallery',
-    phrase: 'Mónica, ve a la galería',
+    phrase: 'Sofi, ve a la galería',
     description: 'Abre el gestor de fotos y trabajos del estudio.',
     category: 'navigation',
     actionHint: 'Ir a Galería',
   },
   {
     id: 'nav-settings',
-    phrase: 'Mónica, abre configuración',
+    phrase: 'Sofi, abre configuración',
     description: 'Abre los ajustes del estudio, horarios y voz.',
     category: 'navigation',
     actionHint: 'Ir a Ajustes',
   },
   {
     id: 'nav-dashboard',
-    phrase: 'Mónica, ve al panel principal',
+    phrase: 'Sofi, ve al panel principal',
     description: 'Regresa a la pantalla de resumen y estadísticas.',
     category: 'navigation',
     actionHint: 'Ir a Inicio',
@@ -71,49 +71,49 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // 📅 Agenda y Citas
   {
     id: 'apt-today',
-    phrase: 'Mónica, ¿qué citas tengo hoy?',
+    phrase: 'Sofi, ¿qué citas tengo hoy?',
     description: 'Consulta y lee en voz alta todas las citas del día.',
     category: 'agenda',
     actionHint: 'Consultar Citas Hoy',
   },
   {
     id: 'apt-tomorrow',
-    phrase: 'Mónica, ¿cuántas citas hay para mañana?',
+    phrase: 'Sofi, ¿cuántas citas hay para mañana?',
     description: 'Te dice cuántas reservas hay programadas para el día siguiente.',
     category: 'agenda',
     actionHint: 'Consultar Citas Mañana',
   },
   {
     id: 'apt-create-full',
-    phrase: 'Mónica, crea una cita para Carmen el viernes a las cinco de la tarde',
+    phrase: 'Sofi, crea una cita para Carmen el viernes a las cinco de la tarde',
     description: 'Agenda automáticamente una nueva cita con nombre, fecha y hora.',
     category: 'agenda',
     actionHint: 'Agendar Cita',
   },
   {
     id: 'apt-create-service',
-    phrase: 'Mónica, añade una cita para Laura en volumen ruso mañana a las once',
+    phrase: 'Sofi, añade una cita para Laura en volumen ruso mañana a las once',
     description: 'Crea la cita asignándole el servicio de pestañas deseado.',
     category: 'agenda',
     actionHint: 'Agendar con Servicio',
   },
   {
     id: 'apt-complete',
-    phrase: 'Mónica, marca la cita de Marta como completada',
+    phrase: 'Sofi, marca la cita de Marta como completada',
     description: 'Actualiza el estado de la cita a realizada.',
     category: 'agenda',
     actionHint: 'Completar Cita',
   },
   {
     id: 'apt-cancel',
-    phrase: 'Mónica, cancela la cita de Rocío',
+    phrase: 'Sofi, cancela la cita de Rocío',
     description: 'Marca como cancelada la cita seleccionada.',
     category: 'agenda',
     actionHint: 'Cancelar Cita',
   },
   {
     id: 'apt-open-modal',
-    phrase: 'Mónica, abre el formulario de nueva cita',
+    phrase: 'Sofi, abre el formulario de nueva cita',
     description: 'Despliega la ventana emergente para rellenar los datos de una cita.',
     category: 'agenda',
     actionHint: 'Abrir Modal',
@@ -122,21 +122,21 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // 👥 Clientas
   {
     id: 'cli-search',
-    phrase: 'Mónica, busca la ficha de Elena',
+    phrase: 'Sofi, busca la ficha de Elena',
     description: 'Localiza a la clienta y lee sus visitas, notas y alergias.',
     category: 'clients',
     actionHint: 'Buscar Ficha',
   },
   {
     id: 'cli-phone',
-    phrase: 'Mónica, ¿cuál es el teléfono de Nuria?',
+    phrase: 'Sofi, ¿cuál es el teléfono de Nuria?',
     description: 'Busca el contacto y te lo dice verbalmente con cadencia natural.',
     category: 'clients',
     actionHint: 'Consultar Teléfono',
   },
   {
     id: 'cli-modal',
-    phrase: 'Mónica, añade una nueva clienta',
+    phrase: 'Sofi, añade una nueva clienta',
     description: 'Abre el formulario para registrar a una clienta en la base de datos.',
     category: 'clients',
     actionHint: 'Nueva Clienta',
@@ -145,21 +145,21 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // 💰 Finanzas y Facturación
   {
     id: 'fin-month',
-    phrase: 'Mónica, ¿cuánto hemos facturado este mes?',
+    phrase: 'Sofi, ¿cuánto hemos facturado este mes?',
     description: 'Calcula y te informa de la facturación total del mes en curso.',
     category: 'finance',
     actionHint: 'Ingresos del Mes',
   },
   {
     id: 'fin-today',
-    phrase: 'Mónica, ¿cuánto dinero hemos ingresado hoy?',
+    phrase: 'Sofi, ¿cuánto dinero hemos ingresado hoy?',
     description: 'Suma todos los cobros del día y te da el balance.',
     category: 'finance',
     actionHint: 'Caja del Día',
   },
   {
     id: 'fin-invoice-modal',
-    phrase: 'Mónica, crea una nueva factura',
+    phrase: 'Sofi, crea una nueva factura',
     description: 'Abre el modal de emisión de facturas y recibos con IVA.',
     category: 'finance',
     actionHint: 'Nueva Factura',
@@ -168,14 +168,14 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // 🔄 Actualizaciones
   {
     id: 'upd-check',
-    phrase: 'Mónica, busca actualizaciones',
+    phrase: 'Sofi, busca actualizaciones',
     description: 'Comprueba en los servidores de GoldBlack Lash si hay una nueva versión.',
     category: 'updates',
     actionHint: 'Buscar Actualización',
   },
   {
     id: 'upd-news',
-    phrase: 'Mónica, ¿hay alguna nueva versión disponible?',
+    phrase: 'Sofi, ¿hay alguna nueva versión disponible?',
     description: 'Verifica y te confirma por voz si tu aplicación está al día.',
     category: 'updates',
     actionHint: 'Verificar Versión',
@@ -184,21 +184,21 @@ const COMMAND_LIST: VoiceCommandItem[] = [
   // ✨ Saludos y Asistente
   {
     id: 'ast-hello',
-    phrase: 'Hola Mónica',
-    description: 'Mónica te saluda y se pone a tu disposición.',
+    phrase: 'Hola Sofi',
+    description: 'Sofi te saluda y se pone a tu disposición.',
     category: 'assistant',
     actionHint: 'Saludar',
   },
   {
     id: 'ast-help',
-    phrase: 'Mónica, ¿qué puedes hacer?',
+    phrase: 'Sofi, ¿qué puedes hacer?',
     description: 'Te resume sus capacidades y cómo puede asistirte con las manos libres.',
     category: 'assistant',
     actionHint: 'Capacidades',
   },
   {
     id: 'ast-thanks',
-    phrase: 'Mónica, gracias',
+    phrase: 'Sofi, gracias',
     description: 'Cortesía con respuesta amable y distinguida.',
     category: 'assistant',
     actionHint: 'Agradecer',
@@ -227,7 +227,7 @@ export const VoiceCommandsModal: React.FC<VoiceCommandsModalProps> = ({
     { id: 'clients', label: 'Clientas', icon: '👥' },
     { id: 'finance', label: 'Finanzas', icon: '💰' },
     { id: 'updates', label: 'Actualizaciones', icon: '🔄' },
-    { id: 'assistant', label: 'Mónica IA', icon: '💎' },
+    { id: 'assistant', label: 'Sofi IA', icon: '💎' },
   ]
 
   const filteredCommands = useMemo(() => {
@@ -271,14 +271,14 @@ export const VoiceCommandsModal: React.FC<VoiceCommandsModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-bold text-white tracking-wide">
-                  Comandos de Voz de Mónica
+                  Comandos de Voz de Sofi
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   Voz Siri • 0€
                 </span>
               </div>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Di <span className="text-amber-300 font-semibold">«Mónica»</span> seguido de cualquier orden o pulsa en <span className="text-amber-400">Probar</span> para ejecutarla al instante.
+                Di <span className="text-amber-300 font-semibold">«Sofi»</span> seguido de cualquier orden o pulsa en <span className="text-amber-400">Probar</span> para ejecutarla al instante.
               </p>
             </div>
           </div>

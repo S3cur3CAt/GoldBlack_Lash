@@ -207,7 +207,7 @@ export interface AudioRecorderOptions {
 
 /**
  * Audio Recorder with Standby Hands-Free Voice Detection and real-time VAD
- * - Standby mode: Listens in background, keeps rolling pre-roll buffer, detects "Oye Mónica"
+ * - Standby mode: Listens in background, keeps rolling pre-roll buffer, detects "Oye Sofi"
  * - Recording mode: Captures command, animates soundwaves, and auto-executes on silence (0 clicks)
  */
 export class AudioRecorder {
@@ -218,7 +218,7 @@ export class AudioRecorder {
   private stream: MediaStream | null = null
   private audioContext: AudioContext | null = null
   private analyser: AnalyserNode | null = null
-  private animFrameId: number | null = null
+  private levelIntervalId: any = null  // setInterval instead of rAF for Electron reliability
   private silenceTimer: any = null
   private isStandby = false
   private isRecording = false
@@ -226,6 +226,7 @@ export class AudioRecorder {
   private options: AudioRecorderOptions = {}
   private consecutiveSpeechFrames = 0
   private recordingStartTime = 0
+  private debugLogCounter = 0
 
   private async initStreamAndAnalyser(): Promise<void> {
     if (!this.stream || !this.stream.active) {
@@ -332,9 +333,13 @@ export class AudioRecorder {
   }
 
   private runLevelLoop(): void {
-    if (this.animFrameId) {
-      cancelAnimationFrame(this.animFrameId)
-      this.animFrameId = null
+    // IMPORTANT: Use setInterval instead of requestAnimationFrame!
+    // requestAnimationFrame STOPS when the Electron window loses focus or is minimized,
+    // which completely kills background voice detection on macOS.
+    // setInterval runs reliably regardless of window focus state.
+    if (this.levelIntervalId) {
+      clearInterval(this.levelIntervalId)
+      this.levelIntervalId = null
     }
 
     const checkLevels = () => {
@@ -351,19 +356,27 @@ export class AudioRecorder {
       const rms = Math.sqrt(sumSquares / timeData.length)
       const normalizedVol = Math.min(rms * 4.5, 1.0)
 
+      // Diagnostic logging every ~3 seconds so user can verify mic is receiving audio
+      this.debugLogCounter++
+      if (this.debugLogCounter % 50 === 0) {
+        const mode = this.isStandby ? 'STANDBY' : this.isRecording ? 'RECORDING' : 'OFF'
+        console.log(`[Sofi VAD] mode=${mode} vol=${normalizedVol.toFixed(4)} rms=${rms.toFixed(5)} frames=${this.consecutiveSpeechFrames}`)
+      }
+
       if (this.isStandby) {
-        const standbyThreshold = this.options.standbyThreshold ?? 0.038
+        const standbyThreshold = this.options.standbyThreshold ?? 0.02
         if (normalizedVol > standbyThreshold) {
           this.consecutiveSpeechFrames++
           if (this.consecutiveSpeechFrames >= 2) {
             // SPEECH DETECTED IN BACKGROUND!
+            console.log(`[Sofi VAD] 🎤 ¡VOZ DETECTADA! vol=${normalizedVol.toFixed(4)} — Activando grabación...`)
             this.isStandby = false
             this.isRecording = true
             this.hasSpoken = true
             this.recordingStartTime = Date.now()
             this.consecutiveSpeechFrames = 0
 
-            // Prepend pre-roll chunks so initial words ("Oye Mónica...") are fully preserved!
+            // Prepend pre-roll chunks so initial words ("Oye Sofi...") are fully preserved!
             this.audioChunks = []
             if (this.headerChunk) {
               this.audioChunks.push(this.headerChunk)
@@ -380,7 +393,7 @@ export class AudioRecorder {
       } else if (this.isRecording) {
         this.options.onVolumeChange?.(normalizedVol)
 
-        const speechThreshold = this.options.speechThreshold ?? 0.035
+        const speechThreshold = this.options.speechThreshold ?? 0.02
         const silenceMs = this.options.silenceMs ?? 1200
         const maxWaitSpeechMs = this.options.maxWaitSpeechMs ?? 7000
 
@@ -405,17 +418,16 @@ export class AudioRecorder {
           return
         }
       }
-
-      this.animFrameId = requestAnimationFrame(checkLevels)
     }
 
-    this.animFrameId = requestAnimationFrame(checkLevels)
+    // 60ms interval ≈ ~16 checks/second — reliable and low CPU
+    this.levelIntervalId = setInterval(checkLevels, 60)
   }
 
   private stopVAD(): void {
-    if (this.animFrameId) {
-      cancelAnimationFrame(this.animFrameId)
-      this.animFrameId = null
+    if (this.levelIntervalId) {
+      clearInterval(this.levelIntervalId)
+      this.levelIntervalId = null
     }
     if (this.silenceTimer) {
       clearTimeout(this.silenceTimer)
@@ -503,7 +515,7 @@ export class AudioRecorder {
 }
 
 /**
- * Plays a discrete, elegant 2-tone chime when Monica wakes up
+ * Plays a discrete, elegant 2-tone chime when Sofi wakes up
  */
 export function playWakeChime(): void {
   try {
@@ -550,8 +562,8 @@ export function isSpeechRecognitionSupported(): boolean {
 }
 
 /**
- * Continuous Wake-Word ("Mónica") Listener
- * Uses SpeechRecognition to detect "Mónica" or "Oye Mónica" hands-free in the background
+ * Continuous Wake-Word ("Sofi") Listener
+ * Uses SpeechRecognition to detect "Sofi" or "Oye Sofi" hands-free in the background
  */
 export class WakeWordListener {
   private recognition: any = null
@@ -599,9 +611,9 @@ export class WakeWordListener {
         this.consecutiveErrors = 0
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0]?.transcript?.trim() || ''
-          // Regex for Monica wake word variations: "Mónica", "Oye Mónica", "Hola Mónica", "Hey Mónica", etc.
+          // Regex for Sofi wake word variations: "Sofi", "Oye Sofi", "Hola Sofi", "Hey Sofi", "Sophie", etc.
           const match = transcript.match(
-            /(?:^|\s)(?:oye m[oó]nica|hola m[oó]nica|hey m[oó]nica|escucha m[oó]nica|dime m[oó]nica|m[oó]nik?a)(?:[,: ]+(.*)|$)/i
+            /(?:^|\s)(?:oye sofi|hola sofi|hey sofi|escucha sofi|dime sofi|sofi|sophie|oye m[oó]nica|hola m[oó]nica|m[oó]nik?a)(?:[,: ]+(.*)|$)/i
           )
           if (match) {
             const command = match[1]?.trim() || ''
@@ -943,20 +955,20 @@ export async function processVoiceWithGemini(
   const studioContext = handlers.getStudioContext ? handlers.getStudioContext() : ''
 
   const systemInstructionText = `
-Eres Mónica, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
-Tu nombre oficial es Mónica. Los administradores y artistas del estudio se dirigirán a ti diciendo «Mónica», «Oye Mónica» o pronunciando directamente su orden (por ejemplo: «Mónica, abre la agenda», «Mónica, ¿qué citas tengo hoy?», «Mónica, busca a Carmen», «Mónica, crea una cita para Laura mañana», «Mónica, comprueba si hay actualizaciones», «Mónica, ve a facturación»).
+Eres Sofi, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
+Tu nombre oficial es Sofi. Los administradores y artistas del estudio se dirigirán a ti diciendo «Sofi», «Oye Sofi» o pronunciando directamente su orden (por ejemplo: «Sofi, abre la agenda», «Sofi, ¿qué citas tengo hoy?», «Sofi, busca a Carmen», «Sofi, crea una cita para Laura mañana», «Sofi, comprueba si hay actualizaciones», «Sofi, ve a facturación»).
 
 REGLAS DE RECONOCIMIENTO Y ACTIVACIÓN POR VOZ:
-1. LLAMADA O SALUDO A MÓNICA:
-   Si el audio recibido contiene tu nombre o un saludo («Mónica», «Oye Mónica», «Hola Mónica», «Hey Mónica», «Mónica estás ahí», «Dime Mónica») SIN que hayan dicho todavía la orden concreta de la app:
+1. LLAMADA O SALUDO A SOFI:
+   Si el audio recibido contiene tu nombre o un saludo («Sofi», «Oye Sofi», «Hola Sofi», «Hey Sofi», «Sofi estás ahí», «Dime Sofi», o «Mónica») SIN que hayan dicho todavía la orden concreta de la app:
    DEBES responder EXACTAMENTE: «Dime, te escucho.» (o «Aquí estoy, dime en qué puedo ayudarte.»).
-   ¡IMPORTANTE: BAJO NINGUNA CIRCUNSTANCIA uses [IGNORAR] si en el audio se pronuncia tu nombre Mónica!
+   ¡IMPORTANTE: BAJO NINGUNA CIRCUNSTANCIA uses [IGNORAR] si en el audio se pronuncia tu nombre Sofi!
 
 2. ORDEN DIRECTA DE LA APLICACIÓN:
    Si el audio contiene una orden para el estudio (ej: «abre la agenda», «comprueba actualizaciones», «¿qué citas hay hoy?», «ve a clientas», «cancela la cita de María», etc.), DEBES invocar la herramienta correspondiente con sus parámetros exactos y responder brevemente en español (1 oración) confirmando la acción de forma elegante.
 
 3. RUIDO O CONVERSACIÓN AJENA [IGNORAR]:
-   ÚNICAMENTE debes responder la palabra [IGNORAR] si el audio NO menciona «Mónica» Y TAMPOCO contiene ninguna orden o pregunta para la app del estudio (por ejemplo: es tos, silencio, secadores de pelo o una charla entre clientas en el salón que no va dirigida a ti).
+   ÚNICAMENTE debes responder la palabra [IGNORAR] si el audio NO menciona «Sofi» (ni «Mónica») Y TAMPOCO contiene ninguna orden o pregunta para la app del estudio (por ejemplo: es tos, silencio, secadores de pelo o una charla entre clientas en el salón que no va dirigida a ti).
 
 Fecha actual: ${today} (Año ${currentYear}).
 ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
@@ -972,7 +984,7 @@ ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
       },
     })
     parts.push({
-      text: 'Escucha atentamente el audio en español. Si el usuario te llama diciendo «Mónica» u «Oye Mónica», responde «Dime, te escucho.». Si pide una acción de la app, invoca la herramienta adecuada. Si es ruido o silencio no dirigido a ti, responde [IGNORAR].',
+      text: 'Escucha atentamente el audio en español. Si el usuario te llama diciendo «Sofi» u «Oye Sofi», responde «Dime, te escucho.». Si pide una acción de la app, invoca la herramienta adecuada. Si es ruido o silencio no dirigido a ti, responde [IGNORAR].',
     })
   } else if (input.textQuery) {
     parts.push({
