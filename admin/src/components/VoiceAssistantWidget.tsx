@@ -9,9 +9,12 @@ import {
 } from './Icons'
 import {
   AudioRecorder,
+  isSpeechRecognitionSupported,
+  playWakeChime,
   processVoiceWithGemini,
   speakWithNativeVoice,
   VoiceActionHandlers,
+  WakeWordListener,
 } from '../services/voiceAssistant'
 import { VoiceCommandsModal } from './VoiceCommandsModal'
 
@@ -44,9 +47,41 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return saved !== null ? saved === 'true' : wakeWordEnabled
   })
 
+  // Keep isHandsFree in sync if settings toggle wakeWordEnabled
+  useEffect(() => {
+    if (wakeWordEnabled !== undefined) {
+      setIsHandsFree(wakeWordEnabled)
+    }
+  }, [wakeWordEnabled])
+
   const recorderRef = useRef<AudioRecorder | null>(null)
+  const wakeWordListenerRef = useRef<WakeWordListener | null>(null)
   const timerRef = useRef<any>(null)
   const autoCloseTimerRef = useRef<any>(null)
+
+  // Unlock Web Audio API context on first interaction to avoid browser/Chromium autoplay blocks
+  useEffect(() => {
+    const unlockAudio = () => {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+        if (AudioCtx) {
+          const ctx = new AudioCtx()
+          if (ctx.state === 'suspended') {
+            ctx.resume().catch(() => {})
+          }
+        }
+      } catch {}
+    }
+
+    window.addEventListener('click', unlockAudio, { once: true })
+    window.addEventListener('keydown', unlockAudio, { once: true })
+    window.addEventListener('touchstart', unlockAudio, { once: true })
+    return () => {
+      window.removeEventListener('click', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+      window.removeEventListener('touchstart', unlockAudio)
+    }
+  }, [])
 
   // Listen for Cmd+Shift+V / Ctrl+Shift+V keyboard shortcut
   useEffect(() => {
@@ -61,9 +96,13 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status, apiKey])
 
-  // Continuous background hands-free standby listener (100% Local Web Audio API VAD)
+  // Continuous background hands-free listener ("Oye Mónica" / "Mónica")
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
+      if (wakeWordListenerRef.current) {
+        wakeWordListenerRef.current.stop()
+        wakeWordListenerRef.current = null
+      }
       if (recorderRef.current) {
         recorderRef.current.cancel()
         recorderRef.current = null
@@ -71,47 +110,110 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       return
     }
 
-    // Only engage standby background listening when in idle mode
+    // Only engage standby listening when in idle mode
     if (status === 'idle') {
-      const recorder = new AudioRecorder()
-      recorderRef.current = recorder
+      let isCancelled = false
 
-      recorder
-        .startStandby({
-          standbyThreshold: 0.042,
-          speechThreshold: 0.038,
-          silenceMs: 1200,
-          onWake: () => {
-            console.log('[Mónica] ¡Activada por voz en segundo plano!')
-            setIsExpanded(true)
-            setStatus('recording')
-            setErrorMessage(null)
-            setLastActionText(null)
-          },
-          onVolumeChange: (vol) => {
-            setLiveVolume(vol)
-          },
-          onSilence: () => {
-            console.log('[Mónica] Silencio detectado tras hablar -> Ejecutando automáticamente sin clics...')
-            stopAndProcess()
-          },
-          onTimeout: () => {
-            console.log('[Mónica] Tiempo de espera agotado.')
-            handleCancel()
-          },
-        })
-        .catch((err) => {
-          console.warn('[Standby Mic Start Error]', err)
-        })
+      const startVADStandby = () => {
+        if (isCancelled) return
+        const recorder = new AudioRecorder()
+        recorderRef.current = recorder
 
-      return () => {
-        recorder.cancel()
-        if (recorderRef.current === recorder) {
-          recorderRef.current = null
+        recorder
+          .startStandby({
+            standbyThreshold: 0.038,
+            speechThreshold: 0.035,
+            silenceMs: 1200,
+            onWake: () => {
+              if (isCancelled) return
+              console.log('[Mónica] ¡Voz detectada en segundo plano!')
+              setIsExpanded(true)
+              setStatus('recording')
+              setErrorMessage(null)
+              setLastActionText('Escuchando a Mónica...')
+            },
+            onVolumeChange: (vol) => {
+              if (!isCancelled) setLiveVolume(vol)
+            },
+            onSilence: () => {
+              if (!isCancelled) stopAndProcess()
+            },
+            onTimeout: () => {
+              if (!isCancelled) handleCancel()
+            },
+          })
+          .catch((err) => {
+            console.warn('[Standby Mic Start Error]', err)
+          })
+      }
+
+      if (isSpeechRecognitionSupported()) {
+        const listener = new WakeWordListener()
+        wakeWordListenerRef.current = listener
+
+        listener.start(
+          async (commandText) => {
+            if (isCancelled) return
+            console.log('[Mónica] Wake word detectado:', commandText)
+            if (commandText && commandText.trim().length > 1) {
+              // Spoke "Oye Mónica, abre la agenda" all in one
+              playWakeChime()
+              await handleExecuteCommandText(commandText.trim())
+            } else {
+              // Spoke "Oye Mónica" alone -> Mónica speaks out loud: "Dime, te escucho."!
+              await handleWakeGreeting()
+            }
+          },
+          () => {
+            // SpeechRecognition failed or unsupported -> graceful fallback to local Web Audio VAD
+            console.log('[Mónica] SpeechRecognition no disponible, activando VAD local.')
+            if (!isCancelled && status === 'idle') {
+              startVADStandby()
+            }
+          }
+        )
+
+        return () => {
+          isCancelled = true
+          listener.stop()
+          wakeWordListenerRef.current = null
+        }
+      } else {
+        // Direct local Web Audio Standby VAD (macOS Electron / Windows Electron / Safari)
+        startVADStandby()
+
+        return () => {
+          isCancelled = true
+          if (recorderRef.current) {
+            recorderRef.current.cancel()
+            recorderRef.current = null
+          }
         }
       }
     }
   }, [isHandsFree, wakeWordEnabled, status, apiKey])
+
+  // Handles when user says "Oye Mónica" alone: speaks out loud "Dime, te escucho." and listens!
+  const handleWakeGreeting = async () => {
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+    if (recorderRef.current) {
+      recorderRef.current.cancel()
+      recorderRef.current = null
+    }
+
+    playWakeChime()
+    setIsExpanded(true)
+    setStatus('speaking')
+    setLastActionText('Dime, te escucho...')
+
+    // Verbal audio response from Siri / macOS native voice
+    if (voiceAutoSpeak) {
+      await speakWithNativeVoice('Dime, te escucho.')
+    }
+
+    // Immediately open mic and listen for the actual command!
+    await startListening()
+  }
 
   // Timer while recording
   useEffect(() => {

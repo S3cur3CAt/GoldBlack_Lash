@@ -340,18 +340,19 @@ export class AudioRecorder {
     const checkLevels = () => {
       if (!this.analyser) return
 
-      const dataArray = new Uint8Array(this.analyser.frequencyBinCount)
-      this.analyser.getByteFrequencyData(dataArray)
+      const timeData = new Uint8Array(this.analyser.fftSize)
+      this.analyser.getByteTimeDomainData(timeData)
 
-      let sum = 0
-      for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i]
+      let sumSquares = 0
+      for (let i = 0; i < timeData.length; i++) {
+        const normalized = (timeData[i] - 128) / 128
+        sumSquares += normalized * normalized
       }
-      const avg = sum / dataArray.length
-      const normalizedVol = Math.min(avg / 100, 1.0)
+      const rms = Math.sqrt(sumSquares / timeData.length)
+      const normalizedVol = Math.min(rms * 4.5, 1.0)
 
       if (this.isStandby) {
-        const standbyThreshold = this.options.standbyThreshold ?? 0.042
+        const standbyThreshold = this.options.standbyThreshold ?? 0.038
         if (normalizedVol > standbyThreshold) {
           this.consecutiveSpeechFrames++
           if (this.consecutiveSpeechFrames >= 2) {
@@ -379,7 +380,7 @@ export class AudioRecorder {
       } else if (this.isRecording) {
         this.options.onVolumeChange?.(normalizedVol)
 
-        const speechThreshold = this.options.speechThreshold ?? 0.038
+        const speechThreshold = this.options.speechThreshold ?? 0.035
         const silenceMs = this.options.silenceMs ?? 1200
         const maxWaitSpeechMs = this.options.maxWaitSpeechMs ?? 7000
 
@@ -536,10 +537,16 @@ export function playWakeChime(): void {
  * Checks if SpeechRecognition is available in the current browser/Electron runtime
  */
 export function isSpeechRecognitionSupported(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
-  )
+  if (typeof window === 'undefined') return false
+  // Standard Electron cannot use Chromium's SpeechRecognition because it lacks Google Chrome API keys
+  if (
+    (window as any).electronAPI?.isElectron ||
+    (typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron'))
+  ) {
+    return false
+  }
+  const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  return Boolean(SpeechRec)
 }
 
 /**
@@ -550,20 +557,38 @@ export class WakeWordListener {
   private recognition: any = null
   private isListening = false
   private onWakeCallback: ((commandText?: string) => void) | null = null
-  private retryCount = 0
+  private onFallbackCallback: (() => void) | null = null
+  private restartTimer: any = null
+  private consecutiveErrors = 0
 
-  start(onWake: (commandText?: string) => void): void {
+  start(onWake: (commandText?: string) => void, onFallback?: () => void): void {
     this.onWakeCallback = onWake
+    this.onFallbackCallback = onFallback || null
     this.isListening = true
-    this.retryCount = 0
+    this.consecutiveErrors = 0
+    this.initRecognition()
+  }
+
+  private initRecognition(): void {
+    if (!this.isListening) return
 
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRec) {
-      console.warn('[WakeWordListener] SpeechRecognition no soportado para wake-word pasivo local.')
+      console.warn('[WakeWordListener] SpeechRecognition no soportado. Activando fallback.')
+      this.onFallbackCallback?.()
       return
     }
 
     try {
+      if (this.recognition) {
+        try {
+          this.recognition.onend = null
+          this.recognition.onerror = null
+          this.recognition.onresult = null
+          this.recognition.stop()
+        } catch {}
+      }
+
       this.recognition = new SpeechRec()
       this.recognition.continuous = true
       this.recognition.interimResults = true
@@ -571,16 +596,16 @@ export class WakeWordListener {
 
       this.recognition.onresult = (event: any) => {
         if (!this.isListening) return
+        this.consecutiveErrors = 0
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0]?.transcript?.trim() || ''
           // Regex for Monica wake word variations: "Mónica", "Oye Mónica", "Hola Mónica", "Hey Mónica", etc.
           const match = transcript.match(
-            /(?:^|\s)(?:oye m[oó]nica|hola m[oó]nica|hey m[oó]nica|escucha m[oó]nica|m[oó]nik?a)(?:[,: ]+(.*)|$)/i
+            /(?:^|\s)(?:oye m[oó]nica|hola m[oó]nica|hey m[oó]nica|escucha m[oó]nica|dime m[oó]nica|m[oó]nik?a)(?:[,: ]+(.*)|$)/i
           )
           if (match) {
             const command = match[1]?.trim() || ''
             this.stop()
-            playWakeChime()
             this.onWakeCallback?.(command)
             break
           }
@@ -588,50 +613,63 @@ export class WakeWordListener {
       }
 
       this.recognition.onerror = (event: any) => {
-        if (event.error === 'not-allowed') {
-          console.warn('[WakeWordListener] Permiso de micrófono denegado para el asistente.')
+        this.consecutiveErrors++
+        console.warn('[WakeWordListener Error]', event?.error || event)
+
+        if (event.error === 'not-allowed' || event.error === 'network' || this.consecutiveErrors >= 2) {
+          console.warn('[WakeWordListener] Pasando a fallback local de audio VAD.')
           this.stop()
+          this.onFallbackCallback?.()
           return
         }
 
-        if (event.error === 'network') {
-          this.retryCount++
-          if (this.retryCount > 3) {
-            console.warn('[WakeWordListener] Reconocimiento de voz continuo no disponible en este entorno de red.')
-            this.stop()
-            return
-          }
-        }
-
-        // Silently restart on non-fatal errors if still active
+        // Restart with slight backoff on non-fatal errors
         if (this.isListening) {
-          setTimeout(() => {
+          if (this.restartTimer) clearTimeout(this.restartTimer)
+          this.restartTimer = setTimeout(() => {
             if (this.isListening) {
-              try {
-                this.recognition?.start()
-              } catch {}
+              this.initRecognition()
             }
-          }, 1500)
+          }, 800)
         }
       }
 
       this.recognition.onend = () => {
-        // Keep continuous listener alive while hands-free mode is on
+        // Chromium ends recognition after silence pause; restart cleanly with a tick
         if (this.isListening) {
-          try {
-            this.recognition.start()
-          } catch {}
+          if (this.restartTimer) clearTimeout(this.restartTimer)
+          this.restartTimer = setTimeout(() => {
+            if (this.isListening) {
+              this.initRecognition()
+            }
+          }, 350)
         }
       }
 
       this.recognition.start()
     } catch (e) {
-      console.warn('[WakeWordListener Start Warning]', e)
+      console.warn('[WakeWordListener Init Error]', e)
+      this.consecutiveErrors++
+      if (this.consecutiveErrors >= 2) {
+        this.stop()
+        this.onFallbackCallback?.()
+        return
+      }
+      if (this.isListening) {
+        if (this.restartTimer) clearTimeout(this.restartTimer)
+        this.restartTimer = setTimeout(() => {
+          if (this.isListening) this.initRecognition()
+        }, 1000)
+      }
     }
   }
 
   stop(): void {
     this.isListening = false
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer)
+      this.restartTimer = null
+    }
     if (this.recognition) {
       try {
         this.recognition.onend = null
@@ -690,7 +728,7 @@ export function formatPhoneForSpeech(phone: string): string {
 export async function speakWithFemaleVoice(text: string): Promise<void> {
   if (!text || !text.trim()) return
 
-  // 1. If running inside Electron on macOS Monterey, use native Siri voice directly via Apple 'say'
+  // 1. If running inside Electron on macOS Monterey, use native Siri voice directly via osascript
   if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
     try {
       const handled = await (window as any).electronAPI.speakWithSiri(text)
@@ -707,94 +745,113 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
       return
     }
 
+    // Safety timeout: never hang longer than 6 seconds even if Chromium fails to fire onend
+    const safetyTimeout = setTimeout(() => {
+      resolve()
+    }, 6000)
+
     try {
-      window.speechSynthesis.cancel()
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+      }
 
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'es-ES'
-      utterance.rate = 1.0 // Cadencia natural y prestigiosa
-      utterance.pitch = 1.08 // Tono femenino cálido y elegante
+      const executeSpeak = () => {
+        try {
+          const utterance = new SpeechSynthesisUtterance(text)
+          utterance.lang = 'es-ES'
+          utterance.rate = 1.0 // Cadencia natural y prestigiosa
+          utterance.pitch = 1.08 // Tono femenino cálido y elegante
 
-      const selectFemaleSpanishVoice = () => {
-        const voices = window.speechSynthesis.getVoices()
+          const voices = window.speechSynthesis.getVoices()
 
-        // 1st Priority: Siri Spanish voice in system voices (if exposed)
-        const siriVoice = voices.find(
-          (v) =>
-            (v.lang.startsWith('es') || v.lang === '') &&
-            v.name.toLowerCase().includes('siri')
-        )
-        if (siriVoice) {
-          utterance.voice = siriVoice
-          return
-        }
-
-        // 2nd Priority: Modern Neural / Natural / Enhanced / Google / Online Spanish voices
-        const hqVoice = voices.find((v) => {
-          const name = v.name.toLowerCase()
-          const isSpanish = v.lang.startsWith('es') || v.lang === ''
-          const isHQ =
-            name.includes('natural') ||
-            name.includes('neural') ||
-            name.includes('enhanced') ||
-            name.includes('premium') ||
-            name.includes('online') ||
-            name.includes('google')
-          return isSpanish && isHQ
-        })
-        if (hqVoice) {
-          utterance.voice = hqVoice
-          return
-        }
-
-        // 3rd Priority: High-quality Apple natural female voices (Paulina, Alba, Victoria, etc.)
-        // Notice: Legacy robotic 'Mónica' is intentionally excluded so only natural voices are used
-        const preferredFemaleKeywords = [
-          'paulina',
-          'alba',
-          'victoria',
-          'elvira',
-          'paloma',
-          'laura',
-          'helena',
-          'sabina',
-          'luciana',
-          'female',
-        ]
-
-        let preferredVoice = voices.find((v) => {
-          const name = v.name.toLowerCase()
-          return (
-            v.lang.startsWith('es') &&
-            preferredFemaleKeywords.some((keyword) => name.includes(keyword))
+          // 1st Priority: Siri Spanish voice in system voices (if exposed)
+          const siriVoice = voices.find(
+            (v) =>
+              (v.lang.startsWith('es') || v.lang === '') &&
+              v.name.toLowerCase().includes('siri')
           )
-        })
+          if (siriVoice) {
+            utterance.voice = siriVoice
+          } else {
+            // 2nd Priority: Modern Neural / Natural / Enhanced / Google / Online Spanish voices
+            const hqVoice = voices.find((v) => {
+              const name = v.name.toLowerCase()
+              const isSpanish = v.lang.startsWith('es') || v.lang === ''
+              const isHQ =
+                name.includes('natural') ||
+                name.includes('neural') ||
+                name.includes('enhanced') ||
+                name.includes('premium') ||
+                name.includes('online') ||
+                name.includes('google')
+              return isSpanish && isHQ
+            })
+            if (hqVoice) {
+              utterance.voice = hqVoice
+            } else {
+              // 3rd Priority: High-quality Apple natural female voices (Paulina, Alba, Victoria, etc.)
+              const preferredFemaleKeywords = [
+                'paulina',
+                'alba',
+                'victoria',
+                'elvira',
+                'paloma',
+                'laura',
+                'helena',
+                'sabina',
+                'luciana',
+                'female',
+              ]
 
-        if (!preferredVoice) {
-          preferredVoice =
-            voices.find((v) => v.lang === 'es-ES') ||
-            voices.find((v) => v.lang.startsWith('es'))
-        }
+              let preferredVoice = voices.find((v) => {
+                const name = v.name.toLowerCase()
+                return (
+                  v.lang.startsWith('es') &&
+                  preferredFemaleKeywords.some((keyword) => name.includes(keyword))
+                )
+              })
 
-        if (preferredVoice) {
-          utterance.voice = preferredVoice
+              if (!preferredVoice) {
+                preferredVoice =
+                  voices.find((v) => v.lang === 'es-ES') ||
+                  voices.find((v) => v.lang.startsWith('es'))
+              }
+
+              if (preferredVoice) {
+                utterance.voice = preferredVoice
+              }
+            }
+          }
+
+          utterance.onend = () => {
+            clearTimeout(safetyTimeout)
+            resolve()
+          }
+          utterance.onerror = (err) => {
+            console.warn('[SpeechSynthesis utterance error]', err)
+            clearTimeout(safetyTimeout)
+            resolve()
+          }
+
+          window.speechSynthesis.resume()
+          window.speechSynthesis.speak(utterance)
+        } catch (err) {
+          console.warn('[SpeechSynthesis execute error]', err)
+          clearTimeout(safetyTimeout)
+          resolve()
         }
       }
 
       if (window.speechSynthesis.getVoices().length > 0) {
-        selectFemaleSpanishVoice()
+        executeSpeak()
       } else {
         window.speechSynthesis.onvoiceschanged = () => {
-          selectFemaleSpanishVoice()
+          executeSpeak()
         }
       }
-
-      utterance.onend = () => resolve()
-      utterance.onerror = () => resolve()
-
-      window.speechSynthesis.speak(utterance)
     } catch (e) {
       console.warn('[TTS Female Error]', e)
+      clearTimeout(safetyTimeout)
       resolve()
     }
   })
@@ -889,23 +946,20 @@ export async function processVoiceWithGemini(
 Eres Mónica, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
 Tu nombre oficial es Mónica. Los administradores y artistas del estudio se dirigirán a ti diciendo «Mónica», «Oye Mónica» o pronunciando directamente su orden (por ejemplo: «Mónica, abre la agenda», «Mónica, ¿qué citas tengo hoy?», «Mónica, busca a Carmen», «Mónica, crea una cita para Laura mañana», «Mónica, comprueba si hay actualizaciones», «Mónica, ve a facturación»).
 
-IDENTIDAD Y TONO DE MÓNICA:
-- Tu nombre es Mónica y te identificas con orgullo y calidez como tal.
-- Eres elegante, refinada, ejecutiva, servicial y extremadamente eficiente.
-- Si el usuario únicamente te llama o te saluda («Mónica», «Oye Mónica», «Hola Mónica», «Mónica estás ahí») sin dar una orden todavía, responde con extrema brevedad y naturalidad: «Dime, te escucho» o «Aquí estoy, dime».
-- Si el usuario comienza su orden diciendo «Mónica, ...» u «Oye Mónica, ...», interpreta y ejecuta la orden solicitada de inmediato.
-- Si el audio recibido NO contiene ninguna orden para ti ni para la app (por ejemplo, es ruido ambiental, una conversación ajena entre clientas en el salón que no te menciona, una tos o silencio), responde ÚNICAMENTE con la palabra: [IGNORAR].
+REGLAS DE RECONOCIMIENTO Y ACTIVACIÓN POR VOZ:
+1. LLAMADA O SALUDO A MÓNICA:
+   Si el audio recibido contiene tu nombre o un saludo («Mónica», «Oye Mónica», «Hola Mónica», «Hey Mónica», «Mónica estás ahí», «Dime Mónica») SIN que hayan dicho todavía la orden concreta de la app:
+   DEBES responder EXACTAMENTE: «Dime, te escucho.» (o «Aquí estoy, dime en qué puedo ayudarte.»).
+   ¡IMPORTANTE: BAJO NINGUNA CIRCUNSTANCIA uses [IGNORAR] si en el audio se pronuncia tu nombre Mónica!
+
+2. ORDEN DIRECTA DE LA APLICACIÓN:
+   Si el audio contiene una orden para el estudio (ej: «abre la agenda», «comprueba actualizaciones», «¿qué citas hay hoy?», «ve a clientas», «cancela la cita de María», etc.), DEBES invocar la herramienta correspondiente con sus parámetros exactos y responder brevemente en español (1 oración) confirmando la acción de forma elegante.
+
+3. RUIDO O CONVERSACIÓN AJENA [IGNORAR]:
+   ÚNICAMENTE debes responder la palabra [IGNORAR] si el audio NO menciona «Mónica» Y TAMPOCO contiene ninguna orden o pregunta para la app del estudio (por ejemplo: es tos, silencio, secadores de pelo o una charla entre clientas en el salón que no va dirigida a ti).
 
 Fecha actual: ${today} (Año ${currentYear}).
 ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
-
-REGLAS DE ACTUACIÓN:
-1. Si el usuario pide cualquier acción de la app (cambiar de pantalla, consultar agenda, crear cita, cancelar cita, buscar clienta, consultar ingresos, comprobar actualizaciones, etc.), DEBES invocar la herramienta correspondiente con los parámetros exactos.
-2. Si el usuario pide agendar o crear una cita:
-   - Si no indica fecha, asume hoy o pregunta brevemente.
-   - Si no indica hora exacta, usa una hora razonable de apertura (ej. 10:00 o 16:00) o abre el modal.
-3. Si el usuario pregunta por actualizaciones («Mónica, ¿hay actualizaciones?», «Mónica, busca actualizaciones», «comprobar novedades»), invoca la herramienta check_updates.
-4. Responde SIEMPRE de forma oral concisa, elegante y directa en español (1 o 2 oraciones máximo), confirmando la acción de forma natural como Mónica.
 `
 
   const parts: any[] = []
@@ -918,7 +972,7 @@ REGLAS DE ACTUACIÓN:
       },
     })
     parts.push({
-      text: 'Escucha atentamente el audio, extrae la orden del usuario y ejecuta la herramienta adecuada. Si no requiere herramientas, responde amablemente en español.',
+      text: 'Escucha atentamente el audio en español. Si el usuario te llama diciendo «Mónica» u «Oye Mónica», responde «Dime, te escucho.». Si pide una acción de la app, invoca la herramienta adecuada. Si es ruido o silencio no dirigido a ti, responde [IGNORAR].',
     })
   } else if (input.textQuery) {
     parts.push({
@@ -1048,7 +1102,9 @@ REGLAS DE ACTUACIÓN:
   const isWakeGreetingOnly =
     !toolCall &&
     Boolean(
-      spokenText.match(/(?:te escucho|dime|en qué te puedo ayudar|aquí estoy|a tu disposición)/i)
+      spokenText.match(
+        /(?:te escucho|dime|en qué te puedo ayudar|en qué puedo ayudarte|aquí estoy|a tu disposición|qué necesitas)/i
+      )
     )
 
   return {

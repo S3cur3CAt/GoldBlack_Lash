@@ -257,8 +257,8 @@ ipcMain.on('notification:appointment', (_event, data) => {
 
 let currentSayProcess = null
 
-// Native macOS Monterey Siri Speech Synthesis via Apple 'say' / osascript engine
-// Passing text as arguments directly to /usr/bin/say without -v uses the exact
+// Native macOS Monterey Siri Speech Synthesis via osascript / Apple 'say' engine
+// In macOS Monterey, osascript 'say' executes in the GUI session using the exact
 // System Voice selected in System Preferences > Accessibility > Spoken Content (Siri)
 ipcMain.handle('voice:speak-siri', async (_event, text) => {
   if (process.platform !== 'darwin' || !text) return false
@@ -278,37 +278,15 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         return
       }
 
-      // 1. Try native /usr/bin/say passing text as argument directly
-      const sayProc = spawn('/usr/bin/say', [cleanText])
-      currentSayProcess = sayProc
+      const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+
+      // 1. First priority: osascript 'say' (uses the active Siri voice set in Accessibility)
+      const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
+      currentSayProcess = osaProc
 
       let hasExited = false
 
-      sayProc.on('error', (err) => {
-        console.warn('[/usr/bin/say error, falling back to osascript]', err?.message || err)
-        if (hasExited) return
-        hasExited = true
-        currentSayProcess = null
-
-        // 2. AppleScript fallback with native system voice
-        try {
-          const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-          const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
-          currentSayProcess = osaProc
-          osaProc.on('close', (code) => {
-            currentSayProcess = null
-            resolve(code === 0)
-          })
-          osaProc.on('error', () => {
-            currentSayProcess = null
-            resolve(false)
-          })
-        } catch {
-          resolve(false)
-        }
-      })
-
-      sayProc.on('close', (code) => {
+      osaProc.on('close', (code) => {
         if (hasExited) return
         hasExited = true
         currentSayProcess = null
@@ -316,22 +294,40 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         if (code === 0) {
           resolve(true)
         } else {
-          // If say exited with non-zero, try osascript fallback
-          try {
-            const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-            const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
-            currentSayProcess = osaProc
-            osaProc.on('close', (c) => {
-              currentSayProcess = null
-              resolve(c === 0)
-            })
-            osaProc.on('error', () => {
-              currentSayProcess = null
-              resolve(false)
-            })
-          } catch {
+          // Fallback to /usr/bin/say if osascript returned non-zero
+          const sayProc = spawn('/usr/bin/say', [cleanText])
+          currentSayProcess = sayProc
+          sayProc.on('close', (c) => {
+            currentSayProcess = null
+            resolve(c === 0)
+          })
+          sayProc.on('error', () => {
+            currentSayProcess = null
             resolve(false)
-          }
+          })
+        }
+      })
+
+      osaProc.on('error', (err) => {
+        console.warn('[osascript error, falling back to /usr/bin/say]', err?.message || err)
+        if (hasExited) return
+        hasExited = true
+        currentSayProcess = null
+
+        // Fallback to /usr/bin/say
+        try {
+          const sayProc = spawn('/usr/bin/say', [cleanText])
+          currentSayProcess = sayProc
+          sayProc.on('close', (code) => {
+            currentSayProcess = null
+            resolve(code === 0)
+          })
+          sayProc.on('error', () => {
+            currentSayProcess = null
+            resolve(false)
+          })
+        } catch {
+          resolve(false)
         }
       })
     } catch (err) {
