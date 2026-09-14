@@ -37,6 +37,11 @@ export interface VoiceActionHandlers {
     status?: string
     paymentStatus?: string
   }) => Promise<string>
+  onDeleteAppointment?: (params: {
+    clientName: string
+    date?: string
+    deleteAll?: boolean
+  }) => Promise<string>
   onSearchClient: (query: string) => Promise<string>
   onQueryFinance: (period?: string) => Promise<string>
   onOpenModal: (modal: string) => void
@@ -140,6 +145,28 @@ const GEMINI_TOOLS = [
         },
       },
       {
+        name: 'delete_appointment',
+        description: 'Elimina o borra permanentemente una cita de la agenda de citas diciendo el nombre de la persona o clienta (ej: "elimina la cita de Rocío", "borra la cita de María", "elimina la cita de hoy de Carmen", "cancela y borra la cita de Laura").',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            clientName: {
+              type: 'STRING',
+              description: 'Nombre de la clienta o persona cuya cita se debe eliminar.',
+            },
+            date: {
+              type: 'STRING',
+              description: 'Fecha opcional de la cita (ej. "today", "hoy", "mañana", "YYYY-MM-DD").',
+            },
+            deleteAll: {
+              type: 'BOOLEAN',
+              description: 'True si el usuario pidió expresamente eliminar todas las citas de esa clienta.',
+            },
+          },
+          required: ['clientName'],
+        },
+      },
+      {
         name: 'search_client',
         description: 'Busca una clienta en el sistema para consultar su historial, teléfono, alergias o notas.',
         parameters: {
@@ -198,6 +225,7 @@ export interface AudioRecorderOptions {
   onSilence?: () => void
   onTimeout?: () => void
   onWake?: () => void
+  onStandbyUtterance?: (audio: { blob: Blob; mimeType: string; base64: string }) => void
   silenceMs?: number
   speechThreshold?: number
   standbyThreshold?: number
@@ -222,6 +250,10 @@ export class AudioRecorder {
   private levelIntervalId: any = null  // setInterval instead of rAF for Electron reliability
   private silenceTimer: any = null
   private isStandby = false
+  private isStandbyCapturing = false
+  private standbySpeechStart = 0
+  private standbySilenceTimer: any = null
+  private standbyCooldownUntil = 0
   private isRecording = false
   private hasSpoken = false
   private options: AudioRecorderOptions = {}
@@ -324,10 +356,11 @@ export class AudioRecorder {
       if (event.data && event.data.size > 0) {
         if (!this.headerChunk) {
           this.headerChunk = event.data
-        } else if (this.isStandby) {
+        }
+        if (this.isStandby && !this.isStandbyCapturing) {
           this.preRollChunks.push(event.data)
-          // Keep last 10 slices (~1000ms of rolling pre-roll)
-          if (this.preRollChunks.length > 10) {
+          // Keep last 15 slices (~1500ms of rolling pre-roll so initial words "Oye Sofi" are preserved)
+          if (this.preRollChunks.length > 15) {
             this.preRollChunks.shift()
           }
         } else {
@@ -342,12 +375,14 @@ export class AudioRecorder {
   /**
    * Starts background standby listening.
    * Keeps mic open and continuously analyzes volume.
-   * When speech is detected, automatically invokes onWake() and transitions to recording!
+   * Silently captures speech and calls onStandbyUtterance only if sustained voice is detected.
    */
   async startStandby(options?: AudioRecorderOptions): Promise<void> {
     this.cancel()
     this.options = options || {}
     this.isStandby = true
+    this.isStandbyCapturing = false
+    this.standbySpeechStart = 0
     this.isRecording = false
     this.hasSpoken = false
     this.audioChunks = []
@@ -366,6 +401,7 @@ export class AudioRecorder {
   async start(options?: AudioRecorderOptions): Promise<void> {
     this.options = options || {}
     this.isStandby = false
+    this.isStandbyCapturing = false
     this.isRecording = true
     this.hasSpoken = false
     this.recordingStartTime = Date.now()
@@ -401,36 +437,92 @@ export class AudioRecorder {
       // Diagnostic logging every ~3 seconds so user can verify mic is receiving audio
       this.debugLogCounter++
       if (this.debugLogCounter % 50 === 0) {
-        const mode = this.isStandby ? 'STANDBY' : this.isRecording ? 'RECORDING' : 'OFF'
+        const mode = this.isStandby ? (this.isStandbyCapturing ? 'STANDBY_CAPTURING' : 'STANDBY_IDLE') : this.isRecording ? 'RECORDING' : 'OFF'
         console.log(`[Sofi VAD] mode=${mode} vol=${normalizedVol.toFixed(4)} frames=${this.consecutiveSpeechFrames}`)
       }
 
       if (this.isStandby) {
-        const standbyThreshold = this.options.standbyThreshold ?? 0.02
-        if (normalizedVol > standbyThreshold) {
-          this.consecutiveSpeechFrames++
-          if (this.consecutiveSpeechFrames >= 2) {
-            // SPEECH DETECTED IN BACKGROUND!
-            console.log(`[Sofi VAD] 🎤 ¡VOZ DETECTADA! vol=${normalizedVol.toFixed(4)} — Activando grabación...`)
-            this.isStandby = false
-            this.isRecording = true
-            this.hasSpoken = true
-            this.recordingStartTime = Date.now()
-            this.consecutiveSpeechFrames = 0
+        // Cooldown: prevent spamming checks on continuous background noise
+        if (Date.now() < this.standbyCooldownUntil) {
+          return
+        }
 
-            // Prepend pre-roll chunks so initial words ("Oye Sofi...") are fully preserved!
-            this.audioChunks = []
-            if (this.headerChunk) {
-              this.audioChunks.push(this.headerChunk)
+        const standbyThreshold = this.options.standbyThreshold ?? 0.038
+        const speechThreshold = this.options.speechThreshold ?? 0.025
+
+        if (!this.isStandbyCapturing) {
+          if (normalizedVol > standbyThreshold) {
+            this.consecutiveSpeechFrames++
+            // Require 4 consecutive frames (~240ms) of vocal energy to reject clicks/bumps
+            if (this.consecutiveSpeechFrames >= 4) {
+              this.isStandbyCapturing = true
+              this.consecutiveSpeechFrames = 0
+              this.standbySpeechStart = Date.now()
+              this.audioChunks = []
+              if (this.headerChunk) {
+                this.audioChunks.push(this.headerChunk)
+              }
+              this.audioChunks.push(...this.preRollChunks)
+              console.log(`[Sofi VAD] 🎙️ Habla detectada en standby (vol=${normalizedVol.toFixed(4)}). Capturando frase silenciosamente...`)
             }
-            this.audioChunks.push(...this.preRollChunks)
-            this.preRollChunks = []
-
-            playWakeChime()
-            this.options.onWake?.()
+          } else {
+            this.consecutiveSpeechFrames = Math.max(0, this.consecutiveSpeechFrames - 1)
           }
         } else {
-          this.consecutiveSpeechFrames = Math.max(0, this.consecutiveSpeechFrames - 1)
+          // In silent standby capturing mode:
+          if (normalizedVol > speechThreshold) {
+            if (this.standbySilenceTimer) {
+              clearTimeout(this.standbySilenceTimer)
+              this.standbySilenceTimer = null
+            }
+          } else {
+            if (!this.standbySilenceTimer) {
+              this.standbySilenceTimer = setTimeout(async () => {
+                this.standbySilenceTimer = null
+                const speechDuration = Date.now() - this.standbySpeechStart
+                this.isStandbyCapturing = false
+
+                // Discard very short sounds (< 450ms) like coughs, clicks, typing
+                if (speechDuration < 450) {
+                  console.log(`[Sofi VAD] Ruido demasiado corto (${speechDuration}ms). Descartado sin enviar a Gemini.`)
+                  this.audioChunks = []
+                  return
+                }
+
+                console.log(`[Sofi VAD] Frase en standby terminada (${speechDuration}ms). Verificando si dijo «Oye Sofi»...`)
+                this.standbyCooldownUntil = Date.now() + 2500 // 2.5s cooldown to respect API limits
+
+                try {
+                  const mimeType = this.mediaRecorder?.mimeType || 'audio/webm'
+                  const blob = new Blob(this.audioChunks, { type: mimeType })
+                  this.audioChunks = []
+                  const base64 = await this.blobToBase64(blob)
+                  this.options.onStandbyUtterance?.({ blob, mimeType: mimeType.split(';')[0], base64 })
+                } catch (e) {
+                  console.warn('[Sofi VAD Error]', e)
+                }
+              }, 750)
+            }
+          }
+
+          // Safety max capture timeout (5.5 seconds max)
+          if (Date.now() - this.standbySpeechStart > 5500) {
+            if (this.standbySilenceTimer) {
+              clearTimeout(this.standbySilenceTimer)
+              this.standbySilenceTimer = null
+            }
+            const speechDuration = Date.now() - this.standbySpeechStart
+            this.isStandbyCapturing = false
+            this.standbyCooldownUntil = Date.now() + 2500
+            try {
+              const mimeType = this.mediaRecorder?.mimeType || 'audio/webm'
+              const blob = new Blob(this.audioChunks, { type: mimeType })
+              this.audioChunks = []
+              this.blobToBase64(blob).then((base64) => {
+                this.options.onStandbyUtterance?.({ blob, mimeType: mimeType.split(';')[0], base64 })
+              })
+            } catch {}
+          }
         }
       } else if (this.isRecording) {
         this.options.onVolumeChange?.(normalizedVol)
@@ -474,6 +566,10 @@ export class AudioRecorder {
     if (this.silenceTimer) {
       clearTimeout(this.silenceTimer)
       this.silenceTimer = null
+    }
+    if (this.standbySilenceTimer) {
+      clearTimeout(this.standbySilenceTimer)
+      this.standbySilenceTimer = null
     }
   }
 
@@ -521,6 +617,8 @@ export class AudioRecorder {
   cancel(): void {
     this.stopVAD()
     this.isStandby = false
+    this.isStandbyCapturing = false
+    this.standbySpeechStart = 0
     this.isRecording = false
 
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
@@ -920,7 +1018,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
 }
 
 // Available Gemini Flash models in order of priority (Google AI Studio Free Tier 0€)
-export const GEMINI_FLASH_MODELS = ['gemini-3.6-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+export const GEMINI_FLASH_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
 
 /**
  * Automatically announces a new incoming real-time appointment from goldblacklash.com
@@ -992,7 +1090,7 @@ Responde únicamente con el texto a pronunciar en voz alta, sin comillas ni acla
  * Send voice audio or text to Gemini Flash with Function Calling
  */
 export async function processVoiceWithGemini(
-  input: { base64Audio?: string; mimeType?: string; textQuery?: string },
+  input: { base64Audio?: string; mimeType?: string; textQuery?: string; isStandbyWakeCheck?: boolean },
   apiKey: string,
   handlers: VoiceActionHandlers
 ): Promise<VoiceAssistantResponse> {
@@ -1003,22 +1101,29 @@ export async function processVoiceWithGemini(
   const today = new Date().toISOString().split('T')[0]
   const currentYear = new Date().getFullYear()
   const studioContext = handlers.getStudioContext ? handlers.getStudioContext() : ''
+  const isStandby = Boolean(input.isStandbyWakeCheck)
 
   const systemInstructionText = `
 Eres Sofi, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
-Tu nombre oficial es Sofi. Los administradores y artistas del estudio se dirigirán a ti diciendo «Sofi», «Oye Sofi» o pronunciando directamente su orden (por ejemplo: «Sofi, abre la agenda», «Sofi, ¿qué citas tengo hoy?», «Sofi, busca a Carmen», «Sofi, crea una cita para Laura mañana», «Sofi, comprueba si hay actualizaciones», «Sofi, ve a facturación»).
+Tu nombre oficial es Sofi. Los administradores y artistas del estudio se dirigirán a ti diciendo «Sofi», «Oye Sofi» o pronunciando directamente su orden.
 
-REGLAS DE RECONOCIMIENTO Y ACTIVACIÓN POR VOZ:
-1. LLAMADA O SALUDO A SOFI:
-   Si el audio recibido contiene tu nombre o un saludo («Sofi», «Oye Sofi», «Hola Sofi», «Hey Sofi», «Sofi estás ahí», «Dime Sofi», o «Mónica») SIN que hayan dicho todavía la orden concreta de la app:
-   DEBES responder EXACTAMENTE: «Dime, te escucho.» (o «Aquí estoy, dime en qué puedo ayudarte.»).
-   ¡IMPORTANTE: BAJO NINGUNA CIRCUNSTANCIA uses [IGNORAR] si en el audio se pronuncia tu nombre Sofi!
-
-2. ORDEN DIRECTA DE LA APLICACIÓN:
-   Si el audio contiene una orden para el estudio (ej: «abre la agenda», «comprueba actualizaciones», «¿qué citas hay hoy?», «ve a clientas», «cancela la cita de María», etc.), DEBES invocar la herramienta correspondiente con sus parámetros exactos y responder brevemente en español (1 oración) confirmando la acción de forma elegante.
-
-3. RUIDO O CONVERSACIÓN AJENA [IGNORAR]:
-   ÚNICAMENTE debes responder la palabra [IGNORAR] si el audio NO menciona «Sofi» (ni «Mónica») Y TAMPOCO contiene ninguna orden o pregunta para la app del estudio (por ejemplo: es tos, silencio, secadores de pelo o una charla entre clientas en el salón que no va dirigida a ti).
+${
+  isStandby
+    ? `REGLAS ESTRICTAS DE ESCUCHA EN SEGUNDO PLANO (STANDBY):
+El audio ha sido capturado automáticamente en segundo plano.
+1. OBLIGATORIO: El usuario DEBE haber dicho explícitamente «Oye Sofi» o «Sofi» (o «Hola Sofi», «Hey Sofi»).
+2. Si el audio NO contiene «Oye Sofi» ni «Sofi», responde ÚNICAMENTE con la palabra exacta: [IGNORAR].
+   Bajo ninguna circunstancia te actives si son ruidos de fondo, música, tos, teclados o charlas entre personas del salón que no van dirigidas a Sofi.
+3. Si el audio dice «Oye Sofi» o «Sofi» solo como saludo o llamada: responde EXACTAMENTE: «Dime, te escucho.».
+4. Si el audio dice «Oye Sofi» o «Sofi» seguido de una orden para la app:
+   - ELIMINAR/BORRAR/CANCELAR CITA: Si pide eliminar, borrar o cancelar la cita de una persona (ej: «Oye Sofi, elimina la cita de Rocío», «Sofi, borra la cita de María», «elimina la cita de hoy de Carmen»), invoca OBLIGATORIAMENTE la herramienta delete_appointment con el nombre de la clienta.
+   - OTRAS ACCIONES: invoca la herramienta correspondiente y confirma la acción en una breve oración en español.`
+    : `REGLAS DE PROCESAMIENTO DIRECTO (BOTÓN O TEXTO):
+El usuario ha presionado el botón del micrófono o ha escrito una orden en la app.
+1. ELIMINAR/BORRAR/CANCELAR CITA: Si pide eliminar, borrar o cancelar la cita de una persona (ej: «elimina la cita de Rocío», «borra la cita de María», «cancela la cita de Laura»), invoca OBLIGATORIAMENTE delete_appointment con el clientName.
+2. Si el usuario solo dice «Sofi» u «Oye Sofi»: responde «Dime, te escucho.».
+3. Si pide cualquier otra orden del estudio: invoca la herramienta adecuada y confirma en una breve oración elegante.`
+}
 
 Fecha actual: ${today} (Año ${currentYear}).
 ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
@@ -1222,6 +1327,17 @@ async function executeVoiceTool(tool: VoiceToolCall, handlers: VoiceActionHandle
       })
     }
 
+    case 'delete_appointment': {
+      if (handlers.onDeleteAppointment) {
+        return await handlers.onDeleteAppointment({
+          clientName: args.clientName,
+          date: args.date,
+          deleteAll: args.deleteAll,
+        })
+      }
+      return `No se pudo procesar la eliminación de la cita de ${args.clientName}.`
+    }
+
     case 'search_client': {
       return await handlers.onSearchClient(args.query)
     }
@@ -1254,3 +1370,94 @@ async function executeVoiceTool(tool: VoiceToolCall, handlers: VoiceActionHandle
       return 'Comando ejecutado.'
   }
 }
+
+/**
+ * Executes direct studio commands locally (0€ / offline) without calling any external API.
+ * Handles deleting appointments, navigation, agenda queries, creation modals, etc.
+ */
+export async function executeLocalVoiceCommand(
+  text: string,
+  handlers: VoiceActionHandlers
+): Promise<{ handled: boolean; spokenText?: string }> {
+  if (!text || !text.trim()) return { handled: false }
+  const clean = text.trim().toLowerCase()
+
+  // 1. Eliminar cita por nombre de persona
+  const deleteMatch = clean.match(
+    /(?:elimina|eliminar|borra|borrar|cancela|cancelar|quita|quitar)\s+(?:la\s+)?cita\s+(?:de\s+)?(.+)/i
+  )
+  if (deleteMatch && handlers.onDeleteAppointment) {
+    const rawName = deleteMatch[1].replace(/[.,!?;]+$/, '').trim()
+    const result = await handlers.onDeleteAppointment({ clientName: rawName })
+    return { handled: true, spokenText: result }
+  }
+
+  // 2. Navegar a pestañas
+  if (clean.includes('agenda') || clean.includes('citas')) {
+    handlers.onNavigateTab('appointments')
+    return { handled: true, spokenText: 'Te he llevado a la Agenda de Citas.' }
+  }
+  if (clean.includes('clienta')) {
+    handlers.onNavigateTab('clients')
+    return { handled: true, spokenText: 'Te he llevado a la Ficha de Clientas.' }
+  }
+  if (clean.includes('servicio')) {
+    handlers.onNavigateTab('services')
+    return { handled: true, spokenText: 'Te he llevado al Catálogo de Servicios.' }
+  }
+  if (clean.includes('factura') || clean.includes('caja') || clean.includes('ingreso')) {
+    handlers.onNavigateTab('billing')
+    return { handled: true, spokenText: 'Te he llevado a Facturación y Control de Caja.' }
+  }
+  if (clean.includes('galer')) {
+    handlers.onNavigateTab('gallery')
+    return { handled: true, spokenText: 'Te he llevado a la Galería.' }
+  }
+  if (clean.includes('ajuste') || clean.includes('configura')) {
+    handlers.onNavigateTab('settings')
+    return { handled: true, spokenText: 'Te he llevado a los Ajustes del Estudio.' }
+  }
+  if (clean.includes('panel') || clean.includes('inicio') || clean.includes('dashboard')) {
+    handlers.onNavigateTab('dashboard')
+    return { handled: true, spokenText: 'Te he llevado al Panel Principal.' }
+  }
+
+  // 3. Consultar citas de hoy / mañana
+  if (clean.includes('cita') && (clean.includes('hoy') || clean.includes('tengo hoy'))) {
+    const res = await handlers.onQueryAgenda('today')
+    return { handled: true, spokenText: res }
+  }
+  if (clean.includes('cita') && (clean.includes('mañana') || clean.includes('tengo mañana'))) {
+    const res = await handlers.onQueryAgenda('tomorrow')
+    return { handled: true, spokenText: res }
+  }
+
+  // 4. Modales de creación
+  if (clean.includes('nueva cita') || clean.includes('crear cita') || clean.includes('añadir cita')) {
+    handlers.onOpenModal('new_appointment')
+    return { handled: true, spokenText: 'He abierto el formulario para nueva cita.' }
+  }
+  if (clean.includes('nueva clienta') || clean.includes('crear clienta') || clean.includes('añadir clienta')) {
+    handlers.onOpenModal('new_client')
+    return { handled: true, spokenText: 'He abierto el formulario para nueva clienta.' }
+  }
+  if (clean.includes('nuevo servicio') || clean.includes('añadir servicio')) {
+    handlers.onOpenModal('new_service')
+    return { handled: true, spokenText: 'He abierto el formulario para nuevo servicio.' }
+  }
+  if (clean.includes('nueva factura') || clean.includes('emitir factura')) {
+    handlers.onOpenModal('new_invoice')
+    return { handled: true, spokenText: 'He abierto el formulario para emitir factura.' }
+  }
+
+  // 5. Comprobar actualizaciones
+  if (clean.includes('actualiza')) {
+    if (handlers.onCheckUpdates) {
+      const res = await handlers.onCheckUpdates()
+      return { handled: true, spokenText: res || 'Comprobando actualizaciones de software.' }
+    }
+  }
+
+  return { handled: false }
+}
+

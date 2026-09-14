@@ -348,6 +348,85 @@ ipcMain.handle('voice:stop-siri', async () => {
   return true
 })
 
+let currentListenProcess = null
+
+// Native macOS Siri Speech Recognition via Apple Speech framework & Swift (0€ / 0 APIs)
+ipcMain.handle('voice:native-listen-start', async () => {
+  if (process.platform !== 'darwin') return { supported: false }
+
+  const swiftPath = '/usr/bin/swift'
+  const scriptPath = path.join(__dirname, 'speech-listener.swift')
+
+  if (currentListenProcess) {
+    try { currentListenProcess.kill('SIGTERM') } catch {}
+    currentListenProcess = null
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const proc = spawn(swiftPath, [scriptPath])
+      currentListenProcess = proc
+
+      let started = false
+
+      proc.stdout.on('data', (data) => {
+        const lines = data.toString().split('\n')
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (trimmed.startsWith('TRANSCRIPT:')) {
+            const text = trimmed.substring(11).trim()
+            mainWindow?.webContents.send('voice:native-transcript', text)
+          } else if (trimmed.startsWith('FINAL:')) {
+            const text = trimmed.substring(6).trim()
+            mainWindow?.webContents.send('voice:native-result', text)
+          }
+        }
+      })
+
+      proc.stderr.on('data', (data) => {
+        const text = data.toString().trim()
+        if (text.includes('LISTENING_READY')) {
+          if (!started) {
+            started = true
+            resolve({ supported: true })
+          }
+        } else if (text.includes('ERROR_NOT_AUTHORIZED')) {
+          console.warn('[macOS Speech Recognition] No autorizado.')
+          if (!started) {
+            started = true
+            resolve({ supported: false, error: 'not_authorized' })
+          }
+        }
+      })
+
+      proc.on('close', () => {
+        currentListenProcess = null
+        if (!started) resolve({ supported: false })
+      })
+
+      proc.on('error', (err) => {
+        console.warn('[Native Speech Spawn Error]', err?.message || err)
+        currentListenProcess = null
+        if (!started) resolve({ supported: false, error: err?.message })
+      })
+    } catch (e) {
+      console.warn('[Native Speech Exception]', e)
+      currentListenProcess = null
+      resolve({ supported: false, error: e?.message })
+    }
+  })
+})
+
+ipcMain.handle('voice:native-listen-stop', async () => {
+  if (currentListenProcess) {
+    try {
+      currentListenProcess.kill('SIGTERM')
+    } catch {}
+    currentListenProcess = null
+  }
+  return true
+})
+
 app.whenReady().then(() => {
   // Proactively check/request microphone access on macOS Monterey & above
   if (process.platform === 'darwin' && systemPreferences && systemPreferences.askForMediaAccess) {

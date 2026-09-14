@@ -29,7 +29,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('updater:progress', handler)
     return () => ipcRenderer.removeListener('updater:progress', handler)
   },
-  // Native macOS Siri Speech
+  // Native macOS Siri Speech Synthesis
   speakWithSiri: (text) => ipcRenderer.invoke('voice:speak-siri', text),
   stopSiri: () => ipcRenderer.invoke('voice:stop-siri'),
+  // Native macOS Siri Speech Recognition (Apple Speech framework)
+  startNativeListen: () => ipcRenderer.invoke('voice:native-listen-start'),
+  stopNativeListen: () => ipcRenderer.invoke('voice:native-listen-stop'),
+  onNativeTranscript: (callback) => {
+    const handler = (_event, text) => callback(text)
+    ipcRenderer.on('voice:native-transcript', handler)
+    return () => ipcRenderer.removeListener('voice:native-transcript', handler)
+  },
+  onNativeResult: (callback) => {
+    const handler = (_event, text) => callback(text)
+    ipcRenderer.on('voice:native-result', handler)
+    return () => ipcRenderer.removeListener('voice:native-result', handler)
+  },
 })

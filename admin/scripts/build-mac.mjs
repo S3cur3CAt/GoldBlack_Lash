@@ -100,6 +100,14 @@ if (existsSync(plistPath)) {
     )
   }
 
+  // Ensure NSSpeechRecognitionUsageDescription is set for Apple Speech Recognition
+  if (!plistContent.includes('<key>NSSpeechRecognitionUsageDescription</key>')) {
+    plistContent = plistContent.replace(
+      '</dict>',
+      '  <key>NSSpeechRecognitionUsageDescription</key>\n    <string>GoldBlack Lash Admin requiere reconocimiento de voz nativo de Siri/macOS para procesar órdenes por voz.</string>\n  </dict>'
+    )
+  }
+
   writeFileSync(plistPath, plistContent, 'utf8')
   console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey y permisos de micrófono.')
 }

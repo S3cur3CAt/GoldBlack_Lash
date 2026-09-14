@@ -9,6 +9,7 @@ import {
 } from './Icons'
 import {
   AudioRecorder,
+  executeLocalVoiceCommand,
   isSpeechRecognitionSupported,
   playWakeChime,
   processVoiceWithGemini,
@@ -124,36 +125,60 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
     const startVADStandby = () => {
       if (isCancelled) return
-      console.log('[Sofi] 🎧 Iniciando escucha VAD en segundo plano (standby=0.02, speech=0.02)...')
+      console.log('[Sofi] 🎧 Iniciando escucha pasiva en segundo plano (esperando «Oye Sofi»)...')
       const recorder = new AudioRecorder()
       recorderRef.current = recorder
 
       recorder
         .startStandby({
-          standbyThreshold: 0.02,
-          speechThreshold: 0.02,
-          silenceMs: 1200,
-          onWake: () => {
-            if (isCancelled) return
-            console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
-            setIsExpanded(true)
-            setStatus('recording')
-            setErrorMessage(null)
-            setLastActionText('Escuchando a Sofi...')
-          },
-          onVolumeChange: (vol) => {
-            if (!isCancelled) setLiveVolume(vol)
-          },
-          onSilence: () => {
-            if (!isCancelled) {
-              console.log('[Sofi] 🔇 Silencio detectado — procesando audio automáticamente...')
-              stopAndProcess()
-            }
-          },
-          onTimeout: () => {
-            if (!isCancelled) {
-              console.log('[Sofi] ⏱️ Timeout — no se detectó voz suficiente.')
-              handleCancel()
+          standbyThreshold: 0.038,
+          speechThreshold: 0.025,
+          onStandbyUtterance: async (audioData) => {
+            if (isCancelled || statusRef.current !== 'idle') return
+            const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
+            if (!effectiveApiKey.trim()) return
+
+            try {
+              console.log('[Sofi] 🔍 Verificando audio en segundo plano con Gemini Flash...')
+              const res = await processVoiceWithGemini(
+                {
+                  base64Audio: audioData.base64,
+                  mimeType: audioData.mimeType,
+                  isStandbyWakeCheck: true,
+                },
+                effectiveApiKey,
+                handlers
+              )
+
+              if (res.ignored) {
+                console.log('[Sofi] 🔇 Audio ignorado (ruido ambiental o charla sin «Sofi»). Sin abrir interfaz.')
+                return
+              }
+
+              // ¡El usuario ha dicho «Oye Sofi» o una orden directa!
+              playWakeChime()
+              setIsExpanded(true)
+              setErrorMessage(null)
+
+              if (res.isWakeGreetingOnly) {
+                console.log('[Sofi] 🌟 Wake word «Oye Sofi» detectado, saludando...')
+                await handleWakeGreeting()
+              } else {
+                console.log('[Sofi] ⚡ Orden directa detectada en standby:', res.spokenText)
+                setStatus('speaking')
+                setLastActionText(res.spokenText)
+                if (voiceAutoSpeak && res.spokenText) {
+                  await speakWithNativeVoice(res.spokenText)
+                }
+
+                if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+                autoCloseTimerRef.current = setTimeout(() => {
+                  setStatus('idle')
+                  setIsExpanded(false)
+                }, 4000)
+              }
+            } catch (err: any) {
+              console.warn('[Standby Utterance Process Error]', err?.message || err)
             }
           },
         })
@@ -223,24 +248,53 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
           recorder
             .startStandby({
-              standbyThreshold: 0.02,
-              speechThreshold: 0.02,
-              silenceMs: 1200,
-              onWake: () => {
-                console.log('[Sofi] 🎤 ¡Voz detectada en segundo plano! Grabando comando...')
-                setIsExpanded(true)
-                setStatus('recording')
-                setErrorMessage(null)
-                setLastActionText('Escuchando a Sofi...')
-              },
-              onVolumeChange: (vol) => setLiveVolume(vol),
-              onSilence: () => {
-                console.log('[Sofi] 🔇 Silencio detectado — procesando audio automáticamente...')
-                stopAndProcess()
-              },
-              onTimeout: () => {
-                console.log('[Sofi] ⏱️ Timeout — no se detectó voz suficiente.')
-                handleCancel()
+              standbyThreshold: 0.038,
+              speechThreshold: 0.025,
+              onStandbyUtterance: async (audioData) => {
+                if (statusRef.current !== 'idle') return
+                const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
+                if (!effectiveApiKey.trim()) return
+
+                try {
+                  const res = await processVoiceWithGemini(
+                    {
+                      base64Audio: audioData.base64,
+                      mimeType: audioData.mimeType,
+                      isStandbyWakeCheck: true,
+                    },
+                    effectiveApiKey,
+                    handlers
+                  )
+
+                  if (res.ignored) {
+                    console.log('[Sofi] 🔇 Audio ignorado en segundo plano (sin «Sofi»).')
+                    return
+                  }
+
+                  playWakeChime()
+                  setIsExpanded(true)
+                  setErrorMessage(null)
+
+                  if (res.isWakeGreetingOnly) {
+                    console.log('[Sofi] 🌟 Wake word «Oye Sofi» detectado...')
+                    await handleWakeGreeting()
+                  } else {
+                    console.log('[Sofi] ⚡ Orden ejecutada:', res.spokenText)
+                    setStatus('speaking')
+                    setLastActionText(res.spokenText)
+                    if (voiceAutoSpeak && res.spokenText) {
+                      await speakWithNativeVoice(res.spokenText)
+                    }
+
+                    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+                    autoCloseTimerRef.current = setTimeout(() => {
+                      setStatus('idle')
+                      setIsExpanded(false)
+                    }, 4000)
+                  }
+                } catch (err: any) {
+                  console.warn('[Standby Process Error]', err?.message || err)
+                }
               },
             })
             .catch((err) => {
@@ -418,11 +472,31 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
   const handleExecuteCommandText = async (text: string) => {
     if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
+    const cleanText = text.trim()
+    if (!cleanText) return
+
     setIsExpanded(true)
-    setStatus('processing')
     setErrorMessage(null)
     setLiveVolume(0)
 
+    // 1. Prioridad: Comprobación local directa (0€ / 100% offline sin consumir API)
+    const localRes = await executeLocalVoiceCommand(cleanText, handlers)
+    if (localRes.handled && localRes.spokenText) {
+      console.log('[Sofi] ⚡ Comando ejecutado localmente (0€ / sin API):', cleanText)
+      setLastActionText(localRes.spokenText)
+      setStatus('speaking')
+      if (voiceAutoSpeak && localRes.spokenText) {
+        await speakWithNativeVoice(localRes.spokenText)
+      }
+      autoCloseTimerRef.current = setTimeout(() => {
+        setStatus('idle')
+        setIsExpanded(false)
+      }, 4500)
+      return
+    }
+
+    // 2. Si no es un patrón local reconocido, procesar con Gemini Flash
+    setStatus('processing')
     try {
       const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
       if (!effectiveApiKey.trim()) {
@@ -432,7 +506,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       }
 
       const response = await processVoiceWithGemini(
-        { textQuery: text },
+        { textQuery: cleanText },
         effectiveApiKey,
         handlers
       )
@@ -469,6 +543,9 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
     if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
       ;(window as any).electronAPI.stopSiri()
+    }
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.stopNativeListen) {
+      ;(window as any).electronAPI.stopNativeListen()
     }
     setLiveVolume(0)
     setStatus('idle')

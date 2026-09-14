@@ -881,6 +881,71 @@ export const App: React.FC = () => {
       return `Cita de ${targetApt.clientName} actualizada correctamente.`
     },
 
+    onDeleteAppointment: async (params) => {
+      const { clientName, date, deleteAll } = params
+      if (!clientName || !clientName.trim()) {
+        return 'Por favor indica el nombre de la persona cuya cita deseas eliminar.'
+      }
+
+      const normalize = (s: string) =>
+        s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+
+      const cleanQuery = normalize(clientName)
+
+      // Find matching appointments
+      const matching = appointments.filter((a) => {
+        const nameNorm = normalize(a.clientName)
+        return nameNorm.includes(cleanQuery)
+      })
+
+      if (matching.length === 0) {
+        return `No he encontrado ninguna cita agendada a nombre de ${clientName}.`
+      }
+
+      // If user said "elimina todas las citas de..."
+      if (deleteAll && matching.length > 1) {
+        matching.forEach((a) => handleDeleteAppointment(a.id))
+        setSyncToast({
+          status: 'synced',
+          message: `✓ Se han eliminado ${matching.length} citas de ${clientName}`,
+        })
+        return `He eliminado las ${matching.length} citas registradas a nombre de ${clientName}.`
+      }
+
+      let targetApt: Appointment | undefined
+      if (date) {
+        let targetDate = date
+        if (date.toLowerCase() === 'today' || date.toLowerCase() === 'hoy') {
+          targetDate = new Date().toISOString().split('T')[0]
+        } else if (date.toLowerCase() === 'tomorrow' || date.toLowerCase() === 'mañana') {
+          const tom = new Date()
+          tom.setDate(tom.getDate() + 1)
+          targetDate = tom.toISOString().split('T')[0]
+        }
+        targetApt = matching.find((a) => a.date === targetDate)
+      }
+
+      if (!targetApt) {
+        if (matching.length === 1) {
+          targetApt = matching[0]
+        } else {
+          // Sort by nearest upcoming date/time
+          const today = new Date().toISOString().split('T')[0]
+          const upcoming = matching
+            .filter((a) => a.date >= today)
+            .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+          targetApt = upcoming[0] || matching[0]
+        }
+      }
+
+      handleDeleteAppointment(targetApt.id)
+      setSyncToast({
+        status: 'synced',
+        message: `✓ Cita de ${targetApt.clientName} (${targetApt.date} ${targetApt.time}) eliminada`,
+      })
+      return `He eliminado la cita de ${targetApt.clientName} del ${targetApt.date} a las ${targetApt.time} (${targetApt.serviceName}).`
+    },
+
     onSearchClient: async (query: string) => {
       const q = query.toLowerCase().trim()
       const found = clients.filter(
@@ -930,7 +995,12 @@ export const App: React.FC = () => {
 
     getStudioContext: () => {
       const serviceNames = services.map((s) => s.name).join(', ')
-      return `Servicios disponibles en el estudio: ${serviceNames}. Total de citas: ${appointments.length}. Clientas registradas: ${clients.length}.`
+      const today = new Date().toISOString().split('T')[0]
+      const recentApts = appointments
+        .slice(0, 15)
+        .map((a) => `[${a.clientName} - ${a.date} ${a.time} - ${a.serviceName}]`)
+        .join(', ')
+      return `Servicios disponibles en el estudio: ${serviceNames}. Citas registradas en el sistema: ${recentApts || 'ninguna'}. Total de citas: ${appointments.length}. Clientas registradas: ${clients.length}.`
     },
   }
 
