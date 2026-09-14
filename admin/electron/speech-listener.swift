@@ -3,97 +3,134 @@ import Speech
 import AVFoundation
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// GoldBlack Lash — Sofi Background Continuous Speech Listener (macOS 12+)
+// GoldBlack Lash — Sofi Continuous Speech Listener (macOS 12+ Monterey)
 // ═══════════════════════════════════════════════════════════════════════════════
-// Runs as a persistent background process. Continuously listens for speech
-// via Apple's SFSpeechRecognizer, emitting TRANSCRIPT/FINAL lines on stdout.
-// Controlled via stdin commands: PAUSE, RESUME, QUIT.
-// Uses a generation counter to prevent stale callbacks from interfering.
+// Pre-compiled native binary for persistent background speech recognition.
+// Protocol:
+//   stdout → TRANSCRIPT: <partial text>
+//   stdout → FINAL: <complete phrase>
+//   stderr → LISTENING_READY | PAUSED | RESUMED | SESSION_STARTED | errors
+//   stdin  ← PAUSE | RESUME | QUIT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 setbuf(stdout, nil)
 setbuf(stderr, nil)
 
-// ── Authorization ───────────────────────────────────────────────────────────
+// ── 1. Authorization ────────────────────────────────────────────────────────
 let authSema = DispatchSemaphore(value: 0)
-var isAuthorized = false
+var authStatus: SFSpeechRecognizerAuthorizationStatus = .notDetermined
 
 SFSpeechRecognizer.requestAuthorization { status in
-    isAuthorized = (status == .authorized)
+    authStatus = status
     authSema.signal()
 }
 _ = authSema.wait(timeout: .now() + 5.0)
 
-guard isAuthorized else {
-    fputs("ERROR_NOT_AUTHORIZED\n", stderr)
+switch authStatus {
+case .authorized:
+    break
+case .denied:
+    fputs("ERROR_DENIED\n", stderr)
+    exit(1)
+case .restricted:
+    fputs("ERROR_RESTRICTED\n", stderr)
+    exit(1)
+case .notDetermined:
+    fputs("ERROR_NOT_DETERMINED\n", stderr)
+    exit(1)
+@unknown default:
+    fputs("ERROR_UNKNOWN_AUTH\n", stderr)
     exit(1)
 }
 
-guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-ES")),
-      recognizer.isAvailable else {
+// ── 2. Recognizer Setup ─────────────────────────────────────────────────────
+guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-ES")) else {
+    fputs("ERROR_NO_RECOGNIZER\n", stderr)
+    exit(2)
+}
+
+if !recognizer.isAvailable {
     fputs("ERROR_RECOGNIZER_UNAVAILABLE\n", stderr)
     exit(2)
 }
 
-// ── State ───────────────────────────────────────────────────────────────────
+// ── 3. Audio Engine ─────────────────────────────────────────────────────────
 let audioEngine = AVAudioEngine()
+let inputNode = audioEngine.inputNode
+let busFormat = inputNode.outputFormat(forBus: 0)
+
+// Validate audio format
+guard busFormat.sampleRate > 0 && busFormat.channelCount > 0 else {
+    fputs("ERROR_BAD_AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
+    exit(3)
+}
+
+fputs("AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
+
+// ── 4. State ────────────────────────────────────────────────────────────────
 var currentRequest: SFSpeechAudioBufferRecognitionRequest?
 var currentTask: SFSpeechRecognitionTask?
 var silenceTimer: DispatchWorkItem?
-var lastTranscript = ""
-var isPaused = false
-var sessionGen: Int = 0 // Generation counter to invalidate stale callbacks
+var lastTranscript: String = ""
+var isPaused: Bool = false
+var sessionGen: Int = 0
 
-// ── Audio Pipeline (installed once, runs forever) ───────────────────────────
-let inputNode = audioEngine.inputNode
-let recordingFormat = inputNode.outputFormat(forBus: 0)
-
-inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-    // Only feed audio when not paused and request exists
-    if !isPaused {
-        currentRequest?.append(buffer)
+// ── 5. Audio Tap (installed once, never removed) ────────────────────────────
+inputNode.installTap(onBus: 0, bufferSize: 2048, format: busFormat) { buffer, _ in
+    if !isPaused, let req = currentRequest {
+        req.append(buffer)
     }
 }
 
-// ── Session Management ──────────────────────────────────────────────────────
+// ── 6. Session Management ───────────────────────────────────────────────────
 func startSession() {
-    // Increment generation so any pending callbacks from old session are ignored
     sessionGen += 1
     let gen = sessionGen
 
-    // Clean up previous session
+    // Tear down previous session
     silenceTimer?.cancel()
     silenceTimer = nil
-    currentTask?.cancel()
-    currentTask = nil
-    currentRequest?.endAudio()
-    currentRequest = nil
+
+    if let task = currentTask {
+        task.cancel()
+        currentTask = nil
+    }
+
+    if let req = currentRequest {
+        req.endAudio()
+        currentRequest = nil
+    }
+
     lastTranscript = ""
 
-    guard !isPaused else { return }
+    guard !isPaused else {
+        fputs("SESSION_SKIPPED (paused)\n", stderr)
+        return
+    }
 
-    // Brief delay to let the cancellation callbacks flush through
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-        // Verify this is still the current generation and not paused
+    // Brief delay so cancellation callbacks from the old session flush
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
         guard gen == sessionGen, !isPaused else { return }
 
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
+        req.taskHint = .dictation
         currentRequest = req
 
+        fputs("SESSION_STARTED gen=\(gen)\n", stderr)
+
         currentTask = recognizer.recognitionTask(with: req) { result, error in
-            // ── Dispatch to main queue for thread safety ──
             DispatchQueue.main.async {
-                // Ignore callbacks from stale sessions
+                // Stale session — ignore
                 guard gen == sessionGen else { return }
 
-                if let result = result {
-                    let transcript = result.bestTranscription.formattedString
-                    if transcript != lastTranscript && !transcript.isEmpty {
-                        lastTranscript = transcript
-                        print("TRANSCRIPT: \(transcript)")
+                if let r = result {
+                    let text = r.bestTranscription.formattedString
+                    if !text.isEmpty && text != lastTranscript {
+                        lastTranscript = text
+                        print("TRANSCRIPT: \(text)")
 
-                        // Reset silence timer: after 1.2s of silence, emit FINAL and restart
+                        // Silence timer: emit FINAL after 1.2s of no new words
                         silenceTimer?.cancel()
                         let timer = DispatchWorkItem {
                             guard gen == sessionGen else { return }
@@ -106,20 +143,27 @@ func startSession() {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: timer)
                     }
 
-                    if result.isFinal {
+                    if r.isFinal {
                         silenceTimer?.cancel()
                         silenceTimer = nil
-                        if !transcript.isEmpty {
-                            print("FINAL: \(transcript)")
+                        if !text.isEmpty {
+                            print("FINAL: \(text)")
                         }
                         startSession()
                     }
                 }
 
-                if error != nil {
-                    // Don't restart if we're already restarting or paused
+                if let err = error {
                     guard gen == sessionGen, !isPaused else { return }
-                    // Restart session after a short delay
+                    let nse = err as NSError
+                    // 216 = speech recognition timeout (normal)
+                    // 1110 = no speech detected (normal)
+                    if nse.code == 216 || nse.code == 1110 {
+                        fputs("SESSION_TIMEOUT gen=\(gen) code=\(nse.code)\n", stderr)
+                    } else {
+                        fputs("SESSION_ERROR gen=\(gen) code=\(nse.code) domain=\(nse.domain) desc=\(nse.localizedDescription)\n", stderr)
+                    }
+                    // Restart after short delay
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         guard gen == sessionGen, !isPaused else { return }
                         startSession()
@@ -130,22 +174,24 @@ func startSession() {
     }
 }
 
-// ── Start Audio Engine ──────────────────────────────────────────────────────
+// ── 7. Start Engine ─────────────────────────────────────────────────────────
 do {
     audioEngine.prepare()
     try audioEngine.start()
-    fputs("LISTENING_READY\n", stderr)
-    startSession()
 } catch {
-    fputs("ERROR_AUDIO_ENGINE: \(error.localizedDescription)\n", stderr)
+    fputs("ERROR_ENGINE_START \(error.localizedDescription)\n", stderr)
     exit(3)
 }
 
-// ── Stdin Command Reader (background thread) ────────────────────────────────
-// Commands: PAUSE (stop recognition), RESUME (restart recognition), QUIT (exit)
+fputs("LISTENING_READY\n", stderr)
+startSession()
+
+// ── 8. Stdin Command Reader ─────────────────────────────────────────────────
 DispatchQueue.global(qos: .userInitiated).async {
     while let line = readLine() {
         let cmd = line.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if cmd.isEmpty { continue }
+
         DispatchQueue.main.async {
             switch cmd {
             case "PAUSE":
@@ -161,26 +207,31 @@ DispatchQueue.global(qos: .userInitiated).async {
                 fputs("PAUSED\n", stderr)
 
             case "RESUME":
-                guard isPaused else { return }
-                isPaused = false
-                fputs("RESUMED\n", stderr)
-                startSession()
+                if isPaused {
+                    isPaused = false
+                    fputs("RESUMED\n", stderr)
+                    startSession()
+                }
 
             case "QUIT":
+                fputs("QUITTING\n", stderr)
+                audioEngine.stop()
+                inputNode.removeTap(onBus: 0)
                 exit(0)
 
             default:
-                break
+                fputs("UNKNOWN_CMD: \(cmd)\n", stderr)
             }
         }
     }
-    // stdin closed (parent process died) — exit gracefully
+    // stdin closed → parent died
+    fputs("STDIN_CLOSED\n", stderr)
     exit(0)
 }
 
-// ── Signal Handlers ─────────────────────────────────────────────────────────
+// ── 9. Signal Handlers ──────────────────────────────────────────────────────
 signal(SIGINT)  { _ in exit(0) }
 signal(SIGTERM) { _ in exit(0) }
 
-// ── Run Loop (keeps process alive) ──────────────────────────────────────────
+// ── 10. Keep Alive ──────────────────────────────────────────────────────────
 RunLoop.main.run()
