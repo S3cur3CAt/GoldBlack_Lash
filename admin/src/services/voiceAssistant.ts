@@ -217,7 +217,8 @@ export class AudioRecorder {
   private preRollChunks: Blob[] = []
   private stream: MediaStream | null = null
   private audioContext: AudioContext | null = null
-  private analyser: AnalyserNode | null = null
+  private sourceNode: MediaStreamAudioSourceNode | null = null
+  private scriptProcessor: ScriptProcessorNode | null = null
   private levelIntervalId: any = null  // setInterval instead of rAF for Electron reliability
   private silenceTimer: any = null
   private isStandby = false
@@ -227,6 +228,7 @@ export class AudioRecorder {
   private consecutiveSpeechFrames = 0
   private recordingStartTime = 0
   private debugLogCounter = 0
+  private currentVolume = 0
 
   private async initStreamAndAnalyser(): Promise<void> {
     if (!this.stream || !this.stream.active) {
@@ -263,7 +265,13 @@ export class AudioRecorder {
 
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
     if (AudioCtx && (!this.audioContext || this.audioContext.state === 'closed')) {
-      this.audioContext = new AudioCtx()
+      // Match AudioContext sample rate to mic native rate to avoid silence bugs
+      let micSampleRate;
+      try {
+        const s = this.stream.getAudioTracks()[0]?.getSettings?.();
+        if (s?.sampleRate) micSampleRate = s.sampleRate;
+      } catch {}
+      this.audioContext = micSampleRate ? new AudioCtx({ sampleRate: micSampleRate }) : new AudioCtx()
 
       // Ensure AudioContext is running (macOS Monterey can suspend it)
       if (this.audioContext.state === 'suspended') {
@@ -272,23 +280,31 @@ export class AudioRecorder {
       }
       console.log(`[Sofi VAD] AudioContext state=${this.audioContext.state} sampleRate=${this.audioContext.sampleRate}`)
 
-      const source = this.audioContext.createMediaStreamSource(this.stream)
-      this.analyser = this.audioContext.createAnalyser()
-      this.analyser.fftSize = 256
-      this.analyser.smoothingTimeConstant = 0.3
+      // STORE source node as class property to prevent garbage collection
+      this.sourceNode = this.audioContext.createMediaStreamSource(this.stream)
 
-      source.connect(this.analyser)
+      // Use ScriptProcessorNode for DIRECT PCM sample reading.
+      // AnalyserNode.getByteTimeDomainData() returns all-128 (zeros) in Electron 11 / Chromium 87.
+      // ScriptProcessorNode reads raw float PCM samples - most reliable across all Electron versions.
+      const bufferSize = 2048
+      this.scriptProcessor = this.audioContext.createScriptProcessor(bufferSize, 1, 1)
 
-      // CRITICAL FIX: Connect analyser to speakers through a SILENT gain node (gain=0).
-      // Without a path to ctx.destination, some Chromium/Electron versions optimize away
-      // the entire audio pipeline and getByteTimeDomainData() returns all 128s (= silence).
-      // The zero-gain node ensures audio flows through the graph without producing audible output.
-      const silentGain = this.audioContext.createGain()
-      silentGain.gain.value = 0
-      this.analyser.connect(silentGain)
-      silentGain.connect(this.audioContext.destination)
+      this.scriptProcessor.onaudioprocess = (event) => {
+        const inputData = event.inputBuffer.getChannelData(0)
+        let sumSquares = 0
+        for (let i = 0; i < inputData.length; i++) {
+          sumSquares += inputData[i] * inputData[i]
+        }
+        const rms = Math.sqrt(sumSquares / inputData.length)
+        this.currentVolume = Math.min(rms * 4.5, 1.0)
+      }
 
-      console.log('[Sofi VAD] ✅ Pipeline de audio conectado: Mic → Source → Analyser → SilentGain(0) → Destination')
+      // Connect: Mic -> Source -> ScriptProcessor -> Destination
+      // onaudioprocess ONLY fires when connected to destination
+      this.sourceNode.connect(this.scriptProcessor)
+      this.scriptProcessor.connect(this.audioContext.destination)
+
+      console.log('[Sofi VAD] Pipeline: Mic -> Source -> ScriptProcessor(PCM) -> Destination')
     }
   }
 
@@ -379,24 +395,14 @@ export class AudioRecorder {
     }
 
     const checkLevels = () => {
-      if (!this.analyser) return
-
-      const timeData = new Uint8Array(this.analyser.fftSize)
-      this.analyser.getByteTimeDomainData(timeData)
-
-      let sumSquares = 0
-      for (let i = 0; i < timeData.length; i++) {
-        const normalized = (timeData[i] - 128) / 128
-        sumSquares += normalized * normalized
-      }
-      const rms = Math.sqrt(sumSquares / timeData.length)
-      const normalizedVol = Math.min(rms * 4.5, 1.0)
+      // Read volume computed by ScriptProcessorNode (direct PCM, most reliable)
+      const normalizedVol = this.currentVolume
 
       // Diagnostic logging every ~3 seconds so user can verify mic is receiving audio
       this.debugLogCounter++
       if (this.debugLogCounter % 50 === 0) {
         const mode = this.isStandby ? 'STANDBY' : this.isRecording ? 'RECORDING' : 'OFF'
-        console.log(`[Sofi VAD] mode=${mode} vol=${normalizedVol.toFixed(4)} rms=${rms.toFixed(5)} frames=${this.consecutiveSpeechFrames}`)
+        console.log(`[Sofi VAD] mode=${mode} vol=${normalizedVol.toFixed(4)} frames=${this.consecutiveSpeechFrames}`)
       }
 
       if (this.isStandby) {
@@ -496,7 +502,8 @@ export class AudioRecorder {
             this.audioContext = null
           }
           this.mediaRecorder = null
-          this.analyser = null
+          this.sourceNode = null
+          this.scriptProcessor = null
 
           const base64 = await this.blobToBase64(blob)
           resolve({ blob, mimeType: mimeType.split(';')[0], base64 })
@@ -529,11 +536,18 @@ export class AudioRecorder {
       try { this.audioContext.close() } catch {}
       this.audioContext = null
     }
+    if (this.scriptProcessor) {
+      try { this.scriptProcessor.disconnect() } catch {}
+      this.scriptProcessor = null
+    }
+    if (this.sourceNode) {
+      try { this.sourceNode.disconnect() } catch {}
+      this.sourceNode = null
+    }
     this.audioChunks = []
     this.preRollChunks = []
     this.headerChunk = null
     this.mediaRecorder = null
-    this.analyser = null
   }
 
   private blobToBase64(blob: Blob): Promise<string> {
