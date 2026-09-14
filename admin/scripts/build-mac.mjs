@@ -90,6 +90,8 @@ if (existsSync(plistPath)) {
       '</dict>',
       '  <key>LSMinimumSystemVersion</key>\n    <string>12.0.0</string>\n  </dict>'
     )
+  }
+
   // Ensure NSMicrophoneUsageDescription is set for voice control microphone access
   if (!plistContent.includes('<key>NSMicrophoneUsageDescription</key>')) {
     plistContent = plistContent.replace(
