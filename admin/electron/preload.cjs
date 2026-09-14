@@ -29,4 +29,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('updater:progress', handler)
     return () => ipcRenderer.removeListener('updater:progress', handler)
   },
+  // Native macOS Siri Speech
+  speakWithSiri: (text) => ipcRenderer.invoke('voice:speak-siri', text),
 })

@@ -325,9 +325,22 @@ export function formatPhoneForSpeech(phone: string): string {
 }
 
 /**
- * Text-to-Speech using a natural Spanish female voice on macOS / Windows / Web
+ * Text-to-Speech using Siri on macOS Monterey, or high quality natural Spanish female voices
  */
-export function speakWithFemaleVoice(text: string): Promise<void> {
+export async function speakWithFemaleVoice(text: string): Promise<void> {
+  if (!text || !text.trim()) return
+
+  // 1. If running inside Electron on macOS Monterey, use native Siri voice directly via Apple 'say'
+  if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
+    try {
+      const handled = await (window as any).electronAPI.speakWithSiri(text)
+      if (handled) return
+    } catch (e) {
+      console.warn('[Native Siri Error, falling back to Web Speech]', e)
+    }
+  }
+
+  // 2. Web Speech Synthesis fallback (prioritizing Siri voice if installed in browser)
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       resolve()
@@ -345,8 +358,18 @@ export function speakWithFemaleVoice(text: string): Promise<void> {
       const selectFemaleSpanishVoice = () => {
         const voices = window.speechSynthesis.getVoices()
 
-        // macOS natural Spanish female voices (Mónica, Paulina, Alba, Victoria, Luciana, Siri)
-        // Windows: Microsoft Laura, Helena, Sabina
+        // 1st Priority: Siri Spanish voice in system voices
+        const siriVoice = voices.find(
+          (v) =>
+            (v.lang.startsWith('es') || v.lang === '') &&
+            v.name.toLowerCase().includes('siri')
+        )
+        if (siriVoice) {
+          utterance.voice = siriVoice
+          return
+        }
+
+        // 2nd Priority: Apple's natural Spanish female voices (Mónica, Paulina, Alba, Victoria)
         const femaleKeywords = [
           'monica',
           'mónica',
@@ -357,7 +380,6 @@ export function speakWithFemaleVoice(text: string): Promise<void> {
           'helena',
           'sabina',
           'luciana',
-          'siri',
           'female',
         ]
 

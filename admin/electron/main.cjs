@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
+const { exec } = require('child_process')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
 // Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
@@ -252,6 +253,25 @@ ipcMain.on('notification:appointment', (_event, data) => {
   } catch (err) {
     console.warn('[Notification Error]', err)
   }
+})
+
+// Native macOS Monterey Siri Speech Synthesis via Apple 'say' engine
+ipcMain.handle('voice:speak-siri', async (_event, text) => {
+  if (process.platform !== 'darwin' || !text) return false
+  return new Promise((resolve) => {
+    // Sanitize string to prevent shell injection and handle quotes safely
+    const cleanText = String(text).replace(/["`$\\]/g, '')
+    // Try Siri explicitly, then premier Spanish voice Mónica, then macOS default voice (Siri on Monterey)
+    const cmd = `say -v "Siri" "${cleanText}" 2>/dev/null || say -v "Mónica" "${cleanText}" 2>/dev/null || say "${cleanText}"`
+    exec(cmd, (err) => {
+      if (err) {
+        console.warn('[macOS Say Error]', err.message)
+        resolve(false)
+      } else {
+        resolve(true)
+      }
+    })
+  })
 })
 
 app.whenReady().then(() => {
