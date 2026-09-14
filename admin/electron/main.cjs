@@ -352,13 +352,26 @@ app.whenReady().then(() => {
   // Proactively check/request microphone access on macOS Monterey & above
   if (process.platform === 'darwin' && systemPreferences && systemPreferences.askForMediaAccess) {
     try {
-      systemPreferences.askForMediaAccess('microphone').then((granted) => {
-        console.log('[macOS Media Access] Micrófono autorizado:', granted)
-      }).catch((err) => {
-        console.warn('[macOS Media Access Warning]', err?.message || err)
-      })
+      // First check current status
+      const micStatus = systemPreferences.getMediaAccessStatus('microphone')
+      console.log('[macOS Mic Permission] Estado actual:', micStatus)
+
+      if (micStatus !== 'granted') {
+        console.log('[macOS Mic Permission] Solicitando permiso de micrófono...')
+        systemPreferences.askForMediaAccess('microphone').then((granted) => {
+          console.log('[macOS Mic Permission] Micrófono autorizado:', granted)
+          if (!granted) {
+            console.error('[macOS Mic Permission] ❌ PERMISO DENEGADO. La detección de voz NO funcionará.')
+            console.error('[macOS Mic Permission] Ve a Preferencias del Sistema > Seguridad y Privacidad > Privacidad > Micrófono')
+          }
+        }).catch((err) => {
+          console.warn('[macOS Mic Permission Warning]', err?.message || err)
+        })
+      } else {
+        console.log('[macOS Mic Permission] ✅ Micrófono ya autorizado')
+      }
     } catch (e) {
-      console.warn('[macOS Media Access Error]', e?.message || e)
+      console.warn('[macOS Mic Permission Error]', e?.message || e)
     }
   }
 

@@ -234,25 +234,61 @@ export class AudioRecorder {
         throw new Error('Tu entorno o navegador no soporta captura de audio.')
       }
 
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          },
+        })
+      } catch (micErr: any) {
+        console.error('[Sofi VAD] ❌ Error al acceder al micrófono:', micErr?.message || micErr)
+        console.error('[Sofi VAD] Posible causa: macOS no ha concedido permiso de micrófono a la app.')
+        console.error('[Sofi VAD] Solución: Ve a Preferencias del Sistema > Seguridad y Privacidad > Privacidad > Micrófono y activa la app.')
+        throw micErr
+      }
+
+      // Diagnostic: log track state to verify macOS actually granted real mic access
+      const tracks = this.stream.getAudioTracks()
+      console.log(`[Sofi VAD] 🎙️ Micrófono obtenido: ${tracks.length} pista(s)`)
+      tracks.forEach((t, i) => {
+        console.log(`[Sofi VAD]   Track ${i}: label="${t.label}" enabled=${t.enabled} muted=${t.muted} readyState=${t.readyState}`)
+        const settings = t.getSettings?.()
+        if (settings) {
+          console.log(`[Sofi VAD]   Settings: sampleRate=${settings.sampleRate} channelCount=${settings.channelCount} deviceId=${settings.deviceId?.substring(0, 12)}...`)
+        }
       })
     }
 
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
     if (AudioCtx && (!this.audioContext || this.audioContext.state === 'closed')) {
       this.audioContext = new AudioCtx()
+
+      // Ensure AudioContext is running (macOS Monterey can suspend it)
       if (this.audioContext.state === 'suspended') {
+        console.log('[Sofi VAD] ⏸️ AudioContext suspendido, reanudando...')
         await this.audioContext.resume()
       }
+      console.log(`[Sofi VAD] AudioContext state=${this.audioContext.state} sampleRate=${this.audioContext.sampleRate}`)
+
       const source = this.audioContext.createMediaStreamSource(this.stream)
       this.analyser = this.audioContext.createAnalyser()
       this.analyser.fftSize = 256
+      this.analyser.smoothingTimeConstant = 0.3
+
       source.connect(this.analyser)
+
+      // CRITICAL FIX: Connect analyser to speakers through a SILENT gain node (gain=0).
+      // Without a path to ctx.destination, some Chromium/Electron versions optimize away
+      // the entire audio pipeline and getByteTimeDomainData() returns all 128s (= silence).
+      // The zero-gain node ensures audio flows through the graph without producing audible output.
+      const silentGain = this.audioContext.createGain()
+      silentGain.gain.value = 0
+      this.analyser.connect(silentGain)
+      silentGain.connect(this.audioContext.destination)
+
+      console.log('[Sofi VAD] ✅ Pipeline de audio conectado: Mic → Source → Analyser → SilentGain(0) → Destination')
     }
   }
 
