@@ -1,6 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
-const { exec } = require('child_process')
+const { exec, spawn } = require('child_process')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
 // Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
@@ -255,23 +255,61 @@ ipcMain.on('notification:appointment', (_event, data) => {
   }
 })
 
+let currentSayProcess = null
+
 // Native macOS Monterey Siri Speech Synthesis via Apple 'say' engine
+// When 'say' is invoked without -v, macOS uses the exact System Voice
+// selected in System Preferences > Accessibility > Spoken Content (Siri)
 ipcMain.handle('voice:speak-siri', async (_event, text) => {
   if (process.platform !== 'darwin' || !text) return false
   return new Promise((resolve) => {
-    // Sanitize string to prevent shell injection and handle quotes safely
-    const cleanText = String(text).replace(/["`$\\]/g, '')
-    // Try Siri explicitly, then premier Spanish voice Mónica, then macOS default voice (Siri on Monterey)
-    const cmd = `say -v "Siri" "${cleanText}" 2>/dev/null || say -v "Mónica" "${cleanText}" 2>/dev/null || say "${cleanText}"`
-    exec(cmd, (err) => {
-      if (err) {
-        console.warn('[macOS Say Error]', err.message)
-        resolve(false)
-      } else {
-        resolve(true)
+    try {
+      // Kill previous speech if still speaking
+      if (currentSayProcess) {
+        try {
+          currentSayProcess.kill('SIGKILL')
+        } catch {}
+        currentSayProcess = null
       }
-    })
+
+      // Spawn native macOS 'say' command without -v to use the user's selected Siri voice
+      const sayProc = spawn('say')
+      currentSayProcess = sayProc
+
+      sayProc.stdin.on('error', (err) => {
+        console.warn('[say stdin error]', err?.message || err)
+      })
+
+      sayProc.on('error', (err) => {
+        console.warn('[macOS say process error]', err?.message || err)
+        currentSayProcess = null
+        resolve(false)
+      })
+
+      sayProc.on('close', (code) => {
+        currentSayProcess = null
+        resolve(code === 0)
+      })
+
+      // Pipe clean text with full UTF-8 encoding directly to stdin
+      sayProc.stdin.write(text, 'utf8')
+      sayProc.stdin.end()
+    } catch (err) {
+      console.warn('[macOS Say Exception]', err?.message || err)
+      currentSayProcess = null
+      resolve(false)
+    }
   })
+})
+
+ipcMain.handle('voice:stop-siri', async () => {
+  if (currentSayProcess) {
+    try {
+      currentSayProcess.kill('SIGKILL')
+    } catch {}
+    currentSayProcess = null
+  }
+  return true
 })
 
 app.whenReady().then(() => {

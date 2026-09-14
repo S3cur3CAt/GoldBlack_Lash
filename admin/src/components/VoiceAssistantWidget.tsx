@@ -157,6 +157,9 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel()
     }
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
+      ;(window as any).electronAPI.stopSiri()
+    }
     setStatus('idle')
     setIsExpanded(false)
     setErrorMessage(null)

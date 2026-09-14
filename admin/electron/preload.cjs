@@ -31,4 +31,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   // Native macOS Siri Speech
   speakWithSiri: (text) => ipcRenderer.invoke('voice:speak-siri', text),
+  stopSiri: () => ipcRenderer.invoke('voice:stop-siri'),
 })
