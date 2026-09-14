@@ -209,8 +209,9 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
 
   const version = el('inputVersion').value.trim()
   if (!version) {
-    alert('Por favor especifica un número de versión antes de compilar.')
     el('inputVersion').focus()
+    el('inputVersion').classList.add('border-red-500/50', 'ring-1', 'ring-red-500/20')
+    setTimeout(() => el('inputVersion').classList.remove('border-red-500/50', 'ring-1', 'ring-red-500/20'), 2000)
     return
   }
 
@@ -226,36 +227,80 @@ el('btnBuildInstaller')?.addEventListener('click', async () => {
   const container = el('buildOutputContainer')
   const logText = el('buildLogText')
   const badge = el('buildStatusBadge')
+  const footer = el('buildTerminalFooter')
   const btn = el('btnBuildInstaller')
 
+  const setBadge = (mode) => {
+    if (!badge) return
+    if (mode === 'compiling') {
+      badge.className = 'ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-amber-500/15 text-amber-300 border border-amber-500/25'
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> Compilando'
+    } else if (mode === 'success') {
+      badge.className = 'ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-emerald-500/15 text-emerald-300 border border-emerald-500/25'
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ✓ Completado'
+    } else if (mode === 'error') {
+      badge.className = 'ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-red-500/15 text-red-300 border border-red-500/25'
+      badge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> ✗ Error'
+    }
+  }
+
   container.classList.remove('hidden')
-  logText.textContent = `[GoldBlack Publisher] Versión v${version.replace(/^v/, '')} sincronizada en packages.json.\nIniciando compilación multiplataforma (Windows NSIS + macOS Monterey)...\n`
-  badge.textContent = 'Compilando...'
-  badge.className = 'text-[10px] text-amber-400 animate-pulse'
+  // Mensaje inicial con estilo moderno + timestamp
+  const ts = new Date().toLocaleTimeString()
+  logText.textContent = `› [${ts}] GoldBlack Publisher • v${version.replace(/^v/, '')} sincronizada\n› Iniciando compilación multiplataforma — Windows NSIS + macOS Monterey\n› ─────────────────────────────────────────────\n`
+  setBadge('compiling')
+  if (footer) footer.textContent = 'Compilando instaladores…'
   btn.disabled = true
   btn.classList.add('opacity-50', 'cursor-not-allowed')
 
   const unsubscribe = window.publisherAPI?.onBuildLog((line) => {
     logText.textContent += line
     logText.scrollTop = logText.scrollHeight
+    if (footer) {
+      const lines = logText.textContent.split('\n').length
+      footer.textContent = `${lines} líneas • streaming…`
+    }
   })
 
   try {
     const res = await window.publisherAPI?.buildInstaller({ version })
-    badge.textContent = '✓ Compilados con éxito'
-    badge.className = 'text-[10px] text-emerald-400 font-bold'
+    setBadge('success')
+    if (footer) footer.textContent = '✓ Compilación finalizada con éxito'
+    logText.textContent += `\n› ─────────────────────────────────────────────\n› ✓ Build completado — instaladores listos en dist-installers\n`
+    logText.scrollTop = logText.scrollHeight
     await loadAdminVersion(false)
     await refreshInstallers()
   } catch (err) {
-    badge.textContent = '✗ Error en compilación'
-    badge.className = 'text-[10px] text-red-400 font-bold'
-    logText.textContent += `\nError: ${err.message}`
+    setBadge('error')
+    if (footer) footer.textContent = '✗ Error en compilación'
+    logText.textContent += `\n› ✗ Error: ${err.message}\n`
+    logText.scrollTop = logText.scrollHeight
   } finally {
     unsubscribe?.()
     isBuilding = false
     btn.disabled = false
     btn.classList.remove('opacity-50', 'cursor-not-allowed')
   }
+})
+
+// Controles del terminal moderno — copiar / limpiar / cerrar
+el('btnCopyBuildLog')?.addEventListener('click', async () => {
+  const txt = el('buildLogText')?.textContent || ''
+  try {
+    await navigator.clipboard.writeText(txt)
+    const b = el('btnCopyBuildLog')
+    const orig = b.innerHTML
+    b.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>'
+    b.classList.add('text-emerald-400', 'border-emerald-500/30')
+    setTimeout(() => { b.innerHTML = orig; b.classList.remove('text-emerald-400', 'border-emerald-500/30') }, 1200)
+  } catch {}
+})
+el('btnClearBuildLog')?.addEventListener('click', () => {
+  const l = el('buildLogText')
+  if (l) { l.textContent = '› Terminal limpiada\n'; const f = el('buildTerminalFooter'); if (f) f.textContent = 'Terminal vacía • listo' }
+})
+el('btnCloseBuildTerminal')?.addEventListener('click', () => {
+  el('buildOutputContainer')?.classList.add('hidden')
 })
 
 // Publish Release to GitHub
@@ -265,42 +310,37 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
 
   const token = el('inputToken').value.trim()
   if (!token) {
-    alert('Por favor introduce tu GitHub Personal Access Token antes de publicar.')
+    setTokenMsg('✗ Introduce tu GitHub PAT antes de publicar.', 'text-red-400')
     el('inputToken').focus()
+    el('inputToken').classList.add('border-red-500/50', 'ring-1', 'ring-red-500/20')
+    setTimeout(() => el('inputToken').classList.remove('border-red-500/50', 'ring-1', 'ring-red-500/20'), 2000)
     return
   }
 
   const version = el('inputVersion').value.trim()
   if (!version) {
-    alert('Por favor especifica un número de versión.')
     el('inputVersion').focus()
+    el('inputVersion').classList.add('border-red-500/50', 'ring-1', 'ring-red-500/20')
+    setTimeout(() => el('inputVersion').classList.remove('border-red-500/50', 'ring-1', 'ring-red-500/20'), 2000)
     return
   }
 
   const autoBuild = el('checkAutoBuild')?.checked ?? true
   const installerPath = el('selectInstaller').value
   if (!installerPath && !autoBuild) {
-    alert('No hay instaladores seleccionados. Por favor marca la casilla de compilar automáticamente o compila primero.')
+    const info = el('selectedInstallerInfo')
+    if (info) {
+      info.textContent = '✗ No hay instaladores seleccionados. Marca compilar automáticamente o compila primero.'
+      info.className = 'text-[10.5px] font-semibold text-red-400'
+      setTimeout(() => { info.textContent = ''; info.className = 'text-[10.5px] text-gray-500 font-mono truncate' }, 3000)
+    }
     return
   }
 
   const title = el('inputTitle').value.trim()
   const notes = el('inputNotes').value.trim()
 
-  const conf = confirm(
-    `¿Confirmas la publicación de la versión v${version.replace(/^v/, '')} en GitHub?\n\n` +
-    `• Repositorio: S3cur3CAt/GoldBlack_Lash\n` +
-    `• Se actualizará automáticamente a v${version.replace(/^v/, '')} en:\n` +
-    `    - admin/package.json\n` +
-    `    - admin/src/services/updater.ts\n` +
-    `    - tools/release-manager/package.json\n` +
-    `    - package.json\n` +
-    (autoBuild ? `• Se compilarán y subirán automáticamente ambos paquetes:\n` +
-                 `    - Windows 11 NSIS: GoldBlack-Lash-Admin-Setup-${version.replace(/^v/, '')}.exe\n` +
-                 `    - macOS Monterey: GoldBlack-Lash-Admin-${version.replace(/^v/, '')}-macOS-Monterey.zip\n` : '') +
-    `\nLa release se mantendrá oculta (draft) hasta que los instaladores estén subidos al 100%, evitando avisos de actualización incompletos.`
-  )
-  if (!conf) return
+  // Publicación directa sin ventana emergente de confirmación (flujo ágil solicitado)
 
   isPublishing = true
   const btn = el('btnPublishRelease')
@@ -368,8 +408,11 @@ el('btnPublishRelease')?.addEventListener('click', async () => {
       el('txtGitHubVersion').className = 'text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30'
     }
   } catch (err) {
-    alert(`Error publicando en GitHub: ${err.message}`)
-    progressContainer.classList.add('hidden')
+    statusText.textContent = `✗ Error: ${err.message}`
+    statusText.className = 'text-red-300 font-semibold flex items-center gap-2 text-[11px]'
+    progressBytes.textContent = err.message || 'Error publicando'
+    progressBar.style.width = '0%'
+    progressBar.className = 'h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full transition-all duration-200'
   } finally {
     unsubscribeProgress?.()
     isPublishing = false
@@ -383,6 +426,11 @@ el('btnOpenReleaseInBrowser')?.addEventListener('click', () => {
   if (lastPublishedUrl) {
     window.publisherAPI?.openExternal(lastPublishedUrl)
   }
+})
+
+// Cerrar terminal con ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') el('buildOutputContainer')?.classList.add('hidden')
 })
 
 // Initialization

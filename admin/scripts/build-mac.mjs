@@ -90,10 +90,16 @@ if (existsSync(plistPath)) {
       '</dict>',
       '  <key>LSMinimumSystemVersion</key>\n    <string>12.0.0</string>\n  </dict>'
     )
+  // Ensure NSMicrophoneUsageDescription is set for voice control microphone access
+  if (!plistContent.includes('<key>NSMicrophoneUsageDescription</key>')) {
+    plistContent = plistContent.replace(
+      '</dict>',
+      '  <key>NSMicrophoneUsageDescription</key>\n    <string>GoldBlack Lash Admin requiere acceso al micrófono para el asistente de control por voz.</string>\n  </dict>'
+    )
   }
 
   writeFileSync(plistPath, plistContent, 'utf8')
-  console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey.')
+  console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey y permisos de micrófono.')
 }
 
 // 5. Compress into final distributable zip with native UNIX POSIX permissions and 1-click installer

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { TitleBar } from './components/TitleBar'
-import { Sidebar, TabId } from './components/Sidebar'
+import { Sidebar, TabId, DEFAULT_SIDEBAR_ORDER } from './components/Sidebar'
 import { Header } from './components/Header'
 import { Dashboard } from './components/Dashboard'
 import { Appointments } from './components/Appointments'
@@ -9,6 +9,11 @@ import { Clients } from './components/Clients'
 import { GalleryManager } from './components/GalleryManager'
 import { Billing } from './components/Billing'
 import { Settings } from './components/Settings'
+import { VoiceAssistantWidget } from './components/VoiceAssistantWidget'
+import {
+  VoiceActionHandlers,
+  announceNewAppointmentVoice,
+} from './services/voiceAssistant'
 
 import {
   Appointment,
@@ -117,6 +122,39 @@ export const App: React.FC = () => {
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
 
+  // Sidebar reorder state - persistido en localStorage para personalización del orden del menú
+  const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(() => {
+    try {
+      const stored = localStorage.getItem('goldblack_sidebar_order')
+      if (stored) {
+        const parsed = JSON.parse(stored) as TabId[]
+        // Merge: asegura que todos los tabs existan y filtra ids obsoletos
+        const valid = new Set(DEFAULT_SIDEBAR_ORDER)
+        const filtered = parsed.filter((id) => valid.has(id))
+        const missing = DEFAULT_SIDEBAR_ORDER.filter((id) => !filtered.includes(id))
+        const merged = [...filtered, ...missing]
+        if (merged.length === DEFAULT_SIDEBAR_ORDER.length) return merged
+      }
+    } catch {}
+    return [...DEFAULT_SIDEBAR_ORDER]
+  })
+  const [isReorderMode, setIsReorderMode] = useState(false)
+
+  const handleReorderSidebar = (newOrder: TabId[]) => {
+    setSidebarOrder(newOrder)
+    try {
+      localStorage.setItem('goldblack_sidebar_order', JSON.stringify(newOrder))
+    } catch {}
+  }
+
+  const handleResetSidebarOrder = () => {
+    const reset = [...DEFAULT_SIDEBAR_ORDER]
+    setSidebarOrder(reset)
+    try {
+      localStorage.setItem('goldblack_sidebar_order', JSON.stringify(reset))
+    } catch {}
+  }
+
   // Track IDs of appointments viewed by the user
   const [viewedAptIds, setViewedAptIds] = useState<Set<string>>(() => {
     try {
@@ -130,6 +168,12 @@ export const App: React.FC = () => {
   // Ref to track IDs of all appointments known so far (to detect new incoming ones)
   const knownAptIdsRef = useRef<Set<string> | null>(null)
   const isInitialSyncRef = useRef<boolean>(true)
+
+  // Ref to track latest studio config in intervals and closures
+  const configRef = useRef<StudioConfig>(config)
+  useEffect(() => {
+    configRef.current = config
+  }, [config])
 
   // Load state on mount
   const refreshAll = () => {
@@ -192,6 +236,24 @@ export const App: React.FC = () => {
               if (newApts.length > 0) {
                 // Play luxury notification chime
                 playNotificationChime()
+
+                // Announce new web booking with intelligent natural female voice
+                const currentConfig = configRef.current
+                if (currentConfig.voiceAnnounceNewAppointments ?? true) {
+                  const newestApt = newApts[0]
+                  setTimeout(() => {
+                    announceNewAppointmentVoice(
+                      {
+                        clientName: newestApt.clientName,
+                        serviceName: newestApt.serviceName,
+                        clientPhone: newestApt.clientPhone,
+                        date: newestApt.date,
+                        time: newestApt.time,
+                      },
+                      currentConfig.geminiApiKey
+                    )
+                  }, 650)
+                }
 
                 // Trigger visual notifications (Electron native macOS / Win + web fallback)
                 for (const apt of newApts) {
@@ -715,18 +777,173 @@ export const App: React.FC = () => {
 
   const headerAction = getHeaderAction()
 
+  // Voice Assistant Action Handlers for Hands-Free Control
+  const voiceHandlers: VoiceActionHandlers = {
+    onNavigateTab: (tab: string) => {
+      const validTabs: TabId[] = [
+        'dashboard',
+        'appointments',
+        'services',
+        'clients',
+        'gallery',
+        'billing',
+        'settings',
+      ]
+      if (validTabs.includes(tab as TabId)) {
+        handleSelectTab(tab as TabId)
+      }
+    },
+
+    onQueryAgenda: async (dateStr?: string, statusFilter?: string) => {
+      let targetDate = new Date().toISOString().split('T')[0]
+      if (dateStr) {
+        if (dateStr.toLowerCase() === 'tomorrow' || dateStr.toLowerCase() === 'mañana') {
+          const tom = new Date()
+          tom.setDate(tom.getDate() + 1)
+          targetDate = tom.toISOString().split('T')[0]
+        } else if (dateStr.toLowerCase() !== 'today' && dateStr.toLowerCase() !== 'hoy') {
+          targetDate = dateStr
+        }
+      }
+
+      const dayApts = appointments.filter((a) => a.date === targetDate)
+      const filtered =
+        statusFilter && statusFilter !== 'todas'
+          ? dayApts.filter((a) => a.status === statusFilter)
+          : dayApts
+
+      if (filtered.length === 0) {
+        return `No tienes citas programadas para el ${targetDate}.`
+      }
+
+      const listStr = filtered
+        .map((a) => `${a.time} con ${a.clientName} (${a.serviceName})`)
+        .join(', ')
+      return `Para el ${targetDate} tienes ${filtered.length} cita${filtered.length > 1 ? 's' : ''}: ${listStr}.`
+    },
+
+    onCreateAppointment: async (params) => {
+      const { clientName, serviceName, date, time, phone, notes } = params
+      const effectiveDate = date || new Date().toISOString().split('T')[0]
+      const effectiveTime = time || '11:00'
+
+      const matchedService = serviceName
+        ? services.find((s) => s.name.toLowerCase().includes(serviceName.toLowerCase()))
+        : services[0]
+
+      const serviceToUse = matchedService || services[0] || {
+        id: 'serv-default',
+        name: serviceName || 'Servicio de Pestañas',
+        priceNumber: 50,
+      }
+
+      const newApt: Appointment = {
+        id: `apt-${Date.now()}`,
+        clientName: clientName,
+        clientPhone: phone || '600000000',
+        date: effectiveDate,
+        time: effectiveTime,
+        durationMinutes: 90,
+        serviceId: serviceToUse.id,
+        serviceName: serviceToUse.name,
+        price: serviceToUse.priceNumber || 50,
+        status: 'confirmada',
+        paymentStatus: 'pendiente',
+        notes: notes || 'Agendada por asistente de voz',
+        createdAt: new Date().toISOString(),
+      }
+
+      handleSaveAppointment(newApt)
+      return `Cita agendada para ${clientName} el ${effectiveDate} a las ${effectiveTime} para ${serviceToUse.name}.`
+    },
+
+    onUpdateAppointment: async (params) => {
+      const { clientName, appointmentId, status, paymentStatus } = params
+      const targetApt = appointments.find(
+        (a) =>
+          (appointmentId && a.id === appointmentId) ||
+          (clientName && a.clientName.toLowerCase().includes(clientName.toLowerCase()))
+      )
+
+      if (!targetApt) {
+        return `No encontré ninguna cita registrada para ${clientName || appointmentId}.`
+      }
+
+      const updatedApt: Appointment = {
+        ...targetApt,
+        status: (status as AppointmentStatus) || targetApt.status,
+        paymentStatus: (paymentStatus as PaymentStatus) || targetApt.paymentStatus,
+      }
+
+      handleSaveAppointment(updatedApt)
+      return `Cita de ${targetApt.clientName} actualizada correctamente.`
+    },
+
+    onSearchClient: async (query: string) => {
+      const q = query.toLowerCase().trim()
+      const found = clients.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q)
+      )
+
+      handleSelectTab('clients')
+
+      if (found.length === 0) {
+        return `No encontré clientas que coincidan con "${query}".`
+      }
+
+      const c = found[0]
+      return `Encontré a ${c.name}, teléfono ${c.phone}, ha venido ${c.totalVisits} veces. Notas: ${c.allergies || c.notes || 'sin notas especiales'}.`
+    },
+
+    onQueryFinance: async (period?: string) => {
+      const now = new Date()
+      let filteredApts = appointments.filter(
+        (a) => a.paymentStatus === 'pagado' || a.status === 'completada'
+      )
+
+      if (period === 'today' || period === 'hoy') {
+        const todayStr = now.toISOString().split('T')[0]
+        filteredApts = filteredApts.filter((a) => a.date === todayStr)
+      } else if (period === 'this_month' || period === 'este_mes') {
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+        filteredApts = filteredApts.filter((a) => a.date.startsWith(currentMonth))
+      }
+
+      const totalRevenue = filteredApts.reduce((sum, a) => sum + (a.price || 0), 0)
+      return `El total registrado para este período es de ${totalRevenue.toFixed(2)} euros en ${filteredApts.length} citas.`
+    },
+
+    onOpenModal: (modal: string) => {
+      if (modal === 'new_appointment') setIsAptModalOpen(true)
+      else if (modal === 'new_service') setIsServiceModalOpen(true)
+      else if (modal === 'new_client') setIsClientModalOpen(true)
+      else if (modal === 'new_invoice') setIsBillingModalOpen(true)
+      else if (modal === 'gallery') setIsGalleryModalOpen(true)
+    },
+
+    getStudioContext: () => {
+      const serviceNames = services.map((s) => s.name).join(', ')
+      return `Servicios disponibles en el estudio: ${serviceNames}. Total de citas: ${appointments.length}. Clientas registradas: ${clients.length}.`
+    },
+  }
+
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-[#0a0a0d] text-gray-200">
       {/* Custom App TitleBar */}
       <TitleBar />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* Sidebar - con drag & drop reordenable, botón dentro del aside en esquina inferior derecha */}
         <Sidebar
           activeTab={activeTab}
           onSelectTab={handleSelectTab}
           pendingAppointmentsCount={unseenCount}
           clientsRecallCount={recallCount}
+          isReorderMode={isReorderMode}
+          sidebarOrder={sidebarOrder}
+          onReorder={handleReorderSidebar}
+          onToggleReorder={() => setIsReorderMode((v) => !v)}
+          onResetOrder={handleResetSidebarOrder}
         />
 
         {/* Main Content Area */}
@@ -850,7 +1067,7 @@ export const App: React.FC = () => {
 
         {/* Real-Time Sync Notification Pill */}
         {syncToast && (
-          <div className="fixed bottom-6 right-6 z-50 transition-all duration-300">
+          <div className="fixed bottom-22 right-6 z-40 transition-all duration-300">
             <div
               className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border text-xs font-semibold ${
                 syncToast.status === 'synced'
@@ -872,6 +1089,16 @@ export const App: React.FC = () => {
               <span>{syncToast.message}</span>
             </div>
           </div>
+        )}
+
+        {/* AI Voice Assistant Widget (Gemini Flash + Web Speech) */}
+        {(config.voiceAssistantEnabled ?? true) && (
+          <VoiceAssistantWidget
+            apiKey={config.geminiApiKey}
+            voiceAutoSpeak={config.voiceAutoSpeak ?? true}
+            handlers={voiceHandlers}
+            onOpenSettings={() => handleSelectTab('settings')}
+          />
         )}
       </div>
       </div>

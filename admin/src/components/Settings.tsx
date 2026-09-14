@@ -11,8 +11,14 @@ import {
   IconSparkles,
   IconAlertCircle,
   IconRefreshCw,
+  IconMic,
+  IconVolume2,
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
+import {
+  processVoiceWithGemini,
+  announceNewAppointmentVoice,
+} from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
 import { useUpdaterContext } from '../context/UpdaterContext'
@@ -155,6 +161,82 @@ export const Settings: React.FC<SettingsProps> = ({
       })
     } finally {
       setIsSendingTest(false)
+    }
+  }
+
+  // Gemini Assistant Live Test State
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [isTestingGemini, setIsTestingGemini] = useState(false)
+  const [geminiTestResult, setGeminiTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  const handleTestGemini = async () => {
+    const key = formData.geminiApiKey?.trim() || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
+    if (!key) {
+      showAlert({
+        title: 'Clave API requerida',
+        message: 'Por favor ingresa tu API Key gratuita de Gemini para verificar la conexión.',
+        type: 'warning',
+      })
+      return
+    }
+    setIsTestingGemini(true)
+    setGeminiTestResult(null)
+    try {
+      const response = await processVoiceWithGemini(
+        { textQuery: 'Confirma en una frase breve y elegante que la conexión con el Asistente de GoldBlack Lash está funcionando.' },
+        key,
+        {
+          onNavigateTab: () => {},
+          onQueryAgenda: async () => '',
+          onCreateAppointment: async () => '',
+          onUpdateAppointment: async () => '',
+          onSearchClient: async () => '',
+          onQueryFinance: async () => '',
+          onOpenModal: () => {},
+        }
+      )
+      setGeminiTestResult({
+        success: true,
+        message: `✓ Conexión con Gemini Flash exitosa: "${response.spokenText}"`,
+      })
+      showAlert({
+        title: 'Conexión Exitosa con Gemini',
+        message: '¡Gemini Flash respondió a la perfección! El control por voz está listo para usar.',
+        type: 'success',
+      })
+    } catch (err: any) {
+      setGeminiTestResult({
+        success: false,
+        message: `❌ Error al conectar con Gemini: ${err.message || 'Verifica tu API Key'}`,
+      })
+      showAlert({
+        title: 'Error de Conexión',
+        message: `No se pudo conectar con Gemini: ${err.message || 'Verifica que la clave sea válida.'}`,
+        type: 'error',
+      })
+    } finally {
+      setIsTestingGemini(false)
+    }
+  }
+
+  // Live Test of Female Voice Announcement
+  const [isPlayingSampleAnnouncement, setIsPlayingSampleAnnouncement] = useState(false)
+
+  const handleTestAnnouncement = async () => {
+    setIsPlayingSampleAnnouncement(true)
+    try {
+      await announceNewAppointmentVoice(
+        {
+          clientName: 'Elena Morales',
+          serviceName: 'Volumen Ruso',
+          clientPhone: '612345678',
+          date: new Date().toISOString().split('T')[0],
+          time: '17:00',
+        },
+        formData.geminiApiKey
+      )
+    } finally {
+      setIsPlayingSampleAnnouncement(false)
     }
   }
 
@@ -691,6 +773,180 @@ export const Settings: React.FC<SettingsProps> = ({
                 <span>{testResult.message}</span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Gemini Flash Voice Assistant Configuration (0€ / 1500 per day) */}
+        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+                <IconMic size={22} />
+              </div>
+              <div>
+                <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
+                  <span>Asistente de Voz con IA (Gemini Flash + Web Speech)</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                    0 € • 1.500/día
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Controla la aplicación por voz con manos libres en Mac o Web (crear citas, consultar agenda, ver ingresos, etc.).
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle voice assistant enabled */}
+            <button
+              type="button"
+              onClick={() =>
+                setFormData({
+                  ...formData,
+                  voiceAssistantEnabled: !(formData.voiceAssistantEnabled ?? true),
+                })
+              }
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                (formData.voiceAssistantEnabled ?? true)
+                  ? 'bg-amber-950/50 border-amber-500/40 text-amber-300 shadow-[0_0_12px_rgba(212,175,55,0.15)]'
+                  : 'bg-zinc-900 border-zinc-800 text-zinc-400'
+              }`}
+            >
+              <span>{(formData.voiceAssistantEnabled ?? true) ? '✓ Asistente Activado' : 'Desactivado'}</span>
+            </button>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-3 text-xs text-gray-400">
+            <div className="flex items-center gap-2 text-amber-400 font-semibold">
+              <IconSparkles size={16} />
+              <span>¿Cómo obtener tu clave gratuita de Google AI Studio en 1 minuto?</span>
+            </div>
+            <ol className="list-decimal list-inside space-y-1 text-gray-300 pl-1">
+              <li>
+                Entra gratis en{' '}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-400 underline font-medium"
+                >
+                  aistudio.google.com/app/apikey
+                </a>{' '}
+                con tu cuenta de Google.
+              </li>
+              <li>
+                Haz clic en <strong className="text-white">Create API Key</strong> y cópiala.
+              </li>
+              <li>
+                Pégala a continuación. Disfrutarás de <strong className="text-white">1.500 peticiones diarias gratis para siempre</strong>.
+              </li>
+            </ol>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                Clave de API de Google Gemini (Gemini 2.0 / 1.5 Flash)
+              </label>
+              <div className="relative">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  placeholder="Pega tu clave AIzaSy..."
+                  value={formData.geminiApiKey || ''}
+                  onChange={(e) => setFormData({ ...formData, geminiApiKey: e.target.value.trim() })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 pr-20 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-2.5 text-xs text-amber-400/80 hover:text-amber-300 cursor-pointer select-none"
+                >
+                  {showApiKey ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">
+                También puedes definir la variable de entorno <code className="text-amber-400 font-mono">VITE_GEMINI_API_KEY</code> en tu archivo <code className="text-gray-400">.env</code>.
+              </p>
+            </div>
+
+            {/* Checkbox for Voice Auto Speak (Text to speech) */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+              <input
+                type="checkbox"
+                id="voiceAutoSpeak"
+                checked={formData.voiceAutoSpeak ?? true}
+                onChange={(e) => setFormData({ ...formData, voiceAutoSpeak: e.target.checked })}
+                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+              />
+              <label htmlFor="voiceAutoSpeak" className="text-xs text-gray-300 cursor-pointer flex-1">
+                <span className="font-semibold text-white">Respuesta hablada por voz (Text-To-Speech)</span> — La app te confirmará las acciones hablándote con las voces nativas en español de tu Mac / ordenador.
+              </label>
+            </div>
+
+            {/* Checkbox for Announcing New Web Appointments with female voice */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+              <input
+                type="checkbox"
+                id="voiceAnnounceNewAppointments"
+                checked={formData.voiceAnnounceNewAppointments ?? true}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    voiceAnnounceNewAppointments: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+              />
+              <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
+                <span className="font-semibold text-white">Anunciar reservas web en tiempo real con voz femenina</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la IA avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
+              </label>
+            </div>
+
+            {/* Live Test Buttons */}
+            <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-300">
+                  <span className="font-semibold text-white">Comprobar conexión con Gemini Flash</span>
+                  <p className="text-[11px] text-gray-500">Envía un mensaje de prueba para verificar que tu clave de Google AI Studio es válida.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestGemini}
+                  disabled={isTestingGemini}
+                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 disabled:opacity-50 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)] shrink-0"
+                >
+                  <IconSparkles size={14} />
+                  <span>{isTestingGemini ? 'Conectando...' : 'Probar Conexión con Gemini'}</span>
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-300">
+                  <span className="font-semibold text-white">Probar Anuncio de Nueva Reserva (Voz Femenina)</span>
+                  <p className="text-[11px] text-gray-500">Escucha cómo la IA anunciará una reserva web con nombre, servicio y teléfono.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestAnnouncement}
+                  disabled={isPlayingSampleAnnouncement}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#1f1f2e] hover:bg-[#28283d] border border-amber-500/30 text-amber-300 font-medium text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                >
+                  <IconVolume2 size={14} />
+                  <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : '🔊 Escuchar Anuncio de Prueba'}</span>
+                </button>
+              </div>
+
+              {geminiTestResult && (
+                <div
+                  className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                    geminiTestResult.success
+                      ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
+                      : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
+                  }`}
+                >
+                  <span>{geminiTestResult.message}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

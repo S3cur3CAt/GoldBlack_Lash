@@ -296,16 +296,54 @@
           <div id="selectedInstallerInfo" class="text-[10.5px] text-gray-500 font-mono truncate"></div>
         </div>
 
-        <!-- Build Terminal Output Drawer -->
-        <div id="buildOutputContainer" class="hidden rounded-xl bg-[#09090e] border border-[#202030] p-3 space-y-1 font-mono text-[10px]">
-          <div class="flex items-center justify-between text-gray-400 border-b border-[#1c1c28] pb-1">
-            <span class="flex items-center gap-1.5 text-gold-300 font-bold">
-              <span class="inline-block w-2 h-2 rounded-full bg-gold-400 animate-ping"></span>
-              Terminal de Compilación (Windows NSIS + macOS Monterey)
-            </span>
-            <span id="buildStatusBadge" class="text-[9.5px] text-gray-500">En progreso</span>
+        <!-- Modern Build Terminal — Warp / iTerm inspired -->
+        <div id="buildOutputContainer" class="hidden rounded-2xl overflow-hidden bg-[#050508] border border-[#1e1e2e] shadow-2xl shadow-black/60">
+          <!-- Terminal chrome header -->
+          <div class="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-[#0e0e16] via-[#141420] to-[#0e0e16] border-b border-[#1e1e2e]">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e] shadow-inner"></span>
+                <span class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123] shadow-inner"></span>
+                <span class="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29] shadow-inner"></span>
+              </div>
+              <span class="hidden sm:flex items-center gap-1.5 ml-2 text-[11px] font-semibold text-gray-300 tracking-wide">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8l4 4-4 4"/><path d="M12 16h6"/></svg>
+                zsh — GoldBlack Builder
+              </span>
+              <span id="buildStatusBadge" class="ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                Compilando
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button id="btnCopyBuildLog" title="Copiar log al portapapeles" class="w-7 h-7 rounded-lg bg-[#1a1a28] hover:bg-[#252538] border border-[#2a2a3d] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v3"/></svg>
+              </button>
+              <button id="btnClearBuildLog" title="Limpiar terminal" class="w-7 h-7 rounded-lg bg-[#1a1a28] hover:bg-[#252538] border border-[#2a2a3d] text-gray-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+              <button id="btnCloseBuildTerminal" title="Cerrar terminal" class="w-7 h-7 rounded-lg bg-[#1a1a28] hover:bg-red-950/60 hover:border-red-500/30 border border-[#2a2a3d] text-gray-400 hover:text-red-300 flex items-center justify-center transition-all cursor-pointer active:scale-95">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
           </div>
-          <pre id="buildLogText" class="max-h-32 overflow-y-auto text-gray-300 whitespace-pre-wrap leading-tight pt-1"></pre>
+          <!-- Terminal body with subtle grid + glow -->
+          <div class="relative bg-[#06060a]">
+            <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(212,175,55,0.06),transparent_60%)] pointer-events-none"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,_rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,_rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30 pointer-events-none"></div>
+            <pre id="buildLogText" class="relative max-h-[260px] min-h-[140px] overflow-y-auto p-3.5 pr-3 text-[11px] leading-[1.7] text-[#d4d4d8] whitespace-pre-wrap break-words font-mono selection:bg-gold-500/30 selection:text-white" style="font-family: 'JetBrains Mono','SF Mono','Cascadia Code',ui-monospace,monospace; scrollbar-width: thin; scrollbar-color: #2a2a3d #06060a;"></pre>
+            <!-- Footer status bar -->
+            <div class="flex items-center gap-2.5 px-3.5 py-2 border-t border-[#11111a] bg-[#08080c] text-[10px] font-mono">
+              <span class="flex items-center gap-1.5 text-gray-500">
+                <span class="w-2 h-3 bg-gold-400/60 inline-block animate-pulse"></span>
+                <span id="buildTerminalFooter" class="text-gray-500">zsh • UTF-8 • LF</span>
+              </span>
+              <span class="ml-auto flex items-center gap-2 text-gray-600">
+                <span class="hidden sm:inline">GoldBlack Publisher</span>
+                <span class="px-1.5 py-0.5 rounded bg-[#141420] border border-[#1e1e2e] text-[9px] text-gray-500">ESC to close</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

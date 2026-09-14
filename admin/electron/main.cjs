@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, Notification } = require('electron')
+const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
@@ -83,6 +83,17 @@ function createWindow() {
 
   // Initialize auto-updater IPC
   setupUpdaterIPC(mainWindow)
+
+  // Handle media/microphone permissions automatically for Voice Assistant
+  if (mainWindow.webContents.session && mainWindow.webContents.session.setPermissionRequestHandler) {
+    mainWindow.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
+      if (permission === 'media' || permission === 'microphone') {
+        callback(true)
+      } else {
+        callback(true)
+      }
+    })
+  }
 
   // Open external links (like email mailto, Instagram, Maps) in user's default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -244,6 +255,19 @@ ipcMain.on('notification:appointment', (_event, data) => {
 })
 
 app.whenReady().then(() => {
+  // Proactively check/request microphone access on macOS Monterey & above
+  if (process.platform === 'darwin' && systemPreferences && systemPreferences.askForMediaAccess) {
+    try {
+      systemPreferences.askForMediaAccess('microphone').then((granted) => {
+        console.log('[macOS Media Access] Micrófono autorizado:', granted)
+      }).catch((err) => {
+        console.warn('[macOS Media Access Warning]', err?.message || err)
+      })
+    } catch (e) {
+      console.warn('[macOS Media Access Error]', e?.message || e)
+    }
+  }
+
   createWindow()
 
   app.on('activate', () => {

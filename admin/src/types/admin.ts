@@ -75,6 +75,10 @@ export interface StudioConfig {
   alertEmail?: string
   maintenanceMode?: boolean
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
+  geminiApiKey?: string
+  voiceAssistantEnabled?: boolean
+  voiceAutoSpeak?: boolean
+  voiceAnnounceNewAppointments?: boolean
 }
 
 export interface GalleryItem {

@@ -12,17 +12,33 @@ import {
   IconCheck,
   IconX,
   IconReceipt,
+  IconGripVertical,
 } from './Icons'
 import { CURRENT_APP_VERSION, formatBytes } from '../services/updater'
 import { useUpdaterContext } from '../context/UpdaterContext'
 
 export type TabId = 'dashboard' | 'appointments' | 'services' | 'clients' | 'gallery' | 'billing' | 'settings'
 
+export const DEFAULT_SIDEBAR_ORDER: TabId[] = [
+  'dashboard',
+  'appointments',
+  'services',
+  'clients',
+  'gallery',
+  'billing',
+  'settings',
+]
+
 interface SidebarProps {
   activeTab: TabId
   onSelectTab: (tab: TabId) => void
   pendingAppointmentsCount: number
   clientsRecallCount: number
+  isReorderMode?: boolean
+  sidebarOrder?: TabId[]
+  onReorder?: (newOrder: TabId[]) => void
+  onToggleReorder?: () => void
+  onResetOrder?: () => void
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -30,6 +46,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTab,
   pendingAppointmentsCount,
   clientsRecallCount,
+  isReorderMode = false,
+  sidebarOrder,
+  onReorder,
+  onToggleReorder,
+  onResetOrder,
 }) => {
   const {
     status,
@@ -42,7 +63,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     applyAndRestart,
     dismiss,
   } = useUpdaterContext()
-  const menuItems = [
+
+  const [draggedId, setDraggedId] = React.useState<TabId | null>(null)
+  const [dragOverId, setDragOverId] = React.useState<TabId | null>(null)
+
+  const baseMenuItems = [
     {
       id: 'dashboard' as TabId,
       label: 'Panel Principal',
@@ -91,8 +116,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ]
 
+  // Ordenar según sidebarOrder si se proporciona; fallback a orden por defecto
+  const orderedMenuItems = React.useMemo(() => {
+    if (!sidebarOrder || sidebarOrder.length === 0) return baseMenuItems
+    const orderMap = new Map<TabId, number>()
+    sidebarOrder.forEach((id, idx) => orderMap.set(id, idx))
+    return [...baseMenuItems].sort((a, b) => {
+      const aIdx = orderMap.has(a.id) ? orderMap.get(a.id)! : 999
+      const bIdx = orderMap.has(b.id) ? orderMap.get(b.id)! : 999
+      return aIdx - bIdx
+    })
+  }, [baseMenuItems, sidebarOrder, pendingAppointmentsCount, clientsRecallCount])
+
+  const handleDragStart = (e: React.DragEvent, id: TabId) => {
+    setDraggedId(id)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', id)
+    // Ghost image nativo del navegador es suficiente
+  }
+
+  const handleDragOver = (e: React.DragEvent, id: TabId) => {
+    e.preventDefault()
+    if (draggedId && draggedId !== id) {
+      setDragOverId(id)
+    }
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDragLeave = () => {
+    setDragOverId(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, targetId: TabId) => {
+    e.preventDefault()
+    setDragOverId(null)
+    if (!draggedId || draggedId === targetId || !onReorder) return
+    const orderedIds = orderedMenuItems.map((i) => i.id)
+    const fromIndex = orderedIds.indexOf(draggedId)
+    const toIndex = orderedIds.indexOf(targetId)
+    if (fromIndex === -1 || toIndex === -1) return
+    const newIds = [...orderedIds]
+    const [moved] = newIds.splice(fromIndex, 1)
+    newIds.splice(toIndex, 0, moved)
+    onReorder(newIds)
+    setDraggedId(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedId(null)
+    setDragOverId(null)
+  }
+
   return (
-    <aside className="w-72 bg-[#0c0c10] border-r border-[#22222d] flex flex-col h-full shrink-0 select-none overflow-hidden">
+    <aside className="w-72 bg-[#0c0c10] border-r border-[#22222d] flex flex-col h-full shrink-0 select-none overflow-hidden relative">
       {/* Brand Header */}
       <div className="p-4 px-5 border-b border-[#1c1c26] shrink-0">
         <div className="flex items-center gap-3">
@@ -126,21 +202,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* Hint cuando está en modo reordenar */}
+      {isReorderMode && (
+        <div className="mx-2.5 mt-2.5 px-3 py-2 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center gap-2 shrink-0">
+          <IconGripVertical size={14} className="text-gold-400 shrink-0" />
+          <p className="text-[11px] font-medium text-gold-300 leading-tight">
+            Arrastra los botones para reordenar
+          </p>
+        </div>
+      )}
+
       {/* Flexible & Scrollable Navigation Menu */}
       <nav className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-2.5 space-y-1">
-        {menuItems.map((item) => {
+        {orderedMenuItems.map((item) => {
           const isActive = activeTab === item.id
           const Icon = item.icon
+          const isDragged = draggedId === item.id
+          const isDragOver = dragOverId === item.id
           return (
             <button
               key={item.id}
-              onClick={() => onSelectTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer ${
+              draggable={isReorderMode}
+              onDragStart={(e) => isReorderMode && handleDragStart(e, item.id)}
+              onDragOver={(e) => isReorderMode && handleDragOver(e, item.id)}
+              onDragLeave={() => { if (isReorderMode) handleDragLeave() }}
+              onDrop={(e) => isReorderMode && handleDrop(e, item.id)}
+              onDragEnd={() => { if (isReorderMode) handleDragEnd() }}
+              onClick={() => {
+                // Evita navegar si se estaba arrastrando (pequeño threshold)
+                if (isReorderMode && draggedId) return
+                onSelectTab(item.id)
+              }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer relative ${
                 isActive
                   ? 'bg-gradient-to-r from-gold-500/15 via-gold-500/8 to-transparent text-white border-l-4 border-gold-400 shadow-sm'
                   : 'bg-transparent text-gray-400 hover:text-gray-200 hover:bg-[#14141c]'
-              }`}
+              } ${
+                isReorderMode ? 'cursor-grab active:cursor-grabbing border border-dashed ' + (isDragOver ? 'border-gold-400/60 bg-gold-500/10 -translate-y-[1px] shadow-md' : 'border-transparent') : ''
+              } ${isDragged ? 'opacity-40 scale-[0.98]' : 'opacity-100'}`}
             >
+              {/* Handle visible solo en modo reordenar */}
+              {isReorderMode && (
+                <span
+                  className="shrink-0 -ml-1 p-1 rounded-md hover:bg-[#1e1e2c] text-gray-500 hover:text-gold-300 transition-colors cursor-grab active:cursor-grabbing"
+                  aria-hidden
+                  title="Arrastra para mover"
+                >
+                  <IconGripVertical size={14} />
+                </span>
+              )}
               <div
                 className={`p-1.5 rounded-lg transition-colors shrink-0 ${
                   isActive
@@ -283,6 +393,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Botón esquina inferior derecha DENTRO del aside para activar reordenamiento drag & drop */}
+      {onToggleReorder && (
+        <div className="absolute bottom-11 right-3 z-20 flex items-center gap-1.5">
+          {isReorderMode && onResetOrder && (
+            <button
+              type="button"
+              onClick={onResetOrder}
+              title="Restaurar orden original del menú"
+              className="px-2.5 py-2 rounded-xl bg-[#1a1a24]/95 backdrop-blur-md border border-[#2b2b3d] text-gray-400 hover:text-white hover:bg-[#232332] hover:border-gray-600 text-[10px] font-semibold shadow-lg transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              Restablecer
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onToggleReorder}
+            title={isReorderMode ? 'Guardar y salir del modo reordenar' : 'Reordenar botones del panel - arrastrar para ordenar a tu gusto'}
+            className={`px-3.5 py-2 rounded-xl font-bold text-[11px] shadow-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 border ${
+              isReorderMode
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black border-emerald-400/50 hover:from-emerald-400 hover:to-teal-300 shadow-emerald-500/20'
+                : 'bg-gradient-to-r from-gold-500 to-gold-400 text-black border-gold-400/50 hover:from-gold-400 hover:to-gold-300 shadow-gold-500/20'
+            }`}
+          >
+            {isReorderMode ? (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                Listo
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                Reordenar menú
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </aside>
   )
 }
