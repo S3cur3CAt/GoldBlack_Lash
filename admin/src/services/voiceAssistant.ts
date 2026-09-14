@@ -16,6 +16,8 @@ export interface VoiceAssistantResponse {
   spokenText: string
   toolCall?: VoiceToolCall
   transcript?: string
+  isWakeGreetingOnly?: boolean
+  ignored?: boolean
 }
 
 export interface VoiceActionHandlers {
@@ -195,104 +197,66 @@ const GEMINI_TOOLS = [
 export interface AudioRecorderOptions {
   onSilence?: () => void
   onTimeout?: () => void
+  onWake?: () => void
   silenceMs?: number
   speechThreshold?: number
+  standbyThreshold?: number
   maxWaitSpeechMs?: number
   onVolumeChange?: (volume: number) => void
 }
 
 /**
- * Audio Recorder with real-time Voice Activity Detection (VAD)
- * Automatically detects when user stops speaking to confirm and execute hands-free!
+ * Audio Recorder with Standby Hands-Free Voice Detection and real-time VAD
+ * - Standby mode: Listens in background, keeps rolling pre-roll buffer, detects "Oye Mónica"
+ * - Recording mode: Captures command, animates soundwaves, and auto-executes on silence (0 clicks)
  */
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null
   private audioChunks: Blob[] = []
+  private headerChunk: Blob | null = null
+  private preRollChunks: Blob[] = []
   private stream: MediaStream | null = null
   private audioContext: AudioContext | null = null
   private analyser: AnalyserNode | null = null
   private animFrameId: number | null = null
   private silenceTimer: any = null
+  private isStandby = false
+  private isRecording = false
   private hasSpoken = false
+  private options: AudioRecorderOptions = {}
+  private consecutiveSpeechFrames = 0
+  private recordingStartTime = 0
 
-  async start(options?: AudioRecorderOptions): Promise<void> {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('Tu entorno o navegador no soporta grabación de audio.')
-    }
-
-    this.audioChunks = []
-    this.hasSpoken = false
-
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    })
-
-    // Setup real-time VAD (Voice Activity Detection) with Web Audio API
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
-      if (AudioCtx) {
-        this.audioContext = new AudioCtx()
-        if (this.audioContext.state === 'suspended') {
-          await this.audioContext.resume()
-        }
-        const source = this.audioContext.createMediaStreamSource(this.stream)
-        this.analyser = this.audioContext.createAnalyser()
-        this.analyser.fftSize = 256
-        source.connect(this.analyser)
-
-        const silenceMs = options?.silenceMs ?? 1200
-        const speechThreshold = options?.speechThreshold ?? 0.038
-        const maxWaitSpeechMs = options?.maxWaitSpeechMs ?? 7000
-        const startTime = Date.now()
-
-        const checkAudioLevels = () => {
-          if (!this.analyser) return
-          const dataArray = new Uint8Array(this.analyser.frequencyBinCount)
-          this.analyser.getByteFrequencyData(dataArray)
-
-          let sum = 0
-          for (let i = 0; i < dataArray.length; i++) {
-            sum += dataArray[i]
-          }
-          const avg = sum / dataArray.length
-          const normalizedVol = Math.min(avg / 100, 1.0)
-          options?.onVolumeChange?.(normalizedVol)
-
-          if (normalizedVol > speechThreshold) {
-            this.hasSpoken = true
-            if (this.silenceTimer) {
-              clearTimeout(this.silenceTimer)
-              this.silenceTimer = null
-            }
-          } else if (this.hasSpoken) {
-            // User was speaking, now silence is observed
-            if (!this.silenceTimer && options?.onSilence) {
-              this.silenceTimer = setTimeout(() => {
-                this.stopVAD()
-                options.onSilence?.()
-              }, silenceMs)
-            }
-          } else if (Date.now() - startTime > maxWaitSpeechMs) {
-            // No speech detected after timeout
-            this.stopVAD()
-            options?.onTimeout?.()
-            return
-          }
-
-          this.animFrameId = requestAnimationFrame(checkAudioLevels)
-        }
-
-        this.animFrameId = requestAnimationFrame(checkAudioLevels)
+  private async initStreamAndAnalyser(): Promise<void> {
+    if (!this.stream || !this.stream.active) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Tu entorno o navegador no soporta captura de audio.')
       }
-    } catch (e) {
-      console.warn('[VAD Init Warning]', e)
+
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
     }
 
-    // Determine supported mime type
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (AudioCtx && (!this.audioContext || this.audioContext.state === 'closed')) {
+      this.audioContext = new AudioCtx()
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume()
+      }
+      const source = this.audioContext.createMediaStreamSource(this.stream)
+      this.analyser = this.audioContext.createAnalyser()
+      this.analyser.fftSize = 256
+      source.connect(this.analyser)
+    }
+  }
+
+  private startMediaRecorder(): void {
+    if (!this.stream) return
     let mimeType = 'audio/webm'
     if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
       mimeType = 'audio/webm;codecs=opus'
@@ -305,11 +269,146 @@ export class AudioRecorder {
     this.mediaRecorder = new MediaRecorder(this.stream, { mimeType })
     this.mediaRecorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) {
-        this.audioChunks.push(event.data)
+        if (!this.headerChunk) {
+          this.headerChunk = event.data
+        } else if (this.isStandby) {
+          this.preRollChunks.push(event.data)
+          // Keep last 10 slices (~1000ms of rolling pre-roll)
+          if (this.preRollChunks.length > 10) {
+            this.preRollChunks.shift()
+          }
+        } else {
+          this.audioChunks.push(event.data)
+        }
       }
     }
 
     this.mediaRecorder.start(100)
+  }
+
+  /**
+   * Starts background standby listening.
+   * Keeps mic open and continuously analyzes volume.
+   * When speech is detected, automatically invokes onWake() and transitions to recording!
+   */
+  async startStandby(options?: AudioRecorderOptions): Promise<void> {
+    this.cancel()
+    this.options = options || {}
+    this.isStandby = true
+    this.isRecording = false
+    this.hasSpoken = false
+    this.audioChunks = []
+    this.headerChunk = null
+    this.preRollChunks = []
+    this.consecutiveSpeechFrames = 0
+
+    await this.initStreamAndAnalyser()
+    this.startMediaRecorder()
+    this.runLevelLoop()
+  }
+
+  /**
+   * Starts direct recording immediately (e.g. on manual mic click or follow-up question)
+   */
+  async start(options?: AudioRecorderOptions): Promise<void> {
+    this.options = options || {}
+    this.isStandby = false
+    this.isRecording = true
+    this.hasSpoken = false
+    this.recordingStartTime = Date.now()
+    this.audioChunks = []
+    this.preRollChunks = []
+
+    if (!this.stream || !this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+      await this.initStreamAndAnalyser()
+      this.startMediaRecorder()
+    } else {
+      if (this.headerChunk) {
+        this.audioChunks.push(this.headerChunk)
+      }
+    }
+
+    this.runLevelLoop()
+  }
+
+  private runLevelLoop(): void {
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId)
+      this.animFrameId = null
+    }
+
+    const checkLevels = () => {
+      if (!this.analyser) return
+
+      const dataArray = new Uint8Array(this.analyser.frequencyBinCount)
+      this.analyser.getByteFrequencyData(dataArray)
+
+      let sum = 0
+      for (let i = 0; i < dataArray.length; i++) {
+        sum += dataArray[i]
+      }
+      const avg = sum / dataArray.length
+      const normalizedVol = Math.min(avg / 100, 1.0)
+
+      if (this.isStandby) {
+        const standbyThreshold = this.options.standbyThreshold ?? 0.042
+        if (normalizedVol > standbyThreshold) {
+          this.consecutiveSpeechFrames++
+          if (this.consecutiveSpeechFrames >= 2) {
+            // SPEECH DETECTED IN BACKGROUND!
+            this.isStandby = false
+            this.isRecording = true
+            this.hasSpoken = true
+            this.recordingStartTime = Date.now()
+            this.consecutiveSpeechFrames = 0
+
+            // Prepend pre-roll chunks so initial words ("Oye Mónica...") are fully preserved!
+            this.audioChunks = []
+            if (this.headerChunk) {
+              this.audioChunks.push(this.headerChunk)
+            }
+            this.audioChunks.push(...this.preRollChunks)
+            this.preRollChunks = []
+
+            playWakeChime()
+            this.options.onWake?.()
+          }
+        } else {
+          this.consecutiveSpeechFrames = Math.max(0, this.consecutiveSpeechFrames - 1)
+        }
+      } else if (this.isRecording) {
+        this.options.onVolumeChange?.(normalizedVol)
+
+        const speechThreshold = this.options.speechThreshold ?? 0.038
+        const silenceMs = this.options.silenceMs ?? 1200
+        const maxWaitSpeechMs = this.options.maxWaitSpeechMs ?? 7000
+
+        if (normalizedVol > speechThreshold) {
+          this.hasSpoken = true
+          if (this.silenceTimer) {
+            clearTimeout(this.silenceTimer)
+            this.silenceTimer = null
+          }
+        } else if (this.hasSpoken) {
+          // Silence detected after speech
+          if (!this.silenceTimer && this.options.onSilence) {
+            this.silenceTimer = setTimeout(() => {
+              this.stopVAD()
+              this.options.onSilence?.()
+            }, silenceMs)
+          }
+        } else if (Date.now() - this.recordingStartTime > maxWaitSpeechMs) {
+          // No speech detected after timeout
+          this.stopVAD()
+          this.options.onTimeout?.()
+          return
+        }
+      }
+
+      this.animFrameId = requestAnimationFrame(checkLevels)
+    }
+
+    this.animFrameId = requestAnimationFrame(checkLevels)
   }
 
   private stopVAD(): void {
@@ -321,17 +420,13 @@ export class AudioRecorder {
       clearTimeout(this.silenceTimer)
       this.silenceTimer = null
     }
-    if (this.audioContext) {
-      try {
-        this.audioContext.close()
-      } catch {}
-      this.audioContext = null
-    }
-    this.analyser = null
   }
 
   async stop(): Promise<{ blob: Blob; mimeType: string; base64: string }> {
     this.stopVAD()
+    this.isStandby = false
+    this.isRecording = false
+
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder) {
         return reject(new Error('No hay una grabación activa'))
@@ -347,7 +442,12 @@ export class AudioRecorder {
             this.stream.getTracks().forEach((track) => track.stop())
             this.stream = null
           }
+          if (this.audioContext) {
+            try { this.audioContext.close() } catch {}
+            this.audioContext = null
+          }
           this.mediaRecorder = null
+          this.analyser = null
 
           const base64 = await this.blobToBase64(blob)
           resolve({ blob, mimeType: mimeType.split(';')[0], base64 })
@@ -364,6 +464,9 @@ export class AudioRecorder {
 
   cancel(): void {
     this.stopVAD()
+    this.isStandby = false
+    this.isRecording = false
+
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try {
         this.mediaRecorder.stop()
@@ -373,8 +476,15 @@ export class AudioRecorder {
       this.stream.getTracks().forEach((track) => track.stop())
       this.stream = null
     }
+    if (this.audioContext) {
+      try { this.audioContext.close() } catch {}
+      this.audioContext = null
+    }
     this.audioChunks = []
+    this.preRollChunks = []
+    this.headerChunk = null
     this.mediaRecorder = null
+    this.analyser = null
   }
 
   private blobToBase64(blob: Blob): Promise<string> {
@@ -777,13 +887,14 @@ export async function processVoiceWithGemini(
 
   const systemInstructionText = `
 Eres Mónica, la asistente de voz inteligente, ejecutiva y personal de GoldBlack Lash Studio (estudio de alta gama de extensiones de pestañas, cejas y belleza en Montequinto, Sevilla).
-Tu nombre oficial es Mónica. Los administradores y artistas del estudio se dirigirán a ti diciendo «Mónica» o pronunciando directamente su orden (por ejemplo: «Mónica, abre la agenda», «Mónica, ¿qué citas tengo hoy?», «Mónica, busca a Carmen», «Mónica, crea una cita para Laura mañana», «Mónica, comprueba si hay actualizaciones», «Mónica, ve a facturación»).
+Tu nombre oficial es Mónica. Los administradores y artistas del estudio se dirigirán a ti diciendo «Mónica», «Oye Mónica» o pronunciando directamente su orden (por ejemplo: «Mónica, abre la agenda», «Mónica, ¿qué citas tengo hoy?», «Mónica, busca a Carmen», «Mónica, crea una cita para Laura mañana», «Mónica, comprueba si hay actualizaciones», «Mónica, ve a facturación»).
 
 IDENTIDAD Y TONO DE MÓNICA:
 - Tu nombre es Mónica y te identificas con orgullo y calidez como tal.
 - Eres elegante, refinada, ejecutiva, servicial y extremadamente eficiente.
-- Si el usuario te saluda o pregunta por ti («Hola Mónica», «Mónica», «¿Mónica estás ahí?», «¿Quién eres?»), saluda cordialmente presentándote como Mónica y preguntando en qué puedes ayudar hoy en el estudio.
-- Si el usuario comienza su orden diciendo «Mónica, ...», interpreta y ejecuta la orden solicitada de inmediato.
+- Si el usuario únicamente te llama o te saluda («Mónica», «Oye Mónica», «Hola Mónica», «Mónica estás ahí») sin dar una orden todavía, responde con extrema brevedad y naturalidad: «Dime, te escucho» o «Aquí estoy, dime».
+- Si el usuario comienza su orden diciendo «Mónica, ...» u «Oye Mónica, ...», interpreta y ejecuta la orden solicitada de inmediato.
+- Si el audio recibido NO contiene ninguna orden para ti ni para la app (por ejemplo, es ruido ambiental, una conversación ajena entre clientas en el salón que no te menciona, una tos o silencio), responde ÚNICAMENTE con la palabra: [IGNORAR].
 
 Fecha actual: ${today} (Año ${currentYear}).
 ${studioContext ? `Contexto del estudio:\n${studioContext}` : ''}
@@ -908,6 +1019,14 @@ REGLAS DE ACTUACIÓN:
 
   spokenText = spokenText.trim()
 
+  // If Gemini determined this audio was background salon noise or unrelated conversation
+  if (spokenText.toUpperCase().includes('[IGNORAR]')) {
+    return {
+      spokenText: '',
+      ignored: true,
+    }
+  }
+
   // Execute tool call if returned
   if (toolCall) {
     try {
@@ -925,9 +1044,17 @@ REGLAS DE ACTUACIÓN:
     spokenText = 'Acción procesada con éxito.'
   }
 
+  // Detect if user solely prompted the wake word/greeting ("Dime, te escucho")
+  const isWakeGreetingOnly =
+    !toolCall &&
+    Boolean(
+      spokenText.match(/(?:te escucho|dime|en qué te puedo ayudar|aquí estoy|a tu disposición)/i)
+    )
+
   return {
     spokenText,
     toolCall,
+    isWakeGreetingOnly,
   }
 }
 

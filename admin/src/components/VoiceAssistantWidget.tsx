@@ -12,7 +12,6 @@ import {
   processVoiceWithGemini,
   speakWithNativeVoice,
   VoiceActionHandlers,
-  WakeWordListener,
 } from '../services/voiceAssistant'
 import { VoiceCommandsModal } from './VoiceCommandsModal'
 
@@ -46,7 +45,6 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   })
 
   const recorderRef = useRef<AudioRecorder | null>(null)
-  const wakeWordListenerRef = useRef<WakeWordListener | null>(null)
   const timerRef = useRef<any>(null)
   const autoCloseTimerRef = useRef<any>(null)
 
@@ -63,40 +61,54 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status, apiKey])
 
-  // Continuous background wake-word listener ("Mónica", "Oye Mónica", "Hola Mónica")
+  // Continuous background hands-free standby listener (100% Local Web Audio API VAD)
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
-      if (wakeWordListenerRef.current) {
-        wakeWordListenerRef.current.stop()
-        wakeWordListenerRef.current = null
+      if (recorderRef.current) {
+        recorderRef.current.cancel()
+        recorderRef.current = null
       }
       return
     }
 
-    // Only listen for the wake-word when idle (not already recording or speaking)
+    // Only engage standby background listening when in idle mode
     if (status === 'idle') {
-      const listener = new WakeWordListener()
-      wakeWordListenerRef.current = listener
+      const recorder = new AudioRecorder()
+      recorderRef.current = recorder
 
-      listener.start(async (commandText) => {
-        console.log('[Mónica Wake-Word Triggered]', commandText)
-        if (commandText && commandText.trim().length > 1) {
-          // User spoke wake word + immediate command together (e.g. "Mónica abre la agenda")
-          await handleExecuteCommandText(commandText.trim())
-        } else {
-          // User said "Mónica" alone: start listening automatically and execute on silence!
-          await startListening()
-        }
-      })
+      recorder
+        .startStandby({
+          standbyThreshold: 0.042,
+          speechThreshold: 0.038,
+          silenceMs: 1200,
+          onWake: () => {
+            console.log('[Mónica] ¡Activada por voz en segundo plano!')
+            setIsExpanded(true)
+            setStatus('recording')
+            setErrorMessage(null)
+            setLastActionText(null)
+          },
+          onVolumeChange: (vol) => {
+            setLiveVolume(vol)
+          },
+          onSilence: () => {
+            console.log('[Mónica] Silencio detectado tras hablar -> Ejecutando automáticamente sin clics...')
+            stopAndProcess()
+          },
+          onTimeout: () => {
+            console.log('[Mónica] Tiempo de espera agotado.')
+            handleCancel()
+          },
+        })
+        .catch((err) => {
+          console.warn('[Standby Mic Start Error]', err)
+        })
 
       return () => {
-        listener.stop()
-        wakeWordListenerRef.current = null
-      }
-    } else {
-      if (wakeWordListenerRef.current) {
-        wakeWordListenerRef.current.stop()
-        wakeWordListenerRef.current = null
+        recorder.cancel()
+        if (recorderRef.current === recorder) {
+          recorderRef.current = null
+        }
       }
     }
   }, [isHandsFree, wakeWordEnabled, status, apiKey])
@@ -140,6 +152,26 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         handlers
       )
 
+      // If Gemini determined this audio was background salon noise or unrelated conversation
+      if (response.ignored) {
+        console.log('[Mónica] Audio ignorado (no dirigido a Mónica ni comando de la app).')
+        setStatus('idle')
+        setIsExpanded(false)
+        return
+      }
+
+      // If user only said "Oye Mónica" without giving a command yet:
+      if (response.isWakeGreetingOnly) {
+        setLastActionText(response.spokenText)
+        setStatus('speaking')
+        if (voiceAutoSpeak && response.spokenText) {
+          await speakWithNativeVoice(response.spokenText)
+        }
+        // Immediately re-open the mic for their command!
+        await startListening()
+        return
+      }
+
       setLastActionText(response.spokenText)
       setStatus('speaking')
 
@@ -148,7 +180,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         await speakWithNativeVoice(response.spokenText)
       }
 
-      // Auto-collapse after 4.5 seconds and return to idle (re-enabling wake word)
+      // Auto-collapse after 4.5 seconds and return to idle standby
       autoCloseTimerRef.current = setTimeout(() => {
         setStatus('idle')
         setIsExpanded(false)
@@ -182,8 +214,11 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     setLiveVolume(0)
 
     try {
-      const recorder = new AudioRecorder()
-      recorderRef.current = recorder
+      let recorder = recorderRef.current
+      if (!recorder) {
+        recorder = new AudioRecorder()
+        recorderRef.current = recorder
+      }
 
       await recorder.start({
         silenceMs: 1200,
@@ -191,11 +226,11 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         onVolumeChange: (vol) => setLiveVolume(vol),
         onSilence: () => {
           // Automatic hands-free confirmation and execution upon silence (0 clicks required)
-          console.log('[VAD] Silencio detectado tras hablar -> Ejecución automática sin clics')
+          console.log('[Mónica] Silencio detectado tras hablar -> Ejecución automática sin clics')
           stopAndProcess()
         },
         onTimeout: () => {
-          console.log('[VAD] Tiempo de espera agotado sin voz detectada.')
+          console.log('[Mónica] Tiempo de espera agotado sin voz detectada.')
           handleCancel()
         },
       })
@@ -210,7 +245,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }
 
-  // Toggle listening
+  // Toggle listening manually
   const toggleListening = async () => {
     if (status === 'recording') {
       await stopAndProcess()
@@ -341,7 +376,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           {/* Body Content by Status */}
           <div className="py-3">
             {status === 'recording' && (
-              <div className="flex flex-col items-center justify-center py-2 space-y-3">
+              <div className="flex flex-col items-center justify-center py-3 space-y-3">
                 {/* Dynamic Real-time Soundwave reacting to live mic volume */}
                 <div className="flex items-center justify-center gap-1.5 h-12">
                   {[0.6, 1.0, 1.4, 0.9, 0.5].map((multiplier, idx) => {
@@ -356,22 +391,15 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                   })}
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-amber-200">Mónica te escucha atentamente...</p>
+                  <p className="text-sm font-semibold text-amber-200">Mónica escuchando tu orden...</p>
                   <p className="text-xs text-amber-400 font-medium mt-0.5 flex items-center justify-center gap-1">
                     <span>⚡</span>
-                    <span>Confirmará y ejecutará automáticamente al callar</span>
+                    <span>Se confirmará y ejecutará automáticamente al callar</span>
                   </p>
                   <p className="text-[11px] text-zinc-400 mt-1">
                     {recordingSeconds}s • Habla normalmente, no tienes que presionar nada
                   </p>
                 </div>
-                <button
-                  onClick={stopAndProcess}
-                  className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)] cursor-pointer"
-                  title="Si prefieres no esperar el silencio automático, puedes pulsar aquí"
-                >
-                  ✓ Confirmar ahora
-                </button>
               </div>
             )}
 
@@ -392,14 +420,6 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 <p className="text-xs text-zinc-200 bg-zinc-900/80 border border-zinc-800 rounded-xl p-2.5 leading-relaxed">
                   {lastActionText}
                 </p>
-                <div className="flex justify-end pt-1">
-                  <button
-                    onClick={startListening}
-                    className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors underline underline-offset-2 cursor-pointer"
-                  >
-                    Dar otra orden
-                  </button>
-                </div>
               </div>
             )}
 
