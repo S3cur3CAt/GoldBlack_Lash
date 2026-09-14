@@ -1,7 +1,7 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
 const https = require('https')
-const { exec, spawn } = require('child_process')
+const { exec, spawn, execSync } = require('child_process')
 const fs = require('fs')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
@@ -262,109 +262,38 @@ let currentListenProcess = null
 let isContinuousListeningActive = false
 let isSpeaking = false
 let listenerRestartTimer = null
-let nativeBinaryPath = null // cached path to compiled binary
 
-// ── Swift Pre-Compilation ──────────────────────────────────────────────────
-// Compile the Swift script into a native binary once, then reuse it.
-// This avoids the 3-5 second compilation delay on every spawn.
-function getOrCompileSwiftBinary() {
-  return new Promise((resolve) => {
-    const userDataDir = app.getPath('userData')
-    const binaryPath = path.join(userDataDir, 'speech-listener')
-    const swiftSrcPath = path.join(userDataDir, 'speech-listener.swift')
-
-    // If we already compiled and cached the path, return it
-    if (nativeBinaryPath && fs.existsSync(nativeBinaryPath)) {
-      resolve(nativeBinaryPath)
-      return
-    }
-
-    // Extract Swift source from app bundle to userData
-    try {
-      const bundleSrc = path.join(__dirname, 'speech-listener.swift')
-      const content = fs.readFileSync(bundleSrc, 'utf8')
-      fs.writeFileSync(swiftSrcPath, content, 'utf8')
-      console.log('[Sofi Compiler] 📄 Swift source extraído a:', swiftSrcPath)
-    } catch (e) {
-      console.error('[Sofi Compiler] ❌ Error extrayendo Swift source:', e?.message)
-      resolve(null)
-      return
-    }
-
-    // Check if binary already exists and is newer than source
-    try {
-      if (fs.existsSync(binaryPath)) {
-        const srcStat = fs.statSync(swiftSrcPath)
-        const binStat = fs.statSync(binaryPath)
-        if (binStat.mtimeMs > srcStat.mtimeMs) {
-          console.log('[Sofi Compiler] ✅ Binario existente y actualizado:', binaryPath)
-          nativeBinaryPath = binaryPath
-          resolve(binaryPath)
-          return
-        }
-        console.log('[Sofi Compiler] ♻️ Source más nuevo que binario, recompilando...')
-      }
-    } catch {}
-
-    // Compile: swiftc -o <binary> <source> -framework Speech -framework AVFoundation
-    console.log('[Sofi Compiler] 🔨 Compilando Swift nativo... (primera vez, ~5-10s)')
-    const compileProc = spawn('/usr/bin/swiftc', [
-      '-o', binaryPath,
-      swiftSrcPath,
-      '-framework', 'Speech',
-      '-framework', 'AVFoundation',
-      '-O'  // optimize for speed
-    ])
-
-    let compileStderr = ''
-    compileProc.stderr.on('data', (data) => {
-      compileStderr += data.toString()
-    })
-
-    compileProc.on('close', (code) => {
-      if (code === 0) {
-        console.log('[Sofi Compiler] ✅ Compilación exitosa:', binaryPath)
-        // Make executable
-        try { fs.chmodSync(binaryPath, 0o755) } catch {}
-        nativeBinaryPath = binaryPath
-        resolve(binaryPath)
-      } else {
-        console.error('[Sofi Compiler] ❌ Error de compilación (code ' + code + '):\n' + compileStderr)
-        // Fallback: try running as interpreted script
-        resolve(null)
-      }
-    })
-
-    compileProc.on('error', (err) => {
-      console.error('[Sofi Compiler] ❌ Error al ejecutar swiftc:', err?.message)
-      resolve(null)
-    })
-  })
+// Forward diagnostic logs to renderer so they show in DevTools console
+function logToRenderer(level, ...args) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')
+  try { mainWindow?.webContents.send('voice:diagnostic', { level, msg }) } catch {}
+  if (level === 'error') console.error(...args)
+  else if (level === 'warn') console.warn(...args)
+  else console.log(...args)
 }
 
-// ── Stdin Command Sender ───────────────────────────────────────────────────
 function sendListenerCommand(cmd) {
   if (!currentListenProcess || currentListenProcess.killed) return false
   try {
     currentListenProcess.stdin.write(cmd + '\n')
     return true
   } catch (e) {
-    console.warn('[Sofi Supervisor] Error escribiendo stdin:', e?.message)
+    logToRenderer('warn', '[Sofi] Error stdin:', e?.message)
     return false
   }
 }
 
 function pauseListener() {
   if (sendListenerCommand('PAUSE')) {
-    console.log('[Sofi Supervisor] ⏸️ Listener pausado (Siri hablando)')
+    logToRenderer('info', '[Sofi] ⏸️ Listener pausado')
   }
 }
 
 function resumeListener() {
   if (sendListenerCommand('RESUME')) {
-    console.log('[Sofi Supervisor] ▶️ Listener reanudado')
+    logToRenderer('info', '[Sofi] ▶️ Listener reanudado')
   } else if (isContinuousListeningActive) {
-    console.log('[Sofi Supervisor] Proceso muerto, relanzando...')
+    logToRenderer('info', '[Sofi] Proceso muerto, relanzando...')
     spawnNativeListener().catch(() => {})
   }
 }
@@ -386,45 +315,195 @@ function stopNativeListener() {
   }
 }
 
-// ── Spawn Native Listener ──────────────────────────────────────────────────
+// ── Sofi Helper App Bundle Configuration & Compilation ─────────────────────
+const SOFI_HELPER_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.goldblacklash.sofilistener</string>
+    <key>CFBundleName</key>
+    <string>SofiListener</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleExecutable</key>
+    <string>SofiListener</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>LSBackgroundOnly</key>
+    <true/>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>GoldBlack Lash requiere reconocimiento de voz nativo de Siri/Apple para el asistente Sofi («Oye Sofi» manos libres).</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>GoldBlack Lash requiere acceso al micrófono para el control por voz del asistente Sofi.</string>
+</dict>
+</plist>
+`
+
+function getNativeAppBundlePaths() {
+  const userDataDir = app.getPath('userData')
+  const appBundleDir = path.join(userDataDir, 'SofiListener.app')
+  const contentsDir = path.join(appBundleDir, 'Contents')
+  const macosDir = path.join(contentsDir, 'MacOS')
+  const binaryPath = path.join(macosDir, 'SofiListener')
+  const infoPlistPath = path.join(contentsDir, 'Info.plist')
+  const swiftSrcPath = path.join(userDataDir, 'speech-listener.swift')
+  return { userDataDir, appBundleDir, contentsDir, macosDir, binaryPath, infoPlistPath, swiftSrcPath }
+}
+
+let nativeBinaryReady = false
+
+async function ensureNativeListenerBinary() {
+  if (process.platform !== 'darwin') {
+    return { supported: false, error: 'not_darwin' }
+  }
+
+  const paths = getNativeAppBundlePaths()
+
+  try {
+    fs.mkdirSync(paths.macosDir, { recursive: true })
+    fs.writeFileSync(paths.infoPlistPath, SOFI_HELPER_PLIST, 'utf8')
+  } catch (e) {
+    logToRenderer('error', '[Sofi Bundle] Error creando bundle directories:', e?.message)
+  }
+
+  // Extract Swift source from bundle/resources to userData
+  const bundleSrc = path.join(__dirname, 'speech-listener.swift')
+  let swiftContent = ''
+  try {
+    swiftContent = fs.readFileSync(bundleSrc, 'utf8')
+  } catch (e) {
+    if (fs.existsSync(paths.swiftSrcPath)) {
+      swiftContent = fs.readFileSync(paths.swiftSrcPath, 'utf8')
+    }
+  }
+
+  if (!swiftContent) {
+    logToRenderer('error', '[Sofi Compiler] No se encontró speech-listener.swift')
+    return { supported: false, error: 'no_swift_source' }
+  }
+  fs.writeFileSync(paths.swiftSrcPath, swiftContent, 'utf8')
+
+  // Check if compiled binary exists and is up to date
+  try {
+    if (fs.existsSync(paths.binaryPath)) {
+      const srcStat = fs.statSync(paths.swiftSrcPath)
+      const binStat = fs.statSync(paths.binaryPath)
+      if (binStat.mtimeMs > srcStat.mtimeMs) {
+        logToRenderer('info', '[Sofi Compiler] ✅ Binario nativo actualizado:', paths.binaryPath)
+        nativeBinaryReady = true
+        return { supported: true, binaryPath: paths.binaryPath }
+      }
+      logToRenderer('info', '[Sofi Compiler] ♻️ Código fuente actualizado, recompilando...')
+    }
+  } catch {}
+
+  // Check if swiftc is available
+  logToRenderer('info', '[Sofi Compiler] 🔨 Compilando SofiListener nativo con swiftc...')
+  return new Promise((resolve) => {
+    const compileArgs = [
+      '-O',
+      '-o', paths.binaryPath,
+      paths.swiftSrcPath,
+      '-framework', 'Speech',
+      '-framework', 'AVFoundation',
+      '-framework', 'CoreAudio',
+      '-Xlinker', '-sectcreate',
+      '-Xlinker', '__TEXT',
+      '-Xlinker', '__info_plist',
+      '-Xlinker', paths.infoPlistPath,
+    ]
+
+    const proc = spawn('/usr/bin/swiftc', compileArgs)
+    let stderr = ''
+    proc.stderr.on('data', (d) => { stderr += d.toString() })
+
+    proc.on('close', (code) => {
+      if (code === 0 && fs.existsSync(paths.binaryPath)) {
+        try {
+          execSync(`chmod +x "${paths.binaryPath}"`)
+          execSync(`/usr/bin/codesign -s - --force --deep "${paths.appBundleDir}" 2>/dev/null || true`)
+        } catch {}
+        logToRenderer('info', '[Sofi Compiler] ✅ Compilación nativa completada:', paths.binaryPath)
+        nativeBinaryReady = true
+        resolve({ supported: true, binaryPath: paths.binaryPath })
+      } else {
+        logToRenderer('warn', '[Sofi Compiler] Falló compilación con -sectcreate, reintentando...')
+        // Fallback compilation without -sectcreate (the Info.plist inside the .app bundle is still active)
+        const fallbackProc = spawn('/usr/bin/swiftc', [
+          '-O',
+          '-o', paths.binaryPath,
+          paths.swiftSrcPath,
+          '-framework', 'Speech',
+          '-framework', 'AVFoundation',
+        ])
+        let fallbackStderr = ''
+        fallbackProc.stderr.on('data', (d) => { fallbackStderr += d.toString() })
+        fallbackProc.on('close', (fCode) => {
+          if (fCode === 0 && fs.existsSync(paths.binaryPath)) {
+            try {
+              execSync(`chmod +x "${paths.binaryPath}"`)
+              execSync(`/usr/bin/codesign -s - --force --deep "${paths.appBundleDir}" 2>/dev/null || true`)
+            } catch {}
+            logToRenderer('info', '[Sofi Compiler] ✅ Compilación fallback exitosa:', paths.binaryPath)
+            nativeBinaryReady = true
+            resolve({ supported: true, binaryPath: paths.binaryPath })
+          } else {
+            logToRenderer('error', '[Sofi Compiler] ❌ Error compilación fallback:', fallbackStderr || stderr)
+            resolve({ supported: false, error: 'compilation_failed', details: fallbackStderr || stderr })
+          }
+        })
+      }
+    })
+
+    proc.on('error', (err) => {
+      logToRenderer('error', '[Sofi Compiler] ❌ swiftc no disponible:', err?.message)
+      resolve({ supported: false, error: 'swiftc_not_found', details: err?.message })
+    })
+  })
+}
+
 async function spawnNativeListener() {
   if (process.platform !== 'darwin') {
-    console.warn('[Sofi Supervisor] ⚠️ Plataforma no soportada:', process.platform)
+    logToRenderer('warn', '[Sofi] ⚠️ Solo macOS soportado. platform=' + process.platform)
     return { supported: false, error: 'not_darwin', platform: process.platform }
   }
 
-  // Kill any existing listener
   if (currentListenProcess) {
     try { currentListenProcess.kill('SIGKILL') } catch {}
     currentListenProcess = null
   }
 
-  // Step 1: Get or compile the binary
-  console.log('[Sofi Supervisor] 🔄 Preparando listener nativo...')
-  const binaryPath = await getOrCompileSwiftBinary()
-
-  let execPath, execArgs
-  if (binaryPath) {
-    // Use pre-compiled binary (fast, ~instant startup)
-    execPath = binaryPath
-    execArgs = []
-    console.log('[Sofi Supervisor] 🚀 Usando binario compilado:', binaryPath)
-  } else {
-    // Fallback: interpreted mode (slow, compiles each time)
-    execPath = '/usr/bin/swift'
-    const swiftSrc = path.join(app.getPath('userData'), 'speech-listener.swift')
-    execArgs = [swiftSrc]
-    console.warn('[Sofi Supervisor] ⚠️ Fallback a modo interpretado (lento):', swiftSrc)
+  const prep = await ensureNativeListenerBinary()
+  if (!prep.supported || !prep.binaryPath) {
+    return prep
   }
+
+  const execPath = prep.binaryPath
 
   return new Promise((resolve) => {
     try {
-      console.log('[Sofi Supervisor] 📡 Ejecutando:', execPath, execArgs.join(' '))
-      const proc = spawn(execPath, execArgs, { stdio: ['pipe', 'pipe', 'pipe'] })
+      logToRenderer('info', '[Sofi] 📡 Ejecutando SofiListener nativo:', execPath)
+      const proc = spawn(execPath, [], { stdio: ['pipe', 'pipe', 'pipe'] })
       currentListenProcess = proc
+      logToRenderer('info', '[Sofi] PID:', proc.pid)
+
       let started = false
 
-      console.log('[Sofi Supervisor] PID:', proc.pid)
+      // Timeout: if LISTENING_READY not received in 30s, give up
+      const startupTimeout = setTimeout(() => {
+        if (!started) {
+          started = true
+          logToRenderer('error', '[Sofi] ❌ Timeout: LISTENING_READY no recibido en 30s')
+          resolve({ supported: false, error: 'startup_timeout' })
+        }
+      }, 30000)
 
       proc.stdout.on('data', (data) => {
         const lines = data.toString().split('\n')
@@ -434,13 +513,13 @@ async function spawnNativeListener() {
           if (trimmed.startsWith('TRANSCRIPT:')) {
             const text = trimmed.substring(11).trim()
             if (text) {
-              console.log('[Sofi Listener] 🗣️ Transcript:', text)
+              logToRenderer('info', '[Sofi] 🗣️', text)
               mainWindow?.webContents.send('voice:native-transcript', text)
             }
           } else if (trimmed.startsWith('FINAL:')) {
             const text = trimmed.substring(6).trim()
             if (text) {
-              console.log('[Sofi Listener] ✅ Final:', text)
+              logToRenderer('info', '[Sofi] ✅ Final:', text)
               mainWindow?.webContents.send('voice:native-result', text)
             }
           }
@@ -453,56 +532,50 @@ async function spawnNativeListener() {
           const l = line.trim()
           if (!l) continue
 
+          logToRenderer('info', '[Swift]', l)
+
           if (l.includes('LISTENING_READY')) {
-            console.log('[Sofi Supervisor] ✅ ESCUCHA NATIVA ACTIVA (persistente, PID ' + proc.pid + ')')
+            clearTimeout(startupTimeout)
             if (!started) {
               started = true
+              logToRenderer('info', '[Sofi] ✅ ESCUCHA ACTIVA (PID ' + proc.pid + ')')
               resolve({ supported: true })
             }
-          } else if (l.startsWith('ERROR_')) {
-            console.error('[Sofi Listener] ❌', l)
-            if (l.includes('DENIED') || l.includes('RESTRICTED') || l.includes('NOT_DETERMINED')) {
-              console.error('[Sofi Listener] → Ve a Preferencias del Sistema > Privacidad > Reconocimiento de voz y Micrófono')
-            }
+          } else if (l.startsWith('ERROR:')) {
+            clearTimeout(startupTimeout)
+            logToRenderer('error', '[Sofi] ❌', l)
             isContinuousListeningActive = false
             if (!started) {
               started = true
               resolve({ supported: false, error: l })
             }
-          } else if (l.includes('SESSION_') || l.includes('PAUSED') || l.includes('RESUMED') || l.includes('AUDIO_FORMAT')) {
-            console.log('[Sofi Native]', l)
-          } else {
-            console.log('[Sofi Native stderr]', l)
           }
         }
       })
 
       proc.on('close', (code, signal) => {
-        console.log('[Sofi Supervisor] Proceso cerrado — code:', code, 'signal:', signal, 'PID:', proc.pid)
+        clearTimeout(startupTimeout)
+        logToRenderer('warn', '[Sofi] Proceso cerrado — code:', code, 'signal:', signal)
         currentListenProcess = null
         if (!started) {
           started = true
           resolve({ supported: false, error: 'process_exited', code, signal })
         }
-        // Auto-respawn on unexpected crash
         if (isContinuousListeningActive && !isSpeaking) {
-          console.log('[Sofi Supervisor] ♻️ Relanzando tras cierre inesperado en 1.5s...')
+          logToRenderer('info', '[Sofi] ♻️ Relanzando en 2s...')
           if (listenerRestartTimer) clearTimeout(listenerRestartTimer)
           listenerRestartTimer = setTimeout(() => {
             listenerRestartTimer = null
             if (isContinuousListeningActive && !isSpeaking) {
-              spawnNativeListener().catch((e) => {
-                console.error('[Sofi Supervisor] Error al relanzar:', e?.message)
-              })
+              spawnNativeListener().catch(() => {})
             }
-          }, 1500)
+          }, 2000)
         }
       })
 
       proc.on('error', (err) => {
-        console.error('[Sofi Supervisor] ❌ Error al iniciar proceso:', err?.message || err)
-        console.error('[Sofi Supervisor]   execPath:', execPath)
-        console.error('[Sofi Supervisor]   execArgs:', JSON.stringify(execArgs))
+        clearTimeout(startupTimeout)
+        logToRenderer('error', '[Sofi] ❌ Spawn error:', err?.message)
         currentListenProcess = null
         if (!started) {
           started = true
@@ -510,7 +583,7 @@ async function spawnNativeListener() {
         }
       })
     } catch (e) {
-      console.error('[Sofi Supervisor] ❌ Excepción:', e?.message || e)
+      logToRenderer('error', '[Sofi] ❌ Excepción:', e?.message)
       currentListenProcess = null
       resolve({ supported: false, error: e?.message })
     }
@@ -520,7 +593,6 @@ async function spawnNativeListener() {
 // ── Siri Speech Synthesis ──────────────────────────────────────────────────
 ipcMain.handle('voice:speak-siri', async (_event, text) => {
   if (process.platform !== 'darwin' || !text) return false
-
   isSpeaking = true
   pauseListener()
 
@@ -565,16 +637,13 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
           sayProc.on('error', () => onFinishSpeech(false))
         }
       })
-
-      osaProc.on('error', (err) => {
-        console.warn('[osascript error, fallback /usr/bin/say]', err?.message)
+      osaProc.on('error', () => {
         const sayProc = spawn('/usr/bin/say', [cleanText])
         currentSayProcess = sayProc
         sayProc.on('close', (c) => onFinishSpeech(c === 0))
         sayProc.on('error', () => onFinishSpeech(false))
       })
     } catch (err) {
-      console.warn('[macOS Say Exception]', err?.message)
       currentSayProcess = null
       isSpeaking = false
       resumeListener()
@@ -593,7 +662,7 @@ ipcMain.handle('voice:stop-siri', async () => {
   return true
 })
 
-// ── IPC Handlers ───────────────────────────────────────────────────────────
+// ── Native Speech IPC Handlers ─────────────────────────────────────────────
 ipcMain.handle('voice:native-listen-start', async () => {
   isContinuousListeningActive = true
   if (currentListenProcess && !currentListenProcess.killed) {
@@ -609,10 +678,9 @@ ipcMain.handle('voice:native-listen-stop', async () => {
 })
 
 ipcMain.handle('voice:native-listen-continuous-start', async () => {
-  console.log('[Sofi Supervisor] 🎧 === INICIANDO ESCUCHA CONTINUA EN SEGUNDO PLANO ===')
-  console.log('[Sofi Supervisor]   platform:', process.platform)
-  console.log('[Sofi Supervisor]   arch:', process.arch)
-  console.log('[Sofi Supervisor]   userData:', app.getPath('userData'))
+  logToRenderer('info', '[Sofi] 🎧 === INICIANDO ESCUCHA CONTINUA ===')
+  logToRenderer('info', '[Sofi]   platform:', process.platform, 'arch:', process.arch)
+  logToRenderer('info', '[Sofi]   userData:', app.getPath('userData'))
   isContinuousListeningActive = true
   if (currentListenProcess && !currentListenProcess.killed) {
     resumeListener()

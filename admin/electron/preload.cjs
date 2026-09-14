@@ -47,6 +47,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('voice:native-result', handler)
     return () => ipcRenderer.removeListener('voice:native-result', handler)
   },
+  onVoiceDiagnostic: (callback) => {
+    const handler = (_event, data) => callback(data)
+    ipcRenderer.on('voice:diagnostic', handler)
+    return () => ipcRenderer.removeListener('voice:diagnostic', handler)
+  },
   // Cloudflare Workers AI
   runCloudflareAI: (params) => ipcRenderer.invoke('ai:cloudflare-run', params),
 })

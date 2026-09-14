@@ -114,6 +114,11 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       ;(window as any).electronAPI.startContinuousListen?.()
         .then((res: any) => {
           console.log('[Sofi] Resultado de escucha continua:', JSON.stringify(res))
+          if (res && res.supported === false) {
+            if (res.error?.includes('DENIED') || res.error?.includes('denegado')) {
+              setErrorMessage('Sofi requiere permisos de Micrófono y Reconocimiento de Voz en Ajustes del Sistema.')
+            }
+          }
         })
         .catch((err: any) => {
           console.warn('[Sofi] Error al iniciar escucha continua nativa:', err)
@@ -123,9 +128,15 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }, [isHandsFree, wakeWordEnabled])
 
-  // Native macOS Siri Speech events from Electron
+  // Native macOS Siri Speech events and diagnostics from Electron
   useEffect(() => {
     if (typeof window === 'undefined' || !(window as any).electronAPI) return
+
+    const unsubDiag = (window as any).electronAPI.onVoiceDiagnostic?.((data: any) => {
+      if (data?.level === 'error') console.error(data.msg)
+      else if (data?.level === 'warn') console.warn(data.msg)
+      else console.log(data?.msg)
+    })
 
     const unsubTranscript = (window as any).electronAPI.onNativeTranscript?.((text: string) => {
       console.log('[Native Siri Speech Partial]:', text)
@@ -188,6 +199,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     })
 
     return () => {
+      unsubDiag?.()
       unsubTranscript?.()
       unsubResult?.()
     }
