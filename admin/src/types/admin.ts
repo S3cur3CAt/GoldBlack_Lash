@@ -80,6 +80,7 @@ export interface StudioConfig {
   voiceAutoSpeak?: boolean
   voiceAnnounceNewAppointments?: boolean
   voiceAnnounceUpdates?: boolean
+  voiceWakeWordEnabled?: boolean
 }
 
 export interface GalleryItem {

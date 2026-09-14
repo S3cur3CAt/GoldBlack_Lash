@@ -1103,6 +1103,7 @@ export const App: React.FC = () => {
           <VoiceAssistantWidget
             apiKey={config.geminiApiKey}
             voiceAutoSpeak={config.voiceAutoSpeak ?? true}
+            wakeWordEnabled={config.voiceWakeWordEnabled ?? true}
             handlers={voiceHandlers}
             onOpenSettings={() => handleSelectTab('settings')}
           />

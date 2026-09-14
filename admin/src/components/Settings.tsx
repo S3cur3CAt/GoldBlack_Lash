@@ -933,6 +933,25 @@ export const Settings: React.FC<SettingsProps> = ({
               </label>
             </div>
 
+            {/* Checkbox for Wake-Word Hands-Free Activation (Mónica) */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+              <input
+                type="checkbox"
+                id="voiceWakeWordEnabled"
+                checked={formData.voiceWakeWordEnabled ?? true}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    voiceWakeWordEnabled: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+              />
+              <label htmlFor="voiceWakeWordEnabled" className="text-xs text-gray-300 cursor-pointer flex-1">
+                <span className="font-semibold text-white">Escucha continua por voz («Oye Mónica» / «Mónica»)</span> — En cuanto digas «Mónica», comenzará a escuchar automáticamente esperando tu orden, y al callar confirmará y ejecutará la acción de inmediato con Siri, sin necesidad de presionar ningún botón.
+              </label>
+            </div>
+
             {/* Live Test Buttons */}
             <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">

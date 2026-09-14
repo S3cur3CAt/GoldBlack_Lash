@@ -34,6 +34,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   voiceAutoSpeak: true,
   voiceAnnounceNewAppointments: true,
   voiceAnnounceUpdates: true,
+  voiceWakeWordEnabled: true,
 }
 
 // Initial Services matching site.ts

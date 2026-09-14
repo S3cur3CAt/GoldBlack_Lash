@@ -12,12 +12,14 @@ import {
   processVoiceWithGemini,
   speakWithNativeVoice,
   VoiceActionHandlers,
+  WakeWordListener,
 } from '../services/voiceAssistant'
 import { VoiceCommandsModal } from './VoiceCommandsModal'
 
 interface VoiceAssistantWidgetProps {
   apiKey?: string
   voiceAutoSpeak?: boolean
+  wakeWordEnabled?: boolean
   handlers: VoiceActionHandlers
   onOpenSettings: () => void
 }
@@ -27,6 +29,7 @@ type VoiceStatus = 'idle' | 'recording' | 'processing' | 'speaking' | 'error'
 export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   apiKey,
   voiceAutoSpeak = true,
+  wakeWordEnabled = true,
   handlers,
   onOpenSettings,
 }) => {
@@ -36,8 +39,14 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [showCommandsModal, setShowCommandsModal] = useState(false)
+  const [liveVolume, setLiveVolume] = useState<number>(0)
+  const [isHandsFree, setIsHandsFree] = useState<boolean>(() => {
+    const saved = localStorage.getItem('goldblack_voice_handsfree')
+    return saved !== null ? saved === 'true' : wakeWordEnabled
+  })
 
   const recorderRef = useRef<AudioRecorder | null>(null)
+  const wakeWordListenerRef = useRef<WakeWordListener | null>(null)
   const timerRef = useRef<any>(null)
   const autoCloseTimerRef = useRef<any>(null)
 
@@ -53,6 +62,44 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status, apiKey])
+
+  // Continuous background wake-word listener ("Mónica", "Oye Mónica", "Hola Mónica")
+  useEffect(() => {
+    if (!isHandsFree || !wakeWordEnabled) {
+      if (wakeWordListenerRef.current) {
+        wakeWordListenerRef.current.stop()
+        wakeWordListenerRef.current = null
+      }
+      return
+    }
+
+    // Only listen for the wake-word when idle (not already recording or speaking)
+    if (status === 'idle') {
+      const listener = new WakeWordListener()
+      wakeWordListenerRef.current = listener
+
+      listener.start(async (commandText) => {
+        console.log('[Mónica Wake-Word Triggered]', commandText)
+        if (commandText && commandText.trim().length > 1) {
+          // User spoke wake word + immediate command together (e.g. "Mónica abre la agenda")
+          await handleExecuteCommandText(commandText.trim())
+        } else {
+          // User said "Mónica" alone: start listening automatically and execute on silence!
+          await startListening()
+        }
+      })
+
+      return () => {
+        listener.stop()
+        wakeWordListenerRef.current = null
+      }
+    } else {
+      if (wakeWordListenerRef.current) {
+        wakeWordListenerRef.current.stop()
+        wakeWordListenerRef.current = null
+      }
+    }
+  }, [isHandsFree, wakeWordEnabled, status, apiKey])
 
   // Timer while recording
   useEffect(() => {
@@ -74,9 +121,11 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   const stopAndProcess = async () => {
     if (!recorderRef.current) return
     setStatus('processing')
+    setLiveVolume(0)
 
     try {
       const { base64, mimeType } = await recorderRef.current.stop()
+      recorderRef.current = null
 
       const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
       if (!effectiveApiKey.trim()) {
@@ -94,16 +143,16 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       setLastActionText(response.spokenText)
       setStatus('speaking')
 
-      // Speak response if voiceAutoSpeak is true
+      // Speak response automatically with Siri / macOS native voice
       if (voiceAutoSpeak && response.spokenText) {
         await speakWithNativeVoice(response.spokenText)
       }
 
-      // Auto-collapse after 5 seconds of completion
+      // Auto-collapse after 4.5 seconds and return to idle (re-enabling wake word)
       autoCloseTimerRef.current = setTimeout(() => {
         setStatus('idle')
         setIsExpanded(false)
-      }, 5000)
+      }, 4500)
     } catch (err: any) {
       console.error('[Voice Assistant Error]', err)
       setStatus('error')
@@ -114,8 +163,8 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }
 
-  // Toggle listening
-  const toggleListening = async () => {
+  // Start listening with real-time VAD for automatic zero-click execution
+  const startListening = async () => {
     if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current)
 
     // Check if API key is present
@@ -127,26 +176,46 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       return
     }
 
+    setIsExpanded(true)
+    setErrorMessage(null)
+    setLastActionText(null)
+    setLiveVolume(0)
+
+    try {
+      const recorder = new AudioRecorder()
+      recorderRef.current = recorder
+
+      await recorder.start({
+        silenceMs: 1200,
+        speechThreshold: 0.038,
+        onVolumeChange: (vol) => setLiveVolume(vol),
+        onSilence: () => {
+          // Automatic hands-free confirmation and execution upon silence (0 clicks required)
+          console.log('[VAD] Silencio detectado tras hablar -> Ejecución automática sin clics')
+          stopAndProcess()
+        },
+        onTimeout: () => {
+          console.log('[VAD] Tiempo de espera agotado sin voz detectada.')
+          handleCancel()
+        },
+      })
+      setStatus('recording')
+    } catch (err: any) {
+      console.error('[Mic Permission Error]', err)
+      setStatus('error')
+      setErrorMessage(
+        err.message ||
+          'No se pudo acceder al micrófono. Verifica los permisos en los Ajustes del Sistema de tu Mac.'
+      )
+    }
+  }
+
+  // Toggle listening
+  const toggleListening = async () => {
     if (status === 'recording') {
       await stopAndProcess()
-    } else if (status === 'idle' || status === 'error' || status === 'speaking') {
-      setIsExpanded(true)
-      setErrorMessage(null)
-      setLastActionText(null)
-
-      try {
-        const recorder = new AudioRecorder()
-        recorderRef.current = recorder
-        await recorder.start()
-        setStatus('recording')
-      } catch (err: any) {
-        console.error('[Mic Permission Error]', err)
-        setStatus('error')
-        setErrorMessage(
-          err.message ||
-            'No se pudo acceder al micrófono. Verifica los permisos en los Ajustes del Sistema de tu Mac.'
-        )
-      }
+    } else {
+      await startListening()
     }
   }
 
@@ -155,6 +224,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     setIsExpanded(true)
     setStatus('processing')
     setErrorMessage(null)
+    setLiveVolume(0)
 
     try {
       const effectiveApiKey = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
@@ -180,7 +250,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       autoCloseTimerRef.current = setTimeout(() => {
         setStatus('idle')
         setIsExpanded(false)
-      }, 5000)
+      }, 4500)
     } catch (err: any) {
       console.error('[Voice Assistant Text Command Error]', err)
       setStatus('error')
@@ -203,6 +273,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
       ;(window as any).electronAPI.stopSiri()
     }
+    setLiveVolume(0)
     setStatus('idle')
     setIsExpanded(false)
     setErrorMessage(null)
@@ -227,6 +298,28 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-1.5">
+              {/* Hands-Free Toggle */}
+              <button
+                onClick={() => {
+                  const next = !isHandsFree
+                  setIsHandsFree(next)
+                  localStorage.setItem('goldblack_voice_handsfree', String(next))
+                }}
+                className={`px-2 py-1 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95 ${
+                  isHandsFree
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                    : 'bg-zinc-800/80 border-zinc-700/60 text-zinc-400'
+                }`}
+                title={
+                  isHandsFree
+                    ? 'Manos libres activado: Di «Mónica» en cualquier momento'
+                    : 'Manos libres pausado: Haz clic para reactivar escucha continua'
+                }
+              >
+                <span className={isHandsFree ? 'animate-pulse' : ''}>🎙️</span>
+                <span>{isHandsFree ? 'Oye Mónica: ON' : 'Oye Mónica: OFF'}</span>
+              </button>
+
               <button
                 onClick={() => setShowCommandsModal(true)}
                 className="px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
@@ -249,25 +342,35 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           <div className="py-3">
             {status === 'recording' && (
               <div className="flex flex-col items-center justify-center py-2 space-y-3">
-                {/* Pulsing Soundwave Bars */}
-                <div className="flex items-center justify-center gap-1.5 h-10">
-                  <span className="w-1.5 h-4 bg-amber-400 rounded-full animate-[pulse_0.6s_ease-in-out_infinite]" />
-                  <span className="w-1.5 h-8 bg-amber-300 rounded-full animate-[pulse_0.8s_ease-in-out_infinite_0.1s]" />
-                  <span className="w-1.5 h-10 bg-amber-500 rounded-full animate-[pulse_0.5s_ease-in-out_infinite_0.2s]" />
-                  <span className="w-1.5 h-6 bg-amber-300 rounded-full animate-[pulse_0.7s_ease-in-out_infinite_0.15s]" />
-                  <span className="w-1.5 h-3 bg-amber-400 rounded-full animate-[pulse_0.9s_ease-in-out_infinite]" />
+                {/* Dynamic Real-time Soundwave reacting to live mic volume */}
+                <div className="flex items-center justify-center gap-1.5 h-12">
+                  {[0.6, 1.0, 1.4, 0.9, 0.5].map((multiplier, idx) => {
+                    const heightPx = Math.max(8, Math.min(42, Math.round(8 + liveVolume * 45 * multiplier)))
+                    return (
+                      <span
+                        key={idx}
+                        style={{ height: `${heightPx}px` }}
+                        className="w-1.5 bg-gradient-to-t from-amber-500 via-amber-400 to-amber-200 rounded-full transition-all duration-75 shadow-[0_0_8px_rgba(212,175,55,0.4)]"
+                      />
+                    )
+                  })}
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-amber-200">Mónica te escucha atentamente...</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    {recordingSeconds}s • Di «Mónica, ...» (ej. &ldquo;Mónica, abre la agenda&rdquo;, &ldquo;Mónica, busca a Carmen&rdquo;)
+                  <p className="text-sm font-semibold text-amber-200">Mónica te escucha atentamente...</p>
+                  <p className="text-xs text-amber-400 font-medium mt-0.5 flex items-center justify-center gap-1">
+                    <span>⚡</span>
+                    <span>Confirmará y ejecutará automáticamente al callar</span>
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-1">
+                    {recordingSeconds}s • Habla normalmente, no tienes que presionar nada
                   </p>
                 </div>
                 <button
                   onClick={stopAndProcess}
                   className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-zinc-950 text-xs font-semibold hover:brightness-110 active:scale-95 transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)] cursor-pointer"
+                  title="Si prefieres no esperar el silencio automático, puedes pulsar aquí"
                 >
-                  ✓ Terminar y Ejecutar
+                  ✓ Confirmar ahora
                 </button>
               </div>
             )}
@@ -291,7 +394,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
                 </p>
                 <div className="flex justify-end pt-1">
                   <button
-                    onClick={toggleListening}
+                    onClick={startListening}
                     className="text-xs text-amber-400/90 hover:text-amber-300 transition-colors underline underline-offset-2 cursor-pointer"
                   >
                     Dar otra orden
@@ -358,7 +461,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
             ? 'bg-[#1a1a24] text-amber-300 border border-amber-500/50 shadow-[0_0_20px_rgba(212,175,55,0.3)]'
             : 'bg-gradient-to-r from-[#171722] to-[#0d0d12] text-amber-400 border border-amber-500/40 hover:border-amber-400 hover:shadow-[0_0_25px_rgba(212,175,55,0.4)]'
         }`}
-        title="Control por voz con IA (Cmd+Shift+V)"
+        title="Control por voz con IA (Di «Mónica» o pulsa Cmd+Shift+V)"
       >
         {/* Pulsing ring when recording */}
         {status === 'recording' && (
@@ -373,8 +476,21 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           <IconMic size={22} className="text-amber-400 group-hover:scale-110 transition-transform" />
         )}
 
-        {/* Small badge spark */}
-        {status === 'idle' && (
+        {/* Indicator badge: Green pulse if Hands-Free ("Oye Mónica") is actively listening */}
+        {status === 'idle' && isHandsFree && (
+          <span
+            className="absolute -top-1 -right-1 flex h-4 w-4"
+            title="Escucha activa en segundo plano: Di «Mónica»"
+          >
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[8px] font-bold text-zinc-950 items-center justify-center shadow-[0_0_8px_rgba(16,185,129,0.8)]">
+              ✦
+            </span>
+          </span>
+        )}
+
+        {/* Standard spark badge when idle and hands-free is off */}
+        {status === 'idle' && !isHandsFree && (
           <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-zinc-950 flex items-center justify-center text-[9px] font-bold shadow-[0_0_8px_rgba(212,175,55,0.5)]">
             ✦
           </span>

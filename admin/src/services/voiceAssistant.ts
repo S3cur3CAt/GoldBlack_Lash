@@ -192,20 +192,37 @@ const GEMINI_TOOLS = [
   },
 ]
 
+export interface AudioRecorderOptions {
+  onSilence?: () => void
+  onTimeout?: () => void
+  silenceMs?: number
+  speechThreshold?: number
+  maxWaitSpeechMs?: number
+  onVolumeChange?: (volume: number) => void
+}
+
 /**
- * Audio Recorder using browser standard MediaRecorder
+ * Audio Recorder with real-time Voice Activity Detection (VAD)
+ * Automatically detects when user stops speaking to confirm and execute hands-free!
  */
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null
   private audioChunks: Blob[] = []
   private stream: MediaStream | null = null
+  private audioContext: AudioContext | null = null
+  private analyser: AnalyserNode | null = null
+  private animFrameId: number | null = null
+  private silenceTimer: any = null
+  private hasSpoken = false
 
-  async start(): Promise<void> {
+  async start(options?: AudioRecorderOptions): Promise<void> {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error('Tu entorno o navegador no soporta grabación de audio.')
     }
 
     this.audioChunks = []
+    this.hasSpoken = false
+
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -213,6 +230,67 @@ export class AudioRecorder {
         autoGainControl: true,
       },
     })
+
+    // Setup real-time VAD (Voice Activity Detection) with Web Audio API
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      if (AudioCtx) {
+        this.audioContext = new AudioCtx()
+        if (this.audioContext.state === 'suspended') {
+          await this.audioContext.resume()
+        }
+        const source = this.audioContext.createMediaStreamSource(this.stream)
+        this.analyser = this.audioContext.createAnalyser()
+        this.analyser.fftSize = 256
+        source.connect(this.analyser)
+
+        const silenceMs = options?.silenceMs ?? 1200
+        const speechThreshold = options?.speechThreshold ?? 0.038
+        const maxWaitSpeechMs = options?.maxWaitSpeechMs ?? 7000
+        const startTime = Date.now()
+
+        const checkAudioLevels = () => {
+          if (!this.analyser) return
+          const dataArray = new Uint8Array(this.analyser.frequencyBinCount)
+          this.analyser.getByteFrequencyData(dataArray)
+
+          let sum = 0
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i]
+          }
+          const avg = sum / dataArray.length
+          const normalizedVol = Math.min(avg / 100, 1.0)
+          options?.onVolumeChange?.(normalizedVol)
+
+          if (normalizedVol > speechThreshold) {
+            this.hasSpoken = true
+            if (this.silenceTimer) {
+              clearTimeout(this.silenceTimer)
+              this.silenceTimer = null
+            }
+          } else if (this.hasSpoken) {
+            // User was speaking, now silence is observed
+            if (!this.silenceTimer && options?.onSilence) {
+              this.silenceTimer = setTimeout(() => {
+                this.stopVAD()
+                options.onSilence?.()
+              }, silenceMs)
+            }
+          } else if (Date.now() - startTime > maxWaitSpeechMs) {
+            // No speech detected after timeout
+            this.stopVAD()
+            options?.onTimeout?.()
+            return
+          }
+
+          this.animFrameId = requestAnimationFrame(checkAudioLevels)
+        }
+
+        this.animFrameId = requestAnimationFrame(checkAudioLevels)
+      }
+    } catch (e) {
+      console.warn('[VAD Init Warning]', e)
+    }
 
     // Determine supported mime type
     let mimeType = 'audio/webm'
@@ -234,7 +312,26 @@ export class AudioRecorder {
     this.mediaRecorder.start(100)
   }
 
+  private stopVAD(): void {
+    if (this.animFrameId) {
+      cancelAnimationFrame(this.animFrameId)
+      this.animFrameId = null
+    }
+    if (this.silenceTimer) {
+      clearTimeout(this.silenceTimer)
+      this.silenceTimer = null
+    }
+    if (this.audioContext) {
+      try {
+        this.audioContext.close()
+      } catch {}
+      this.audioContext = null
+    }
+    this.analyser = null
+  }
+
   async stop(): Promise<{ blob: Blob; mimeType: string; base64: string }> {
+    this.stopVAD()
     return new Promise((resolve, reject) => {
       if (!this.mediaRecorder) {
         return reject(new Error('No hay una grabación activa'))
@@ -266,6 +363,7 @@ export class AudioRecorder {
   }
 
   cancel(): void {
+    this.stopVAD()
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try {
         this.mediaRecorder.stop()
@@ -290,6 +388,149 @@ export class AudioRecorder {
       reader.onerror = reject
       reader.readAsDataURL(blob)
     })
+  }
+}
+
+/**
+ * Plays a discrete, elegant 2-tone chime when Monica wakes up
+ */
+export function playWakeChime(): void {
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') ctx.resume()
+
+    const now = ctx.currentTime
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+
+    osc.type = 'sine'
+    // C5 (523 Hz) -> E5 (659 Hz)
+    osc.frequency.setValueAtTime(523.25, now)
+    osc.frequency.setValueAtTime(659.25, now + 0.1)
+
+    gain.gain.setValueAtTime(0, now)
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.03)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28)
+
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+
+    osc.start(now)
+    osc.stop(now + 0.3)
+  } catch {}
+}
+
+/**
+ * Checks if SpeechRecognition is available in the current browser/Electron runtime
+ */
+export function isSpeechRecognitionSupported(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+  )
+}
+
+/**
+ * Continuous Wake-Word ("Mónica") Listener
+ * Uses SpeechRecognition to detect "Mónica" or "Oye Mónica" hands-free in the background
+ */
+export class WakeWordListener {
+  private recognition: any = null
+  private isListening = false
+  private onWakeCallback: ((commandText?: string) => void) | null = null
+  private retryCount = 0
+
+  start(onWake: (commandText?: string) => void): void {
+    this.onWakeCallback = onWake
+    this.isListening = true
+    this.retryCount = 0
+
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRec) {
+      console.warn('[WakeWordListener] SpeechRecognition no soportado para wake-word pasivo local.')
+      return
+    }
+
+    try {
+      this.recognition = new SpeechRec()
+      this.recognition.continuous = true
+      this.recognition.interimResults = true
+      this.recognition.lang = 'es-ES'
+
+      this.recognition.onresult = (event: any) => {
+        if (!this.isListening) return
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0]?.transcript?.trim() || ''
+          // Regex for Monica wake word variations: "Mónica", "Oye Mónica", "Hola Mónica", "Hey Mónica", etc.
+          const match = transcript.match(
+            /(?:^|\s)(?:oye m[oó]nica|hola m[oó]nica|hey m[oó]nica|escucha m[oó]nica|m[oó]nik?a)(?:[,: ]+(.*)|$)/i
+          )
+          if (match) {
+            const command = match[1]?.trim() || ''
+            this.stop()
+            playWakeChime()
+            this.onWakeCallback?.(command)
+            break
+          }
+        }
+      }
+
+      this.recognition.onerror = (event: any) => {
+        if (event.error === 'not-allowed') {
+          console.warn('[WakeWordListener] Permiso de micrófono denegado para el asistente.')
+          this.stop()
+          return
+        }
+
+        if (event.error === 'network') {
+          this.retryCount++
+          if (this.retryCount > 3) {
+            console.warn('[WakeWordListener] Reconocimiento de voz continuo no disponible en este entorno de red.')
+            this.stop()
+            return
+          }
+        }
+
+        // Silently restart on non-fatal errors if still active
+        if (this.isListening) {
+          setTimeout(() => {
+            if (this.isListening) {
+              try {
+                this.recognition?.start()
+              } catch {}
+            }
+          }, 1500)
+        }
+      }
+
+      this.recognition.onend = () => {
+        // Keep continuous listener alive while hands-free mode is on
+        if (this.isListening) {
+          try {
+            this.recognition.start()
+          } catch {}
+        }
+      }
+
+      this.recognition.start()
+    } catch (e) {
+      console.warn('[WakeWordListener Start Warning]', e)
+    }
+  }
+
+  stop(): void {
+    this.isListening = false
+    if (this.recognition) {
+      try {
+        this.recognition.onend = null
+        this.recognition.onerror = null
+        this.recognition.onresult = null
+        this.recognition.stop()
+      } catch {}
+      this.recognition = null
+    }
   }
 }
 
