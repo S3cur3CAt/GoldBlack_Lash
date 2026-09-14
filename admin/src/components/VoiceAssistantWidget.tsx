@@ -111,9 +111,13 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
     if (isHandsFree && wakeWordEnabled) {
       console.log('[Sofi] 🎧 Activando escucha continua en segundo plano («Oye Sofi» manos libres)...')
-      ;(window as any).electronAPI.startContinuousListen?.().catch((err: any) => {
-        console.warn('[Sofi] Error al iniciar escucha continua nativa:', err)
-      })
+      ;(window as any).electronAPI.startContinuousListen?.()
+        .then((res: any) => {
+          console.log('[Sofi] Resultado de escucha continua:', JSON.stringify(res))
+        })
+        .catch((err: any) => {
+          console.warn('[Sofi] Error al iniciar escucha continua nativa:', err)
+        })
     } else {
       ;(window as any).electronAPI.stopContinuousListen?.().catch(() => {})
     }

@@ -2,90 +2,127 @@ import Foundation
 import Speech
 import AVFoundation
 
-// Ensure stdout flushes immediately
-setbuf(stdout, nil)
+// ═══════════════════════════════════════════════════════════════════════════════
+// GoldBlack Lash — Sofi Background Continuous Speech Listener (macOS 12+)
+// ═══════════════════════════════════════════════════════════════════════════════
+// Runs as a persistent background process. Continuously listens for speech
+// via Apple's SFSpeechRecognizer, emitting TRANSCRIPT/FINAL lines on stdout.
+// Controlled via stdin commands: PAUSE, RESUME, QUIT.
+// Uses a generation counter to prevent stale callbacks from interfering.
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Check macOS Speech Recognition Authorization
-let sema = DispatchSemaphore(value: 0)
+setbuf(stdout, nil)
+setbuf(stderr, nil)
+
+// ── Authorization ───────────────────────────────────────────────────────────
+let authSema = DispatchSemaphore(value: 0)
 var isAuthorized = false
 
 SFSpeechRecognizer.requestAuthorization { status in
     isAuthorized = (status == .authorized)
-    sema.signal()
+    authSema.signal()
 }
-_ = sema.wait(timeout: .now() + 3.0)
+_ = authSema.wait(timeout: .now() + 5.0)
 
-if !isAuthorized {
+guard isAuthorized else {
     fputs("ERROR_NOT_AUTHORIZED\n", stderr)
     exit(1)
 }
 
-guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-ES")), recognizer.isAvailable else {
+guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-ES")),
+      recognizer.isAvailable else {
     fputs("ERROR_RECOGNIZER_UNAVAILABLE\n", stderr)
     exit(2)
 }
 
+// ── State ───────────────────────────────────────────────────────────────────
 let audioEngine = AVAudioEngine()
 var currentRequest: SFSpeechAudioBufferRecognitionRequest?
 var currentTask: SFSpeechRecognitionTask?
 var silenceTimer: DispatchWorkItem?
 var lastTranscript = ""
 var isPaused = false
+var sessionGen: Int = 0 // Generation counter to invalidate stale callbacks
 
-func startRecognitionSession() {
-    DispatchQueue.main.async {
-        silenceTimer?.cancel()
-        currentTask?.cancel()
-        currentRequest = nil
-        lastTranscript = ""
+// ── Audio Pipeline (installed once, runs forever) ───────────────────────────
+let inputNode = audioEngine.inputNode
+let recordingFormat = inputNode.outputFormat(forBus: 0)
 
-        if isPaused { return }
+inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+    // Only feed audio when not paused and request exists
+    if !isPaused {
+        currentRequest?.append(buffer)
+    }
+}
+
+// ── Session Management ──────────────────────────────────────────────────────
+func startSession() {
+    // Increment generation so any pending callbacks from old session are ignored
+    sessionGen += 1
+    let gen = sessionGen
+
+    // Clean up previous session
+    silenceTimer?.cancel()
+    silenceTimer = nil
+    currentTask?.cancel()
+    currentTask = nil
+    currentRequest?.endAudio()
+    currentRequest = nil
+    lastTranscript = ""
+
+    guard !isPaused else { return }
+
+    // Brief delay to let the cancellation callbacks flush through
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // Verify this is still the current generation and not paused
+        guard gen == sessionGen, !isPaused else { return }
 
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
         currentRequest = req
 
         currentTask = recognizer.recognitionTask(with: req) { result, error in
-            if isPaused { return }
+            // ── Dispatch to main queue for thread safety ──
+            DispatchQueue.main.async {
+                // Ignore callbacks from stale sessions
+                guard gen == sessionGen else { return }
 
-            if let result = result {
-                let transcript = result.bestTranscription.formattedString
-                if transcript != lastTranscript && !transcript.isEmpty {
-                    lastTranscript = transcript
-                    print("TRANSCRIPT: \(transcript)")
-                    fflush(stdout)
+                if let result = result {
+                    let transcript = result.bestTranscription.formattedString
+                    if transcript != lastTranscript && !transcript.isEmpty {
+                        lastTranscript = transcript
+                        print("TRANSCRIPT: \(transcript)")
 
-                    silenceTimer?.cancel()
-                    let timer = DispatchWorkItem {
-                        if !lastTranscript.isEmpty {
-                            print("FINAL: \(lastTranscript)")
-                            fflush(stdout)
+                        // Reset silence timer: after 1.2s of silence, emit FINAL and restart
+                        silenceTimer?.cancel()
+                        let timer = DispatchWorkItem {
+                            guard gen == sessionGen else { return }
+                            if !lastTranscript.isEmpty {
+                                print("FINAL: \(lastTranscript)")
+                            }
+                            startSession()
                         }
-                        // Automatically restart recognition session without exiting process
-                        startRecognitionSession()
+                        silenceTimer = timer
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: timer)
                     }
-                    silenceTimer = timer
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2, execute: timer)
+
+                    if result.isFinal {
+                        silenceTimer?.cancel()
+                        silenceTimer = nil
+                        if !transcript.isEmpty {
+                            print("FINAL: \(transcript)")
+                        }
+                        startSession()
+                    }
                 }
 
-                if result.isFinal {
-                    silenceTimer?.cancel()
-                    if !transcript.isEmpty {
-                        print("FINAL: \(transcript)")
-                        fflush(stdout)
-                    }
-                    startRecognitionSession()
-                }
-            }
-
-            if let error = error {
-                let nsError = error as NSError
-                // 216 = Apple recognition timeout / cancellation
-                // 1110 = no speech detected
-                silenceTimer?.cancel()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    if !isPaused {
-                        startRecognitionSession()
+                if error != nil {
+                    // Don't restart if we're already restarting or paused
+                    guard gen == sessionGen, !isPaused else { return }
+                    // Restart session after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        guard gen == sessionGen, !isPaused else { return }
+                        startSession()
                     }
                 }
             }
@@ -93,58 +130,57 @@ func startRecognitionSession() {
     }
 }
 
-let inputNode = audioEngine.inputNode
-let recordingFormat = inputNode.outputFormat(forBus: 0)
-
-inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-    if !isPaused {
-        currentRequest?.append(buffer)
-    }
-}
-
+// ── Start Audio Engine ──────────────────────────────────────────────────────
 do {
     audioEngine.prepare()
     try audioEngine.start()
     fputs("LISTENING_READY\n", stderr)
-    startRecognitionSession()
+    startSession()
 } catch {
     fputs("ERROR_AUDIO_ENGINE: \(error.localizedDescription)\n", stderr)
     exit(3)
 }
 
-// Background thread reading commands from stdin: "PAUSE", "RESUME", "QUIT"
-DispatchQueue.global(qos: .background).async {
-    let handle = FileHandle.standardInput
-    while true {
-        let data = handle.availableData
-        if data.isEmpty { break }
-        if let rawStr = String(data: data, encoding: .utf8) {
-            let lines = rawStr.split(separator: "\n")
-            for line in lines {
-                let cmd = line.trimmingCharacters(in: .whitespacesAndNewlines)
-                if cmd == "PAUSE" {
-                    DispatchQueue.main.async {
-                        isPaused = true
-                        silenceTimer?.cancel()
-                        currentTask?.cancel()
-                        currentRequest = nil
-                        fputs("LISTENING_PAUSED\n", stderr)
-                    }
-                } else if cmd == "RESUME" {
-                    DispatchQueue.main.async {
-                        isPaused = false
-                        startRecognitionSession()
-                        fputs("LISTENING_RESUMED\n", stderr)
-                    }
-                } else if cmd == "QUIT" {
-                    exit(0)
-                }
+// ── Stdin Command Reader (background thread) ────────────────────────────────
+// Commands: PAUSE (stop recognition), RESUME (restart recognition), QUIT (exit)
+DispatchQueue.global(qos: .userInitiated).async {
+    while let line = readLine() {
+        let cmd = line.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        DispatchQueue.main.async {
+            switch cmd {
+            case "PAUSE":
+                isPaused = true
+                sessionGen += 1
+                silenceTimer?.cancel()
+                silenceTimer = nil
+                currentTask?.cancel()
+                currentTask = nil
+                currentRequest?.endAudio()
+                currentRequest = nil
+                lastTranscript = ""
+                fputs("PAUSED\n", stderr)
+
+            case "RESUME":
+                guard isPaused else { return }
+                isPaused = false
+                fputs("RESUMED\n", stderr)
+                startSession()
+
+            case "QUIT":
+                exit(0)
+
+            default:
+                break
             }
         }
     }
+    // stdin closed (parent process died) — exit gracefully
+    exit(0)
 }
 
-signal(SIGINT) { _ in exit(0) }
+// ── Signal Handlers ─────────────────────────────────────────────────────────
+signal(SIGINT)  { _ in exit(0) }
 signal(SIGTERM) { _ in exit(0) }
 
+// ── Run Loop (keeps process alive) ──────────────────────────────────────────
 RunLoop.main.run()

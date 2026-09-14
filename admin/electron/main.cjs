@@ -263,18 +263,34 @@ let isContinuousListeningActive = false
 let isSpeaking = false
 let listenerRestartTimer = null
 
-function ensureNativeListenerRunning() {
-  if (process.platform !== 'darwin') return Promise.resolve({ supported: false })
-  if (isSpeaking) {
-    return Promise.resolve({ supported: true, paused: true })
+// Send a command to the persistent Swift listener via stdin
+function sendListenerCommand(cmd) {
+  if (!currentListenProcess || currentListenProcess.killed) return false
+  try {
+    currentListenProcess.stdin.write(cmd + '\n')
+    return true
+  } catch (e) {
+    console.warn('[Sofi Supervisor] Error escribiendo stdin:', e?.message)
+    return false
   }
-  if (currentListenProcess && !currentListenProcess.killed) {
-    try {
-      currentListenProcess.stdin.write('RESUME\n')
-    } catch {}
-    return Promise.resolve({ supported: true })
+}
+
+// Pause the listener (when Siri is about to speak)
+function pauseListener() {
+  if (sendListenerCommand('PAUSE')) {
+    console.log('[Sofi Supervisor] ⏸️ Listener pausado (Siri hablando)')
   }
-  return spawnNativeListener()
+}
+
+// Resume the listener (after Siri finishes speaking)
+function resumeListener() {
+  if (sendListenerCommand('RESUME')) {
+    console.log('[Sofi Supervisor] ▶️ Listener reanudado')
+  } else if (isContinuousListeningActive) {
+    // Process died, respawn it
+    console.log('[Sofi Supervisor] Proceso muerto, relanzando...')
+    spawnNativeListener().catch(() => {})
+  }
 }
 
 function stopNativeListener() {
@@ -284,41 +300,19 @@ function stopNativeListener() {
     listenerRestartTimer = null
   }
   if (currentListenProcess) {
-    try {
-      currentListenProcess.stdin.write('QUIT\n')
-      currentListenProcess.kill('SIGTERM')
-    } catch {}
-    currentListenProcess = null
-  }
-}
-
-function resumeListeningAfterSpeech() {
-  if (listenerRestartTimer) {
-    clearTimeout(listenerRestartTimer)
-    listenerRestartTimer = null
-  }
-  // Wait 500ms after speech stops to allow acoustic room decay (avoid microphone feedback)
-  setTimeout(() => {
-    isSpeaking = false
-    if (isContinuousListeningActive) {
-      if (currentListenProcess && !currentListenProcess.killed) {
-        try {
-          currentListenProcess.stdin.write('RESUME\n')
-        } catch {
-          spawnNativeListener().catch(() => {})
-        }
-      } else {
-        spawnNativeListener().catch(() => {})
+    sendListenerCommand('QUIT')
+    setTimeout(() => {
+      // Force kill if still alive after 500ms
+      if (currentListenProcess) {
+        try { currentListenProcess.kill('SIGTERM') } catch {}
+        currentListenProcess = null
       }
-    }
-  }, 500)
+    }, 500)
+  }
 }
 
 function spawnNativeListener() {
   if (process.platform !== 'darwin') return Promise.resolve({ supported: false })
-  if (isSpeaking) {
-    return Promise.resolve({ supported: true, paused: true })
-  }
 
   const swiftPath = '/usr/bin/swift'
   let scriptPath = path.join(__dirname, 'speech-listener.swift')
@@ -333,16 +327,16 @@ function spawnNativeListener() {
     console.warn('[Swift Script Extract Warning]', extractErr?.message || extractErr)
   }
 
+  // Kill any existing listener before spawning new one
   if (currentListenProcess) {
-    try { currentListenProcess.kill('SIGTERM') } catch {}
+    try { currentListenProcess.kill('SIGKILL') } catch {}
     currentListenProcess = null
   }
 
   return new Promise((resolve) => {
     try {
-      const proc = spawn(swiftPath, [scriptPath])
+      const proc = spawn(swiftPath, [scriptPath], { stdio: ['pipe', 'pipe', 'pipe'] })
       currentListenProcess = proc
-
       let started = false
 
       proc.stdout.on('data', (data) => {
@@ -351,45 +345,56 @@ function spawnNativeListener() {
           const trimmed = line.trim()
           if (trimmed.startsWith('TRANSCRIPT:')) {
             const text = trimmed.substring(11).trim()
-            mainWindow?.webContents.send('voice:native-transcript', text)
+            if (text) mainWindow?.webContents.send('voice:native-transcript', text)
           } else if (trimmed.startsWith('FINAL:')) {
             const text = trimmed.substring(6).trim()
-            mainWindow?.webContents.send('voice:native-result', text)
+            if (text) mainWindow?.webContents.send('voice:native-result', text)
           }
         }
       })
 
       proc.stderr.on('data', (data) => {
         const text = data.toString().trim()
-        if (text.includes('LISTENING_READY')) {
-          if (!started) {
-            started = true
-            resolve({ supported: true })
-          }
-        } else if (text.includes('ERROR_NOT_AUTHORIZED')) {
-          console.warn('[macOS Speech Recognition] No autorizado.')
-          isContinuousListeningActive = false
-          if (!started) {
-            started = true
-            resolve({ supported: false, error: 'not_authorized' })
+        for (const line of text.split('\n')) {
+          const l = line.trim()
+          if (l.includes('LISTENING_READY')) {
+            console.log('[Sofi Supervisor] ✅ Escucha nativa activa (proceso persistente)')
+            if (!started) {
+              started = true
+              resolve({ supported: true })
+            }
+          } else if (l.includes('ERROR_NOT_AUTHORIZED')) {
+            console.warn('[macOS Speech] ❌ No autorizado — ve a Preferencias > Privacidad > Reconocimiento de voz')
+            isContinuousListeningActive = false
+            if (!started) {
+              started = true
+              resolve({ supported: false, error: 'not_authorized' })
+            }
+          } else if (l.includes('SESSION_STARTED') || l.includes('PAUSED') || l.includes('RESUMED')) {
+            console.log('[Sofi Native]', l)
+          } else if (l) {
+            console.log('[Sofi Native stderr]', l)
           }
         }
       })
 
-      proc.on('close', () => {
+      proc.on('close', (code) => {
+        console.log('[Sofi Supervisor] Proceso Swift cerrado con código', code)
         currentListenProcess = null
         if (!started) {
           started = true
           resolve({ supported: false })
         }
-        // Auto-restart supervisor if continuous listening is enabled and Siri is not speaking
+        // Auto-respawn if continuous mode is on (unexpected crash)
         if (isContinuousListeningActive && !isSpeaking) {
+          console.log('[Sofi Supervisor] Relanzando tras cierre inesperado...')
           if (listenerRestartTimer) clearTimeout(listenerRestartTimer)
           listenerRestartTimer = setTimeout(() => {
+            listenerRestartTimer = null
             if (isContinuousListeningActive && !isSpeaking) {
               spawnNativeListener().catch(() => {})
             }
-          }, 800)
+          }, 1000)
         }
       })
 
@@ -404,58 +409,48 @@ function spawnNativeListener() {
     } catch (e) {
       console.warn('[Native Speech Exception]', e)
       currentListenProcess = null
-      if (!started) {
-        started = true
-        resolve({ supported: false, error: e?.message })
-      }
+      resolve({ supported: false, error: e?.message })
     }
   })
 }
 
 // Native macOS Monterey Siri Speech Synthesis via osascript / Apple 'say' engine
-// In macOS Monterey, osascript 'say' executes in the GUI session using the exact
-// System Voice selected in System Preferences > Accessibility > Spoken Content (Siri)
 ipcMain.handle('voice:speak-siri', async (_event, text) => {
   if (process.platform !== 'darwin' || !text) return false
 
   // Pause native listener so Siri does NOT hear her own speech
   isSpeaking = true
-  if (currentListenProcess && !currentListenProcess.killed) {
-    try {
-      currentListenProcess.stdin.write('PAUSE\n')
-    } catch {}
-  }
+  pauseListener()
 
   return new Promise((resolve) => {
     try {
-      // Kill previous speech if still speaking
       if (currentSayProcess) {
-        try {
-          currentSayProcess.kill('SIGKILL')
-        } catch {}
+        try { currentSayProcess.kill('SIGKILL') } catch {}
         currentSayProcess = null
       }
 
       const cleanText = String(text).trim()
       if (!cleanText) {
-        resumeListeningAfterSpeech()
+        isSpeaking = false
+        resumeListener()
         resolve(false)
         return
       }
 
       const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
-
-      // 1. First priority: osascript 'say' (uses the active Siri voice set in Accessibility)
       const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
       currentSayProcess = osaProc
 
       let hasExited = false
-
       const onFinishSpeech = (success) => {
         if (hasExited) return
         hasExited = true
         currentSayProcess = null
-        resumeListeningAfterSpeech()
+        // Resume listening after 500ms acoustic decay
+        setTimeout(() => {
+          isSpeaking = false
+          resumeListener()
+        }, 500)
         resolve(success)
       }
 
@@ -463,7 +458,6 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         if (code === 0) {
           onFinishSpeech(true)
         } else {
-          // Fallback to /usr/bin/say if osascript returned non-zero
           const sayProc = spawn('/usr/bin/say', [cleanText])
           currentSayProcess = sayProc
           sayProc.on('close', (c) => onFinishSpeech(c === 0))
@@ -481,7 +475,8 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
     } catch (err) {
       console.warn('[macOS Say Exception]', err?.message || err)
       currentSayProcess = null
-      resumeListeningAfterSpeech()
+      isSpeaking = false
+      resumeListener()
       resolve(false)
     }
   })
@@ -489,19 +484,22 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
 
 ipcMain.handle('voice:stop-siri', async () => {
   if (currentSayProcess) {
-    try {
-      currentSayProcess.kill('SIGKILL')
-    } catch {}
+    try { currentSayProcess.kill('SIGKILL') } catch {}
     currentSayProcess = null
   }
-  resumeListeningAfterSpeech()
+  isSpeaking = false
+  resumeListener()
   return true
 })
 
 // Native macOS Siri Speech Recognition via Apple Speech framework & Swift (0€ / 0 APIs)
 ipcMain.handle('voice:native-listen-start', async () => {
   isContinuousListeningActive = true
-  return ensureNativeListenerRunning()
+  if (currentListenProcess && !currentListenProcess.killed) {
+    resumeListener()
+    return { supported: true }
+  }
+  return spawnNativeListener()
 })
 
 ipcMain.handle('voice:native-listen-stop', async () => {
@@ -510,8 +508,13 @@ ipcMain.handle('voice:native-listen-stop', async () => {
 })
 
 ipcMain.handle('voice:native-listen-continuous-start', async () => {
+  console.log('[Sofi Supervisor] 🎧 Iniciando escucha continua en segundo plano...')
   isContinuousListeningActive = true
-  return ensureNativeListenerRunning()
+  if (currentListenProcess && !currentListenProcess.killed) {
+    resumeListener()
+    return { supported: true }
+  }
+  return spawnNativeListener()
 })
 
 ipcMain.handle('voice:native-listen-continuous-stop', async () => {
