@@ -105,28 +105,75 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [status])
 
+  // Start / stop native macOS continuous listener automatically on mount or when isHandsFree changes
+  useEffect(() => {
+    if (typeof window === 'undefined' || !(window as any).electronAPI) return
+
+    if (isHandsFree && wakeWordEnabled) {
+      console.log('[Sofi] 🎧 Activando escucha continua en segundo plano («Oye Sofi» manos libres)...')
+      ;(window as any).electronAPI.startContinuousListen?.().catch((err: any) => {
+        console.warn('[Sofi] Error al iniciar escucha continua nativa:', err)
+      })
+    } else {
+      ;(window as any).electronAPI.stopContinuousListen?.().catch(() => {})
+    }
+  }, [isHandsFree, wakeWordEnabled])
+
   // Native macOS Siri Speech events from Electron
   useEffect(() => {
     if (typeof window === 'undefined' || !(window as any).electronAPI) return
 
     const unsubTranscript = (window as any).electronAPI.onNativeTranscript?.((text: string) => {
       console.log('[Native Siri Speech Partial]:', text)
-      setLiveTranscript(text)
+      const clean = text.trim()
+      if (!clean) return
+
+      // If idle and hands-free is enabled: check if the user just spoke the wake word
+      if (statusRef.current === 'idle' && isHandsFree && wakeWordEnabled) {
+        const norm = clean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        if (/(?:sofi|sophie|sofy|sofia)/i.test(norm)) {
+          playWakeChime()
+          setIsExpanded(true)
+          setStatus('recording')
+          setLiveTranscript(clean)
+          return
+        }
+      }
+
+      if (statusRef.current === 'recording') {
+        setLiveTranscript(clean)
+      }
     })
 
     const unsubResult = (window as any).electronAPI.onNativeResult?.(async (text: string) => {
       console.log('[Native Siri Speech Final]:', text)
       if (!text || !text.trim()) return
+      const clean = text.trim()
+      const norm = clean.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+      const wakePrefixRegex = /^(?:.*?\b(?:oye|hola|hey|ok|escucha)\s+(?:sofi|sophie|sofy|sofia)\b|\b(?:sofi|sophie|sofy|sofia)\b)[,\s:]*/i
+      const hasWakeWord = /(?:sofi|sophie|sofy|sofia)/i.test(norm)
 
       if (statusRef.current === 'recording') {
-        await handleExecuteCommandText(text)
+        const command = clean.replace(wakePrefixRegex, '').trim()
+        if (command.length > 1) {
+          await handleExecuteCommandText(command)
+        } else if (hasWakeWord) {
+          // Said only "Oye Sofi"
+          await handleWakeGreeting()
+        } else if (clean.length > 1) {
+          // Direct command spoken while recording
+          await handleExecuteCommandText(clean)
+        } else {
+          setStatus('idle')
+          setIsExpanded(false)
+        }
       } else if (isHandsFree && wakeWordEnabled) {
-        // In standby check if it contains wake word "sofi"
-        const norm = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        if (norm.includes('sofi')) {
+        // Was in standby idle: only trigger if wake word is mentioned
+        if (hasWakeWord) {
           playWakeChime()
           setIsExpanded(true)
-          const command = norm.replace(/^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i, '').trim()
+          const command = clean.replace(wakePrefixRegex, '').trim()
           if (command.length > 1) {
             await handleExecuteCommandText(command)
           } else {
@@ -142,7 +189,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     }
   }, [isHandsFree, wakeWordEnabled])
 
-  // Hands-free Wake Word listener ("Oye Sofi" / "Sofi")
+  // Hands-free Wake Word listener for Web browser fallback ("Oye Sofi" / "Sofi")
   useEffect(() => {
     if (!isHandsFree || !wakeWordEnabled) {
       if (wakeWordListenerRef.current) {
@@ -203,8 +250,10 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       await speakWithNativeVoice('Dime, te escucho.')
     }
 
-    // Immediately open mic and listen for the actual command!
-    await startListening()
+    // Immediately switch to recording state so user can speak the command
+    setStatus('recording')
+    setLiveTranscript('')
+    setLiveVolume(0.3)
   }
 
   // Timer while recording
@@ -353,15 +402,12 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
   const toggleListening = async () => {
     if (status === 'recording') {
-      if ((window as any).electronAPI?.stopNativeListen) {
-        await (window as any).electronAPI.stopNativeListen()
+      if (liveTranscript && liveTranscript.trim()) {
+        await handleExecuteCommandText(liveTranscript.trim())
+      } else {
+        setStatus('idle')
+        setIsExpanded(false)
       }
-      if (speechRecognitionRef.current) {
-        try {
-          speechRecognitionRef.current.stop()
-        } catch {}
-      }
-      await stopAndProcess()
     } else if (status === 'speaking') {
       if ((window as any).electronAPI?.stopSiri) {
         await (window as any).electronAPI.stopSiri()
@@ -371,7 +417,17 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
       }
       setStatus('idle')
     } else {
-      await startListening()
+      playWakeChime()
+      setIsExpanded(true)
+      setStatus('recording')
+      setLiveTranscript('')
+      setErrorMessage(null)
+      setLastActionText(null)
+      if ((window as any).electronAPI?.startContinuousListen) {
+        await (window as any).electronAPI.startContinuousListen()
+      } else {
+        await startListening()
+      }
     }
   }
 
@@ -432,7 +488,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
       ;(window as any).electronAPI.stopSiri()
     }
-    if (typeof window !== 'undefined' && (window as any).electronAPI?.stopNativeListen) {
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.stopNativeListen && !isHandsFree) {
       ;(window as any).electronAPI.stopNativeListen()
     }
     if (speechRecognitionRef.current) {

@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Native macOS Siri Speech Recognition (Apple Speech framework)
   startNativeListen: () => ipcRenderer.invoke('voice:native-listen-start'),
   stopNativeListen: () => ipcRenderer.invoke('voice:native-listen-stop'),
+  startContinuousListen: () => ipcRenderer.invoke('voice:native-listen-continuous-start'),
+  stopContinuousListen: () => ipcRenderer.invoke('voice:native-listen-continuous-stop'),
   onNativeTranscript: (callback) => {
     const handler = (_event, text) => callback(text)
     ipcRenderer.on('voice:native-transcript', handler)

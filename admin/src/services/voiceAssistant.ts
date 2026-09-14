@@ -1213,12 +1213,12 @@ export async function executeLocalVoiceCommand(
   let raw = text.trim()
   let norm = normalizeText(raw)
 
-  // Strip leading greetings / wake word prefixes: "oye sofi", "hola sofi", "hey sofi", "sofi"
-  const wakePrefixRegex = /^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i
+  // Strip leading greetings / wake word prefixes: "oye sofi", "oye sofia", "hola sofi", "sofi", etc.
+  const wakePrefixRegex = /^(?:.*?\b(?:oye|hola|hey|ok|escucha)\s+(?:sofi|sophie|sofy|sofia)\b|\b(?:sofi|sophie|sofy|sofia)\b)[,\s:]*/i
   const hadWakePrefix = wakePrefixRegex.test(norm)
   if (hadWakePrefix) {
     norm = norm.replace(wakePrefixRegex, '').trim()
-    raw = raw.replace(/^(?:oye\s+sofi|hola\s+sofi|hey\s+sofi|sofi)[,\s:]*/i, '').trim()
+    raw = raw.replace(wakePrefixRegex, '').trim()
   }
 
   // If user only called the wake word ("Oye Sofi" / "Sofi")
