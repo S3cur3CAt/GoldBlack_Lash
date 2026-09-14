@@ -16,8 +16,10 @@ import {
   WakeWordListener,
 } from '../services/voiceAssistant'
 import { VoiceCommandsModal } from './VoiceCommandsModal'
+import { StudioConfig } from '../types/admin'
 
 interface VoiceAssistantWidgetProps {
+  config?: StudioConfig
   apiKey?: string
   voiceAutoSpeak?: boolean
   wakeWordEnabled?: boolean
@@ -28,6 +30,7 @@ interface VoiceAssistantWidgetProps {
 type VoiceStatus = 'idle' | 'recording' | 'processing' | 'speaking' | 'error'
 
 export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
+  config,
   voiceAutoSpeak = true,
   wakeWordEnabled = true,
   handlers,
@@ -382,12 +385,12 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
     setLiveVolume(0)
     setLiveTranscript('')
 
-    // Ejecución 100% nativa y local con Siri (0€ / sin API externa)
+    // Ejecución con Cloudflare Workers AI (Qwen 30B) y motor local
     setStatus('processing')
     try {
-      const localRes = await executeLocalVoiceCommand(cleanText, handlers)
+      const localRes = await executeLocalVoiceCommand(cleanText, handlers, config)
       const spoken = localRes.spokenText || 'Comando procesado.'
-      console.log('[Sofi] ⚡ Orden ejecutada con Siri:', cleanText, '->', spoken)
+      console.log('[Sofi] ⚡ Orden ejecutada con Cloudflare AI / Siri:', cleanText, '->', spoken)
       setLastActionText(spoken)
       setStatus('speaking')
 
@@ -457,9 +460,9 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
               </div>
               <div>
                 <h4 className="text-xs font-semibold tracking-wide uppercase text-amber-300/90 font-mono">
-                  Sofi • Asistente de Voz
+                  Sofi • Asistente IA
                 </h4>
-                <p className="text-[10px] text-zinc-400">Siri Nativo (macOS • 0€)</p>
+                <p className="text-[10px] text-zinc-400">Cloudflare AI (Qwen 30B) + Siri</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -605,7 +608,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
           {/* Quick Examples footer */}
           <div className="pt-2 border-t border-zinc-800/60 text-[10px] text-zinc-400 flex items-center justify-between">
             <span>Atajo: ⌘ + Shift + V</span>
-            <span className="text-zinc-500">Siri macOS 0€</span>
+            <span className="text-amber-400/80 font-medium">Cloudflare AI • Qwen 30B</span>
           </div>
         </div>
       )}

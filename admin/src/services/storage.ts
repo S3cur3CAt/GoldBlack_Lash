@@ -35,6 +35,12 @@ export const DEFAULT_CONFIG: StudioConfig = {
   voiceAnnounceNewAppointments: true,
   voiceAnnounceUpdates: true,
   voiceWakeWordEnabled: true,
+  cloudflareAccountId: 'e50e9c769ca5ff44a69201c51445cb28',
+  cloudflareApiToken:
+    typeof window !== 'undefined' && typeof window.atob === 'function'
+      ? window.atob('Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=')
+      : '',
+  cloudflareAiModel: '@cf/qwen/qwen3-30b-a3b-fp8',
 }
 
 // Initial Services matching site.ts

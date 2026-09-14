@@ -45,4 +45,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('voice:native-result', handler)
     return () => ipcRenderer.removeListener('voice:native-result', handler)
   },
+  // Cloudflare Workers AI
+  runCloudflareAI: (params) => ipcRenderer.invoke('ai:cloudflare-run', params),
 })

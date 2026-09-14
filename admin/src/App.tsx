@@ -1165,9 +1165,10 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* AI Voice Assistant Widget (Siri Nativo macOS / 0€) */}
+        {/* AI Voice Assistant Widget (Cloudflare Workers AI Qwen 30B + Siri) */}
         {(config.voiceAssistantEnabled ?? true) && (
           <VoiceAssistantWidget
+            config={config}
             voiceAutoSpeak={config.voiceAutoSpeak ?? true}
             wakeWordEnabled={config.voiceWakeWordEnabled ?? true}
             handlers={voiceHandlers}

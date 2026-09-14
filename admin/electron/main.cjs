@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
+const https = require('https')
 const { exec, spawn } = require('child_process')
 const fs = require('fs')
 const { setupUpdaterIPC } = require('./updater.cjs')
@@ -436,6 +437,89 @@ ipcMain.handle('voice:native-listen-stop', async () => {
     currentListenProcess = null
   }
   return true
+})
+
+// Cloudflare Workers AI with Qwen 30B (qwen3-30b-a3b-fp8)
+const CLOUDFLARE_DEFAULT_ACCOUNT_ID = 'e50e9c769ca5ff44a69201c51445cb28'
+const CLOUDFLARE_DEFAULT_API_TOKEN = Buffer.from(
+  'Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=',
+  'base64'
+).toString('utf8')
+const CLOUDFLARE_DEFAULT_MODEL = '@cf/qwen/qwen3-30b-a3b-fp8'
+
+ipcMain.handle('ai:cloudflare-run', async (_event, params = {}) => {
+  const accountId = params.accountId || CLOUDFLARE_DEFAULT_ACCOUNT_ID
+  const apiToken = params.apiToken || CLOUDFLARE_DEFAULT_API_TOKEN
+  const model = params.model || CLOUDFLARE_DEFAULT_MODEL
+  const messages = params.messages || []
+
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`
+
+  return new Promise((resolve) => {
+    try {
+      const parsedUrl = new URL(url)
+      const postData = JSON.stringify({ messages })
+
+      const req = https.request(
+        {
+          hostname: parsedUrl.hostname,
+          path: parsedUrl.pathname + parsedUrl.search,
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+          },
+          timeout: 25000,
+        },
+        (res) => {
+          let rawData = ''
+          res.on('data', (chunk) => {
+            rawData += chunk
+          })
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(rawData)
+              if (json.success && json.result) {
+                const responseText =
+                  json.result.response || json.result.choices?.[0]?.message?.content || ''
+                resolve({ success: true, text: responseText, result: json.result })
+              } else {
+                resolve({
+                  success: false,
+                  error:
+                    json.errors?.[0]?.message || 'Error en respuesta de Cloudflare Workers AI',
+                  raw: json,
+                })
+              }
+            } catch (err) {
+              resolve({
+                success: false,
+                error: 'Error al parsear respuesta JSON de Cloudflare: ' + err.message,
+              })
+            }
+          })
+        }
+      )
+
+      req.on('error', (e) => {
+        resolve({ success: false, error: e.message })
+      })
+
+      req.on('timeout', () => {
+        req.destroy()
+        resolve({
+          success: false,
+          error: 'Tiempo de espera agotado con Cloudflare Workers AI (25s)',
+        })
+      })
+
+      req.write(postData)
+      req.end()
+    } catch (e) {
+      resolve({ success: false, error: e.message })
+    }
+  })
 })
 
 app.whenReady().then(() => {

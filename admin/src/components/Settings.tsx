@@ -18,6 +18,7 @@ import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../servi
 import {
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
+  testCloudflareWorkersAIConnection,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -104,6 +105,35 @@ export const Settings: React.FC<SettingsProps> = ({
   const [testRecipient, setTestRecipient] = useState(config.email || '')
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Cloudflare Workers AI Test State
+  const [isTestingCloudflare, setIsTestingCloudflare] = useState(false)
+  const [cloudflareTestResult, setCloudflareTestResult] = useState<{
+    ok: boolean
+    message: string
+    latencyMs?: number
+  } | null>(null)
+  const [showCloudflareToken, setShowCloudflareToken] = useState(false)
+
+  const handleTestCloudflareAI = async () => {
+    setIsTestingCloudflare(true)
+    setCloudflareTestResult(null)
+    try {
+      const res = await testCloudflareWorkersAIConnection({
+        accountId: formData.cloudflareAccountId,
+        apiToken: formData.cloudflareApiToken,
+        model: formData.cloudflareAiModel,
+      })
+      setCloudflareTestResult(res)
+    } catch (e: any) {
+      setCloudflareTestResult({
+        ok: false,
+        message: e?.message || 'Error de conexión con Cloudflare Workers AI',
+      })
+    } finally {
+      setIsTestingCloudflare(false)
+    }
+  }
 
   const handleTestEmail = async () => {
     if (!testRecipient.trim()) {
@@ -749,7 +779,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Gemini Flash Voice Assistant Configuration (0€ / 1500 per day) */}
+        {/* Cloudflare Workers AI & Voice Assistant Configuration */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -758,13 +788,13 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
               <div>
                 <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
-                  <span>Asistente de Voz con IA (Gemini Flash + Web Speech)</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
-                    0 € • 1.500/día
+                  <span>Asistente de Voz con IA (Cloudflare Workers AI + Siri)</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
+                    Qwen3 30B FP8
                   </span>
                 </h4>
                 <p className="text-xs text-gray-400">
-                  Controla la aplicación por voz con manos libres en Mac o Web (crear citas, consultar agenda, ver ingresos, etc.).
+                  Controla la aplicación por voz con manos libres en Mac o Web, ejecuta acciones complejas y consulta dudas sobre pestañas y servicios.
                 </p>
               </div>
             </div>
@@ -788,14 +818,122 @@ export const Settings: React.FC<SettingsProps> = ({
             </button>
           </div>
 
+          {/* Cloudflare Workers AI Configuration Card */}
+          <div className="p-4 rounded-xl bg-[#151522] border border-amber-500/30 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
+              <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
+                <IconSparkles size={16} className="text-amber-400" />
+                <span>Motor de Inteligencia Artificial (Cloudflare Workers AI)</span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30 w-fit">
+                Modelo: @cf/qwen/qwen3-30b-a3b-fp8
+              </span>
+            </div>
+
+            <p className="text-[11px] text-gray-300 leading-relaxed">
+              Sofi utiliza el modelo de razonamiento profundo <code className="text-amber-300 font-mono">qwen3-30b-a3b-fp8</code> alojado en Cloudflare para comprender órdenes complejas en lenguaje natural, responder dudas de estética y ejecutar acciones automáticas en tu agenda y facturación.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-400 mb-1">
+                  Cloudflare Account ID
+                </label>
+                <input
+                  type="text"
+                  value={formData.cloudflareAccountId ?? 'e50e9c769ca5ff44a69201c51445cb28'}
+                  onChange={(e) => setFormData({ ...formData, cloudflareAccountId: e.target.value })}
+                  placeholder="e50e9c769ca5ff44a69201c51445cb28"
+                  className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[11px] font-medium text-gray-400">
+                    API Token (Cloudflare)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCloudflareToken(!showCloudflareToken)}
+                    className="text-[10px] text-amber-400 hover:underline cursor-pointer"
+                  >
+                    {showCloudflareToken ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
+                <input
+                  type={showCloudflareToken ? 'text' : 'password'}
+                  value={
+                    formData.cloudflareApiToken ??
+                    (typeof window !== 'undefined' && typeof window.atob === 'function'
+                      ? window.atob('Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=')
+                      : '')
+                  }
+                  onChange={(e) => setFormData({ ...formData, cloudflareApiToken: e.target.value })}
+                  placeholder="Token de Cloudflare..."
+                  className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-gray-400 mb-1">
+                Identificador del Modelo en Cloudflare
+              </label>
+              <input
+                type="text"
+                value={formData.cloudflareAiModel ?? '@cf/qwen/qwen3-30b-a3b-fp8'}
+                onChange={(e) => setFormData({ ...formData, cloudflareAiModel: e.target.value })}
+                placeholder="@cf/qwen/qwen3-30b-a3b-fp8"
+                className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
+              />
+            </div>
+
+            {/* Test Connection Button & Result */}
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-[11px] text-gray-400">
+                Verifica la latencia y la respuesta de Qwen 30B en tiempo real.
+              </div>
+              <button
+                type="button"
+                onClick={handleTestCloudflareAI}
+                disabled={isTestingCloudflare}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 disabled:opacity-50 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)] shrink-0"
+              >
+                <IconSparkles size={14} className={isTestingCloudflare ? 'animate-spin' : ''} />
+                <span>{isTestingCloudflare ? 'Probando Qwen 30B...' : '⚡ Probar Conexión con Qwen 30B'}</span>
+              </button>
+            </div>
+
+            {cloudflareTestResult && (
+              <div
+                className={`p-3 rounded-xl text-xs border animate-in fade-in duration-200 ${
+                  cloudflareTestResult.ok
+                    ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200'
+                    : 'bg-rose-950/40 border-rose-500/30 text-rose-200'
+                }`}
+              >
+                <div className="flex items-center justify-between font-semibold mb-1">
+                  <span>{cloudflareTestResult.ok ? '✓ Conexión establecida con éxito' : '✕ Error al conectar'}</span>
+                  {cloudflareTestResult.latencyMs !== undefined && (
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
+                      {cloudflareTestResult.latencyMs} ms
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] opacity-90">{cloudflareTestResult.message}</p>
+              </div>
+            )}
+          </div>
+
           {/* Native Siri Integration Banner */}
           <div className="p-4 rounded-xl bg-[#151520] border border-amber-500/20 space-y-2 text-xs text-gray-400">
             <div className="flex items-center gap-2 text-amber-400 font-semibold">
               <IconSparkles size={16} />
-              <span>Asistente Sofi con Voz Nativa de Siri (macOS • 0€)</span>
+              <span>Síntesis y Reconocimiento de Voz con Siri (macOS • 0€)</span>
             </div>
             <p className="text-gray-300 leading-relaxed text-[11px]">
-              El asistente funciona de forma 100% nativa e ilimitada integrándose con el sintetizador y reconocedor de voz de Apple en macOS (Siri). No requiere saldo ni claves de API externas, garantizando privacidad total y 0€ de coste.
+              La síntesis de voz y el reconocimiento por micrófono se integran de forma 100% nativa con Siri en macOS. Las respuestas de Qwen 30B son locutadas con las voces de Siri en español de España de tu Mac.
             </p>
           </div>
 

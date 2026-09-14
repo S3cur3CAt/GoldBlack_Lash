@@ -75,12 +75,14 @@ export interface StudioConfig {
   alertEmail?: string
   maintenanceMode?: boolean
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
-  geminiApiKey?: string
   voiceAssistantEnabled?: boolean
   voiceAutoSpeak?: boolean
   voiceAnnounceNewAppointments?: boolean
   voiceAnnounceUpdates?: boolean
   voiceWakeWordEnabled?: boolean
+  cloudflareAccountId?: string
+  cloudflareApiToken?: string
+  cloudflareAiModel?: string
 }
 
 export interface GalleryItem {

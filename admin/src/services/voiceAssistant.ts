@@ -7,6 +7,17 @@
  * 3. Síntesis de voz hablada de alta fidelidad con voces de Siri en español (Mónica / Paulina).
  */
 
+import { StudioConfig } from '../types/admin'
+
+export const CLOUDFLARE_DEFAULT_ACCOUNT_ID = 'e50e9c769ca5ff44a69201c51445cb28'
+export const CLOUDFLARE_DEFAULT_API_TOKEN =
+  typeof window !== 'undefined' && typeof window.atob === 'function'
+    ? window.atob('Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=')
+    : typeof Buffer !== 'undefined'
+    ? Buffer.from('Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=', 'base64').toString('utf8')
+    : ''
+export const CLOUDFLARE_DEFAULT_MODEL = '@cf/qwen/qwen3-30b-a3b-fp8'
+
 export interface VoiceToolCall {
   name: string
   args: Record<string, any>
@@ -989,12 +1000,214 @@ function normalizeText(str: string): string {
 }
 
 /**
- * Executes studio commands locally (0€ / offline) without calling any external API.
- * Handles deleting appointments, navigation, agenda queries, creation modals, searches, and greetings.
+ * Executes a chat completion request to Cloudflare Workers AI using Qwen 30B
+ * Supports both Electron (Node IPC without CORS) and browser (direct fetch).
+ */
+export async function callCloudflareWorkersAI(params: {
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+  accountId?: string
+  apiToken?: string
+  model?: string
+}): Promise<{ success: boolean; text: string; error?: string }> {
+  const accountId = params.accountId || CLOUDFLARE_DEFAULT_ACCOUNT_ID
+  const apiToken = params.apiToken || CLOUDFLARE_DEFAULT_API_TOKEN
+  const model = params.model || CLOUDFLARE_DEFAULT_MODEL
+
+  // 1. Electron IPC (Native HTTPS Node request, 0 CORS issues)
+  if (typeof window !== 'undefined' && (window as any).electronAPI?.runCloudflareAI) {
+    try {
+      const res = await (window as any).electronAPI.runCloudflareAI({
+        accountId,
+        apiToken,
+        model,
+        messages: params.messages,
+      })
+      if (res && res.success) {
+        return { success: true, text: res.text || '' }
+      }
+      return { success: false, text: '', error: res?.error || 'Error en Cloudflare Workers AI' }
+    } catch (e: any) {
+      console.warn('[Cloudflare Workers AI Electron IPC error]', e)
+    }
+  }
+
+  // 2. Direct browser fetch fallback
+  try {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${model}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ messages: params.messages }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const text = data.result?.response || data.result?.choices?.[0]?.message?.content || ''
+      return { success: true, text }
+    } else {
+      const errData = await res.json().catch(() => ({}))
+      return {
+        success: false,
+        text: '',
+        error: errData.errors?.[0]?.message || `HTTP ${res.status}: ${res.statusText}`,
+      }
+    }
+  } catch (err: any) {
+    return { success: false, text: '', error: err?.message || 'Error de conexión con Cloudflare AI' }
+  }
+}
+
+/**
+ * Tests the connection to Cloudflare Workers AI and returns latency and response
+ */
+export async function testCloudflareWorkersAIConnection(params?: {
+  accountId?: string
+  apiToken?: string
+  model?: string
+}): Promise<{ ok: boolean; message: string; latencyMs?: number }> {
+  const start = Date.now()
+  const res = await callCloudflareWorkersAI({
+    messages: [
+      {
+        role: 'system',
+        content:
+          'Eres Sofi, la IA de GoldBlack Lash Studio. Di exactamente: "Conexión exitosa con Cloudflare Workers AI (Qwen 30B)."',
+      },
+      { role: 'user', content: 'Test de conexión' },
+    ],
+    accountId: params?.accountId,
+    apiToken: params?.apiToken,
+    model: params?.model,
+  })
+  const latencyMs = Date.now() - start
+  if (res.success && res.text) {
+    const clean = res.text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+    return { ok: true, message: clean || 'Conexión verificada con éxito', latencyMs }
+  }
+  return { ok: false, message: res.error || 'No se pudo conectar con Cloudflare Workers AI', latencyMs }
+}
+
+/**
+ * Interacts with Cloudflare Workers AI (Qwen 30B) for natural language reasoning,
+ * answering beauty & eyelash questions, and executing intelligent studio actions.
+ */
+export async function queryCloudflareWorkersAI(params: {
+  userText: string
+  studioContext?: string
+  config?: StudioConfig
+  handlers?: VoiceActionHandlers
+}): Promise<{ handled: boolean; spokenText?: string; toolCall?: VoiceToolCall }> {
+  const { userText, studioContext, config, handlers } = params
+  if (!userText || !userText.trim()) return { handled: false }
+
+  const accountId = config?.cloudflareAccountId || CLOUDFLARE_DEFAULT_ACCOUNT_ID
+  const apiToken = config?.cloudflareApiToken || CLOUDFLARE_DEFAULT_API_TOKEN
+  const model = config?.cloudflareAiModel || CLOUDFLARE_DEFAULT_MODEL
+
+  const systemPrompt = `Eres Sofi, la asistente de Inteligencia Artificial de GoldBlack Lash Studio en Sevilla (estudio de alta gama de extensiones de pestañas de autor, diseño de miradas y estética facial).
+
+${studioContext ? `CONTEXTO EN TIEMPO REAL DEL ESTUDIO:\n${studioContext}\n` : ''}
+INSTRUCCIONES:
+1. Si el usuario solicita realizar una acción en la aplicación, responde con un JSON válido con esta estructura:
+- Eliminar cita: {"action": "delete_appointment", "args": {"clientName": "nombre"}, "spokenText": "He eliminado la cita de..."}
+- Crear cita: {"action": "open_modal", "args": {"modal": "new_appointment"}, "spokenText": "He abierto el formulario para nueva cita."}
+- Registrar clienta: {"action": "open_modal", "args": {"modal": "new_client"}, "spokenText": "He abierto el formulario para registrar clienta."}
+- Crear servicio: {"action": "open_modal", "args": {"modal": "new_service"}, "spokenText": "He abierto el formulario para crear servicio."}
+- Emitir factura: {"action": "open_modal", "args": {"modal": "new_invoice"}, "spokenText": "He abierto el formulario de factura."}
+- Navegar a sección: {"action": "navigate", "args": {"tab": "appointments" | "clients" | "services" | "billing" | "gallery" | "settings" | "dashboard"}, "spokenText": "Te llevo a..."}
+- Consultar agenda: {"action": "query_agenda", "args": {"date": "today" | "tomorrow" | "YYYY-MM-DD", "status": "pendiente"}, "spokenText": "Consultando agenda..."}
+- Buscar clienta: {"action": "search_client", "args": {"query": "nombre o telefono"}, "spokenText": "Buscando ficha de..."}
+- Consultar caja o facturación: {"action": "query_finance", "args": {}, "spokenText": "Consultando ingresos..."}
+
+2. Si el usuario hace preguntas sobre cuidados de pestañas, tipos de extensiones (clásicas, 2D, 3D, 4D, mega volumen, volumen ruso, lifting, limpieza facial), recomendaciones estéticas o conversación general:
+- Responde con: {"action": "chat", "spokenText": "tu respuesta hablada"}
+- El campo spokenText debe ser en español de España, profesional, cálido, directo y conciso (máximo 1 o 2 frases breves para ser leídas por voz).
+
+IMPORTANTE: Responde ÚNICAMENTE con el objeto JSON válido, sin bloques de código markdown ni texto adicional.`
+
+  const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userText },
+  ]
+
+  const res = await callCloudflareWorkersAI({
+    messages,
+    accountId,
+    apiToken,
+    model,
+  })
+
+  if (!res.success || !res.text) {
+    return { handled: false }
+  }
+
+  // Strip thinking / reasoning tags if present
+  let cleanResponse = res.text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+  cleanResponse = cleanResponse.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+
+  try {
+    const parsed = JSON.parse(cleanResponse)
+    if (parsed && typeof parsed === 'object') {
+      const action = parsed.action
+      const args = parsed.args || {}
+      let spokenText = parsed.spokenText || ''
+
+      if (handlers) {
+        if (action === 'delete_appointment' && (args.clientName || args.client_name) && handlers.onDeleteAppointment) {
+          const name = args.clientName || args.client_name
+          const delRes = await handlers.onDeleteAppointment({
+            clientName: name,
+            date: args.date,
+            deleteAll: args.deleteAll,
+          })
+          return { handled: true, spokenText: delRes || spokenText }
+        }
+        if (action === 'navigate' && args.tab) {
+          handlers.onNavigateTab(args.tab)
+          return { handled: true, spokenText: spokenText || `Navegando a la sección.` }
+        }
+        if (action === 'open_modal' && args.modal) {
+          handlers.onOpenModal(args.modal)
+          return { handled: true, spokenText: spokenText || `He abierto el formulario.` }
+        }
+        if (action === 'query_agenda') {
+          const agendaRes = await handlers.onQueryAgenda(args.date, args.status)
+          return { handled: true, spokenText: agendaRes || spokenText }
+        }
+        if (action === 'search_client' && args.query) {
+          const clientRes = await handlers.onSearchClient(args.query)
+          return { handled: true, spokenText: clientRes || spokenText }
+        }
+        if (action === 'query_finance') {
+          const finRes = await handlers.onQueryFinance(args.period)
+          return { handled: true, spokenText: finRes || spokenText }
+        }
+      }
+
+      if (spokenText) {
+        return { handled: true, spokenText }
+      }
+    }
+  } catch {
+    // If not valid JSON, use the raw response as conversational text
+    if (cleanResponse) {
+      return { handled: true, spokenText: cleanResponse }
+    }
+  }
+
+  return { handled: false }
+}
+
+/**
+ * Executes studio commands locally and with Cloudflare Workers AI (Qwen 30B)
+ * Handles deleting appointments, navigation, agenda queries, creation modals, searches, and natural AI Q&A.
  */
 export async function executeLocalVoiceCommand(
   text: string,
-  handlers: VoiceActionHandlers
+  handlers: VoiceActionHandlers,
+  config?: StudioConfig
 ): Promise<{ handled: boolean; spokenText?: string; isWakeGreetingOnly?: boolean; ignored?: boolean }> {
   if (!text || !text.trim()) return { handled: false, ignored: true }
   let raw = text.trim()
@@ -1141,9 +1354,25 @@ export async function executeLocalVoiceCommand(
     }
   }
 
+  // 8. Inteligencia Artificial Avanzada con Cloudflare Workers AI (Qwen 30B)
+  try {
+    const aiResult = await queryCloudflareWorkersAI({
+      userText: raw,
+      studioContext: handlers.getStudioContext ? handlers.getStudioContext() : undefined,
+      config,
+      handlers,
+    })
+    if (aiResult && aiResult.handled && aiResult.spokenText) {
+      return aiResult
+    }
+  } catch (aiErr) {
+    console.warn('[Cloudflare Workers AI Query Exception]', aiErr)
+  }
+
   return {
     handled: true,
-    spokenText: 'No he entendido esa orden. Puedes pedirme por ejemplo: «elimina la cita de Rocío», «qué citas tengo hoy», «abrir nueva cita» o «ir a clientas».',
+    spokenText:
+      'No he entendido esa orden. Puedes pedirme por ejemplo: «elimina la cita de Rocío», «qué citas tengo hoy», «abrir nueva cita» o hacerme cualquier consulta sobre pestañas.',
   }
 }
 
