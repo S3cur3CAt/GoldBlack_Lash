@@ -301,8 +301,8 @@ export const App: React.FC = () => {
     // Initial sync
     syncAppointments()
 
-    // Regular polling for online web bookings (every 5 seconds)
-    const aptPolling = setInterval(syncAppointments, 5000)
+    // Regular polling for online web bookings (every 15 seconds)
+    const aptPolling = setInterval(syncAppointments, 15000)
 
     // Sync on window focus (e.g. user returns to admin app)
     window.addEventListener('focus', syncAppointments)

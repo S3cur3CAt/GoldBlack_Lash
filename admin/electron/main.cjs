@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
 const path = require('path')
 const { exec, spawn } = require('child_process')
+const fs = require('fs')
 const { setupUpdaterIPC } = require('./updater.cjs')
 
 // Set explicit Application User Model ID for Windows 10/11 taskbar icon grouping
@@ -355,7 +356,17 @@ ipcMain.handle('voice:native-listen-start', async () => {
   if (process.platform !== 'darwin') return { supported: false }
 
   const swiftPath = '/usr/bin/swift'
-  const scriptPath = path.join(__dirname, 'speech-listener.swift')
+  let scriptPath = path.join(__dirname, 'speech-listener.swift')
+
+  // If inside asar archive, extract to real disk location in userData
+  try {
+    const scriptContent = fs.readFileSync(scriptPath, 'utf8')
+    const diskPath = path.join(app.getPath('userData'), 'speech-listener.swift')
+    fs.writeFileSync(diskPath, scriptContent, 'utf8')
+    scriptPath = diskPath
+  } catch (extractErr) {
+    console.warn('[Swift Script Extract Warning]', extractErr?.message || extractErr)
+  }
 
   if (currentListenProcess) {
     try { currentListenProcess.kill('SIGTERM') } catch {}

@@ -40,6 +40,7 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
   const [showCommandsModal, setShowCommandsModal] = useState(false)
   const [liveVolume, setLiveVolume] = useState<number>(0)
   const [liveTranscript, setLiveTranscript] = useState<string>('')
+  const [textCommandInput, setTextCommandInput] = useState<string>('')
   const [isHandsFree, setIsHandsFree] = useState<boolean>(() => {
     const saved = localStorage.getItem('goldblack_voice_handsfree')
     return saved !== null ? saved === 'true' : wakeWordEnabled
@@ -294,7 +295,15 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
 
         recognition.onerror = (err: any) => {
           console.warn('[SpeechRecognition Error]', err)
-          if (statusRef.current === 'recording') {
+          if (err.error === 'network') {
+            setErrorMessage('Reconocimiento por voz en la nube no disponible. Puedes escribir tu orden aquí abajo:')
+            setStatus('error')
+            setIsExpanded(true)
+          } else if (err.error === 'not-allowed') {
+            setErrorMessage('Permiso de micrófono no concedido. Puedes escribir tu orden aquí abajo:')
+            setStatus('error')
+            setIsExpanded(true)
+          } else if (statusRef.current === 'recording') {
             setStatus('idle')
           }
         }
@@ -398,6 +407,14 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
         speakWithNativeVoice('No pude procesar el comando. Inténtalo de nuevo.')
       }
     }
+  }
+
+  const handleTextCommandSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!textCommandInput.trim()) return
+    const cmd = textCommandInput.trim()
+    setTextCommandInput('')
+    await handleExecuteCommandText(cmd)
   }
 
   const handleCancel = () => {
@@ -554,6 +571,25 @@ export const VoiceAssistantWidget: React.FC<VoiceAssistantWidgetProps> = ({
               </div>
             )}
           </div>
+
+          {/* Quick text command box */}
+          <form onSubmit={handleTextCommandSubmit} className="mb-2.5 flex items-center gap-1.5">
+            <input
+              type="text"
+              value={textCommandInput}
+              onChange={(e) => setTextCommandInput(e.target.value)}
+              placeholder="O escribe una orden (ej: elimina cita de Rocío)..."
+              className="flex-1 bg-zinc-900/90 border border-zinc-700/80 focus:border-amber-500/80 rounded-xl px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none transition-colors"
+            />
+            <button
+              type="submit"
+              disabled={!textCommandInput.trim()}
+              className="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-30 disabled:hover:bg-amber-500 text-zinc-950 text-xs font-bold transition-all shadow-sm cursor-pointer"
+              title="Ejecutar orden escrita"
+            >
+              ↵
+            </button>
+          </form>
 
           {/* Botón principal para abrir catálogo de comandos */}
           <div className="pt-2 pb-1 border-t border-zinc-800/60">
