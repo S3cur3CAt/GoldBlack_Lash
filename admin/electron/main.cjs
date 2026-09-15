@@ -729,6 +729,7 @@ ipcMain.handle('voice:native-listen-continuous-start', async () => {
   logToRenderer('info', '[Sofi]   platform:', process.platform, 'arch:', process.arch)
   logToRenderer('info', '[Sofi]   userData:', app.getPath('userData'))
   isContinuousListeningActive = true
+  consecutiveCrashes = 0
   if (currentListenProcess && !currentListenProcess.killed) {
     resumeListener()
     return { supported: true }

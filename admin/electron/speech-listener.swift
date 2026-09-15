@@ -81,40 +81,16 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
             exit(1)
 
         case .notDetermined:
-            fputs("STATUS: REQUESTING_SPEECH_AUTH\n", stderr)
+            fputs("STATUS: SPEECH_NOT_DETERMINED (macOS gestionará la autorización automáticamente al iniciar la tarea)\n", stderr)
             fflush(stderr)
-
-            // Request authorization in Cocoa main thread
-            SFSpeechRecognizer.requestAuthorization { [weak self] authStatus in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    fputs("RESULT: Speech auth = \(authStatus.rawValue)\n", stderr)
-                    fflush(stderr)
-
-                    switch authStatus {
-                    case .authorized:
-                        fputs("STATUS: SPEECH_AUTHORIZED\n", stderr)
-                        self.checkMicrophoneAndSetup()
-                    case .denied:
-                        fputs("ERROR: SPEECH_DENIED\n", stderr)
-                        fputs("DIAGNOSTIC: Acceso denegado por el usuario.\n", stderr)
-                        exit(1)
-                    case .restricted:
-                        fputs("ERROR: SPEECH_RESTRICTED\n", stderr)
-                        exit(1)
-                    case .notDetermined:
-                        fputs("ERROR: SPEECH_NOT_DETERMINED\n", stderr)
-                        exit(1)
-                    @unknown default:
-                        fputs("ERROR: SPEECH_UNKNOWN_AUTH\n", stderr)
-                        exit(1)
-                    }
-                }
-            }
+            // En macOS, invocar SFSpeechRecognizer.requestAuthorization directamente en un helper
+            // dispara un SIGABRT de TCC. La autorización se solicita de forma nativa e integrada
+            // al iniciar el reconocimiento de voz (SFSpeechRecognitionTask) con AVAudioEngine.
+            self.checkMicrophoneAndSetup()
 
         @unknown default:
-            fputs("ERROR: SPEECH_UNKNOWN_STATUS\n", stderr)
-            exit(1)
+            fputs("STATUS: SPEECH_UNKNOWN_STATUS, procediendo a inicializar\n", stderr)
+            self.checkMicrophoneAndSetup()
         }
     }
 
@@ -187,14 +163,24 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
         fputs("AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
         fflush(stderr)
 
-        guard busFormat.sampleRate > 0 && busFormat.channelCount > 0 else {
-            fputs("ERROR_BAD_AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
-            exit(3)
+        let targetFormat: AVAudioFormat
+        if busFormat.sampleRate > 0 && busFormat.channelCount > 0 {
+            targetFormat = busFormat
+        } else {
+            let altFormat = inputNode.inputFormat(forBus: 0)
+            if altFormat.sampleRate > 0 && altFormat.channelCount > 0 {
+                targetFormat = altFormat
+            } else if let fallback = AVAudioFormat(standardFormatWithSampleRate: 44100, channels: 1) {
+                targetFormat = fallback
+            } else {
+                fputs("ERROR_BAD_AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
+                exit(3)
+            }
         }
 
         // Install buffer tap once on the input node
         if !isTapInstalled {
-            inputNode.installTap(onBus: 0, bufferSize: 2048, format: busFormat) { [weak self] buffer, _ in
+            inputNode.installTap(onBus: 0, bufferSize: 2048, format: targetFormat) { [weak self] buffer, _ in
                 guard let self = self else { return }
                 if !self.isPaused, let req = self.currentRequest {
                     req.append(buffer)
@@ -297,6 +283,11 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                         // Code 216 = session timeout / silence limit, Code 1110 = no speech detected
                         if nse.code == 216 || nse.code == 1110 {
                             fputs("SESSION_TIMEOUT gen=\(gen) code=\(nse.code)\n", stderr)
+                        } else if nse.code == 1700 || nse.domain == "kAFAssistantErrorDomain" {
+                            fputs("ERROR: SPEECH_DENIED\n", stderr)
+                            fputs("DIAGNOSTIC: Reconocimiento de voz denegado en el diálogo del sistema. Permítelo en Ajustes del Sistema -> Privacidad y Seguridad -> Reconocimiento de voz.\n", stderr)
+                            fflush(stderr)
+                            exit(1)
                         } else {
                             fputs("SESSION_ERROR gen=\(gen) code=\(nse.code) domain=\(nse.domain) desc=\(nse.localizedDescription)\n", stderr)
                         }
