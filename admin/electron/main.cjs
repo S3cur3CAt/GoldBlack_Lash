@@ -358,6 +358,8 @@ function getNativeAppBundlePaths() {
 }
 
 let nativeBinaryReady = false
+let consecutiveCrashes = 0
+let lastSpawnTime = 0
 
 async function ensureNativeListenerBinary() {
   if (process.platform !== 'darwin') {
@@ -388,15 +390,29 @@ async function ensureNativeListenerBinary() {
     logToRenderer('error', '[Sofi Compiler] No se encontró speech-listener.swift')
     return { supported: false, error: 'no_swift_source' }
   }
-  fs.writeFileSync(paths.swiftSrcPath, swiftContent, 'utf8')
 
-  // Check if compiled binary exists and is up to date
+  // Only write if content changed to preserve mtime
+  let sourceChanged = true
+  try {
+    if (fs.existsSync(paths.swiftSrcPath)) {
+      const existing = fs.readFileSync(paths.swiftSrcPath, 'utf8')
+      if (existing === swiftContent) {
+        sourceChanged = false
+      }
+    }
+  } catch {}
+
+  if (sourceChanged) {
+    fs.writeFileSync(paths.swiftSrcPath, swiftContent, 'utf8')
+  }
+
+  // Check if compiled binary exists and is newer than source
   try {
     if (fs.existsSync(paths.binaryPath)) {
       const srcStat = fs.statSync(paths.swiftSrcPath)
       const binStat = fs.statSync(paths.binaryPath)
-      if (binStat.mtimeMs > srcStat.mtimeMs) {
-        logToRenderer('info', '[Sofi Compiler] ✅ Binario nativo actualizado:', paths.binaryPath)
+      if (!sourceChanged && binStat.mtimeMs >= srcStat.mtimeMs) {
+        logToRenderer('info', '[Sofi Compiler] ✅ Binario nativo listo y actualizado:', paths.binaryPath)
         nativeBinaryReady = true
         return { supported: true, binaryPath: paths.binaryPath }
       }
@@ -411,6 +427,7 @@ async function ensureNativeListenerBinary() {
       '-O',
       '-o', paths.binaryPath,
       paths.swiftSrcPath,
+      '-framework', 'Cocoa',
       '-framework', 'Speech',
       '-framework', 'AVFoundation',
       '-framework', 'CoreAudio',
@@ -428,18 +445,28 @@ async function ensureNativeListenerBinary() {
       if (code === 0 && fs.existsSync(paths.binaryPath)) {
         try {
           execSync(`chmod +x "${paths.binaryPath}"`)
-          execSync(`/usr/bin/codesign -s - --force --deep "${paths.appBundleDir}" 2>/dev/null || true`)
+          const signRes = execSync(`/usr/bin/codesign -s - --force --deep "${paths.appBundleDir}" 2>&1`, { encoding: 'utf8' })
+          logToRenderer('info', '[Sofi Compiler] Codesign:', signRes.trim() || 'OK')
+        } catch (e) {
+          logToRenderer('warn', '[Sofi Compiler] Codesign notice:', e?.message)
+        }
+
+        try {
+          execSync(`/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "${paths.appBundleDir}" 2>/dev/null || true`)
+          logToRenderer('info', '[Sofi Compiler] LaunchServices registrado')
         } catch {}
+
         logToRenderer('info', '[Sofi Compiler] ✅ Compilación nativa completada:', paths.binaryPath)
         nativeBinaryReady = true
         resolve({ supported: true, binaryPath: paths.binaryPath })
       } else {
         logToRenderer('warn', '[Sofi Compiler] Falló compilación con -sectcreate, reintentando...')
-        // Fallback compilation without -sectcreate (the Info.plist inside the .app bundle is still active)
+        // Fallback compilation without -sectcreate
         const fallbackProc = spawn('/usr/bin/swiftc', [
           '-O',
           '-o', paths.binaryPath,
           paths.swiftSrcPath,
+          '-framework', 'Cocoa',
           '-framework', 'Speech',
           '-framework', 'AVFoundation',
         ])
@@ -450,6 +477,9 @@ async function ensureNativeListenerBinary() {
             try {
               execSync(`chmod +x "${paths.binaryPath}"`)
               execSync(`/usr/bin/codesign -s - --force --deep "${paths.appBundleDir}" 2>/dev/null || true`)
+            } catch {}
+            try {
+              execSync(`/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "${paths.appBundleDir}" 2>/dev/null || true`)
             } catch {}
             logToRenderer('info', '[Sofi Compiler] ✅ Compilación fallback exitosa:', paths.binaryPath)
             nativeBinaryReady = true
@@ -489,6 +519,7 @@ async function spawnNativeListener() {
 
   return new Promise((resolve) => {
     try {
+      lastSpawnTime = Date.now()
       logToRenderer('info', '[Sofi] 📡 Ejecutando SofiListener nativo:', execPath)
       const proc = spawn(execPath, [], { stdio: ['pipe', 'pipe', 'pipe'] })
       currentListenProcess = proc
@@ -535,6 +566,7 @@ async function spawnNativeListener() {
           logToRenderer('info', '[Swift]', l)
 
           if (l.includes('LISTENING_READY')) {
+            consecutiveCrashes = 0
             clearTimeout(startupTimeout)
             if (!started) {
               started = true
@@ -557,10 +589,25 @@ async function spawnNativeListener() {
         clearTimeout(startupTimeout)
         logToRenderer('warn', '[Sofi] Proceso cerrado — code:', code, 'signal:', signal)
         currentListenProcess = null
+
+        const runtime = Date.now() - lastSpawnTime
+        if (runtime < 3000) {
+          consecutiveCrashes++
+        } else {
+          consecutiveCrashes = 0
+        }
+
         if (!started) {
           started = true
           resolve({ supported: false, error: 'process_exited', code, signal })
         }
+
+        if (consecutiveCrashes >= 3) {
+          logToRenderer('error', '[Sofi] 🛑 El proceso nativo falló 3 veces consecutivas en el arranque. Deteniendo auto-reinicio para evitar bucle.')
+          isContinuousListeningActive = false
+          return
+        }
+
         if (isContinuousListeningActive && !isSpeaking) {
           logToRenderer('info', '[Sofi] ♻️ Relanzando en 2s...')
           if (listenerRestartTimer) clearTimeout(listenerRestartTimer)

@@ -1,26 +1,38 @@
 import Foundation
+import Cocoa
 import Speech
 import AVFoundation
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // GoldBlack Lash — Sofi Native Continuous Speech Listener (macOS Monterey 12+)
 // ═══════════════════════════════════════════════════════════════════════════════
-// High-performance, robust native background speech recognition engine.
+// Robust Cocoa-based helper application with full TCC entitlement support.
 // Features:
-//   - Non-blocking asynchronous authorization flow (no main-thread deadlocks)
-//   - Explicit microphone and speech recognition permission handlers
-//   - Resilient AVAudioEngine setup adapting to any hardware sample rate
+//   - NSApplication lifecycle (.accessory policy) for native macOS permission UI
+//   - Detailed uncaught exception trapping for diagnostic transparency
+//   - Lazy AVAudioEngine initialization after permission validation
+//   - Asynchronous authorization handling without main-thread deadlocks
 //   - Continuous recognition session cycling on silence or network timeouts
 //   - Bidirectional IPC via stdio (PAUSE / RESUME / QUIT)
-//   - Graceful termination on SIGINT / SIGTERM / STDIN EOF
 // ═══════════════════════════════════════════════════════════════════════════════
 
 setbuf(stdout, nil)
 setbuf(stderr, nil)
 
+// Trap uncaught Objective-C exceptions to print exact diagnostics before SIGABRT
+NSSetUncaughtExceptionHandler { exception in
+    let name = exception.name.rawValue
+    let reason = exception.reason ?? "Sin descripción"
+    fputs("CRASH_EXCEPTION [\(name)]: \(reason)\n", stderr)
+    for sym in exception.callStackSymbols.prefix(10) {
+        fputs("  \(sym)\n", stderr)
+    }
+    fflush(stderr)
+}
+
 final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
     private var recognizer: SFSpeechRecognizer?
-    private let audioEngine = AVAudioEngine()
+    private lazy var audioEngine = AVAudioEngine()
     private var currentRequest: SFSpeechAudioBufferRecognitionRequest?
     private var currentTask: SFSpeechRecognitionTask?
     private var silenceTimer: DispatchWorkItem?
@@ -35,45 +47,91 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
         super.init()
     }
 
-    // ── 1. Entry Point: Asynchronous Authorization ──────────────────────────
+    // ── 1. Entry Point: Permission Diagnostics & Authorization ───────────────
     func start() {
         fputs("STATUS: INITIALIZING\n", stderr)
+        fputs("BUNDLE_PATH: \(Bundle.main.bundlePath)\n", stderr)
+        fputs("BUNDLE_ID: \(Bundle.main.bundleIdentifier ?? "nil")\n", stderr)
 
-        // Request Speech Recognition Authorization asynchronously on main runloop
-        SFSpeechRecognizer.requestAuthorization { [weak self] authStatus in
-            DispatchQueue.main.async {
-                guard let self = self else { return }
-                switch authStatus {
-                case .authorized:
-                    fputs("STATUS: SPEECH_AUTHORIZED\n", stderr)
-                    self.checkMicrophoneAndSetup()
-                case .denied:
-                    fputs("ERROR: SPEECH_DENIED\n", stderr)
-                    fputs("DIAGNOSTIC: Acceso a reconocimiento de voz denegado. Permítelo en Ajustes del Sistema -> Privacidad y Seguridad -> Reconocimiento de voz.\n", stderr)
-                    exit(1)
-                case .restricted:
-                    fputs("ERROR: SPEECH_RESTRICTED\n", stderr)
-                    fputs("DIAGNOSTIC: Reconocimiento de voz restringido por directivas del sistema o controles parentales.\n", stderr)
-                    exit(1)
-                case .notDetermined:
-                    fputs("ERROR: SPEECH_NOT_DETERMINED\n", stderr)
-                    exit(1)
-                @unknown default:
-                    fputs("ERROR: SPEECH_UNKNOWN_AUTH\n", stderr)
-                    exit(1)
+        let speechDesc = Bundle.main.object(forInfoDictionaryKey: "NSSpeechRecognitionUsageDescription") as? String ?? "nil"
+        fputs("SPEECH_DESC: \(speechDesc)\n", stderr)
+
+        let micDesc = Bundle.main.object(forInfoDictionaryKey: "NSMicrophoneUsageDescription") as? String ?? "nil"
+        fputs("MIC_DESC: \(micDesc)\n", stderr)
+        fflush(stderr)
+
+        // Check speech recognition authorization status first
+        let speechStatus = SFSpeechRecognizer.authorizationStatus()
+        fputs("CHECK: Speech status = \(speechStatus.rawValue)\n", stderr)
+        fflush(stderr)
+
+        switch speechStatus {
+        case .authorized:
+            fputs("STATUS: SPEECH_ALREADY_AUTHORIZED\n", stderr)
+            self.checkMicrophoneAndSetup()
+
+        case .denied:
+            fputs("ERROR: SPEECH_DENIED\n", stderr)
+            fputs("DIAGNOSTIC: El reconocimiento de voz está denegado en macOS. Ve a Ajustes del Sistema -> Privacidad y Seguridad -> Reconocimiento de voz y actívalo para GoldBlack Lash.\n", stderr)
+            exit(1)
+
+        case .restricted:
+            fputs("ERROR: SPEECH_RESTRICTED\n", stderr)
+            fputs("DIAGNOSTIC: Reconocimiento de voz restringido por directivas del sistema o controles parentales.\n", stderr)
+            exit(1)
+
+        case .notDetermined:
+            fputs("STATUS: REQUESTING_SPEECH_AUTH\n", stderr)
+            fflush(stderr)
+
+            // Request authorization in Cocoa main thread
+            SFSpeechRecognizer.requestAuthorization { [weak self] authStatus in
+                DispatchQueue.main.async {
+                    guard let self = self else { return }
+                    fputs("RESULT: Speech auth = \(authStatus.rawValue)\n", stderr)
+                    fflush(stderr)
+
+                    switch authStatus {
+                    case .authorized:
+                        fputs("STATUS: SPEECH_AUTHORIZED\n", stderr)
+                        self.checkMicrophoneAndSetup()
+                    case .denied:
+                        fputs("ERROR: SPEECH_DENIED\n", stderr)
+                        fputs("DIAGNOSTIC: Acceso denegado por el usuario.\n", stderr)
+                        exit(1)
+                    case .restricted:
+                        fputs("ERROR: SPEECH_RESTRICTED\n", stderr)
+                        exit(1)
+                    case .notDetermined:
+                        fputs("ERROR: SPEECH_NOT_DETERMINED\n", stderr)
+                        exit(1)
+                    @unknown default:
+                        fputs("ERROR: SPEECH_UNKNOWN_AUTH\n", stderr)
+                        exit(1)
+                    }
                 }
             }
+
+        @unknown default:
+            fputs("ERROR: SPEECH_UNKNOWN_STATUS\n", stderr)
+            exit(1)
         }
     }
 
     // ── 2. Microphone Permission Check ───────────────────────────────────────
     private func checkMicrophoneAndSetup() {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        fputs("CHECK: Mic status = \(micStatus.rawValue)\n", stderr)
+        fflush(stderr)
+
+        switch micStatus {
         case .authorized:
             fputs("STATUS: MIC_AUTHORIZED\n", stderr)
             self.setupRecognizerAndAudio()
+
         case .notDetermined:
             fputs("STATUS: REQUESTING_MIC\n", stderr)
+            fflush(stderr)
             AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
                 DispatchQueue.main.async {
                     guard let self = self else { return }
@@ -87,13 +145,16 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                     }
                 }
             }
+
         case .denied:
             fputs("ERROR: MIC_DENIED\n", stderr)
             fputs("DIAGNOSTIC: Acceso al micrófono denegado en Ajustes del Sistema.\n", stderr)
             exit(1)
+
         case .restricted:
             fputs("ERROR: MIC_RESTRICTED\n", stderr)
             exit(1)
+
         @unknown default:
             fputs("ERROR: MIC_UNKNOWN_AUTH\n", stderr)
             exit(1)
@@ -111,7 +172,9 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
         rec.delegate = self
 
         if !rec.isAvailable {
-            fputs("STATUS: RECOGNIZER_CURRENTLY_UNAVAILABLE\n", stderr)
+            fputs("STATUS: RECOGNIZER_CURRENTLY_UNAVAILABLE (esperando conexión con Siri/Dictado)\n", stderr)
+        } else {
+            fputs("STATUS: RECOGNIZER_AVAILABLE\n", stderr)
         }
 
         setupAudioEngine()
@@ -122,6 +185,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
         let busFormat = inputNode.outputFormat(forBus: 0)
 
         fputs("AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
+        fflush(stderr)
 
         guard busFormat.sampleRate > 0 && busFormat.channelCount > 0 else {
             fputs("ERROR_BAD_AUDIO_FORMAT sampleRate=\(busFormat.sampleRate) channels=\(busFormat.channelCount)\n", stderr)
@@ -144,6 +208,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
             try audioEngine.start()
             isEngineRunning = true
             fputs("LISTENING_READY\n", stderr)
+            fflush(stderr)
             startSession()
         } catch {
             fputs("ERROR_ENGINE_START \(error.localizedDescription)\n", stderr)
@@ -188,6 +253,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
             self.currentRequest = req
 
             fputs("SESSION_STARTED gen=\(gen)\n", stderr)
+            fflush(stderr)
 
             self.currentTask = recognizer.recognitionTask(with: req) { [weak self] result, error in
                 DispatchQueue.main.async {
@@ -198,6 +264,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                         if !text.isEmpty && text != self.lastTranscript {
                             self.lastTranscript = text
                             print("TRANSCRIPT: \(text)")
+                            fflush(stdout)
 
                             // Emit FINAL after 1.2 seconds of silence
                             self.silenceTimer?.cancel()
@@ -205,6 +272,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                                 guard let self = self, self.sessionGen == gen else { return }
                                 if !self.lastTranscript.isEmpty {
                                     print("FINAL: \(self.lastTranscript)")
+                                    fflush(stdout)
                                 }
                                 self.startSession()
                             }
@@ -217,6 +285,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                             self.silenceTimer = nil
                             if !text.isEmpty {
                                 print("FINAL: \(text)")
+                                fflush(stdout)
                             }
                             self.startSession()
                         }
@@ -231,6 +300,7 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
                         } else {
                             fputs("SESSION_ERROR gen=\(gen) code=\(nse.code) domain=\(nse.domain) desc=\(nse.localizedDescription)\n", stderr)
                         }
+                        fflush(stderr)
 
                         // Cycle recognition session seamlessly after cooldown
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
@@ -255,18 +325,21 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
         currentRequest = nil
         lastTranscript = ""
         fputs("PAUSED\n", stderr)
+        fflush(stderr)
     }
 
     func resume() {
         if isPaused {
             isPaused = false
             fputs("RESUMED\n", stderr)
+            fflush(stderr)
             startSession()
         }
     }
 
     func quit() {
         fputs("QUITTING\n", stderr)
+        fflush(stderr)
         if isEngineRunning {
             audioEngine.stop()
             if isTapInstalled {
@@ -282,17 +355,19 @@ final class SofiSpeechController: NSObject, SFSpeechRecognizerDelegate {
             guard let self = self else { return }
             if available {
                 fputs("STATUS: RECOGNIZER_AVAILABLE\n", stderr)
+                fflush(stderr)
                 if !self.isPaused && self.isEngineRunning {
                     self.startSession()
                 }
             } else {
                 fputs("STATUS: RECOGNIZER_UNAVAILABLE\n", stderr)
+                fflush(stderr)
             }
         }
     }
 }
 
-// ── 7. Global Lifecycle & Command Loop ──────────────────────────────────────
+// ── 7. Global Lifecycle & Cocoa NSApplication RunLoop ───────────────────────
 let controller = SofiSpeechController()
 
 // Read Stdin in Background Thread
@@ -311,6 +386,7 @@ DispatchQueue.global(qos: .userInitiated).async {
                 controller.quit()
             default:
                 fputs("UNKNOWN_CMD: \(cmd)\n", stderr)
+                fflush(stderr)
             }
         }
     }
@@ -324,8 +400,16 @@ DispatchQueue.global(qos: .userInitiated).async {
 signal(SIGINT)  { _ in exit(0) }
 signal(SIGTERM) { _ in exit(0) }
 
-// Start
-controller.start()
+// Cocoa App Configuration (.accessory -> no Dock icon, full WindowServer/TCC support)
+let app = NSApplication.shared
+app.setActivationPolicy(.accessory)
 
-// Run Loop keep alive
-RunLoop.main.run()
+class SofiAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        controller.start()
+    }
+}
+
+let appDelegate = SofiAppDelegate()
+app.delegate = appDelegate
+app.run()
