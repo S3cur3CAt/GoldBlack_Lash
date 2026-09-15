@@ -6,6 +6,7 @@ import { openReservationModal } from '#/components/ReservationModal'
 import {
   business,
   faqs,
+  serviceCategories,
 } from '#/data/site'
 
 export const Route = createFileRoute('/')({
@@ -154,8 +155,12 @@ function Hero() {
 }
 
 function ServicesPreview() {
+  const featuredServices = serviceCategories.flatMap((cat) =>
+    cat.services.map((srv) => ({ ...srv, categoryName: cat.name }))
+  )
+
   return (
-    <section className="section">
+    <section className="section bg-gradient-to-b from-transparent via-[#0d0d14]/30 to-transparent">
       <div className="wrap">
         <header className="mx-auto max-w-2xl text-center">
           <p className="eyebrow justify-center">
@@ -174,10 +179,63 @@ function ServicesPreview() {
           </p>
         </header>
 
-        <div className="mt-9 text-center">
-          <Link to="/servicios" className="button">
-            Ver todos los servicios
-            <span aria-hidden="true">↗</span>
+        {/* Beautiful Services Grid Preview */}
+        <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {featuredServices.slice(0, 4).map((service) => (
+            <div
+              key={service.id}
+              className="beauty-card p-6 flex flex-col justify-between group hover:shadow-card-hover transition-all duration-300"
+            >
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-widest text-[#d4af37]/80 font-bold block mb-1">
+                      {service.categoryName}
+                    </span>
+                    <h3 className="font-display text-2xl text-white group-hover:text-[#e5c158] transition-colors">
+                      {service.name}
+                    </h3>
+                  </div>
+                  <span className="font-display text-2xl font-semibold text-[#e5c158] bg-[#12121a] px-3.5 py-1 rounded-xl border border-[#d4af37]/25 shadow-inner">
+                    {service.price}
+                  </span>
+                </div>
+
+                <p className="text-sm text-[#9e9ea7] mt-3 leading-relaxed">
+                  {service.description}
+                </p>
+
+                <div className="mt-4 flex items-center gap-2 text-xs text-[#9e9ea7]">
+                  <svg className="w-4 h-4 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <span>Duración estimada: {service.duration}</span>
+                </div>
+
+                <ul className="mt-6 space-y-2 border-t border-[#d4af37]/15 pt-4">
+                  {service.includes.map((inc) => (
+                    <li key={inc} className="flex items-center gap-2.5 text-xs text-zinc-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]" />
+                      <span>{inc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-8">
+                <button
+                  onClick={() => openReservationModal()}
+                  className="w-full button button-light py-2.5 text-xs font-bold group-hover:bg-[#d4af37]/10 transition-colors"
+                >
+                  Reservar este servicio
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-14 text-center">
+          <Link to="/servicios" className="button button-accent shadow-gold-glow">
+            Ver catálogo completo
+            <span aria-hidden="true" className="ml-1">↗</span>
           </Link>
         </div>
       </div>
