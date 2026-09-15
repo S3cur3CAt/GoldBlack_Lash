@@ -60,6 +60,12 @@ async function checkGitHubStatus(userTriggered = false) {
       latestGitHubTag = res.latest.tag_name || ''
       el('txtGitHubVersion').textContent = latestGitHubTag
       el('txtGitHubVersion').className = 'text-xs font-mono font-bold text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/30'
+
+      const currentInput = el('inputVersion').value.trim().replace(/^v/, '')
+      const ghVer = latestGitHubTag.replace(/^v/, '')
+      if (!currentInput || currentInput === ghVer) {
+        suggestNextVersion(ghVer)
+      }
     } else {
       latestGitHubTag = ''
       el('txtGitHubVersion').textContent = 'Sin releases (0)'

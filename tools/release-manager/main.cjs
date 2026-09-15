@@ -386,6 +386,138 @@ function uploadAssetToRelease(rawUploadUrlTemplate, filePath, token, onProgress)
   })
 }
 
+// Check for existing release or create a new release with retry on transient errors
+async function getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerelease) {
+  // 1. Check if a release for this tag already exists on GitHub
+  const existing = await new Promise((resolve) => {
+    const req = https.request(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/tags/${cleanTag}`,
+      {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'GoldBlack-Release-Publisher',
+          Authorization: `token ${token.trim()}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      },
+      (res) => {
+        let body = ''
+        res.on('data', (c) => (body += c))
+        res.on('end', () => {
+          if (res.statusCode === 200) {
+            try {
+              resolve(JSON.parse(body))
+            } catch {
+              resolve(null)
+            }
+          } else {
+            resolve(null)
+          }
+        })
+      }
+    )
+    req.on('error', () => resolve(null))
+    req.end()
+  })
+
+  if (existing && existing.id) {
+    console.log(`[Publisher] Release existente detectada para ${cleanTag} (ID: ${existing.id}). Actualizando assets...`)
+    // Delete any existing assets with the same names to allow fresh replacement
+    if (Array.isArray(existing.assets)) {
+      for (const asset of existing.assets) {
+        await new Promise((resDelete) => {
+          const delReq = https.request(
+            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/assets/${asset.id}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'User-Agent': 'GoldBlack-Release-Publisher',
+                Authorization: `token ${token.trim()}`,
+                Accept: 'application/vnd.github.v3+json',
+              },
+            },
+            () => resDelete(true)
+          )
+          delReq.on('error', () => resDelete(false))
+          delReq.end()
+        })
+      }
+    }
+    return existing
+  }
+
+  // 2. Not existing: create new release with retry (up to 3 attempts) for transient 500/502/503 errors
+  let lastError = null
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      console.log(`[Publisher] Creando nueva release en GitHub para ${cleanTag} (intento ${attempt}/3)...`)
+
+      const payloadObj = {
+        tag_name: cleanTag,
+        name: title || `GoldBlack Lash Admin ${cleanTag}`,
+        body: notes || `Versión ${cleanTag} de GoldBlack Lash Admin para Windows y macOS.`,
+        draft: true,
+        prerelease: !!isPrerelease,
+      }
+      // On attempt 1, try with target_commitish. If 500 error occurred, omit it to avoid git ref sync delays
+      if (attempt === 1) {
+        payloadObj.target_commitish = 'main'
+      }
+
+      const releasePayload = JSON.stringify(payloadObj)
+
+      const releaseData = await new Promise((resolve, reject) => {
+        const req = https.request(
+          `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`,
+          {
+            method: 'POST',
+            headers: {
+              'User-Agent': 'GoldBlack-Release-Publisher',
+              Authorization: `token ${token.trim()}`,
+              Accept: 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(releasePayload),
+            },
+          },
+          (res) => {
+            let body = ''
+            res.on('data', (c) => (body += c))
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  resolve(JSON.parse(body))
+                } catch (e) {
+                  reject(new Error('Respuesta JSON de GitHub inválida'))
+                }
+              } else {
+                try {
+                  const errObj = JSON.parse(body)
+                  reject(new Error(errObj.message || `Error al crear release: HTTP ${res.statusCode}`))
+                } catch {
+                  reject(new Error(`Error al crear release: HTTP ${res.statusCode}`))
+                }
+              }
+            })
+          }
+        )
+        req.on('error', reject)
+        req.write(releasePayload)
+        req.end()
+      })
+
+      return releaseData
+    } catch (err) {
+      lastError = err
+      console.warn(`[Publisher] Intento ${attempt} de creación de release falló:`, err.message)
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 2000 * attempt))
+      }
+    }
+  }
+
+  throw lastError || new Error(`No se pudo crear la release ${cleanTag} tras 3 intentos.`)
+}
+
 // Publish Release to GitHub & Upload Binary Assets (Windows + macOS)
 ipcMain.handle('publisher:publish-release', async (event, payload) => {
   const { token, version, title, notes, isPrerelease, autoBuild, installerPath: userInstallerPath } = payload
@@ -441,54 +573,8 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
     throw new Error(`No se encontraron instaladores para v${cleanVersion} tras compilar.`)
   }
 
-  // 1. Create Release as DRAFT first (not visible in releases/latest while uploading)
-  const releasePayload = JSON.stringify({
-    tag_name: cleanTag,
-    target_commitish: 'main',
-    name: title || `GoldBlack Lash Admin ${cleanTag}`,
-    body: notes || `Versión ${cleanTag} de GoldBlack Lash Admin para Windows y macOS.`,
-    draft: true, // DRAFT: Keeps it hidden until all binaries are 100% uploaded
-    prerelease: !!isPrerelease,
-  })
-
-  const releaseData = await new Promise((resolve, reject) => {
-    const req = https.request(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases`,
-      {
-        method: 'POST',
-        headers: {
-          'User-Agent': 'GoldBlack-Release-Publisher',
-          Authorization: `token ${token.trim()}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(releasePayload),
-        },
-      },
-      (res) => {
-        let body = ''
-        res.on('data', (c) => (body += c))
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            try {
-              resolve(JSON.parse(body))
-            } catch (e) {
-              reject(new Error('Respuesta de GitHub inválida'))
-            }
-          } else {
-            try {
-              const errObj = JSON.parse(body)
-              reject(new Error(errObj.message || `Error al crear release: HTTP ${res.statusCode}`))
-            } catch {
-              reject(new Error(`Error al crear release: HTTP ${res.statusCode}`))
-            }
-          }
-        })
-      }
-    )
-    req.on('error', reject)
-    req.write(releasePayload)
-    req.end()
-  })
+  // 1. Get existing Release for this tag or Create new Release as DRAFT with automatic retry
+  const releaseData = await getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerelease)
 
   // 2. Upload All Assets (Windows .exe and macOS .zip)
   for (let i = 0; i < assetsToUpload.length; i++) {
