@@ -799,6 +799,9 @@ export const App: React.FC = () => {
           config={config}
           actionLabel={headerAction.actionLabel}
           onAction={headerAction.onAction}
+          appointments={appointments}
+          clients={clients}
+          services={services}
         />
 
         {config.maintenanceMode && (
