@@ -92,24 +92,8 @@ if (existsSync(plistPath)) {
     )
   }
 
-  // Ensure NSMicrophoneUsageDescription is set for voice control microphone access
-  if (!plistContent.includes('<key>NSMicrophoneUsageDescription</key>')) {
-    plistContent = plistContent.replace(
-      '</dict>',
-      '  <key>NSMicrophoneUsageDescription</key>\n    <string>GoldBlack Lash Admin requiere acceso al micrófono para el asistente de control por voz.</string>\n  </dict>'
-    )
-  }
-
-  // Ensure NSSpeechRecognitionUsageDescription is set for Apple Speech Recognition
-  if (!plistContent.includes('<key>NSSpeechRecognitionUsageDescription</key>')) {
-    plistContent = plistContent.replace(
-      '</dict>',
-      '  <key>NSSpeechRecognitionUsageDescription</key>\n    <string>GoldBlack Lash Admin requiere reconocimiento de voz nativo de Siri/macOS para procesar órdenes por voz.</string>\n  </dict>'
-    )
-  }
-
   writeFileSync(plistPath, plistContent, 'utf8')
-  console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey y permisos de micrófono.')
+  console.log('✓ Info.plist verificado para compatibilidad con macOS 12.0 Monterey.')
 }
 
 // 5. Compress into final distributable zip with native UNIX POSIX permissions and 1-click installer

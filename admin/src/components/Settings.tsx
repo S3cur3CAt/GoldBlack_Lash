@@ -18,7 +18,6 @@ import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../servi
 import {
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
-  testCloudflareWorkersAIConnection,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -106,34 +105,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
-  // Cloudflare Workers AI Test State
-  const [isTestingCloudflare, setIsTestingCloudflare] = useState(false)
-  const [cloudflareTestResult, setCloudflareTestResult] = useState<{
-    ok: boolean
-    message: string
-    latencyMs?: number
-  } | null>(null)
-  const [showCloudflareToken, setShowCloudflareToken] = useState(false)
 
-  const handleTestCloudflareAI = async () => {
-    setIsTestingCloudflare(true)
-    setCloudflareTestResult(null)
-    try {
-      const res = await testCloudflareWorkersAIConnection({
-        accountId: formData.cloudflareAccountId,
-        apiToken: formData.cloudflareApiToken,
-        model: formData.cloudflareAiModel,
-      })
-      setCloudflareTestResult(res)
-    } catch (e: any) {
-      setCloudflareTestResult({
-        ok: false,
-        message: e?.message || 'Error de conexión con Cloudflare Workers AI',
-      })
-    } finally {
-      setIsTestingCloudflare(false)
-    }
-  }
 
   const handleTestEmail = async () => {
     if (!testRecipient.trim()) {
@@ -201,7 +173,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setIsTestingSiri(true)
     try {
       await speakWithFemaleVoice(
-        'Hola, soy Sofi. Tu asistente ejecutiva de GoldBlack Lash Studio. El sistema de voz nativo de Siri está funcionando a la perfección.'
+        'El sistema de alertas por voz con Siri está funcionando a la perfección.'
       )
       showAlert({
         title: 'Voz Nativa Siri Activa',
@@ -779,180 +751,27 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Cloudflare Workers AI & Voice Assistant Configuration */}
+        {/* Voice Alerts with Siri Configuration */}
         <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
-                <IconMic size={22} />
-              </div>
-              <div>
-                <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
-                  <span>Asistente de Voz con IA (Cloudflare Workers AI + Siri)</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/30">
-                    Qwen3 30B FP8
-                  </span>
-                </h4>
-                <p className="text-xs text-gray-400">
-                  Controla la aplicación por voz con manos libres en Mac o Web, ejecuta acciones complejas y consulta dudas sobre pestañas y servicios.
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+              <IconVolume2 size={22} />
             </div>
-
-            {/* Toggle voice assistant enabled */}
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({
-                  ...formData,
-                  voiceAssistantEnabled: !(formData.voiceAssistantEnabled ?? true),
-                })
-              }
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                (formData.voiceAssistantEnabled ?? true)
-                  ? 'bg-amber-950/50 border-amber-500/40 text-amber-300 shadow-[0_0_12px_rgba(212,175,55,0.15)]'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400'
-              }`}
-            >
-              <span>{(formData.voiceAssistantEnabled ?? true) ? '✓ Asistente Activado' : 'Desactivado'}</span>
-            </button>
-          </div>
-
-          {/* Cloudflare Workers AI Configuration Card */}
-          <div className="p-4 rounded-xl bg-[#151522] border border-amber-500/30 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-zinc-800/80">
-              <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs">
-                <IconSparkles size={16} className="text-amber-400" />
-                <span>Motor de Inteligencia Artificial (Cloudflare Workers AI)</span>
-              </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30 w-fit">
-                Modelo: @cf/qwen/qwen3-30b-a3b-fp8
-              </span>
-            </div>
-
-            <p className="text-[11px] text-gray-300 leading-relaxed">
-              Sofi utiliza el modelo de razonamiento profundo <code className="text-amber-300 font-mono">qwen3-30b-a3b-fp8</code> alojado en Cloudflare para comprender órdenes complejas en lenguaje natural, responder dudas de estética y ejecutar acciones automáticas en tu agenda y facturación.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="block text-[11px] font-medium text-gray-400 mb-1">
-                  Cloudflare Account ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.cloudflareAccountId ?? 'e50e9c769ca5ff44a69201c51445cb28'}
-                  onChange={(e) => setFormData({ ...formData, cloudflareAccountId: e.target.value })}
-                  placeholder="e50e9c769ca5ff44a69201c51445cb28"
-                  className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-[11px] font-medium text-gray-400">
-                    API Token (Cloudflare)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowCloudflareToken(!showCloudflareToken)}
-                    className="text-[10px] text-amber-400 hover:underline cursor-pointer"
-                  >
-                    {showCloudflareToken ? 'Ocultar' : 'Mostrar'}
-                  </button>
-                </div>
-                <input
-                  type={showCloudflareToken ? 'text' : 'password'}
-                  value={
-                    formData.cloudflareApiToken ??
-                    (typeof window !== 'undefined' && typeof window.atob === 'function'
-                      ? window.atob('Y2Z1dF9WNXBWcFp0a3NkZHhXQ0U1Y2FOR3ZQS1dDUnlPaDMzaWpTc1RySVo2OWFiYWY0NGY=')
-                      : '')
-                  }
-                  onChange={(e) => setFormData({ ...formData, cloudflareApiToken: e.target.value })}
-                  placeholder="Token de Cloudflare..."
-                  className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
-                />
-              </div>
-            </div>
-
             <div>
-              <label className="block text-[11px] font-medium text-gray-400 mb-1">
-                Identificador del Modelo en Cloudflare
-              </label>
-              <input
-                type="text"
-                value={formData.cloudflareAiModel ?? '@cf/qwen/qwen3-30b-a3b-fp8'}
-                onChange={(e) => setFormData({ ...formData, cloudflareAiModel: e.target.value })}
-                placeholder="@cf/qwen/qwen3-30b-a3b-fp8"
-                className="w-full bg-[#101018] border border-zinc-800 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 font-mono transition-colors"
-              />
+              <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
+                <span>Alertas y Anuncios por Voz con Siri</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                  macOS • 0€
+                </span>
+              </h4>
+              <p className="text-xs text-gray-400">
+                Recibe avisos locutados con la voz natural de Siri en tu Mac o navegador cuando entren nuevas reservas desde el sitio web o existan actualizaciones.
+              </p>
             </div>
-
-            {/* Test Connection Button & Result */}
-            <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-[11px] text-gray-400">
-                Verifica la latencia y la respuesta de Qwen 30B en tiempo real.
-              </div>
-              <button
-                type="button"
-                onClick={handleTestCloudflareAI}
-                disabled={isTestingCloudflare}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 disabled:opacity-50 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)] shrink-0"
-              >
-                <IconSparkles size={14} className={isTestingCloudflare ? 'animate-spin' : ''} />
-                <span>{isTestingCloudflare ? 'Probando Qwen 30B...' : '⚡ Probar Conexión con Qwen 30B'}</span>
-              </button>
-            </div>
-
-            {cloudflareTestResult && (
-              <div
-                className={`p-3 rounded-xl text-xs border animate-in fade-in duration-200 ${
-                  cloudflareTestResult.ok
-                    ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-200'
-                    : 'bg-rose-950/40 border-rose-500/30 text-rose-200'
-                }`}
-              >
-                <div className="flex items-center justify-between font-semibold mb-1">
-                  <span>{cloudflareTestResult.ok ? '✓ Conexión establecida con éxito' : '✕ Error al conectar'}</span>
-                  {cloudflareTestResult.latencyMs !== undefined && (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40">
-                      {cloudflareTestResult.latencyMs} ms
-                    </span>
-                  )}
-                </div>
-                <p className="text-[11px] opacity-90">{cloudflareTestResult.message}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Native Siri Integration Banner */}
-          <div className="p-4 rounded-xl bg-[#151520] border border-amber-500/20 space-y-2 text-xs text-gray-400">
-            <div className="flex items-center gap-2 text-amber-400 font-semibold">
-              <IconSparkles size={16} />
-              <span>Síntesis y Reconocimiento de Voz con Siri (macOS • 0€)</span>
-            </div>
-            <p className="text-gray-300 leading-relaxed text-[11px]">
-              La síntesis de voz y el reconocimiento por micrófono se integran de forma 100% nativa con Siri en macOS. Las respuestas de Qwen 30B son locutadas con las voces de Siri en español de España de tu Mac.
-            </p>
           </div>
 
           <div className="space-y-4">
-            {/* Checkbox for Voice Auto Speak (Text to speech) */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
-              <input
-                type="checkbox"
-                id="voiceAutoSpeak"
-                checked={formData.voiceAutoSpeak ?? true}
-                onChange={(e) => setFormData({ ...formData, voiceAutoSpeak: e.target.checked })}
-                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
-              />
-              <label htmlFor="voiceAutoSpeak" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Respuesta hablada por voz (Siri Text-To-Speech)</span> — La app te confirmará las acciones hablándote con las voces nativas en español de Siri en tu Mac.
-              </label>
-            </div>
-
-            {/* Checkbox for Announcing New Web Appointments with female voice */}
+            {/* Checkbox for Announcing New Web Appointments */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
               <input
                 type="checkbox"
@@ -967,11 +786,11 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar reservas web en tiempo real con voz de Siri</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
+                <span className="font-semibold text-white">Anunciar reservas de la web en tiempo real con voz de Siri</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
               </label>
             </div>
 
-            {/* Checkbox for Announcing App Updates with voice */}
+            {/* Checkbox for Announcing App Updates */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
               <input
                 type="checkbox"
@@ -986,26 +805,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar actualizaciones disponibles por voz</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará en voz alta diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
-              </label>
-            </div>
-
-            {/* Checkbox for Wake-Word Hands-Free Activation (Sofi) */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
-              <input
-                type="checkbox"
-                id="voiceWakeWordEnabled"
-                checked={formData.voiceWakeWordEnabled ?? true}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    voiceWakeWordEnabled: e.target.checked,
-                  })
-                }
-                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
-              />
-              <label htmlFor="voiceWakeWordEnabled" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Escucha continua por voz («Oye Sofi» / «Sofi»)</span> — En cuanto digas «Oye Sofi», comenzará a escuchar automáticamente esperando tu orden, y al callar confirmará y ejecutará la acción de inmediato con Siri, sin necesidad de presionar ningún botón.
+                <span className="font-semibold text-white">Anunciar actualizaciones del sistema por voz</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará en voz alta diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
               </label>
             </div>
 
@@ -1014,7 +814,7 @@ export const Settings: React.FC<SettingsProps> = ({
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
                   <span className="font-semibold text-white">Probar Voz de Siri (macOS)</span>
-                  <p className="text-[11px] text-gray-500">Reproduce una locución de prueba de Sofi con la voz nativa de Siri de tu Mac.</p>
+                  <p className="text-[11px] text-gray-500">Reproduce una locución de prueba con la voz nativa de Siri de tu Mac.</p>
                 </div>
                 <button
                   type="button"
@@ -1029,8 +829,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Anuncio de Nueva Reserva (Voz Femenina)</span>
-                  <p className="text-[11px] text-gray-500">Escucha cómo la IA anunciará una reserva web con nombre, servicio y teléfono.</p>
+                  <span className="font-semibold text-white">Probar Anuncio de Nueva Reserva Web</span>
+                  <p className="text-[11px] text-gray-500">Escucha cómo Siri anunciará una reserva web entrante con nombre, servicio y teléfono.</p>
                 </div>
                 <button
                   type="button"
@@ -1057,10 +857,10 @@ export const Settings: React.FC<SettingsProps> = ({
                   <IconVolume2 size={14} />
                   <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
                 </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
         {/* Save Settings Button */}
         <div className="flex justify-end">

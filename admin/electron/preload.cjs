@@ -29,29 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('updater:progress', handler)
     return () => ipcRenderer.removeListener('updater:progress', handler)
   },
-  // Native macOS Siri Speech Synthesis
+  // Native macOS Siri Speech Synthesis for website alerts
   speakWithSiri: (text) => ipcRenderer.invoke('voice:speak-siri', text),
   stopSiri: () => ipcRenderer.invoke('voice:stop-siri'),
-  // Native macOS Siri Speech Recognition (Apple Speech framework)
-  startNativeListen: () => ipcRenderer.invoke('voice:native-listen-start'),
-  stopNativeListen: () => ipcRenderer.invoke('voice:native-listen-stop'),
-  startContinuousListen: () => ipcRenderer.invoke('voice:native-listen-continuous-start'),
-  stopContinuousListen: () => ipcRenderer.invoke('voice:native-listen-continuous-stop'),
-  onNativeTranscript: (callback) => {
-    const handler = (_event, text) => callback(text)
-    ipcRenderer.on('voice:native-transcript', handler)
-    return () => ipcRenderer.removeListener('voice:native-transcript', handler)
-  },
-  onNativeResult: (callback) => {
-    const handler = (_event, text) => callback(text)
-    ipcRenderer.on('voice:native-result', handler)
-    return () => ipcRenderer.removeListener('voice:native-result', handler)
-  },
-  onVoiceDiagnostic: (callback) => {
-    const handler = (_event, data) => callback(data)
-    ipcRenderer.on('voice:diagnostic', handler)
-    return () => ipcRenderer.removeListener('voice:diagnostic', handler)
-  },
-  // Cloudflare Workers AI
-  runCloudflareAI: (params) => ipcRenderer.invoke('ai:cloudflare-run', params),
 })
