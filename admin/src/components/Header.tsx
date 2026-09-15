@@ -10,6 +10,9 @@ interface HeaderProps {
   actionLabel?: string | null
   onAction?: () => void
   onNewAppointment?: () => void
+  appointments: any[]
+  clients: any[]
+  services: any[]
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,6 +22,9 @@ export const Header: React.FC<HeaderProps> = ({
   actionLabel,
   onAction,
   onNewAppointment,
+  appointments,
+  clients,
+  services,
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('')
   const [currentDate, setCurrentDate] = useState<string>('')
@@ -97,6 +103,9 @@ export const Header: React.FC<HeaderProps> = ({
       <VoiceCopilotModal
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
+        appointments={appointments}
+        clients={clients}
+        services={services}
       />
     </header>
   )
