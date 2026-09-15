@@ -72,6 +72,25 @@ function createWindow() {
   const indexPath = path.join(__dirname, '..', 'dist', 'index.html')
   mainWindow.loadFile(indexPath)
 
+  // Developer mode: F12 / Ctrl+Shift+I toggles DevTools (app menu is hidden on Windows)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (
+      input.type === 'keyDown' &&
+      (input.key === 'F12' ||
+        (input.control && input.shift && input.key.toLowerCase() === 'i'))
+    ) {
+      mainWindow.webContents.toggleDevTools()
+      event.preventDefault()
+    }
+  })
+
+  // Open DevTools automatically (detached) when launched with GB_DEVTOOLS=1
+  if (process.env.GB_DEVTOOLS === '1') {
+    mainWindow.webContents.once('did-finish-load', () => {
+      mainWindow.webContents.openDevTools({ mode: 'detach' })
+    })
+  }
+
   // Show gracefully when ready to prevent white flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
@@ -99,13 +118,23 @@ function createWindow() {
   }
 
   // Open external links (like email mailto, Instagram, Maps) in user's default browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
-      shell.openExternal(url)
-      return { action: 'deny' }
-    }
-    return { action: 'allow' }
-  })
+  if (mainWindow.webContents.setWindowOpenHandler) {
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+      if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
+        shell.openExternal(url)
+        return { action: 'deny' }
+      }
+      return { action: 'allow' }
+    })
+  } else {
+    // Electron < 12 fallback
+    mainWindow.webContents.on('new-window', (event, url) => {
+      if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
+        event.preventDefault()
+        shell.openExternal(url)
+      }
+    })
+  }
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (url.startsWith('http:') || url.startsWith('https:')) {

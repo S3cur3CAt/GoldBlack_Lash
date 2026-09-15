@@ -474,19 +474,19 @@ export const Billing: React.FC<BillingProps> = ({
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-full select-none">
       {/* Top Financial KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Total Facturado Este Mes */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all shadow-md">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Ingresos Este Mes</span>
-            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20 shadow-gold-glow">
+            <span className="text-[11px] font-medium text-muted uppercase tracking-wider">Ingresos Este Mes</span>
+            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400">
               <IconReceipt size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-gold-300">{kpis.monthTotal.toFixed(2)} €</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-gold-300 tabular-nums">{kpis.monthTotal.toFixed(2)} €</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
             {kpis.countMonth} {kpis.countMonth === 1 ? 'factura emitida' : 'facturas emitidas'} este mes
@@ -494,15 +494,15 @@ export const Billing: React.FC<BillingProps> = ({
         </div>
 
         {/* Card 2: Total Cobrado en Caja */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all shadow-md">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Cobrado</span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="text-[11px] font-medium text-muted uppercase tracking-wider">Total Cobrado</span>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
               <IconCheck size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-emerald-400">{kpis.totalCobrado.toFixed(2)} €</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-emerald-400 tabular-nums">{kpis.totalCobrado.toFixed(2)} €</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
             Pagos asentados en caja sin incidencias
@@ -510,15 +510,15 @@ export const Billing: React.FC<BillingProps> = ({
         </div>
 
         {/* Card 3: Pendiente de Cobro */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all shadow-md">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pendiente de Cobro</span>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <span className="text-[11px] font-medium text-muted uppercase tracking-wider">Pendiente de Cobro</span>
+            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
               <IconClock size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-amber-300">{kpis.totalPendiente.toFixed(2)} €</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-amber-300 tabular-nums">{kpis.totalPendiente.toFixed(2)} €</span>
           </div>
           <p className="text-[11px] text-gray-500 mt-1">
             Servicios pendientes de cobro final
@@ -526,10 +526,10 @@ export const Billing: React.FC<BillingProps> = ({
         </div>
 
         {/* Card 4: Desglose por Método de Pago */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all shadow-md">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Desglose Métodos</span>
-            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20">
+            <span className="text-[11px] font-medium text-muted uppercase tracking-wider">Desglose Métodos</span>
+            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400">
               <IconCreditCard size={18} />
             </div>
           </div>
@@ -551,9 +551,9 @@ export const Billing: React.FC<BillingProps> = ({
       </div>
 
       {/* Filter and Action Bar */}
-      <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-ink-850 border border-line flex flex-wrap items-center justify-between gap-4">
         {/* Status Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#242436]">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-800 border border-line">
           <button
             type="button"
             onClick={() => setFilterStatus('all')}
@@ -594,7 +594,7 @@ export const Billing: React.FC<BillingProps> = ({
           <select
             value={filterPayment}
             onChange={(e) => setFilterPayment(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#161622] border border-[#272738] text-xs text-gray-300 focus:outline-none focus:border-gold-500"
+            className="px-3 py-2 rounded-xl bg-ink-850 border border-line text-xs text-gray-300 focus:outline-none focus:border-gold-500"
           >
             <option value="all">Todos los métodos de pago</option>
             <option value="bizum">Bizum</option>
@@ -610,7 +610,7 @@ export const Billing: React.FC<BillingProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por clienta, NIF o nº..."
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-[#161622] border border-[#272738] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+              className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-ink-850 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
             />
           </div>
 
@@ -618,7 +618,7 @@ export const Billing: React.FC<BillingProps> = ({
             type="button"
             onClick={handleExportCSV}
             title="Descargar registro en archivo Excel CSV para gestoría contable"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#191924] hover:bg-[#222232] text-gray-300 hover:text-white border border-[#2b2b3d] text-xs font-semibold transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-800 text-gray-300 hover:text-white border border-line-strong text-xs font-semibold transition-all cursor-pointer"
           >
             <IconDownload size={14} />
             <span>Exportar CSV</span>
@@ -627,10 +627,10 @@ export const Billing: React.FC<BillingProps> = ({
       </div>
 
       {/* Invoices List / Table */}
-      <div className="rounded-2xl bg-[#111118] border border-[#20202c] overflow-hidden shadow-xl">
+      <div className="rounded-2xl bg-ink-850 border border-line overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#151520] border-b border-[#222234] text-gray-400 uppercase tracking-wider text-[10.5px]">
+            <thead className="bg-ink-850 border-b border-line text-gray-400 uppercase tracking-wider text-[10.5px]">
               <tr>
                 <th className="py-3.5 px-5 font-bold">Nº Factura</th>
                 <th className="py-3.5 px-4 font-bold">Fecha</th>
@@ -642,7 +642,7 @@ export const Billing: React.FC<BillingProps> = ({
                 <th className="py-3.5 px-5 font-bold text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1e1e2c]">
+            <tbody className="divide-y divide-line">
               {filteredInvoices.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-14 text-center text-gray-400">
@@ -653,7 +653,7 @@ export const Billing: React.FC<BillingProps> = ({
                 </tr>
               ) : (
                 filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-[#151522]/60 transition-colors">
+                  <tr key={inv.id} className="hover:bg-ink-850/60 transition-colors">
                     <td className="py-4 px-5 font-mono font-bold text-gold-400">
                       {inv.number}
                     </td>
@@ -714,7 +714,7 @@ export const Billing: React.FC<BillingProps> = ({
                           type="button"
                           onClick={() => setDetailInvoice(inv)}
                           title="Ver todos los detalles de la factura"
-                          className="p-1.5 rounded-lg bg-[#1a1a28] hover:bg-[#252538] text-gray-300 hover:text-white border border-[#2a2a3e] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong transition-colors cursor-pointer"
                         >
                           <IconEye size={15} />
                         </button>
@@ -734,7 +734,7 @@ export const Billing: React.FC<BillingProps> = ({
                           type="button"
                           onClick={() => handleOpenEdit(inv)}
                           title="Editar factura"
-                          className="p-1.5 rounded-lg bg-[#1a1a28] hover:bg-[#252538] text-gray-300 hover:text-gold-300 border border-[#2a2a3e] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-gold-300 border border-line-strong transition-colors cursor-pointer"
                         >
                           <IconEdit size={15} />
                         </button>
@@ -744,7 +744,7 @@ export const Billing: React.FC<BillingProps> = ({
                           type="button"
                           onClick={() => handleOpenPrint(inv)}
                           title="Imprimir ticket para la clienta"
-                          className="p-1.5 rounded-lg bg-[#1a1a28] hover:bg-[#252538] text-gray-300 hover:text-white border border-[#2a2a3e] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong transition-colors cursor-pointer"
                         >
                           <IconPrinter size={15} />
                         </button>
@@ -782,9 +782,9 @@ export const Billing: React.FC<BillingProps> = ({
 
       {/* MODAL 1: Emitir o Editar Factura */}
       {(isCreateModalOpen || editingInvoice) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none animate-fadeIn">
-          <div className="w-full max-w-2xl rounded-3xl bg-gradient-to-b from-[#181824] via-[#12121a] to-[#0c0c12] border border-gold-500/40 shadow-2xl p-6 sm:p-7 relative overflow-hidden max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-[#242436]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
+          <div className="w-full max-w-2xl rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 sm:p-7 relative overflow-hidden max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
               <h3 className="font-sans text-xl font-bold text-white flex items-center gap-2">
                 <IconReceipt size={22} className="text-gold-400" />
                 <span>{editingInvoice ? `Editar Factura ${editingInvoice.number}` : 'Emitir Nueva Factura / Ticket'}</span>
@@ -795,7 +795,7 @@ export const Billing: React.FC<BillingProps> = ({
                   setIsCreateModalOpen(false)
                   setEditingInvoice(null)
                 }}
-                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252536] transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-ink-750 transition-colors cursor-pointer"
               >
                 <IconX size={18} />
               </button>
@@ -804,7 +804,7 @@ export const Billing: React.FC<BillingProps> = ({
             <form onSubmit={handleFormSubmit} className="space-y-4 pt-4 text-xs">
               {/* Quick Select from existing clients */}
               {clients.length > 0 && !editingInvoice && (
-                <div className="p-3 rounded-2xl bg-[#151522] border border-[#252538] flex items-center justify-between gap-3">
+                <div className="p-3 rounded-2xl bg-ink-850 border border-line flex items-center justify-between gap-3">
                   <span className="text-gray-400 flex items-center gap-1.5 font-medium">
                     <IconUsers size={15} className="text-gold-400" />
                     Seleccionar clienta registrada:
@@ -814,7 +814,7 @@ export const Billing: React.FC<BillingProps> = ({
                     onChange={(e) => {
                       if (e.target.value) handleSelectClient(e.target.value)
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-[#1c1c2a] border border-[#303046] text-white focus:outline-none focus:border-gold-500 text-xs"
+                    className="px-3 py-1.5 rounded-xl bg-ink-800 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs"
                   >
                     <option value="">-- Autocompletar clienta --</option>
                     {clients.map((c) => (
@@ -836,7 +836,7 @@ export const Billing: React.FC<BillingProps> = ({
                     value={formData.clientName || ''}
                     onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
                     placeholder="Ej. Sofía Benítez"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500"
                   />
                 </div>
                 <div>
@@ -846,7 +846,7 @@ export const Billing: React.FC<BillingProps> = ({
                     value={formData.clientNif || ''}
                     onChange={(e) => setFormData({ ...formData, clientNif: e.target.value })}
                     placeholder="48923412X"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>
                 <div>
@@ -856,7 +856,7 @@ export const Billing: React.FC<BillingProps> = ({
                     value={formData.clientPhone || ''}
                     onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
                     placeholder="604 18 76 76"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>
                 <div>
@@ -866,7 +866,7 @@ export const Billing: React.FC<BillingProps> = ({
                     value={formData.clientEmail || ''}
                     onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
                     placeholder="clienta@correo.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500"
                   />
                 </div>
               </div>
@@ -880,7 +880,7 @@ export const Billing: React.FC<BillingProps> = ({
                     required
                     value={formData.number}
                     onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-gold-300 focus:outline-none focus:border-gold-500 font-mono font-bold"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-gold-300 focus:outline-none focus:border-gold-500 font-mono font-bold"
                   />
                 </div>
                 <div>
@@ -890,7 +890,7 @@ export const Billing: React.FC<BillingProps> = ({
                     required
                     value={formData.date || ''}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -912,8 +912,8 @@ export const Billing: React.FC<BillingProps> = ({
                           onClick={() => setFormData({ ...formData, paymentMethod: m.id })}
                           className={`p-2.5 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer ${
                             isSel
-                              ? 'bg-gold-500/20 border-gold-400 text-white shadow-gold-glow'
-                              : 'bg-[#151520] border-[#252538] text-gray-400 hover:text-gray-200'
+                              ? 'bg-gold-500/10 border-gold-500/50 text-white ring-1 ring-gold-500/30'
+                              : 'bg-ink-850 border-line text-gray-400 hover:text-gray-200'
                           }`}
                         >
                           <div className="h-6 flex items-center justify-center">{m.logo}</div>
@@ -926,7 +926,7 @@ export const Billing: React.FC<BillingProps> = ({
               </div>
 
               {/* Line Items Container */}
-              <div className="space-y-3 p-4 rounded-2xl bg-[#0f0f16] border border-[#222234]">
+              <div className="space-y-3 p-4 rounded-2xl bg-ink-900 border border-line">
                 <div className="flex items-center justify-between">
                   <div className="font-bold text-gray-200 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
                     <IconSparkles size={14} className="text-gold-400" />
@@ -943,7 +943,7 @@ export const Billing: React.FC<BillingProps> = ({
                           e.target.value = ''
                         }
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-[#181824] border border-gold-500/30 text-gold-300 text-[11px] focus:outline-none font-semibold"
+                      className="px-2.5 py-1 rounded-lg bg-ink-800 border border-gold-500/30 text-gold-300 text-[11px] focus:outline-none font-semibold"
                     >
                       <option value="">+ Añadir del Catálogo...</option>
                       {services.map((s) => (
@@ -957,7 +957,7 @@ export const Billing: React.FC<BillingProps> = ({
 
                 <div className="space-y-2">
                   {formData.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-2 items-center bg-[#151522] p-2.5 rounded-xl border border-[#222234]">
+                    <div key={index} className="grid grid-cols-12 gap-2 items-center bg-ink-850 p-2.5 rounded-xl border border-line">
                       <div className="col-span-6 sm:col-span-6">
                         <input
                           type="text"
@@ -965,7 +965,7 @@ export const Billing: React.FC<BillingProps> = ({
                           value={item.description}
                           onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                           placeholder="Descripción del tratamiento"
-                          className="w-full px-3 py-1.5 rounded-lg bg-[#1c1c2a] border border-[#2a2a3e] text-white focus:outline-none focus:border-gold-500 text-xs"
+                          className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs"
                         />
                       </div>
                       <div className="col-span-2 sm:col-span-2">
@@ -976,7 +976,7 @@ export const Billing: React.FC<BillingProps> = ({
                           value={item.quantity}
                           onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                           placeholder="Cant."
-                          className="w-full px-2 py-1.5 rounded-lg bg-[#1c1c2a] border border-[#2a2a3e] text-white focus:outline-none focus:border-gold-500 text-xs text-center font-mono"
+                          className="w-full px-2 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs text-center font-mono"
                         />
                       </div>
                       <div className="col-span-3 sm:col-span-3 relative">
@@ -987,7 +987,7 @@ export const Billing: React.FC<BillingProps> = ({
                           value={item.unitPrice}
                           onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
                           placeholder="Precio"
-                          className="w-full px-3 py-1.5 pr-6 rounded-lg bg-[#1c1c2a] border border-[#2a2a3e] text-gold-300 focus:outline-none focus:border-gold-500 text-xs font-mono font-bold text-right"
+                          className="w-full px-3 py-1.5 pr-6 rounded-lg bg-ink-800 border border-line-strong text-gold-300 focus:outline-none focus:border-gold-500 text-xs font-mono font-bold text-right"
                         />
                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 font-bold">€</span>
                       </div>
@@ -1030,7 +1030,7 @@ export const Billing: React.FC<BillingProps> = ({
                   <select
                     value={formData.status || 'cobrada'}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as InvoiceStatus })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500"
                   >
                     <option value="cobrada">Cobrada (Asentada en Caja)</option>
                     <option value="pendiente">Pendiente de Cobro</option>
@@ -1044,25 +1044,25 @@ export const Billing: React.FC<BillingProps> = ({
                     value={formData.notes || ''}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     placeholder="Ej. Pagado por Bizum en el estudio"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222232]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => {
                     setIsCreateModalOpen(false)
                     setEditingInvoice(null)
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-[#1a1a26] text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-ink-850 text-gray-400 hover:text-white transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-black font-bold uppercase tracking-wider shadow-gold-glow transition-all cursor-pointer active:scale-95"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
                 >
                   {editingInvoice ? 'Guardar Cambios' : 'Guardar y Emitir'}
                 </button>
@@ -1074,9 +1074,9 @@ export const Billing: React.FC<BillingProps> = ({
 
       {/* MODAL 2: Ver Detalles Completos de Factura */}
       {detailInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none animate-fadeIn">
-          <div className="w-full max-w-xl rounded-3xl bg-gradient-to-b from-[#181824] via-[#12121a] to-[#0c0c12] border border-gold-500/40 shadow-2xl p-6 sm:p-7 relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 border-b border-[#242436]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
+          <div className="w-full max-w-xl rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 sm:p-7 relative overflow-hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20">
                   <IconReceipt size={20} />
@@ -1101,7 +1101,7 @@ export const Billing: React.FC<BillingProps> = ({
                 <button
                   type="button"
                   onClick={() => setDetailInvoice(null)}
-                  className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252536] transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-ink-750 transition-colors cursor-pointer"
                 >
                   <IconX size={18} />
                 </button>
@@ -1110,7 +1110,7 @@ export const Billing: React.FC<BillingProps> = ({
 
             <div className="space-y-4 pt-4 text-xs">
               {/* Client and Payment summary */}
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-[#151522] border border-[#242436]">
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-ink-850 border border-line">
                 <div className="space-y-1">
                   <span className="text-[10px] text-gray-400 uppercase tracking-wider block font-bold">Datos de la Clienta</span>
                   <div className="font-bold text-white text-sm">{detailInvoice.clientName}</div>
@@ -1127,9 +1127,9 @@ export const Billing: React.FC<BillingProps> = ({
               </div>
 
               {/* Items Table */}
-              <div className="rounded-xl bg-[#14141e] border border-[#222234] overflow-hidden">
+              <div className="rounded-xl bg-ink-850 border border-line overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#181826] text-gray-400 uppercase text-[10px] border-b border-[#252538]">
+                  <thead className="bg-ink-800 text-gray-400 uppercase text-[10px] border-b border-line">
                     <tr>
                       <th className="py-2.5 px-3.5">Descripción</th>
                       <th className="py-2.5 px-3 text-center">Cant.</th>
@@ -1137,7 +1137,7 @@ export const Billing: React.FC<BillingProps> = ({
                       <th className="py-2.5 px-3.5 text-right">Total</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#202030]">
+                  <tbody className="divide-y divide-line">
                     {detailInvoice.items?.map((item, i) => (
                       <tr key={i}>
                         <td className="py-2 px-3.5 text-white font-medium">{item.description}</td>
@@ -1151,7 +1151,7 @@ export const Billing: React.FC<BillingProps> = ({
               </div>
 
               {/* Economic Summary - Sin IVA */}
-              <div className="p-3.5 rounded-xl bg-[#151522] border border-[#242436] flex justify-between items-center text-xs">
+              <div className="p-3.5 rounded-xl bg-ink-850 border border-line flex justify-between items-center text-xs">
                 <div>
                   <span className="text-xs text-gray-400 font-medium">Tarifa neta (Sin IVA aplicado)</span>
                 </div>
@@ -1162,7 +1162,7 @@ export const Billing: React.FC<BillingProps> = ({
               </div>
 
               {/* Action Buttons inside Details Modal */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#222232]">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={() => handleDelete(detailInvoice)}
@@ -1179,7 +1179,7 @@ export const Billing: React.FC<BillingProps> = ({
                       setDetailInvoice(null)
                       handleOpenEdit(detailInvoice)
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1d1d2c] hover:bg-[#28283e] text-gray-200 border border-gray-700 text-xs font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-200 border border-gray-700 text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <IconEdit size={14} />
                     <span>Editar</span>
@@ -1191,7 +1191,7 @@ export const Billing: React.FC<BillingProps> = ({
                       setSelectedInvoiceForPrint(detailInvoice)
                       setIsPrintModalOpen(true)
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1d1d2c] hover:bg-[#28283e] text-gray-200 border border-gray-700 text-xs font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-200 border border-gray-700 text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <IconPrinter size={14} />
                     <span>Imprimir Ticket</span>
@@ -1202,7 +1202,7 @@ export const Billing: React.FC<BillingProps> = ({
                     onClick={() => {
                       handleOpenEmail(detailInvoice)
                     }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-black text-xs font-bold transition-all shadow-gold-glow cursor-pointer"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-black text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <IconMail size={14} />
                     <span>Enviar por Correo</span>
@@ -1216,9 +1216,9 @@ export const Billing: React.FC<BillingProps> = ({
 
       {/* MODAL 3: Enviar Factura por Correo Electrónico (Resend) */}
       {emailInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none animate-fadeIn">
-          <div className="w-full max-w-lg rounded-3xl bg-gradient-to-b from-[#181824] via-[#12121a] to-[#0c0c12] border border-gold-500/40 shadow-2xl p-6 sm:p-7 relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 border-b border-[#242436]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 sm:p-7 relative overflow-hidden">
+            <div className="flex items-center justify-between pb-4 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20">
                   <IconMail size={20} />
@@ -1231,7 +1231,7 @@ export const Billing: React.FC<BillingProps> = ({
               <button
                 type="button"
                 onClick={() => setEmailInvoice(null)}
-                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252536] transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-ink-750 transition-colors cursor-pointer"
               >
                 <IconX size={18} />
               </button>
@@ -1246,7 +1246,7 @@ export const Billing: React.FC<BillingProps> = ({
                   value={emailRecipient}
                   onChange={(e) => setEmailRecipient(e.target.value)}
                   placeholder="clienta@correo.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 text-xs"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs"
                 />
               </div>
 
@@ -1257,7 +1257,7 @@ export const Billing: React.FC<BillingProps> = ({
                   required
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 text-xs"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs"
                 />
               </div>
 
@@ -1267,12 +1267,12 @@ export const Billing: React.FC<BillingProps> = ({
                   rows={4}
                   value={emailCustomNote}
                   onChange={(e) => setEmailCustomNote(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#161622] border border-[#2b2b3d] text-white focus:outline-none focus:border-gold-500 text-xs resize-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 text-xs resize-none"
                 />
               </div>
 
               {/* Preview Box */}
-              <div className="p-3.5 rounded-2xl bg-[#0f0f16] border border-[#242436] space-y-1.5">
+              <div className="p-3.5 rounded-2xl bg-ink-900 border border-line space-y-1.5">
                 <div className="flex justify-between items-center text-gray-400">
                   <span>Factura: <strong className="text-white font-mono">{emailInvoice.number}</strong></span>
                   <span>Fecha: <strong className="text-white font-mono">{emailInvoice.date}</strong></span>
@@ -1281,23 +1281,23 @@ export const Billing: React.FC<BillingProps> = ({
                   <span>Importe total:</span>
                   <span className="text-gold-300 font-bold font-mono text-sm">{emailInvoice.total.toFixed(2)} €</span>
                 </div>
-                <p className="text-[10.5px] text-gray-500 pt-1 border-t border-[#1e1e2c]">
+                <p className="text-[10.5px] text-gray-500 pt-1 border-t border-line">
                   Se enviará un comprobante oficial de alta fidelidad con el membrete del atelier y el importe neto del servicio.
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#222232]">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setEmailInvoice(null)}
-                  className="px-4 py-2.5 rounded-xl bg-[#1a1a26] text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-ink-850 text-gray-400 hover:text-white transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSendingEmail}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 disabled:opacity-50 text-black font-bold uppercase tracking-wider shadow-gold-glow transition-all cursor-pointer active:scale-95"
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-black font-semibold uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
                 >
                   <IconSend size={15} />
                   <span>{isSendingEmail ? 'Enviando...' : 'Enviar Factura'}</span>
@@ -1310,7 +1310,7 @@ export const Billing: React.FC<BillingProps> = ({
 
       {/* MODAL 4: Ticket / Factura Imprimible (Apple-style receipt) */}
       {isPrintModalOpen && selectedInvoiceForPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
           <div className="w-full max-w-md rounded-3xl bg-white text-gray-900 shadow-2xl p-6 sm:p-8 relative print:m-0 print:p-4 print:shadow-none">
             {/* Action Bar (hidden when printing) */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-200 print:hidden mb-4">

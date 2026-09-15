@@ -95,16 +95,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     .slice(0, 4)
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
+    <div className="p-8 space-y-8 max-w-7xl mx-auto overflow-y-auto h-full">
       {/* Top Welcome Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-[#171722] via-[#1c1c28] to-[#121218] border border-gold-500/20 p-6 overflow-hidden shadow-gold-glow">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-gold-500/10 to-transparent pointer-events-none" />
+      <div className="relative rounded-2xl bg-ink-850 border border-line p-6 overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-gold-500/[0.07] to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-2xl font-bold font-sans tracking-tight text-white">
+            <h3 className="text-xl font-semibold font-sans tracking-tight text-white">
               Bienvenida
             </h3>
-            <p className="text-sm text-gray-400 mt-1 max-w-xl">
+            <p className="text-sm text-muted mt-1 max-w-xl">
               {todayAppointments.length > 0 ? (
                 <>
                   Tienes <strong className="text-gold-300">{todayAppointments.length} citas</strong> hoy en el estudio de Montequinto ({confirmedToday} confirmadas).
@@ -119,7 +119,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={() => onSelectTab('appointments')}
-              className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-200 text-xs font-semibold border border-gray-700/50 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-200 text-xs font-semibold border border-line-strong transition-colors cursor-pointer"
             >
               Ver Agenda Completa →
             </button>
@@ -130,71 +130,71 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Citas Hoy */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all duration-200">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors duration-150">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Citas Hoy</span>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted">Citas Hoy</span>
+            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
               <IconCalendar size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-white">{todayAppointments.length}</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-white tabular-nums">{todayAppointments.length}</span>
             <span className="text-xs text-emerald-400 font-medium">
               {completedToday > 0 ? `${completedToday} completada(s)` : 'En progreso'}
             </span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">
+          <p className="text-[11px] text-faint mt-2">
             {confirmedToday} confirmada(s) por la clienta
           </p>
         </div>
 
         {/* Card 2: Ingresos Mes */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all duration-200">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors duration-150">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Facturación Estimada Mes</span>
-            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20 shadow-gold-glow">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted">Facturación Estimada Mes</span>
+            <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400">
               <IconEuro size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-gold-300">{monthlyIncome} €</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-gold-300 tabular-nums">{monthlyIncome} €</span>
             <span className="text-xs text-gold-400/80 font-mono">EST.</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">
+          <p className="text-[11px] text-faint mt-2">
             {monthAppointments.length} sesiones en este mes
           </p>
         </div>
 
         {/* Card 3: Clientas Activas */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all duration-200">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors duration-150">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Base de Clientas</span>
-            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted">Base de Clientas</span>
+            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
               <IconUsers size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-white">{clients.length}</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-white tabular-nums">{clients.length}</span>
             <span className="text-xs text-purple-400 font-medium">Fichas registradas</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">
+          <p className="text-[11px] text-faint mt-2">
             {recallClients.length} pendientes de mantenimiento
           </p>
         </div>
 
         {/* Card 4: Servicios Activos */}
-        <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202d] hover:border-gold-500/30 transition-all duration-200">
+        <div className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-colors duration-150">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-400">Catálogo de Pestañas</span>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-muted">Catálogo de Pestañas</span>
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
               <IconSparkles size={18} />
             </div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-bold font-sans tracking-tight text-white">{services.length}</span>
+            <span className="text-2xl font-semibold font-sans tracking-tight text-white tabular-nums">{services.length}</span>
             <span className="text-xs text-emerald-400 font-medium">Servicios activos</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-2">
+          <p className="text-[11px] text-faint mt-2">
             Volumen, Ruso, Retirada y Limpieza Facial
           </p>
         </div>
@@ -205,7 +205,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Left Column (2 cols): Today's Appointments */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-sans text-lg font-bold text-white flex items-center gap-2">
+            <h4 className="font-sans text-base font-semibold text-white flex items-center gap-2">
               <IconClock size={18} className="text-gold-400" />
               Citas Programadas para Hoy ({today})
             </h4>
@@ -218,7 +218,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {todayAppointments.length === 0 ? (
-            <div className="p-8 rounded-2xl bg-[#111118] border border-[#20202c] text-center">
+            <div className="p-8 rounded-2xl bg-ink-850 border border-line text-center">
               <p className="text-sm text-gray-400">No hay citas programadas para el día de hoy.</p>
               <button
                 onClick={onNewAppointment}
@@ -233,10 +233,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 return (
                   <div
                     key={apt.id}
-                    className="p-4 rounded-2xl bg-[#12121a] border border-[#222230] hover:border-gold-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-4 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className="px-3 py-2 rounded-xl bg-[#1c1c28] border border-[#2a2a3c] text-center min-w-[65px]">
+                      <div className="px-3 py-2 rounded-xl bg-ink-800 border border-line-strong text-center min-w-[65px]">
                         <span className="block text-sm font-bold font-mono text-gold-300">{apt.time}</span>
                         <span className="block text-[10px] text-gray-400">{apt.durationMinutes} min</span>
                       </div>
@@ -246,10 +246,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <span
                             className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                               apt.status === 'completada'
-                                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                                 : apt.status === 'confirmada'
-                                ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
-                                : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                             }`}
                           >
                             {apt.status.toUpperCase()}
@@ -260,16 +260,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </p>
                         {apt.curl && (
                           <div className="flex items-center gap-2 mt-1 text-[11px] text-gray-400">
-                            <span className="px-1.5 py-0.5 rounded bg-[#1c1c28] text-gray-300 font-mono">
+                            <span className="px-1.5 py-0.5 rounded bg-ink-800 text-gray-300 font-mono">
                               Curva: {apt.curl}
                             </span>
                             {apt.length && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#1c1c28] text-gray-300 font-mono">
+                              <span className="px-1.5 py-0.5 rounded bg-ink-800 text-gray-300 font-mono">
                                 Longitud: {apt.length}
                               </span>
                             )}
                             {apt.style && (
-                              <span className="px-1.5 py-0.5 rounded bg-[#1c1c28] text-gray-300">
+                              <span className="px-1.5 py-0.5 rounded bg-ink-800 text-gray-300">
                                 {apt.style}
                               </span>
                             )}
@@ -325,8 +325,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Right Column (1 col): Top Services & Maintenance Recalls */}
         <div className="space-y-6">
           {/* Top Services */}
-          <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202c]">
-            <h4 className="font-sans text-base font-bold text-white flex items-center gap-2 mb-4">
+          <div className="p-5 rounded-2xl bg-ink-850 border border-line">
+            <h4 className="font-sans text-base font-semibold text-white flex items-center gap-2 mb-4">
               <IconSparkles size={16} className="text-gold-400" />
               Técnicas Más Pedidas
             </h4>
@@ -344,9 +344,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         <span className="text-gray-300 font-medium truncate max-w-[180px]">{name}</span>
                         <span className="text-gray-400 font-mono">{percent}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-[#1c1c28] rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-ink-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-gold-500 to-gold-300 rounded-full"
+                          className="h-full bg-gold-500 rounded-full"
                           style={{ width: `${percent}%` }}
                         />
                       </div>
@@ -358,9 +358,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Maintenance Recalls (> 3 weeks) */}
-          <div className="p-5 rounded-2xl bg-[#111118] border border-[#20202c]">
+          <div className="p-5 rounded-2xl bg-ink-850 border border-line">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="font-sans text-base font-bold text-white flex items-center gap-2">
+              <h4 className="font-sans text-base font-semibold text-white flex items-center gap-2">
                 <IconAlertCircle size={16} className="text-amber-400" />
                 Avisos de Retoque ({recallClients.length})
               </h4>
@@ -382,7 +382,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   return (
                     <div
                       key={c.id}
-                      className="p-3 rounded-xl bg-[#161622] border border-[#242436] flex items-center justify-between gap-2"
+                      className="p-3 rounded-xl bg-ink-850 border border-line flex items-center justify-between gap-2"
                     >
                       <div>
                         <div className="text-xs font-bold text-white">{c.name}</div>

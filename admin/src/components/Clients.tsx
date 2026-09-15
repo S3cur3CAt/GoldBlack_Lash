@@ -164,9 +164,9 @@ export const Clients: React.FC<ClientsProps> = ({
   })
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-full">
       {/* Controls Bar: Search & View Mode Switcher */}
-      <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 rounded-2xl bg-ink-850 border border-line flex flex-wrap items-center justify-between gap-4">
         <div className="relative flex-1 max-w-md">
           <IconSearch size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
@@ -174,7 +174,7 @@ export const Clients: React.FC<ClientsProps> = ({
             placeholder="Buscar por nombre, teléfono o email..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#181824] border border-[#272738] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+            className="w-full pl-10 pr-4 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
           />
         </div>
 
@@ -184,7 +184,7 @@ export const Clients: React.FC<ClientsProps> = ({
           </span>
 
           {/* View Mode Toggle: Grid | List | Compact */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-[#161622] border border-[#242436]">
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-ink-850 border border-line">
             <button
               type="button"
               onClick={() => handleSetViewMode('grid')}
@@ -247,7 +247,7 @@ export const Clients: React.FC<ClientsProps> = ({
             return (
               <div
                 key={client.id}
-                className="p-5 rounded-2xl bg-[#12121a] border border-[#222230] hover:border-gold-500/30 transition-all flex flex-col justify-between"
+                className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/30 transition-all flex flex-col justify-between"
               >
                 <div>
                   {/* Header */}
@@ -271,7 +271,7 @@ export const Clients: React.FC<ClientsProps> = ({
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleEdit(client)}
-                        className="p-2 rounded-xl bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] cursor-pointer"
+                        className="p-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong cursor-pointer"
                         title="Editar ficha"
                       >
                         <IconEdit size={14} />
@@ -295,7 +295,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   </div>
 
                   {/* Metrics: Visits & Spend */}
-                  <div className="grid grid-cols-3 gap-2 mt-4 p-3 rounded-xl bg-[#171722] border border-[#222232] text-center">
+                  <div className="grid grid-cols-3 gap-2 mt-4 p-3 rounded-xl bg-ink-800 border border-line text-center">
                     <div>
                       <span className="block text-[10px] uppercase tracking-wider text-gray-500">Visitas</span>
                       <span className="text-sm font-bold text-white font-mono">{client.totalVisits}</span>
@@ -314,10 +314,10 @@ export const Clients: React.FC<ClientsProps> = ({
                   <div className="mt-4 space-y-2 text-xs">
                     <div className="flex items-center gap-2">
                       <span className="text-gray-500 font-medium">Estilo favorito:</span>
-                      <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gray-200 border border-[#29293c]">
+                      <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-200 border border-line">
                         {client.preferredStyle || 'Cat Eye (Ojo de Gato)'}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gold-300 font-mono border border-[#29293c]">
+                      <span className="px-2 py-0.5 rounded bg-ink-800 text-gold-300 font-mono border border-line">
                         Curva {client.preferredCurl || 'D'}
                       </span>
                     </div>
@@ -330,7 +330,7 @@ export const Clients: React.FC<ClientsProps> = ({
                     )}
 
                     {client.notes && (
-                      <p className="text-[11px] text-gray-400 italic bg-[#171722] p-2 rounded-lg">
+                      <p className="text-[11px] text-gray-400 italic bg-ink-800 p-2 rounded-lg">
                         "{client.notes}"
                       </p>
                     )}
@@ -338,7 +338,7 @@ export const Clients: React.FC<ClientsProps> = ({
                 </div>
 
                 {/* Email Recall CTA */}
-                <div className="mt-5 pt-3 border-t border-[#20202e] flex items-center justify-between">
+                <div className="mt-5 pt-3 border-t border-line flex items-center justify-between">
                   <span className="text-[11px] text-gray-500">
                     Registrada el {client.createdAt}
                   </span>
@@ -359,10 +359,10 @@ export const Clients: React.FC<ClientsProps> = ({
 
       {/* PRESENTATION MODE 2: LIST / TABLE */}
       {viewMode === 'list' && (
-        <div className="rounded-2xl bg-[#12121a] border border-[#222230] overflow-hidden">
+        <div className="rounded-2xl bg-ink-850 border border-line overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#171724] border-b border-[#252538] text-gray-400 uppercase tracking-wider text-[10px]">
+              <thead className="bg-ink-800 border-b border-line text-gray-400 uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Clienta</th>
                   <th className="px-4 py-3 font-semibold">Contacto</th>
@@ -374,7 +374,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   <th className="px-4 py-3 font-semibold text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#1e1e2c]">
+              <tbody className="divide-y divide-line">
                 {filteredClients.map((client) => {
                   const diffDays = client.lastVisitDate
                     ? Math.floor((nowMs - new Date(client.lastVisitDate).getTime()) / 86400000)
@@ -382,10 +382,10 @@ export const Clients: React.FC<ClientsProps> = ({
                   const needsRecall = diffDays >= 20
 
                   return (
-                    <tr key={client.id} className="hover:bg-[#181824] transition-colors">
+                    <tr key={client.id} className="hover:bg-ink-800 transition-colors">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-500/20 to-gold-700/10 border border-gold-500/30 flex items-center justify-center font-bold text-gold-300 text-xs">
+                          <div className="w-8 h-8 rounded-full bg-gold-500/10 border border-gold-500/25 flex items-center justify-center font-semibold text-gold-300 text-xs">
                             {client.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -416,10 +416,10 @@ export const Clients: React.FC<ClientsProps> = ({
                         {client.lastVisitDate || '—'}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded bg-[#1c1c28] text-gray-200 border border-[#29293c] text-[10px] inline-block mr-1">
+                        <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-200 border border-line text-[10px] inline-block mr-1">
                           {client.preferredStyle || 'Cat Eye (Ojo de Gato)'}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded bg-[#1c1c28] text-gold-300 font-mono text-[10px] border border-[#29293c]">
+                        <span className="px-1.5 py-0.5 rounded bg-ink-800 text-gold-300 font-mono text-[10px] border border-line">
                           {client.preferredCurl || 'D'}
                         </span>
                       </td>
@@ -450,7 +450,7 @@ export const Clients: React.FC<ClientsProps> = ({
                             type="button"
                             onClick={() => handleEdit(client)}
                             title="Editar ficha"
-                            className="p-1.5 rounded-lg bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] cursor-pointer"
+                            className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong cursor-pointer"
                           >
                             <IconEdit size={13} />
                           </button>
@@ -493,12 +493,12 @@ export const Clients: React.FC<ClientsProps> = ({
             return (
               <div
                 key={client.id}
-                className="p-3.5 rounded-xl bg-[#12121a] border border-[#222230] hover:border-gold-500/30 transition-all flex flex-col justify-between"
+                className="p-3.5 rounded-xl bg-ink-850 border border-line hover:border-gold-500/30 transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded-full shrink-0 bg-gradient-to-br from-gold-500/20 to-gold-700/10 border border-gold-500/30 flex items-center justify-center font-bold text-gold-300 text-xs">
+                      <div className="w-8 h-8 rounded-full shrink-0 bg-gold-500/10 border border-gold-500/25 flex items-center justify-center font-semibold text-gold-300 text-xs">
                         {client.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -519,7 +519,7 @@ export const Clients: React.FC<ClientsProps> = ({
                       <button
                         type="button"
                         onClick={() => handleEdit(client)}
-                        className="p-1.5 rounded-lg bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] cursor-pointer"
+                        className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong cursor-pointer"
                         title="Editar"
                       >
                         <IconEdit size={12} />
@@ -533,14 +533,14 @@ export const Clients: React.FC<ClientsProps> = ({
                     </p>
                   )}
 
-                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-[#1e1e2c] text-[10px]">
+                  <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-line text-[10px]">
                     <span className="text-gray-400">
                       Visitas: <strong className="text-white font-mono">{client.totalVisits}</strong>
                     </span>
                     <span className="text-gold-300 font-mono font-semibold">
                       {client.totalSpent} €
                     </span>
-                    <span className="px-1.5 py-0.5 rounded bg-[#1a1a26] text-gray-300 font-mono border border-[#262638]">
+                    <span className="px-1.5 py-0.5 rounded bg-ink-850 text-gray-300 font-mono border border-line">
                       Curva {client.preferredCurl || 'D'}
                     </span>
                   </div>
@@ -559,16 +559,16 @@ export const Clients: React.FC<ClientsProps> = ({
 
       {/* Modal: Create / Edit Client */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-lg rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-sans text-xl font-bold tracking-tight text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-line pb-4 mb-5">
+              <h3 className="font-sans text-xl font-semibold tracking-tight text-white flex items-center gap-2">
                 <IconUsers size={20} className="text-gold-400" />
                 {editingClient ? 'Editar Ficha de Clienta' : 'Nueva Ficha de Clienta'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230] cursor-pointer"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 <IconX size={18} />
               </button>
@@ -583,7 +583,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   placeholder="Ej. Carmen Ortiz"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                 />
               </div>
 
@@ -596,7 +596,7 @@ export const Clients: React.FC<ClientsProps> = ({
                     placeholder="Ej. 604 18 76 76"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 font-mono"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 font-mono"
                   />
                 </div>
 
@@ -607,7 +607,7 @@ export const Clients: React.FC<ClientsProps> = ({
                     placeholder="ejemplo@correo.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                   />
                 </div>
               </div>
@@ -618,7 +618,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   <select
                     value={formData.preferredStyle}
                     onChange={(e) => setFormData({ ...formData, preferredStyle: e.target.value as LashStyle })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   >
                     <option value="Natural">Natural</option>
                     <option value="Cat Eye (Ojo de Gato)">Cat Eye (Ojo de Gato)</option>
@@ -632,7 +632,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   <select
                     value={formData.preferredCurl}
                     onChange={(e) => setFormData({ ...formData, preferredCurl: e.target.value as LashCurl })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400 font-mono"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400 font-mono"
                   >
                     <option value="C">C (Suave / Natural)</option>
                     <option value="D">D (Marcada / Glamour)</option>
@@ -650,7 +650,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   placeholder="Ej. Ninguna conocida / Sensibilidad a vapores"
                   value={formData.allergies}
                   onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                 />
               </div>
 
@@ -661,21 +661,21 @@ export const Clients: React.FC<ClientsProps> = ({
                   placeholder="Grosor habitual, mapa de longitudes, preferencias personales..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 resize-none"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 resize-none"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#252536]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider cursor-pointer transition-colors"
                 >
                   {editingClient ? 'Guardar Cambios' : 'Crear Ficha'}
                 </button>

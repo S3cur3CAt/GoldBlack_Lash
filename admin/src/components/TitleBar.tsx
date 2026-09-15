@@ -27,13 +27,13 @@ export const TitleBar: React.FC = () => {
 
   return (
     <div
-      className="h-9 w-full bg-[#08080b] border-b border-[#1c1c27] flex items-center justify-between select-none shrink-0 z-50 text-xs overflow-hidden"
+      className="h-9 w-full bg-ink-950 flex items-center justify-between select-none shrink-0 z-50 text-xs overflow-hidden"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* Left brand area */}
       <div className={`flex items-center gap-2.5 ${isMac ? 'pl-20' : 'pl-3.5'}`}>
         <div
-          className="w-5 h-5 rounded-[4px] bg-gradient-to-br from-gold-400 to-gold-600 p-[0.75px] shadow-gold-glow shrink-0 overflow-hidden"
+          className="w-5 h-5 rounded-[4px] bg-gold-500/80 p-[0.75px] shrink-0 overflow-hidden"
           style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px', maxWidth: '20px', maxHeight: '20px' }}
         >
           <img
@@ -50,10 +50,10 @@ export const TitleBar: React.FC = () => {
           />
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-sans font-bold text-[13px] text-white tracking-wide">
+          <span className="font-sans font-semibold text-[13px] text-white tracking-tight">
             GoldBlack <span className="text-gold-400 font-light">Lash</span>
           </span>
-          <span className="text-gray-500 text-[11px] hidden sm:inline">
+          <span className="text-faint text-[11px] hidden sm:inline">
             — Panel de Administración
           </span>
         </div>
@@ -75,7 +75,7 @@ export const TitleBar: React.FC = () => {
             <button
               onClick={handleMinimize}
               title="Minimizar"
-              className="w-11 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
+              className="w-11 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-ink-800 transition-colors"
             >
               <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
                 <rect width="10" height="1" />
@@ -86,7 +86,7 @@ export const TitleBar: React.FC = () => {
             <button
               onClick={handleMaximize}
               title={isMaximized ? 'Restaurar' : 'Maximizar'}
-              className="w-11 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#1a1a24] transition-colors"
+              className="w-11 h-9 flex items-center justify-center text-gray-400 hover:text-white hover:bg-ink-800 transition-colors"
             >
               {isMaximized ? (
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1">

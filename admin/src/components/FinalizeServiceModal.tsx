@@ -97,19 +97,19 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="w-full max-w-lg rounded-3xl bg-[#12121a] border border-gold-500/40 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-lg rounded-2xl bg-ink-900 border border-line shadow-raised overflow-hidden flex flex-col max-h-[92vh] animate-scale-up">
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-[#242436] flex items-center justify-between bg-gradient-to-r from-[#171724] via-[#1a1a2b] to-[#12121a]">
+        <div className="p-6 pb-4 border-b border-line flex items-center justify-between bg-ink-900">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-gold-500/15 border border-gold-500/30 text-gold-400 shadow-gold-glow">
+            <div className="p-2.5 rounded-2xl bg-gold-500/10 border border-gold-500/25 text-gold-400">
               <IconReceipt size={22} className="text-gold-400" />
             </div>
             <div>
-              <h3 className="font-sans text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <h3 className="font-sans text-lg font-semibold text-white tracking-tight flex items-center gap-2">
                 Finalizar Servicio & Emitir Factura
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 Emisión automática en Facturación & Caja
               </p>
             </div>
@@ -118,7 +118,7 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#202030] transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl text-muted hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
           >
             <IconX size={18} />
           </button>
@@ -127,7 +127,7 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 custom-scrollbar flex-1">
           {/* Summary Card */}
-          <div className="p-4 rounded-2xl bg-[#161622] border border-[#262638] space-y-2">
+          <div className="p-4 rounded-2xl bg-ink-850 border border-line space-y-2">
             <div className="flex items-start justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-gold-400 block">
@@ -149,19 +149,19 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
 
             {/* Technical curl/length if present */}
             {(appointment.curl || appointment.length || appointment.style) && (
-              <div className="pt-2 border-t border-[#222232] flex flex-wrap items-center gap-2 text-[10.5px] text-gray-400">
+              <div className="pt-2 border-t border-line flex flex-wrap items-center gap-2 text-[10.5px] text-muted">
                 {appointment.style && (
-                  <span className="px-2 py-0.5 rounded bg-[#1c1c2a] text-gray-300 border border-[#2b2b3d]">
+                  <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                     {appointment.style}
                   </span>
                 )}
                 {appointment.curl && (
-                  <span className="px-2 py-0.5 rounded bg-[#1c1c2a] text-gray-300 border border-[#2b2b3d]">
+                  <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                     Curva: <strong className="text-gold-400">{appointment.curl}</strong>
                   </span>
                 )}
                 {appointment.length && (
-                  <span className="px-2 py-0.5 rounded bg-[#1c1c2a] text-gray-300 border border-[#2b2b3d]">
+                  <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                     {appointment.length}
                   </span>
                 )}
@@ -170,15 +170,15 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
           </div>
 
           {/* Financial Summary Card - Sin IVA */}
-          <div className="p-4 rounded-2xl bg-[#0e0e14] border border-[#202030] flex items-center justify-between">
+          <div className="p-4 rounded-2xl bg-ink-850 border border-line flex items-center justify-between">
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 block">
+              <span className="text-[10px] uppercase font-medium tracking-wider text-muted block">
                 Importe Total del Servicio
               </span>
-              <span className="text-xs text-gray-500">Tarifa final neta (Sin IVA)</span>
+              <span className="text-xs text-faint">Tarifa final neta (Sin IVA)</span>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold font-mono text-gold-300">
+              <span className="text-2xl font-semibold font-mono tabular-nums text-gold-300">
                 {totalPrice.toFixed(2)} €
               </span>
             </div>
@@ -222,10 +222,10 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
                     key={m.id}
                     type="button"
                     onClick={() => setPaymentMethod(m.id)}
-                    className={`p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer min-h-[86px] ${
+                    className={`p-3 rounded-2xl border text-center transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer min-h-[86px] ${
                       isSelected
-                        ? 'bg-gold-500/20 border-gold-400 text-white shadow-gold-glow ring-1 ring-gold-400/50'
-                        : 'bg-[#151520] border-[#252538] text-gray-400 hover:text-gray-200 hover:bg-[#1a1a28]'
+                        ? 'bg-gold-500/10 border-gold-500/50 text-white ring-1 ring-gold-500/30'
+                        : 'bg-ink-850 border-line text-muted hover:text-gray-200 hover:bg-ink-800'
                     }`}
                   >
                     <div className="h-7 flex items-center justify-center">
@@ -242,14 +242,14 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
           </div>
 
           {/* Email Dispatch Section */}
-          <div className="p-4 rounded-2xl bg-[#161622] border border-[#252536] space-y-3">
+          <div className="p-4 rounded-2xl bg-ink-850 border border-line space-y-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-gray-200 flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={sendEmail}
                   onChange={(e) => setSendEmail(e.target.checked)}
-                  className="rounded border-[#3a3a4e] text-gold-500 focus:ring-gold-400 cursor-pointer h-4 w-4 bg-[#1e1e2c]"
+                  className="rounded border-line-strong text-gold-500 focus:ring-gold-400 cursor-pointer h-4 w-4 bg-ink-800"
                 />
                 <span className="flex items-center gap-1.5">
                   <IconMail size={14} className="text-gold-400" />
@@ -259,13 +259,13 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
             </div>
 
             {sendEmail && (
-              <div className="space-y-2 pt-1 animate-fadeIn">
+              <div className="space-y-2 pt-1 animate-fade-in">
                 <input
                   type="email"
                   value={clientEmail}
                   onChange={(e) => setClientEmail(e.target.value)}
                   placeholder="ejemplo: clienta@correo.com"
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#0f0f16] border border-[#2c2c3e] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-faint focus:outline-none focus:border-gold-500/50"
                 />
                 <p className="text-[10.5px] text-gray-400 leading-tight">
                   Se enviará automáticamente el recibo oficial con diseño Atelier GoldBlack Lash mediante Resend.
@@ -285,7 +285,7 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
                 value={clientNif}
                 onChange={(e) => setClientNif(e.target.value)}
                 placeholder="ej: 12345678Z"
-                className="w-full px-3 py-2 rounded-xl bg-[#0f0f16] border border-[#252536] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                className="w-full px-3 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-faint focus:outline-none focus:border-gold-500/50"
               />
             </div>
             <div>
@@ -297,19 +297,19 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
                 placeholder="Notas de servicio"
-                className="w-full px-3 py-2 rounded-xl bg-[#0f0f16] border border-[#252536] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                className="w-full px-3 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-faint focus:outline-none focus:border-gold-500/50"
               />
             </div>
           </div>
         </form>
 
         {/* Footer Actions */}
-        <div className="p-5 border-t border-[#242436] flex items-center justify-between gap-3 bg-[#101016]">
+        <div className="p-5 border-t border-line flex items-center justify-between gap-3 bg-ink-900">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2.5 rounded-xl bg-[#1c1c28] hover:bg-[#252538] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
+            className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
           >
             Cancelar
           </button>
@@ -318,7 +318,7 @@ export const FinalizeServiceModal: React.FC<FinalizeServiceModalProps> = ({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 max-w-[280px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-gold-500 via-amber-400 to-gold-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50"
+            className="flex-1 max-w-[280px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer disabled:opacity-50"
           >
             <IconCheck size={16} className="stroke-[2.5]" />
             <span>{isSubmitting ? 'Emitiendo Factura...' : '✓ Finalizar & Emitir Factura'}</span>

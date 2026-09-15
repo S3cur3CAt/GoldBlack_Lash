@@ -194,27 +194,27 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-2xl rounded-2xl bg-[#13131c] border border-[#262638] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-scale-up"
+        className="w-full max-w-2xl rounded-2xl bg-ink-900 border border-line shadow-raised overflow-hidden flex flex-col max-h-[92vh] animate-scale-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-5 border-b border-[#202030] flex items-center justify-between bg-[#161622]">
+        <div className="p-5 border-b border-line flex items-center justify-between bg-ink-900">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gold-500/20 text-gold-400 border border-gold-500/30 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/25 flex items-center justify-center">
               <IconMail size={22} />
             </div>
             <div>
-              <h3 className="font-bold text-white text-base">Enviar Correo Corporativo (Resend)</h3>
-              <p className="text-xs text-gray-400">
+              <h3 className="font-semibold text-white text-base tracking-tight">Enviar Correo Corporativo (Resend)</h3>
+              <p className="text-xs text-muted mt-0.5">
                 Comunicación directa con <span className="text-gold-300 font-semibold">{clientName}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-ink-800 transition-colors"
           >
             <IconX size={18} />
           </button>
@@ -223,14 +223,14 @@ export const EmailModal: React.FC<EmailModalProps> = ({
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4 text-xs">
           {/* Action Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-[#171724] border border-[#242436]">
+          <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-ink-850 border border-line">
             <button
               type="button"
               onClick={() => handleModeChange('confirmar')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors ${
                 mode === 'confirmar'
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-ink-800 text-blue-300 border border-blue-500/25'
+                  : 'text-muted hover:text-white hover:bg-ink-800'
               }`}
             >
               <IconCheck size={14} />
@@ -240,10 +240,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('recordar')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors ${
                 mode === 'recordar'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-ink-800 text-emerald-300 border border-emerald-500/25'
+                  : 'text-muted hover:text-white hover:bg-ink-800'
               }`}
             >
               <IconClock size={14} />
@@ -253,10 +253,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('cuidados')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors ${
                 mode === 'cuidados'
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-ink-800 text-purple-300 border border-purple-500/25'
+                  : 'text-muted hover:text-white hover:bg-ink-800'
               }`}
             >
               <IconSparkles size={14} />
@@ -266,10 +266,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('retoque')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors ${
                 mode === 'retoque'
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-ink-800 text-rose-300 border border-rose-500/25'
+                  : 'text-muted hover:text-white hover:bg-ink-800'
               }`}
             >
               <IconClock size={14} />
@@ -279,10 +279,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <button
               type="button"
               onClick={() => handleModeChange('responder')}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-medium transition-colors ${
                 mode === 'responder'
-                  ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-ink-800 text-gold-300 border border-gold-500/25'
+                  : 'text-muted hover:text-white hover:bg-ink-800'
               }`}
             >
               <IconMessageSquare size={14} />
@@ -304,7 +304,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-[#171724] border border-[#27273a] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-faint focus:outline-none focus:border-gold-500/50"
                 />
               </div>
             </div>
@@ -317,7 +317,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 type="text"
                 disabled
                 value={config.senderEmail || 'citas@goldblacklash.com'}
-                className="w-full px-3 py-2 rounded-xl bg-[#12121c] border border-[#222232] text-xs text-gray-400 cursor-not-allowed"
+                className="w-full px-3 py-2 rounded-xl bg-ink-850 border border-line text-xs text-muted cursor-not-allowed"
               />
             </div>
           </div>
@@ -333,7 +333,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Asunto..."
-              className="w-full px-3.5 py-2 rounded-xl bg-[#171724] border border-[#27273a] text-xs text-white focus:outline-none focus:border-gold-400"
+              className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-faint focus:outline-none focus:border-gold-500/50"
             />
           </div>
 
@@ -357,7 +357,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               rows={9}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full p-3 rounded-xl bg-[#171724] border border-[#27273a] text-xs text-gray-200 focus:outline-none focus:border-gold-400 font-sans leading-relaxed resize-y"
+              className="w-full p-3 rounded-xl bg-ink-800 border border-line text-xs text-gray-200 focus:outline-none focus:border-gold-500/50 font-sans leading-relaxed resize-y"
             />
           </div>
 
@@ -379,8 +379,8 @@ export const EmailModal: React.FC<EmailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 border-t border-[#202030] flex items-center justify-between bg-[#161622]">
-          <span className="text-[11px] text-gray-500 flex items-center gap-1">
+        <div className="p-4 border-t border-line flex items-center justify-between bg-ink-900">
+          <span className="text-[11px] text-faint flex items-center gap-1">
             ⚡ Envío cifrado mediante Resend API
           </span>
 
@@ -388,7 +388,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-xs font-medium"
+              className="px-4 py-2 rounded-xl text-muted hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium"
             >
               Cancelar
             </button>
@@ -396,7 +396,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               type="button"
               onClick={handleSend}
               disabled={isSending || sendSuccess}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
             >
               {isSending ? (
                 <>

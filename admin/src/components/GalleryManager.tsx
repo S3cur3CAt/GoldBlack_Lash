@@ -455,7 +455,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
   }
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-full">
       {/* Filter Tabs, Categories Manager & Search Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
         {/* Category Pills */}
@@ -465,7 +465,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               selectedCategory === 'Todas'
                 ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
-                : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
+                : 'bg-ink-850 text-gray-400 hover:text-white border border-line'
             }`}
           >
             Todas ({galleryItems.length})
@@ -480,7 +480,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedCategory === cat
                     ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
-                    : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
+                    : 'bg-ink-850 text-gray-400 hover:text-white border border-line'
                 }`}
               >
                 {cat} {count > 0 ? `(${count})` : '(0)'}
@@ -498,7 +498,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               setEditingCat(null)
               setIsCatModalOpen(true)
             }}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gold-400 hover:text-gold-300 border border-gold-500/30 text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-ink-800 hover:bg-ink-800 text-gold-400 hover:text-gold-300 border border-gold-500/30 text-xs font-bold transition-all duration-200 shadow-sm cursor-pointer"
             title="Añadir, renombrar o eliminar categorías"
           >
             <IconFolderPlus size={14} />
@@ -512,7 +512,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               placeholder="Buscar por técnica, curvatura..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-[#14141d] border border-[#222230] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+              className="w-full pl-9 pr-3.5 py-1.5 rounded-xl bg-ink-850 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
             />
           </div>
         </div>
@@ -520,7 +520,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
 
       {/* Grid of Gallery Cards */}
       {filteredItems.length === 0 ? (
-        <div className="rounded-2xl border border-[#222232] bg-[#12121a] p-12 text-center">
+        <div className="rounded-2xl border border-line bg-ink-850 p-12 text-center">
           <IconImage size={36} className="mx-auto text-gray-600 mb-3" />
           <h4 className="font-sans text-lg text-white font-bold">No se encontraron fotografías</h4>
           <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
@@ -534,10 +534,10 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="group relative rounded-2xl bg-[#12121a] border border-[#222230] overflow-hidden hover:border-gold-500/40 transition-all flex flex-col shadow-lg"
+              className="group relative rounded-2xl bg-ink-850 border border-line overflow-hidden hover:border-gold-500/40 transition-all flex flex-col shadow-lg"
             >
               {/* Photo Container */}
-              <div className="relative aspect-[4/5] w-full bg-[#0d0d12] overflow-hidden flex items-center justify-center">
+              <div className="relative aspect-[4/5] w-full bg-ink-900 overflow-hidden flex items-center justify-center">
                 <img
                   src={resolveImageUrl(item.url, item.key)}
                   alt={item.title}
@@ -582,7 +582,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={() => handleOpenEdit(item)}
-                    className="p-2 rounded-xl bg-black/70 hover:bg-[#252538] text-gray-200 hover:text-white border border-[#3b3b52] transition-colors backdrop-blur-md shadow-sm"
+                    className="p-2 rounded-xl bg-black/70 hover:bg-ink-750 text-gray-200 hover:text-white border border-line-strong transition-colors backdrop-blur-md shadow-sm"
                     title="Editar fotografía y elementos"
                   >
                     <IconEdit size={14} />
@@ -625,7 +625,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               </div>
 
               {/* Card Footer: Elements / Characteristics Chips */}
-              <div className="p-3 bg-[#101017] flex-1 flex flex-col justify-between border-t border-[#1e1e2c]">
+              <div className="p-3 bg-ink-900 flex-1 flex flex-col justify-between border-t border-line">
                 <div>
                   <span className="text-[9.5px] uppercase font-mono tracking-wider text-gray-500 block mb-1.5">
                     Elementos & Ficha Técnica:
@@ -635,7 +635,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                       {item.elements.map((el, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-[#181826] text-gold-300 border border-gold-500/20"
+                          className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-ink-800 text-gold-300 border border-gold-500/20"
                         >
                           <IconCheck size={10} className="text-gold-400 shrink-0" />
                           <span className="truncate max-w-[130px]">{el}</span>
@@ -647,7 +647,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   )}
                 </div>
 
-                <div className="mt-2.5 pt-2 border-t border-[#181824] flex items-center justify-between text-[10px] text-gray-500 font-mono">
+                <div className="mt-2.5 pt-2 border-t border-line flex items-center justify-between text-[10px] text-gray-500 font-mono">
                   <span>Clave: {item.key}</span>
                   <button
                     onClick={() => handleOpenEdit(item)}
@@ -665,17 +665,17 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
 
       {/* Modal: Upload / Edit Image & Elements */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-2xl rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 max-h-[92vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-sans text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-line pb-4 mb-5">
+              <h3 className="font-sans text-xl font-semibold tracking-tight text-white flex items-center gap-2">
                 <IconSparkles size={20} className="text-gold-400" />
                 {editingItem ? 'Editar Fotografía y Elementos' : 'Subir Fotografía al Catálogo'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230] transition-colors"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-ink-800 transition-colors"
               >
                 <IconX size={18} />
               </button>
@@ -694,7 +694,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                     placeholder="Ej. Volumen Ruso Efecto Seda"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -718,7 +718,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                       placeholder="Nombre de la nueva categoría..."
                       value={customCatInput}
                       onChange={(e) => setCustomCatInput(e.target.value)}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-gold-500/50 text-sm text-white focus:outline-none"
+                      className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-gold-500/50 text-sm text-white focus:outline-none"
                     />
                   ) : (
                     <select
@@ -731,7 +731,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                           setCategory(e.target.value)
                         }
                       }}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                      className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                     >
                       {categoriesList.map((cat) => (
                         <option key={cat} value={cat}>
@@ -757,7 +757,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                     placeholder="Ej. 27 € o 30 €"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -770,7 +770,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                     placeholder="Ej. Más Pedido, Nuevo, Tendencia"
                     value={badge}
                     onChange={(e) => setBadge(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
               </div>
@@ -785,12 +785,12 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   placeholder="Detalla el efecto, las fibras utilizadas y el resultado..."
                   value={detail}
                   onChange={(e) => setDetail(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-xs text-white focus:outline-none focus:border-gold-400"
                 />
               </div>
 
               {/* Row 4: Elements & Attributes Manager ("Añadir elementos al gusto") */}
-              <div className="rounded-xl p-4 bg-[#181824] border border-[#252536] space-y-3">
+              <div className="rounded-xl p-4 bg-ink-800 border border-line space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-gold-300 flex items-center gap-1.5">
                     <IconSparkles size={14} className="text-gold-400" />
@@ -814,12 +814,12 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                         handleAddElement()
                       }
                     }}
-                    className="flex-1 px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white focus:outline-none focus:border-gold-400"
+                    className="flex-1 px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-xs text-white focus:outline-none focus:border-gold-400"
                   />
                   <button
                     type="button"
                     onClick={() => handleAddElement()}
-                    className="px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs transition-all shadow-gold-glow"
+                    className="px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs transition-colors"
                   >
                     Añadir
                   </button>
@@ -841,8 +841,8 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                           disabled={alreadyAdded}
                           className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${
                             alreadyAdded
-                              ? 'bg-[#1e1e2a] text-gray-500 border-gray-800 opacity-50 cursor-not-allowed'
-                              : 'bg-[#20202e] hover:bg-gold-500/20 text-gray-300 hover:text-gold-300 border-[#2f2f42] hover:border-gold-500/40'
+                              ? 'bg-ink-800 text-gray-500 border-gray-800 opacity-50 cursor-not-allowed'
+                              : 'bg-ink-800 hover:bg-gold-500/20 text-gray-300 hover:text-gold-300 border-line-strong hover:border-gold-500/40'
                           }`}
                         >
                           + {sug}
@@ -853,7 +853,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 </div>
 
                 {/* Current Elements List */}
-                <div className="pt-2 border-t border-[#222234]">
+                <div className="pt-2 border-t border-line">
                   <span className="text-[10.5px] text-gray-400 block mb-1.5 font-medium">
                     Elementos asignados a esta imagen:
                   </span>
@@ -866,7 +866,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                       {elements.map((el, i) => (
                         <div
                           key={i}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#14141d] border border-gold-500/30 text-xs text-gold-200"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ink-850 border border-gold-500/30 text-xs text-gold-200"
                         >
                           <IconCheck size={12} className="text-gold-400 shrink-0" />
                           <span>{el}</span>
@@ -890,7 +890,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 <label className="block text-xs font-semibold text-gray-300 mb-1">
                   {editingItem ? 'Imagen (Mantener actual o sustituir)' : 'Seleccionar Archivo (JPG, PNG) *'}
                 </label>
-                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-2 border-[#2b2b3d] border-dashed rounded-xl bg-[#181824] hover:border-gold-500/40 transition-colors">
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border-2 border-line-strong border-dashed rounded-xl bg-ink-800 hover:border-gold-500/40 transition-colors">
                   {previewUrl ? (
                     <div className="relative shrink-0 w-28 h-28 rounded-lg overflow-hidden border border-gold-500/30 bg-black/50">
                       <img
@@ -915,13 +915,13 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="w-24 h-24 rounded-lg bg-[#14141c] border border-[#2b2b3d] flex items-center justify-center shrink-0">
+                    <div className="w-24 h-24 rounded-lg bg-ink-850 border border-line-strong flex items-center justify-center shrink-0">
                       <IconUpload size={28} className="text-gray-500" />
                     </div>
                   )}
 
                   <div className="flex-1 text-center sm:text-left space-y-1">
-                    <label className="inline-block px-4 py-2 rounded-xl bg-[#28283a] hover:bg-[#34344c] text-gold-400 hover:text-gold-300 font-semibold text-xs cursor-pointer border border-[#393952] transition-colors">
+                    <label className="inline-block px-4 py-2 rounded-xl bg-ink-750 hover:bg-ink-750 text-gold-400 hover:text-gold-300 font-semibold text-xs cursor-pointer border border-line-strong transition-colors">
                       <span>{previewUrl ? 'Cambiar por otra foto...' : 'Seleccionar archivo del equipo...'}</span>
                       <input
                         type="file"
@@ -951,17 +951,17 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
               </div>
 
               {/* Modal Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222230]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors"
                 >
                   {editingItem ? 'Guardar Cambios' : 'Subir Fotografía'}
                 </button>
@@ -973,17 +973,17 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
 
       {/* Modal Gestionar Categorías */}
       {isCatModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg rounded-2xl bg-[#12121a] border border-[#2a2a3c] shadow-2xl p-6 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-lg rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#222230]">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400 border border-gold-500/20 shadow-gold-glow">
+                <div className="p-2.5 rounded-xl bg-gold-500/10 text-gold-400">
                   <IconFolderPlus size={20} />
                 </div>
                 <div>
-                  <h4 className="font-sans text-base font-bold tracking-tight text-white">Gestión de Categorías</h4>
-                  <p className="text-[11px] text-gray-400">Añade nuevas categorías, edita sus nombres o elimínalas</p>
+                  <h4 className="font-sans text-base font-semibold tracking-tight text-white">Gestión de Categorías</h4>
+                  <p className="text-[11px] text-muted">Añade nuevas categorías, edita sus nombres o elimínalas</p>
                 </div>
               </div>
               <button
@@ -993,7 +993,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   setEditingCat(null)
                   setNewCatInput('')
                 }}
-                className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-[#1a1a24]"
+                className="text-gray-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-ink-800"
               >
                 <IconX size={18} />
               </button>
@@ -1006,11 +1006,11 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                 placeholder="Nombre de nueva categoría (ej. Efecto Sirena, Fox Eyes...)"
                 value={newCatInput}
                 onChange={(e) => setNewCatInput(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#2c2c40] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition-colors"
+                className="flex-1 px-3.5 py-2.5 rounded-xl bg-ink-800 border border-line-strong text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 transition-colors"
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all shrink-0 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors shrink-0 cursor-pointer"
               >
                 + Añadir
               </button>
@@ -1030,7 +1030,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   return (
                     <div
                       key={cat}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#171722] border border-[#262638] hover:border-[#35354c] transition-colors gap-3"
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-ink-800 border border-line hover:border-line-strong transition-colors gap-3"
                     >
                       {isEditing ? (
                         <div className="flex items-center gap-2 flex-1">
@@ -1049,7 +1049,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                                 setEditingCat(null)
                               }
                             }}
-                            className="flex-1 px-3 py-1.5 rounded-lg bg-[#20202e] border border-gold-500/50 text-xs text-white focus:outline-none"
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-ink-800 border border-gold-500/50 text-xs text-white focus:outline-none"
                           />
                           <button
                             type="button"
@@ -1075,7 +1075,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                               photoCount > 0
                                 ? 'bg-gold-500/10 text-gold-400 border border-gold-500/20'
-                                : 'bg-[#20202e] text-gray-500'
+                                : 'bg-ink-800 text-gray-500'
                             }`}>
                               {photoCount} {photoCount === 1 ? 'foto' : 'fotos'}
                             </span>
@@ -1085,7 +1085,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                             <button
                               type="button"
                               onClick={() => handleStartEditCategory(cat)}
-                              className="p-1.5 rounded-lg hover:bg-[#252536] text-gray-400 hover:text-gold-400 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg hover:bg-ink-750 text-gray-400 hover:text-gold-400 transition-colors cursor-pointer"
                               title="Editar nombre de la categoría"
                             >
                               <IconEdit size={14} />
@@ -1108,7 +1108,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-[#222230]">
+            <div className="flex items-center justify-between pt-3 border-t border-line">
               <p className="text-[11px] text-gray-500">
                 Al renombrar o eliminar, los cambios se sincronizan en la web en tiempo real.
               </p>
@@ -1119,7 +1119,7 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({
                   setEditingCat(null)
                   setNewCatInput('')
                 }}
-                className="px-4 py-2 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 text-xs font-semibold transition-colors cursor-pointer"
               >
                 Cerrar
               </button>

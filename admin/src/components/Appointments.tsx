@@ -317,18 +317,18 @@ export const Appointments: React.FC<AppointmentsProps> = ({
   }).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-full select-none">
 
       {/* View Switcher: Calendario Mensual vs Horario Diario vs Lista */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-[#1f1f2c]">
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#14141e] border border-[#242436]">
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-2 border-b border-line">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-850 border border-line">
           <button
             type="button"
             onClick={() => setViewMode('month')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
               viewMode === 'month'
-                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-ink-800 text-white'
+                : 'text-muted hover:text-white'
             }`}
           >
             <IconCalendar size={15} />
@@ -337,10 +337,10 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           <button
             type="button"
             onClick={() => setViewMode('agenda')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
               viewMode === 'agenda'
-                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-ink-800 text-white'
+                : 'text-muted hover:text-white'
             }`}
           >
             <IconClock size={15} />
@@ -349,10 +349,10 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
               viewMode === 'list'
-                ? 'bg-gradient-to-r from-gold-500 to-gold-400 text-ink-950 shadow-gold-glow'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-ink-800 text-white'
+                : 'text-muted hover:text-white'
             }`}
           >
             <span className="text-sm">📋</span>
@@ -363,19 +363,19 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         {/* Date / Month / Year Navigator depending on view */}
         {viewMode === 'month' && (
           <div className="flex flex-wrap items-center gap-2.5">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-ink-850 border border-line">
               <button
                 type="button"
                 onClick={handlePrevMonth}
                 title="Mes anterior"
-                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 ‹
               </button>
               <button
                 type="button"
                 onClick={handleGoToday}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 Hoy
               </button>
@@ -383,7 +383,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 type="button"
                 onClick={handleNextMonth}
                 title="Mes siguiente"
-                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 ›
               </button>
@@ -393,7 +393,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             <select
               value={calMonth}
               onChange={(e) => setCalMonth(Number(e.target.value))}
-              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-ink-850 border border-line text-xs font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
             >
               {MONTH_NAMES.map((m, idx) => (
                 <option key={m} value={idx}>
@@ -406,7 +406,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             <select
               value={calYear}
               onChange={(e) => setCalYear(Number(e.target.value))}
-              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-gold-300 focus:outline-none focus:border-gold-500 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-ink-850 border border-line text-xs font-mono font-bold text-gold-300 focus:outline-none focus:border-gold-500 cursor-pointer"
             >
               {AVAILABLE_YEARS.map((y) => (
                 <option key={y} value={y}>
@@ -431,13 +431,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             <button
               type="button"
               onClick={() => setViewMode('month')}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-[#14141e] hover:bg-[#1f1f2e] text-gray-300 hover:text-white border border-[#242436] text-xs font-semibold transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-3 py-2 rounded-xl bg-ink-850 hover:bg-ink-800 text-gray-300 hover:text-white border border-line text-xs font-semibold transition-colors cursor-pointer"
             >
               <IconCalendar size={14} />
               <span>Ver Calendario Mensual</span>
             </button>
 
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#14141e] border border-[#242436]">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-ink-850 border border-line">
               <button
                 type="button"
                 onClick={() => {
@@ -448,14 +448,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   setCalYear(d.getFullYear())
                   setCalMonth(d.getMonth())
                 }}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 ← Ayer
               </button>
               <button
                 type="button"
                 onClick={handleGoToday}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gold-300 hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 Hoy
               </button>
@@ -469,7 +469,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   setCalYear(d.getFullYear())
                   setCalMonth(d.getMonth())
                 }}
-                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-[#1f1f2e] transition-colors cursor-pointer"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 Mañana →
               </button>
@@ -486,7 +486,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   setCalMonth(d.getMonth())
                 }
               }}
-              className="px-3 py-2 rounded-xl bg-[#14141e] border border-[#242436] text-xs font-mono font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-ink-850 border border-line text-xs font-mono font-bold text-white focus:outline-none focus:border-gold-500 cursor-pointer"
             />
 
             <button
@@ -588,44 +588,44 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         })
 
         return (
-          <div className="space-y-6 animate-fadeIn">
+          <div className="space-y-6 animate-fade-in">
             {/* Monthly KPI Header */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#151522] via-[#11111a] to-[#0c0c14] border border-gold-500/30 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+            <div className="p-4 sm:p-5 rounded-2xl bg-ink-850 border border-line flex flex-wrap items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] uppercase tracking-widest text-gold-400 font-bold block">
+                <span className="text-[10px] uppercase tracking-widest text-gold-400 font-semibold block">
                   Resumen Mensual del Estudio
                 </span>
-                <h3 className="text-lg font-bold font-sans text-white capitalize mt-0.5">
+                <h3 className="text-lg font-semibold font-sans text-white capitalize mt-0.5">
                   {MONTH_NAMES[calMonth]} de {calYear}
                 </h3>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-                <div className="px-3 py-1.5 rounded-xl bg-[#181826] border border-[#262638]">
-                  <span className="text-gray-400">Citas Mes: </span>
-                  <strong className="text-white">{monthApts.length}</strong>
+                <div className="px-3 py-1.5 rounded-xl bg-ink-800 border border-line">
+                  <span className="text-muted">Citas Mes: </span>
+                  <strong className="text-white tabular-nums">{monthApts.length}</strong>
                 </div>
-                <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                   <span>Completadas: </span>
-                  <strong>{monthCompleted}</strong>
+                  <strong className="tabular-nums">{monthCompleted}</strong>
                 </div>
-                <div className="px-3 py-1.5 rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300">
+                <div className="px-3 py-1.5 rounded-xl bg-gold-500/10 border border-gold-500/20 text-gold-300">
                   <span>Previsión: </span>
-                  <strong>{monthIncome} €</strong>
+                  <strong className="tabular-nums">{monthIncome} €</strong>
                 </div>
                 {monthNotesCount > 0 && (
-                  <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 flex items-center gap-1.5">
+                  <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center gap-1.5">
                     <span>📝</span>
-                    <span>{monthNotesCount} notas</span>
+                    <span className="tabular-nums">{monthNotesCount} notas</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Calendar 7-Day Grid */}
-            <div className="rounded-3xl bg-[#0f0f17] border border-[#1e1e2d] overflow-hidden shadow-2xl">
+            <div className="rounded-3xl bg-ink-900 border border-line overflow-hidden shadow-2xl">
               {/* Days of Week Header */}
-              <div className="grid grid-cols-7 border-b border-[#222234] bg-[#141420] text-center text-xs font-bold text-gray-400 py-3">
+              <div className="grid grid-cols-7 border-b border-line bg-ink-850 text-center text-xs font-bold text-gray-400 py-3">
                 <div className="text-gray-300">Lunes</div>
                 <div className="text-gray-300">Martes</div>
                 <div className="text-gray-300">Miércoles</div>
@@ -636,26 +636,26 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               </div>
 
               {/* Grid Cells */}
-              <div className="grid grid-cols-7 divide-x divide-y divide-[#1c1c2a]">
+              <div className="grid grid-cols-7 divide-x divide-y divide-line">
                 {cells.map((cell) => {
                   return (
                     <div
                       key={cell.dateStr}
                       onClick={() => setAgendaDate(cell.dateStr)}
                       className={`min-h-[105px] p-2 transition-all flex flex-col justify-between group cursor-pointer relative ${
-                        cell.isCurrentMonth ? 'bg-[#0f0f17] hover:bg-[#151524]' : 'bg-[#09090f]/60 opacity-40 hover:opacity-75'
+                        cell.isCurrentMonth ? 'bg-ink-900 hover:bg-ink-850' : 'bg-ink-900/60 opacity-40 hover:opacity-75'
                       } ${
                         cell.isSelected
-                          ? 'ring-2 ring-gold-400/80 bg-[#171728] z-10 shadow-lg'
+                          ? 'ring-2 ring-gold-400/80 bg-ink-800 z-10 shadow-lg'
                           : ''
                       }`}
                     >
                       {/* Cell Header: Day Number & Badges */}
                       <div className="flex items-center justify-between gap-1">
                         <span
-                          className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-mono font-bold transition-all ${
+                          className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-mono font-semibold transition-colors ${
                             cell.isToday
-                              ? 'bg-gradient-to-r from-gold-500 to-amber-400 text-black shadow-gold-glow font-black'
+                              ? 'bg-gold-500 text-black font-bold'
                               : cell.isSelected
                               ? 'text-gold-300 bg-gold-500/20'
                               : cell.isCurrentMonth
@@ -756,7 +756,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                               cell.apts.every((a) => a.status === 'completada')
                                 ? 'bg-emerald-500'
                                 : cell.apts.some((a) => a.status === 'completada')
-                                ? 'bg-gradient-to-r from-emerald-500 to-amber-400'
+                                ? 'bg-amber-400'
                                 : 'bg-gold-500'
                             }`}
                           />
@@ -769,13 +769,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             </div>
 
             {/* Selected Date Summary & Notes Drawer */}
-            <div className="p-5 rounded-3xl bg-gradient-to-r from-[#141420] via-[#101018] to-[#0c0c14] border border-gold-500/35 shadow-xl space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-[#222232]">
+            <div className="p-5 rounded-2xl bg-ink-850 border border-line space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-3 border-b border-line">
                 <div>
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-gold-400 block">
+                  <span className="text-[10px] uppercase font-semibold tracking-widest text-gold-400 block">
                     Jornada Seleccionada
                   </span>
-                  <h4 className="text-base font-bold font-sans text-white capitalize mt-0.5">
+                  <h4 className="text-base font-semibold font-sans text-white capitalize mt-0.5">
                     {selectedDateFormatted}
                   </h4>
                 </div>
@@ -784,7 +784,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <button
                     type="button"
                     onClick={() => setViewMode('agenda')}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer active:scale-95"
                   >
                     <IconClock size={14} />
                     <span>Ver Horario del Día ({selectedDayApts.length} citas)</span>
@@ -793,7 +793,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <button
                     type="button"
                     onClick={() => handleNew(agendaDate)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1b1b28] hover:bg-[#252538] text-white border border-[#2c2c40] text-xs font-semibold transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-white border border-line-strong text-xs font-semibold transition-colors cursor-pointer"
                   >
                     <IconPlus size={14} />
                     <span>Nueva Cita</span>
@@ -853,7 +853,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               ) : (
                 <div
                   onClick={() => handleOpenNoteModal(agendaDate)}
-                  className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#262638] hover:border-gold-500/40 flex items-center justify-between gap-3 text-xs text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
+                  className="p-3.5 rounded-2xl bg-ink-850/60 border border-dashed border-line hover:border-gold-500/40 flex items-center justify-between gap-3 text-xs text-gray-400 hover:text-gray-200 transition-colors cursor-pointer"
                 >
                   <span className="flex items-center gap-2">
                     <span className="text-sm">📝</span>
@@ -869,7 +869,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
       {/* AGENDA VIEW: Timeline by hours */}
       {viewMode === 'agenda' && (
-        <div className="space-y-5 animate-fadeIn">
+        <div className="space-y-5 animate-fade-in">
           {/* Day KPI Summary */}
           {(() => {
             const dayApts = appointments.filter((a) => a.date === agendaDate)
@@ -885,32 +885,32 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             })
 
             return (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-[#141420] via-[#101018] to-[#0d0d14] border border-gold-500/30 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+              <div className="p-4 rounded-2xl bg-ink-850 border border-line flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <span className="text-[11px] uppercase tracking-widest text-gold-400 font-bold block">
+                  <span className="text-[11px] uppercase tracking-widest text-gold-400 font-semibold block">
                     Horario de la Jornada
                   </span>
-                  <h4 className="text-base font-bold font-sans tracking-tight text-white capitalize mt-0.5">
+                  <h4 className="text-base font-semibold font-sans tracking-tight text-white capitalize mt-0.5">
                     {dateFormatted}
                   </h4>
                 </div>
 
                 <div className="flex items-center gap-4 text-xs font-mono">
-                  <div className="px-3 py-1.5 rounded-xl bg-[#181826] border border-[#262638]">
-                    <span className="text-gray-400">Citas: </span>
-                    <strong className="text-white">{dayApts.length}</strong>
+                  <div className="px-3 py-1.5 rounded-xl bg-ink-800 border border-line">
+                    <span className="text-muted">Citas: </span>
+                    <strong className="text-white tabular-nums">{dayApts.length}</strong>
                   </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                     <span>Completadas: </span>
-                    <strong>{completed}</strong>
+                    <strong className="tabular-nums">{completed}</strong>
                   </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-300">
+                  <div className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
                     <span>Confirmadas: </span>
-                    <strong>{confirmed}</strong>
+                    <strong className="tabular-nums">{confirmed}</strong>
                   </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-gold-500/15 border border-gold-500/30 text-gold-300">
+                  <div className="px-3 py-1.5 rounded-xl bg-gold-500/10 border border-gold-500/20 text-gold-300">
                     <span>Previsión: </span>
-                    <strong>{totalIncome} €</strong>
+                    <strong className="tabular-nums">{totalIncome} €</strong>
                   </div>
                 </div>
               </div>
@@ -922,7 +922,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             const dayNote = notes.find((n) => n.date === agendaDate)
             if (dayNote) {
               return (
-                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/35 flex items-start justify-between gap-4 shadow-md animate-fadeIn">
+                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/35 flex items-start justify-between gap-4 shadow-md animate-fade-in">
                   <div className="flex items-start gap-3">
                     <span className="text-xl">📝</span>
                     <div className="space-y-0.5">
@@ -957,7 +957,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             return (
               <div
                 onClick={() => handleOpenNoteModal(agendaDate)}
-                className="p-3.5 rounded-2xl bg-[#11111a]/60 border border-dashed border-[#242436] hover:border-gold-500/40 flex items-center justify-between text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
+                className="p-3.5 rounded-2xl bg-ink-850/60 border border-dashed border-line hover:border-gold-500/40 flex items-center justify-between text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <span>📝</span>
@@ -969,7 +969,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           })()}
 
           {/* Timeline Schedule from 09:00 to 20:30 */}
-          <div className="rounded-3xl bg-[#0f0f16] border border-[#1e1e2c] p-6 space-y-3 shadow-xl">
+          <div className="rounded-3xl bg-ink-900 border border-line p-6 space-y-3 shadow-xl">
             {['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'].map((timeSlot) => {
               const matchedApt = appointments.find((a) => a.date === agendaDate && a.time === timeSlot)
 
@@ -1059,7 +1059,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 <div
                   key={timeSlot}
                   onClick={() => handleNew(agendaDate, timeSlot)}
-                  className="group flex items-center justify-between p-3 rounded-2xl bg-[#12121c]/40 hover:bg-[#1a1a28] border border-dashed border-[#242436] hover:border-gold-500/50 transition-all cursor-pointer"
+                  className="group flex items-center justify-between p-3 rounded-2xl bg-ink-850/40 hover:bg-ink-800 border border-dashed border-line hover:border-gold-500/50 transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
                     <span className="font-mono text-xs font-bold text-gray-500 group-hover:text-gold-300 min-w-[50px]">
@@ -1083,11 +1083,11 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
       {/* LIST VIEW: Filters + Cards */}
       {viewMode === 'list' && (
-        <div className="space-y-6 animate-fadeIn">
+        <div className="space-y-6 animate-fade-in">
           {/* Filter and Search Bar */}
-          <div className="p-4 rounded-2xl bg-[#111118] border border-[#20202c] flex flex-wrap items-center justify-between gap-4">
+          <div className="p-4 rounded-2xl bg-ink-850 border border-line flex flex-wrap items-center justify-between gap-4">
             {/* Date Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#222232]">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-800 border border-line">
               <button
                 type="button"
                 onClick={() => setFilterDate('all')}
@@ -1132,7 +1132,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 focus:outline-none focus:border-gold-500"
+                className="px-3 py-1.5 rounded-xl bg-ink-800 border border-line text-xs text-gray-200 focus:outline-none focus:border-gold-500"
               >
                 <option value="all">Todos los estados</option>
                 <option value="pendiente">Pendientes</option>
@@ -1150,14 +1150,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 placeholder="Buscar por clienta o teléfono..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-[#171722] border border-[#262638] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-ink-800 border border-line text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gold-500"
               />
             </div>
           </div>
 
           {/* Appointments List */}
           {filteredAppointments.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl bg-[#111118] border border-[#20202c]">
+            <div className="p-12 text-center rounded-2xl bg-ink-850 border border-line">
               <p className="text-sm text-gray-400">No se encontraron citas con los filtros seleccionados.</p>
               <button
                 type="button"
@@ -1174,11 +1174,11 @@ export const Appointments: React.FC<AppointmentsProps> = ({
             return (
               <div
                 key={apt.id}
-                className="p-5 rounded-2xl bg-[#12121a] border border-[#222230] hover:border-gold-500/40 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+                className="p-5 rounded-2xl bg-ink-850 border border-line hover:border-gold-500/40 transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-5"
               >
                 {/* Left: Time & Client Data */}
                 <div className="flex items-start gap-4">
-                  <div className="px-3.5 py-2.5 rounded-xl bg-[#181824] border border-[#28283a] text-center min-w-[80px]">
+                  <div className="px-3.5 py-2.5 rounded-xl bg-ink-800 border border-line text-center min-w-[80px]">
                     <span className="block text-[11px] font-mono text-gray-400 uppercase tracking-wider">{apt.date}</span>
                     <span className="block text-base font-bold font-mono text-gold-300 mt-0.5">{apt.time}</span>
                     <span className="block text-[10px] text-gray-500">{apt.durationMinutes} min</span>
@@ -1187,7 +1187,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="font-bold text-white text-base">{apt.clientName}</h4>
-                      <span className="text-xs font-mono text-gray-400 bg-[#1a1a26] px-2 py-0.5 rounded-md">
+                      <span className="text-xs font-mono text-gray-400 bg-ink-850 px-2 py-0.5 rounded-md">
                         {apt.clientPhone}
                       </span>
                       {/* Web Booking Badge */}
@@ -1199,14 +1199,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
                       {/* Status Badge */}
                       <span
-                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase ${
+                        className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold uppercase ${
                           apt.status === 'completada'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : apt.status === 'confirmada'
-                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                             : apt.status === 'cancelada'
-                            ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                         }`}
                       >
                         {apt.status}
@@ -1215,10 +1215,10 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
                           apt.paymentStatus === 'pagado'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-600/30'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : apt.paymentStatus === 'seña_pagada'
-                            ? 'bg-cyan-950 text-cyan-300 border border-cyan-600/30'
-                            : 'bg-zinc-800 text-zinc-400'
+                            ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                            : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
                         }`}
                       >
                         {apt.paymentStatus === 'pagado' ? 'Pagado' : apt.paymentStatus === 'seña_pagada' ? 'Seña Pagada' : 'Pago Pendiente'}
@@ -1234,17 +1234,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     {/* Technical Sheet details */}
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-gray-400">
                       {apt.curl && (
-                        <span className="px-2 py-0.5 rounded bg-[#1b1b26] text-gray-300 border border-[#272738]">
+                        <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                           Curva: <strong className="text-gold-400">{apt.curl}</strong>
                         </span>
                       )}
                       {apt.length && (
-                        <span className="px-2 py-0.5 rounded bg-[#1b1b26] text-gray-300 border border-[#272738]">
+                        <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                           Longitud: <strong className="text-gold-400">{apt.length}</strong>
                         </span>
                       )}
                       {apt.style && (
-                        <span className="px-2 py-0.5 rounded bg-[#1b1b26] text-gray-300 border border-[#272738]">
+                        <span className="px-2 py-0.5 rounded bg-ink-800 text-gray-300 border border-line">
                           Diseño: <strong className="text-gold-400">{apt.style}</strong>
                         </span>
                       )}
@@ -1280,7 +1280,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   )}
 
                   {/* Email Action Buttons - Sends luxury email via Resend */}
-                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171722] border border-[#242436]">
+                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-800 border border-line">
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'confirmar')}
@@ -1323,7 +1323,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <select
                     value={apt.status}
                     onChange={(e) => onUpdateStatus(apt.id, e.target.value as AppointmentStatus)}
-                    className="px-2.5 py-1.5 rounded-xl bg-[#171722] border border-[#2a2a3c] text-xs text-gray-200 focus:outline-none focus:border-gold-500"
+                    className="px-2.5 py-1.5 rounded-xl bg-ink-800 border border-line-strong text-xs text-gray-200 focus:outline-none focus:border-gold-500"
                   >
                     <option value="pendiente">Marcar Pendiente</option>
                     <option value="confirmada">Marcar Confirmada</option>
@@ -1335,7 +1335,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <button
                     onClick={() => handleEdit(apt)}
                     title="Editar detalles de la cita"
-                    className="p-2 rounded-xl bg-[#1b1b28] hover:bg-[#252536] text-gray-300 hover:text-white border border-[#2b2b3e] transition-colors"
+                    className="p-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong transition-colors"
                   >
                     <IconEdit size={15} />
                   </button>
@@ -1367,16 +1367,16 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
       {/* Modal: Create / Edit Appointment */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-sans text-xl font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-2xl rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-line pb-4 mb-5">
+              <h3 className="font-sans text-xl font-semibold text-white flex items-center gap-2">
                 <IconCalendar size={20} className="text-gold-400" />
                 {editingAppointment ? 'Editar Cita de Estudio' : 'Nueva Cita en GoldBlack Lash'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230]"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-ink-800 transition-colors"
               >
                 <IconX size={18} />
               </button>
@@ -1395,7 +1395,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     placeholder="Ej. Carmen Navarro"
                     value={formData.clientName}
                     onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1410,7 +1410,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     placeholder="Ej. 612345678"
                     value={formData.clientPhone}
                     onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1424,7 +1424,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     placeholder="ejemplo@correo.com"
                     value={formData.clientEmail || ''}
                     onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1436,7 +1436,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1448,7 +1448,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     required
                     value={formData.time}
                     onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1460,7 +1460,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <select
                     value={formData.serviceId}
                     onChange={(e) => handleServiceChange(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   >
                     {services.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -1477,7 +1477,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     type="number"
                     value={formData.price}
                     onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
 
@@ -1487,13 +1487,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     type="number"
                     value={formData.durationMinutes}
                     onChange={(e) => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                   />
                 </div>
               </div>
 
               {/* Ficha Técnica de Pestañas */}
-              <div className="p-4 rounded-xl bg-[#181824] border border-[#28283a] space-y-3">
+              <div className="p-4 rounded-xl bg-ink-800 border border-line space-y-3">
                 <div className="text-xs font-bold font-sans text-gold-300 uppercase tracking-wider flex items-center gap-2">
                   <IconSparkles size={15} />
                   Ficha Técnica de Extensiones
@@ -1504,7 +1504,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <select
                       value={formData.curl || 'D'}
                       onChange={(e) => setFormData({ ...formData, curl: e.target.value as LashCurl })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
+                      className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white"
                     >
                       <option value="C">Curva C (Natural)</option>
                       <option value="D">Curva D (Volumen glamuroso)</option>
@@ -1517,7 +1517,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <select
                       value={formData.length || '9 - 13 mm'}
                       onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white font-mono"
+                      className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white font-mono"
                     >
                       <option value="9 - 13 mm">9 - 13 mm (Longitud Media / Estándar)</option>
                       <option value="8 - 12 mm">8 - 12 mm (Natural / Equilibrada)</option>
@@ -1541,7 +1541,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <select
                       value={formData.style || 'Cat Eye (Ojo de Gato)'}
                       onChange={(e) => setFormData({ ...formData, style: e.target.value as LashStyle })}
-                      className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
+                      className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white"
                     >
                       <option value="Natural">Natural (Armónico)</option>
                       <option value="Cat Eye (Ojo de Gato)">Cat Eye (Ojo de Gato)</option>
@@ -1558,7 +1558,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     placeholder="Ej. Ojo izquierdo con remolino en lagrimal, adhesivo bajo en vapores"
                     value={formData.notes || ''}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
+                    className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white"
                   />
                 </div>
               </div>
@@ -1570,7 +1570,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as AppointmentStatus })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white"
                   >
                     <option value="pendiente">Pendiente</option>
                     <option value="confirmada">Confirmada</option>
@@ -1584,7 +1584,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                   <select
                     value={formData.paymentStatus}
                     onChange={(e) => setFormData({ ...formData, paymentStatus: e.target.value as PaymentStatus })}
-                    className="w-full px-3 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white"
                   >
                     <option value="pendiente">Pendiente de pago</option>
                     <option value="seña_pagada">Seña recibida (reserva)</option>
@@ -1594,17 +1594,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222230]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors"
                 >
                   {editingAppointment ? 'Guardar Cambios' : 'Crear Cita'}
                 </button>
@@ -1646,20 +1646,20 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
       {/* Note Modal: Add / Edit Day Note */}
       {isNoteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-md rounded-3xl bg-[#141420] border border-gold-500/40 shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#242436]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">📝</span>
                 <div>
-                  <h3 className="font-bold text-white text-base">Nota de la Jornada</h3>
+                  <h3 className="font-semibold text-white text-base">Nota de la Jornada</h3>
                   <span className="text-xs text-gold-300 font-mono">{noteModalDate}</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsNoteModalOpen(false)}
-                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-[#252538] transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors cursor-pointer"
               >
                 <IconX size={18} />
               </button>
@@ -1674,11 +1674,11 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 value={noteModalContent}
                 onChange={(e) => setNoteModalContent(e.target.value)}
                 placeholder="Ejemplo: Llega pedido de adhesivo D-curl. Clienta María necesita prueba de parche. Horario intensivo 10:00 - 15:00."
-                className="w-full p-3.5 rounded-xl bg-[#0d0d14] border border-[#2b2b3d] text-white text-xs placeholder-gray-500 focus:outline-none focus:border-gold-500 resize-none"
+                className="w-full p-3.5 rounded-xl bg-ink-900 border border-line-strong text-white text-xs placeholder-gray-500 focus:outline-none focus:border-gold-500 resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-[#222232]">
+            <div className="flex items-center justify-between pt-2 border-t border-line">
               {notes.some((n) => n.date === noteModalDate) ? (
                 <button
                   type="button"
@@ -1695,14 +1695,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsNoteModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-[#1c1c28] hover:bg-[#252538] text-gray-300 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveNoteModal}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-gold-500 to-amber-400 hover:from-gold-400 hover:to-amber-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow cursor-pointer active:scale-95"
+                  className="px-5 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold text-xs uppercase tracking-wider cursor-pointer active:scale-95 transition-colors"
                 >
                   Guardar Nota
                 </button>

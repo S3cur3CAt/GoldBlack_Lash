@@ -64,7 +64,7 @@ export const LogoCreditCards: React.FC<{ className?: string; height?: number }> 
       </div>
 
       {/* Mastercard SVG Badge */}
-      <div className="h-5 px-1.5 py-0.5 rounded bg-[#1f1f2e] border border-white/10 flex items-center justify-center shadow-xs">
+      <div className="h-5 px-1.5 py-0.5 rounded bg-ink-800 border border-line flex items-center justify-center shadow-xs">
         <svg
           height={height * 0.7}
           viewBox="0 0 36 22"

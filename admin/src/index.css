@@ -57,8 +57,8 @@
   }
 
   body {
-    background-color: #060608;
-    color: #e5e5eb;
+    background-color: #09090b;
+    color: #ececf1;
     margin: 0;
     padding: 0;
     font-family: 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -96,70 +96,98 @@
     display: block;
   }
 
-  /* Custom luxury scrollbars */
+  /* Discreet scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0d0d12;
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #252536;
+    background: #232329;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #d4af37;
+    background: #34343e;
   }
 }
 
-/* Eradicate the white border / outline ring when clicking or pressing buttons */
-button:focus,
-button:focus-visible,
-button:active,
-button:focus-within,
+/* Keyboard focus: invisible on click, gold ring on Tab navigation */
 button:focus:not(:focus-visible),
-a:focus,
-a:focus-visible,
-a:active,
-[role="button"]:focus,
-[role="button"]:focus-visible,
-[role="button"]:active,
-*:focus,
-*:focus-visible,
-*:active {
+a:focus:not(:focus-visible),
+[role="button"]:focus:not(:focus-visible),
+*:focus:not(:focus-visible) {
   outline: none !important;
-  outline-style: none !important;
-  outline-width: 0 !important;
-  outline-color: transparent !important;
-  -webkit-tap-highlight-color: transparent !important;
-  -webkit-focus-ring-color: transparent !important;
 }
 
-/* Luxury Gold gradients and glows */
+*:focus-visible {
+  outline: 2px solid rgba(212, 175, 55, 0.55) !important;
+  outline-offset: 2px;
+}
+
+/* Flat gold accents */
 .bg-gold-gradient {
-  background: linear-gradient(135deg, #d4af37 0%, #f4e8bd 50%, #b89228 100%);
+  background: linear-gradient(180deg, #e5c158 0%, #c9a230 100%);
 }
 
 .text-gold-gradient {
-  background: linear-gradient(135deg, #f4e8bd 0%, #d4af37 50%, #aa841f 100%);
+  background: linear-gradient(180deg, #ecd591 0%, #d4af37 60%, #b89228 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .border-gold-glow {
   border-color: rgba(212, 175, 55, 0.35);
-  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel {
-  background: rgba(18, 18, 24, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(13, 13, 16, 0.92);
+  border: 1px solid #26262e;
 }
 
 .glass-panel-gold {
-  background: rgba(20, 20, 26, 0.88);
-  backdrop-filter: blur(12px);
+  background: rgba(13, 13, 16, 0.92);
   border: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+/* ===== Sofi — orbe de voz estilo Siri (colores vívidos) ===== */
+@keyframes sofi-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes sofi-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes sofi-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.07); opacity: 1; }
+}
+
+@keyframes sofi-ripple {
+  0% { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.sofi-spin {
+  animation: sofi-spin 7s linear infinite;
+  will-change: transform;
+}
+
+.sofi-spin-reverse {
+  animation: sofi-spin-reverse 10s linear infinite;
+  will-change: transform;
+}
+
+.sofi-breathe {
+  animation: sofi-breathe 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.sofi-ripple {
+  animation: sofi-ripple 1.8s ease-out infinite;
+  will-change: transform, opacity;
 }

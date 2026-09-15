@@ -168,15 +168,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   return (
-    <aside className="w-72 bg-[#0c0c10] border-r border-[#22222d] flex flex-col h-full shrink-0 select-none overflow-hidden relative">
+    <aside className="w-72 bg-ink-900 border border-line rounded-2xl shadow-card flex flex-col h-full shrink-0 select-none overflow-hidden relative">
       {/* Brand Header */}
-      <div className="p-4 px-5 border-b border-[#1c1c26] shrink-0">
+      <div className="p-4 px-5 border-b border-line shrink-0">
         <div className="flex items-center gap-3">
           <div
-            className="w-11 h-11 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 p-[1.5px] shadow-gold-glow shrink-0 overflow-hidden"
+            className="w-11 h-11 rounded-xl bg-gold-500/80 p-[1.5px] shrink-0 overflow-hidden"
             style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px' }}
           >
-            <div className="w-full h-full bg-[#0e0e14] rounded-[10px] overflow-hidden flex items-center justify-center">
+            <div className="w-full h-full bg-ink-850 rounded-[10px] overflow-hidden flex items-center justify-center">
               <img
                 src={logoImg}
                 alt="GoldBlack Lash Studio"
@@ -233,18 +233,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 if (isReorderMode && draggedId) return
                 onSelectTab(item.id)
               }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group cursor-pointer relative ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors duration-150 group cursor-pointer relative ${
                 isActive
-                  ? 'bg-gradient-to-r from-gold-500/15 via-gold-500/8 to-transparent text-white border-l-4 border-gold-400 shadow-sm'
-                  : 'bg-transparent text-gray-400 hover:text-gray-200 hover:bg-[#14141c]'
+                  ? 'bg-ink-850 text-white'
+                  : 'bg-transparent text-gray-400 hover:text-gray-200 hover:bg-ink-850/60'
               } ${
                 isReorderMode ? 'cursor-grab active:cursor-grabbing border border-dashed ' + (isDragOver ? 'border-gold-400/60 bg-gold-500/10 -translate-y-[1px] shadow-md' : 'border-transparent') : ''
               } ${isDragged ? 'opacity-40 scale-[0.98]' : 'opacity-100'}`}
             >
+              {/* Indicador activo: barra dorada a la izquierda */}
+              {isActive && !isReorderMode && (
+                <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-0.5 rounded-full bg-gold-400" />
+              )}
+
               {/* Handle visible solo en modo reordenar */}
               {isReorderMode && (
                 <span
-                  className="shrink-0 -ml-1 p-1 rounded-md hover:bg-[#1e1e2c] text-gray-500 hover:text-gold-300 transition-colors cursor-grab active:cursor-grabbing"
+                  className="shrink-0 -ml-1 p-1 rounded-md hover:bg-ink-800 text-gray-500 hover:text-gold-300 transition-colors cursor-grab active:cursor-grabbing"
                   aria-hidden
                   title="Arrastra para mover"
                 >
@@ -254,8 +259,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div
                 className={`p-1.5 rounded-lg transition-colors shrink-0 ${
                   isActive
-                    ? 'bg-gold-500/20 text-gold-400 shadow-gold-glow'
-                    : 'bg-[#181822] text-gray-400 group-hover:text-gold-300'
+                    ? 'bg-gold-500/15 text-gold-400'
+                    : 'bg-ink-800 text-gray-400 group-hover:text-gold-300'
                 }`}
               >
                 <Icon size={17} />
@@ -271,7 +276,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                   )}
                 </div>
-                <p className="text-[10.5px] text-gray-500 truncate">{item.subtitle}</p>
+                <p className="text-[10.5px] text-faint truncate">{item.subtitle}</p>
               </div>
             </button>
           )
@@ -279,12 +284,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Pinned Footer Area: Reorder Toolbar, Update Widget & Version */}
-      <div className="shrink-0 mt-auto w-full bg-[#0c0c10] border-t border-[#1c1c26]/80 flex flex-col">
+      <div className="shrink-0 mt-auto w-full bg-ink-900 border-t border-line flex flex-col">
         {/* Barra de Reordenar menú en flujo normal (sin solapar la actualización) */}
         {onToggleReorder && (
-          <div className="px-3.5 py-2 border-b border-[#1c1c26]/60 flex items-center justify-between gap-2 bg-[#0e0e14]">
+          <div className="px-3.5 py-2 border-b border-line/60 flex items-center justify-between gap-2 bg-ink-900">
             <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1.5">
-              <IconGripVertical size={13} className="text-gray-500" />
+              <IconGripVertical size={13} className="text-faint" />
               Menú
             </span>
             <div className="flex items-center gap-1.5">
@@ -293,7 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   type="button"
                   onClick={onResetOrder}
                   title="Restaurar orden original del menú"
-                  className="px-2 py-1 rounded-lg bg-[#1a1a24] hover:bg-[#232332] border border-[#2b2b3d] text-gray-400 hover:text-white text-[10px] font-semibold transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+                  className="px-2 py-1 rounded-lg bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-400 hover:text-white text-[10px] font-semibold transition-colors flex items-center gap-1 cursor-pointer active:scale-95"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
                   Restablecer
@@ -303,10 +308,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={onToggleReorder}
                 title={isReorderMode ? 'Guardar y salir del modo reordenar' : 'Reordenar botones del panel - arrastrar para ordenar a tu gusto'}
-                className={`px-3 py-1 rounded-lg font-bold text-[10.5px] transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 border ${
+                className={`px-3 py-1 rounded-lg font-semibold text-[10.5px] transition-colors flex items-center gap-1.5 cursor-pointer active:scale-95 border ${
                   isReorderMode
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-black border-emerald-400/50 hover:from-emerald-400 hover:to-teal-300 shadow-emerald-500/20'
-                    : 'bg-gradient-to-r from-gold-500 to-gold-400 text-black border-gold-400/50 hover:from-gold-400 hover:to-gold-300 shadow-gold-500/20'
+                    ? 'bg-emerald-500 hover:bg-emerald-400 text-black border-emerald-400/50'
+                    : 'bg-gold-500 hover:bg-gold-400 text-black border-gold-400/50'
                 }`}
               >
                 {isReorderMode ? (
@@ -327,8 +332,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* If update is available / downloading / downloaded / error */}
         {(status === 'available' || status === 'downloading' || status === 'downloaded' || status === 'error') && (
-          <div className="p-3 pb-2 border-b border-[#1c1c26]/60">
-            <div className="p-3 rounded-xl bg-gradient-to-b from-[#161622] to-[#0e0e16] border border-gold-500/30 shadow-lg flex flex-col space-y-2 transition-all">
+          <div className="p-3 pb-2 border-b border-line/60">
+            <div className="p-3 rounded-xl bg-ink-850 border border-gold-500/25 flex flex-col space-y-2 transition-all">
               {/* Header info */}
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-1.5">
@@ -343,7 +348,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   type="button"
                   onClick={dismiss}
-                  className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-[#20202d] transition-colors cursor-pointer"
+                  className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-ink-800 transition-colors cursor-pointer"
                   title="Ocultar aviso"
                 >
                   <IconX size={12} />
@@ -359,7 +364,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={startDownload}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-400 hover:to-gold-300 text-black font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                    className="w-full py-2 px-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-black font-semibold text-xs uppercase tracking-wider transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <IconDownload size={13} />
                     Actualizar
@@ -378,9 +383,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <span className="font-mono font-bold text-gold-300">{progress}%</span>
                   </div>
                   {/* Progress bar container with rounded corners */}
-                  <div className="w-full h-1.5 rounded-full bg-[#1e1e2c] overflow-hidden border border-[#2b2b3d]">
+                  <div className="w-full h-1.5 rounded-full bg-ink-800 overflow-hidden border border-line">
                     <div
-                      className="h-full bg-gradient-to-r from-gold-500 via-amber-400 to-gold-300 rounded-full transition-all duration-200 shadow-gold-glow"
+                      className="h-full bg-gold-500 rounded-full transition-all duration-200"
                       style={{ width: `${Math.max(progress, 4)}%` }}
                     />
                   </div>
@@ -402,7 +407,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     type="button"
                     onClick={applyAndRestart}
-                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-bold text-xs uppercase tracking-wider shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                    className="w-full py-2 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black font-semibold text-xs uppercase tracking-wider transition-colors duration-150 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                   >
                     <IconRefreshCw size={13} />
                     Reiniciar aplicación
@@ -432,7 +437,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="text-gray-500 font-medium">GoldBlack Studio</span>
           <span
             title={`Versión instalada: v${CURRENT_APP_VERSION} (Búsqueda automática cada 5 segundos)`}
-            className="font-mono px-2 py-0.5 rounded bg-[#1e1e2c] text-gold-400/90 border border-[#2b2b3d] select-none shadow-sm font-semibold"
+            className="font-mono px-2 py-0.5 rounded bg-ink-800 text-gold-400/90 border border-line select-none font-semibold"
           >
             v{CURRENT_APP_VERSION}
           </span>

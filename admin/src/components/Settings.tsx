@@ -281,7 +281,7 @@ export const Settings: React.FC<SettingsProps> = ({
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-5xl mx-auto overflow-y-auto h-[calc(100vh-80px)]">
+    <div className="p-8 space-y-8 max-w-5xl mx-auto overflow-y-auto h-full">
       {saveSuccess && (
         <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
           <IconCheck size={16} />
@@ -290,17 +290,17 @@ export const Settings: React.FC<SettingsProps> = ({
       )}
 
       {importStatus && (
-        <div className="p-4 rounded-xl bg-[#1a1a28] border border-gold-500/30 text-gold-300 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-ink-800 border border-gold-500/30 text-gold-300 text-xs flex items-center gap-2">
           <span>{importStatus}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Modo Mantenimiento Card */}
-        <div className={`p-6 rounded-2xl border transition-all duration-300 ${
+        <div className={`p-6 rounded-2xl border transition-colors duration-200 ${
           formData.maintenanceMode
-            ? 'bg-[#1c1408] border-amber-500/50 shadow-[0_4px_25px_rgba(245,158,11,0.15)]'
-            : 'bg-[#12121a] border-[#222230]'
+            ? 'bg-amber-500/[0.07] border-amber-500/40'
+            : 'bg-ink-850 border-line'
         }`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -308,7 +308,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <span className={`w-2.5 h-2.5 rounded-full ${
                   formData.maintenanceMode ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'
                 }`} />
-                <h4 className="font-sans text-base font-bold tracking-tight text-white uppercase">
+                <h4 className="font-sans text-base font-semibold tracking-tight text-white uppercase">
                   Modo Mantenimiento del Sitio Web
                 </h4>
                 <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
@@ -343,7 +343,7 @@ export const Settings: React.FC<SettingsProps> = ({
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 formData.maintenanceMode
                   ? 'bg-amber-500 text-black hover:bg-amber-400 shadow-md'
-                  : 'bg-[#1e1e2c] text-gray-200 hover:bg-[#28283c] border border-gray-700'
+                  : 'bg-ink-800 text-gray-200 hover:bg-ink-750 border border-gray-700'
               }`}
             >
               <span>{formData.maintenanceMode ? 'Desactivar Mantenimiento' : 'Activar Mantenimiento'}</span>
@@ -374,7 +374,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* Efectos Estacionales y Partículas Ambientales */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
@@ -428,7 +428,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           {/* Live Preview Box */}
-          <div className="relative w-full h-44 rounded-xl overflow-hidden bg-[#08080c] border border-[#2b2b3d] flex items-center justify-center shadow-inner">
+          <div className="relative w-full h-44 rounded-xl overflow-hidden bg-ink-900 border border-line-strong flex items-center justify-center shadow-inner">
             <SeasonalPreviewCanvas effect={formData.seasonalEffect || 'none'} />
             
             <div className="absolute top-2.5 left-3 text-[10px] uppercase font-mono tracking-widest text-gray-400 bg-black/80 px-2.5 py-1 rounded-md border border-white/10 pointer-events-none backdrop-blur-sm z-20">
@@ -483,10 +483,10 @@ export const Settings: React.FC<SettingsProps> = ({
                   onClick={() => {
                     setFormData({ ...formData, seasonalEffect: opt.id as SeasonalEffectType })
                   }}
-                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 ${
+                  className={`p-4 rounded-xl border text-left transition-colors cursor-pointer flex flex-col justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-[#1e1b12] border-gold-400 shadow-[0_0_15px_rgba(212,175,55,0.15)] ring-1 ring-gold-400/50'
-                      : 'bg-[#181824] border-[#28283c] hover:border-gray-600 hover:bg-[#1f1f2e]'
+                      ? 'bg-gold-500/10 border-gold-500/50'
+                      : 'bg-ink-850 border-line hover:border-line-strong hover:bg-ink-800'
                   }`}
                 >
                   <div className="flex items-start justify-between w-full">
@@ -513,7 +513,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* Contact and Business Details */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-4">
           <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase">
             Información del Estudio
           </h4>
@@ -525,7 +525,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -535,7 +535,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.tagline}
                 onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -547,7 +547,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.phoneDisplay}
                 onChange={(e) => setFormData({ ...formData, phoneDisplay: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -557,7 +557,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -567,7 +567,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.instagramHandle}
                 onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -577,7 +577,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -587,7 +587,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.city}
                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -597,20 +597,20 @@ export const Settings: React.FC<SettingsProps> = ({
                 type="text"
                 value={formData.postalCode}
                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
             </div>
           </div>
         </div>
 
         {/* Studio Opening Hours */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-4">
           <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase">
             Horarios de Atención
           </h4>
           <div className="space-y-3">
             {formData.hours.map((h, i) => (
-              <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[#181824] border border-[#262638]">
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-ink-800 border border-line">
                 <div>
                   <label className="block text-[11px] text-gray-400 mb-1">Días</label>
                   <input
@@ -621,7 +621,7 @@ export const Settings: React.FC<SettingsProps> = ({
                       updated[i].days = e.target.value
                       setFormData({ ...formData, hours: updated })
                     }}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
+                    className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white"
                   />
                 </div>
                 <div>
@@ -634,7 +634,7 @@ export const Settings: React.FC<SettingsProps> = ({
                       updated[i].time = e.target.value
                       setFormData({ ...formData, hours: updated })
                     }}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#20202e] border border-[#303044] text-xs text-white"
+                    className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white"
                   />
                 </div>
               </div>
@@ -643,7 +643,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* Corporate Email Configuration (Resend + Vercel Domain) */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
           <div className="flex items-center justify-between">
             <h4 className="font-sans text-base font-bold tracking-tight text-gold-300 uppercase flex items-center gap-2">
               <IconMail size={18} className="text-gold-400" />
@@ -659,7 +659,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </p>
 
           {/* Step by Step Guide Card */}
-          <div className="p-4 rounded-xl bg-[#171724] border border-[#27273a] space-y-2.5 text-xs text-gray-300">
+          <div className="p-4 rounded-xl bg-ink-800 border border-line space-y-2.5 text-xs text-gray-300">
             <div className="font-bold text-white flex items-center gap-1.5 text-xs">
               <IconSparkles size={14} className="text-gold-400" />
               Pasos para conectar tu Dominio de Vercel con Resend:
@@ -690,7 +690,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                 value={formData.resendApiKey || ''}
                 onChange={(e) => setFormData({ ...formData, resendApiKey: e.target.value.trim() })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
               />
               <p className="text-[11px] text-gray-500 mt-1">
                 Obtén tu clave desde <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-gold-400 underline">resend.com/api-keys</a>. También puedes configurarla como variable de entorno <code className="text-gray-400">RESEND_API_KEY</code> en Vercel.
@@ -706,7 +706,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="GoldBlack Lash <citas@goldblacklash.com>"
                 value={formData.senderEmail || ''}
                 onChange={(e) => setFormData({ ...formData, senderEmail: e.target.value.trim() })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
               <p className="text-[11px] text-gray-500 mt-1">
                 Dirección con tu dominio verificado. Ejemplo: <span className="font-mono text-gray-400">citas@goldblacklash.com</span>
@@ -722,7 +722,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="tu-correo@gmail.com o citas@goldblacklash.com"
                 value={formData.alertEmail || ''}
                 onChange={(e) => setFormData({ ...formData, alertEmail: e.target.value.trim() })}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
               />
               <p className="text-[11px] text-gray-500 mt-1">
                 Aquí recibirás una notificación instantánea cada vez que una clienta reserve desde la web.
@@ -731,7 +731,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           {/* Live Test Box */}
-          <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-3">
+          <div className="p-4 rounded-xl bg-ink-850 border border-line space-y-3">
             <label className="block text-xs font-semibold text-gray-300">
               Probar Envío de Correo en Vivo
             </label>
@@ -741,7 +741,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="Ingresa un correo para recibir la prueba..."
                 value={testRecipient}
                 onChange={(e) => setTestRecipient(e.target.value)}
-                className="flex-1 px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
+                className="flex-1 px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-400"
               />
               <button
                 type="button"
@@ -766,15 +766,15 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* Voice Alerts with Siri Configuration */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
               <IconVolume2 size={22} />
             </div>
             <div>
-              <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
+              <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
                 <span>Alertas y Anuncios por Voz con Siri</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/60 text-amber-300 border border-amber-500/30">
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25">
                   macOS • 0€
                 </span>
               </h4>
@@ -786,7 +786,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
           <div className="space-y-4">
             {/* Checkbox for Announcing New Web Appointments */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-ink-800 border border-line">
               <input
                 type="checkbox"
                 id="voiceAnnounceNewAppointments"
@@ -797,7 +797,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     voiceAnnounceNewAppointments: e.target.checked,
                   })
                 }
-                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+                className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
                 <span className="font-semibold text-white">Anunciar reservas de la web en tiempo real con voz de Siri</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
@@ -805,7 +805,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
 
             {/* Checkbox for Announcing App Updates */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-[#171724] border border-[#262638]">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-ink-800 border border-line">
               <input
                 type="checkbox"
                 id="voiceAnnounceUpdates"
@@ -816,7 +816,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     voiceAnnounceUpdates: e.target.checked,
                   })
                 }
-                className="w-4 h-4 rounded border-[#2b2b3d] text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
+                className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
                 <span className="font-semibold text-white">Anunciar actualizaciones del sistema por voz</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará en voz alta diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
@@ -824,7 +824,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
 
             {/* Live Test Buttons */}
-            <div className="p-4 rounded-xl bg-[#151520] border border-[#222235] space-y-4">
+            <div className="p-4 rounded-xl bg-ink-850 border border-line space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
                   <span className="font-semibold text-white">Probar Voz de Siri (macOS)</span>
@@ -834,7 +834,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   type="button"
                   onClick={handleTestSiriVoice}
                   disabled={isTestingSiri}
-                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 disabled:opacity-50 text-zinc-950 font-bold text-xs transition-all cursor-pointer shadow-[0_0_12px_rgba(212,175,55,0.2)] shrink-0"
+                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-semibold text-xs transition-colors cursor-pointer shrink-0"
                 >
                   <IconSparkles size={14} />
                   <span>{isTestingSiri ? 'Reproduciendo...' : '🔊 Probar Voz de Siri'}</span>
@@ -850,7 +850,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   type="button"
                   onClick={handleTestAnnouncement}
                   disabled={isPlayingSampleAnnouncement}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#1f1f2e] hover:bg-[#28283d] border border-amber-500/30 text-amber-300 font-medium text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-amber-500/30 text-amber-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
                 >
                   <IconVolume2 size={14} />
                   <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : '🔊 Escuchar Anuncio de Reserva'}</span>
@@ -866,7 +866,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   type="button"
                   onClick={handleTestUpdateVoice}
                   disabled={isPlayingUpdateVoiceTest}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#1f1f2e] hover:bg-[#28283d] border border-amber-500/30 text-amber-300 font-medium text-xs transition-all cursor-pointer shrink-0 shadow-[0_0_10px_rgba(212,175,55,0.1)]"
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-amber-500/30 text-amber-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
                 >
                   <IconVolume2 size={14} />
                   <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
@@ -877,13 +877,13 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         {/* Cloudflare Workers AI Configuration */}
-        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-600/10 border border-gold-500/30 flex items-center justify-center text-gold-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+            <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/25 flex items-center justify-center text-gold-400">
               <IconSparkles size={22} />
             </div>
             <div>
-              <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
+              <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
                 <span>Asistente de IA y Voz (Cloudflare Workers AI)</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gold-950/60 text-gold-300 border border-gold-500/30">
                   @cf/qwen/qwen3-30b-a3b-fp8
@@ -929,7 +929,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="Ingresa tu ID de cuenta..."
                 value={cfAccountId}
                 onChange={(e) => setCfAccountId(e.target.value.trim())}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
               />
             </div>
 
@@ -942,7 +942,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder="Ingresa tu API Token..."
                 value={cfApiToken}
                 onChange={(e) => setCfApiToken(e.target.value.trim())}
-                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
               />
             </div>
           </div>
@@ -962,7 +962,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-8 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow transition-all"
+            className="px-8 py-3 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors"
           >
             Guardar Cambios de Configuración
           </button>
@@ -970,7 +970,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </form>
 
       {/* Real-time Vercel & Supabase Sync Section */}
-      <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+      <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -984,7 +984,7 @@ export const Settings: React.FC<SettingsProps> = ({
           Los precios, citas y fotografías editados en este panel se guardan directamente en tu base de datos y almacenamiento de Supabase y se reflejan de inmediato en la web sin necesidad de esperar despliegues de GitHub.
         </p>
 
-        <div className="p-4 rounded-xl bg-[#161622] border border-[#262638] space-y-3">
+        <div className="p-4 rounded-xl bg-ink-850 border border-line space-y-3">
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1">
               URL del Sitio Web en Vercel (API Endpoint)
@@ -995,7 +995,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 defaultValue={localStorage.getItem('goldblack_admin_api_url') || 'https://goldblacklash.com'}
                 onChange={(e) => localStorage.setItem('goldblack_admin_api_url', e.target.value.trim())}
                 placeholder="https://goldblacklash.com"
-                className="flex-1 px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white font-mono"
+                className="flex-1 px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-xs text-white font-mono"
               />
               <button
                 type="button"
@@ -1024,7 +1024,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     })
                   }
                 }}
-                className="px-4 py-2 rounded-xl bg-[#252538] hover:bg-[#303048] text-xs font-semibold text-gray-200 border border-gray-700/50"
+                className="px-4 py-2 rounded-xl bg-ink-750 hover:bg-ink-750 text-xs font-semibold text-gray-200 border border-gray-700/50"
               >
                 Probar Conexión
               </button>
@@ -1034,7 +1034,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* Backup and Restore Box */}
-      <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+      <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-4">
         <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
           <IconDownload size={18} className="text-gold-400" />
           Copias de Seguridad (Backup y Restauración)
@@ -1047,13 +1047,13 @@ export const Settings: React.FC<SettingsProps> = ({
           <button
             type="button"
             onClick={handleExportBackup}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1e1e2c] hover:bg-[#2a2a3e] text-gold-300 border border-gold-500/30 text-xs font-semibold transition-all shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 text-gold-300 border border-gold-500/30 text-xs font-semibold transition-all shadow-sm"
           >
             <IconDownload size={16} />
             <span>Descargar Copia de Seguridad (.json)</span>
           </button>
 
-          <label className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#181824] hover:bg-[#222234] text-gray-300 border border-gray-700/40 text-xs font-semibold cursor-pointer transition-all">
+          <label className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-800 text-gray-300 border border-gray-700/40 text-xs font-semibold cursor-pointer transition-all">
             <IconUpload size={16} />
             <span>Restaurar Copia de Seguridad</span>
             <input
@@ -1067,7 +1067,7 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* Updates and Sound/Visual Notification Section */}
-      <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-4">
+      <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
             <IconRefreshCw size={18} className="text-gold-400" />
@@ -1086,7 +1086,7 @@ export const Settings: React.FC<SettingsProps> = ({
             type="button"
             onClick={() => checkUpdates(true)}
             disabled={updateStatus === 'checking'}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1e1e2c] hover:bg-[#2a2a3e] text-gold-300 border border-gold-500/30 text-xs font-semibold transition-all shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 text-gold-300 border border-gold-500/30 text-xs font-semibold transition-all shadow-sm cursor-pointer active:scale-95 disabled:opacity-50"
           >
             <IconRefreshCw size={14} className={updateStatus === 'checking' ? 'animate-spin' : ''} />
             <span>{updateStatus === 'checking' ? 'Buscando en GitHub...' : 'Buscar Actualizaciones'}</span>
@@ -1095,7 +1095,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <button
             type="button"
             onClick={() => testUpdateNotification()}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-gold-500/20 via-amber-500/20 to-gold-500/10 hover:from-gold-500/30 hover:to-amber-500/20 text-gold-300 border border-gold-500/40 text-xs font-semibold transition-all shadow-gold-glow cursor-pointer active:scale-95"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/15 text-gold-300 border border-gold-500/30 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
             title="Dispara la tira de notificación nativa del sistema de Apple con sonido Glass"
           >
             <span className="text-sm">🔔</span>
@@ -1105,18 +1105,18 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* System & Architecture Info */}
-      <div className="p-6 rounded-2xl bg-[#101016] border border-[#1e1e28] space-y-3 text-xs text-gray-400">
+      <div className="p-6 rounded-2xl bg-ink-900 border border-line space-y-3 text-xs text-gray-400">
         <h5 className="font-sans font-bold tracking-tight text-white text-sm">
           Compatibilidad del Sistema y Versiones
         </h5>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
-          <div className="p-3 rounded-xl bg-[#14141e] border border-[#222232]">
+          <div className="p-3 rounded-xl bg-ink-850 border border-line">
             <span className="text-gold-400 font-bold block mb-1">🍏 macOS Monterey (macOS 12.0+)</span>
             <p className="text-gray-400">
               Compatible con macOS 12.0 Monterey y versiones superiores en arquitecturas Intel y Apple Silicon.
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-[#14141e] border border-[#222232]">
+          <div className="p-3 rounded-xl bg-ink-850 border border-line">
             <span className="text-blue-400 font-bold block mb-1">🪟 Windows 11 / Windows 10 (x64)</span>
             <p className="text-gray-400">
               Instalador ejecutable (.exe con NSIS) y versión portable autónoma.

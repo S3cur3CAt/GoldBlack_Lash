@@ -61,13 +61,13 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     <DialogContext.Provider value={{ showAlert, showConfirm }}>
       {children}
 
-      {/* Luxury Alert Modal */}
+      {/* Alert Modal */}
       {alertState && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm select-none">
-          <div className="w-full max-w-md rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-ink-900 border border-line shadow-raised p-6 relative animate-scale-up">
             <button
               onClick={closeAlert}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230] transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-muted hover:text-white hover:bg-ink-800 transition-colors"
             >
               <IconX size={18} />
             </button>
@@ -76,12 +76,12 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
                   alertState.type === 'success'
-                    ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400'
+                    ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
                     : alertState.type === 'error'
-                    ? 'bg-red-950/60 border-red-500/40 text-red-400'
+                    ? 'bg-red-500/10 border-red-500/25 text-red-400'
                     : alertState.type === 'warning'
-                    ? 'bg-amber-950/60 border-amber-500/40 text-amber-400'
-                    : 'bg-[#1e1e2c] border-gold-500/30 text-gold-400'
+                    ? 'bg-amber-500/10 border-amber-500/25 text-amber-400'
+                    : 'bg-gold-500/10 border-gold-500/25 text-gold-400'
                 }`}
               >
                 {alertState.type === 'success' ? (
@@ -105,12 +105,12 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               </div>
             </div>
 
-            <div className="flex justify-end pt-5 mt-4 border-t border-[#222230]">
+            <div className="flex justify-end pt-5 mt-4 border-t border-line">
               <button
                 type="button"
                 autoFocus
                 onClick={closeAlert}
-                className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-gold-glow"
+                className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors"
               >
                 {alertState.confirmText || 'Entendido'}
               </button>
@@ -119,13 +119,13 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         </div>
       )}
 
-      {/* Luxury Confirm Modal */}
+      {/* Confirm Modal */}
       {confirmState && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm select-none">
-          <div className="w-full max-w-md rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 relative">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-ink-900 border border-line shadow-raised p-6 relative animate-scale-up">
             <button
               onClick={closeConfirm}
-              className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230] transition-colors"
+              className="absolute top-4 right-4 p-1.5 rounded-lg text-muted hover:text-white hover:bg-ink-800 transition-colors"
             >
               <IconX size={18} />
             </button>
@@ -134,8 +134,8 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               <div
                 className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
                   confirmState.danger
-                    ? 'bg-red-950/60 border-red-500/40 text-red-400'
-                    : 'bg-amber-950/60 border-amber-500/40 text-amber-400'
+                    ? 'bg-red-500/10 border-red-500/25 text-red-400'
+                    : 'bg-amber-500/10 border-amber-500/25 text-amber-400'
                 }`}
               >
                 {confirmState.danger ? (
@@ -155,11 +155,11 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-5 mt-4 border-t border-[#222230]">
+            <div className="flex items-center justify-end gap-3 pt-5 mt-4 border-t border-line">
               <button
                 type="button"
                 onClick={closeConfirm}
-                className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold transition-colors"
+                className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold transition-colors"
               >
                 {confirmState.cancelText || 'Cancelar'}
               </button>
@@ -171,10 +171,10 @@ export const DialogProvider: React.FC<{ children: ReactNode }> = ({ children }) 
                   closeConfirm()
                   cb()
                 }}
-                className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-200 shadow-sm ${
+                className={`px-5 py-2.5 rounded-xl font-semibold text-xs uppercase tracking-wider transition-colors ${
                   confirmState.danger
                     ? 'bg-red-600 hover:bg-red-500 text-white'
-                    : 'bg-gold-500 hover:bg-gold-400 text-ink-950 shadow-gold-glow'
+                    : 'bg-gold-500 hover:bg-gold-400 text-ink-950'
                 }`}
               >
                 {confirmState.confirmText || (confirmState.danger ? 'Eliminar' : 'Confirmar')}

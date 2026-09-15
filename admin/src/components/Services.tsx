@@ -214,7 +214,7 @@ export const Services: React.FC<ServicesProps> = ({
   })
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-[calc(100vh-80px)] select-none">
+    <div className="p-8 space-y-6 max-w-7xl mx-auto overflow-y-auto h-full select-none">
       {/* Filter and View Mode Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Category Filter Pills */}
@@ -226,7 +226,7 @@ export const Services: React.FC<ServicesProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
-                  : 'bg-[#14141d] text-gray-400 hover:text-white border border-[#222230]'
+                  : 'bg-ink-850 text-gray-400 hover:text-white border border-line'
               }`}
             >
               {cat.name}
@@ -235,7 +235,7 @@ export const Services: React.FC<ServicesProps> = ({
         </div>
 
         {/* View Toggle */}
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-[#14141d] border border-[#222230]">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-ink-850 border border-line">
           <button
             onClick={() => setViewMode('grid')}
             title="Vista Cuadrícula Compacta"
@@ -269,8 +269,8 @@ export const Services: React.FC<ServicesProps> = ({
               key={service.id}
               className={`rounded-xl p-4 transition-all flex flex-col justify-between border ${
                 service.featured
-                  ? 'bg-gradient-to-b from-[#181824] to-[#12121a] border-gold-500/40 shadow-gold-glow'
-                  : 'bg-[#12121a] border-[#222230] hover:border-gold-500/20'
+                  ? 'bg-ink-850 border-gold-500/40'
+                  : 'bg-ink-850 border-line hover:border-gold-500/20'
               }`}
             >
               <div>
@@ -314,11 +314,11 @@ export const Services: React.FC<ServicesProps> = ({
 
                 {/* Inclusions as compact pills */}
                 {Array.isArray(service.includes) && service.includes.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-[#1e1e2c] flex flex-wrap gap-1">
+                  <div className="mt-3 pt-2.5 border-t border-line flex flex-wrap gap-1">
                     {service.includes.map((inc, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#161622] text-gray-300 border border-[#232332]"
+                        className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-ink-850 text-gray-300 border border-line"
                       >
                         <IconCheck size={10} className="text-gold-400 shrink-0" />
                         <span className="truncate max-w-[130px]">{inc}</span>
@@ -329,7 +329,7 @@ export const Services: React.FC<ServicesProps> = ({
               </div>
 
               {/* Bottom Controls */}
-              <div className="mt-3.5 pt-2.5 border-t border-[#1e1e2c] flex items-center justify-between">
+              <div className="mt-3.5 pt-2.5 border-t border-line flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-2 h-2 rounded-full ${
@@ -343,7 +343,7 @@ export const Services: React.FC<ServicesProps> = ({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => handleEdit(service)}
-                    className="p-1.5 rounded-lg bg-[#1c1c28] hover:bg-[#28283a] text-gray-300 hover:text-white border border-[#2b2b3e] transition-colors"
+                    className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong transition-colors"
                     title="Editar servicio"
                   >
                     <IconEdit size={13} />
@@ -370,10 +370,10 @@ export const Services: React.FC<ServicesProps> = ({
         </div>
       ) : (
         /* Table / List View */
-        <div className="rounded-xl border border-[#20202e] bg-[#12121a] overflow-hidden">
+        <div className="rounded-xl border border-line bg-ink-850 overflow-hidden">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-[#20202e] bg-[#151520] text-gray-400 uppercase tracking-wider font-mono text-[10px]">
+              <tr className="border-b border-line bg-ink-850 text-gray-400 uppercase tracking-wider font-mono text-[10px]">
                 <th className="py-3 px-4">Servicio</th>
                 <th className="py-3 px-4">Categoría</th>
                 <th className="py-3 px-4">Duración</th>
@@ -383,9 +383,9 @@ export const Services: React.FC<ServicesProps> = ({
                 <th className="py-3 px-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1c1c28]">
+            <tbody className="divide-y divide-line">
               {filteredServices.map((service) => (
-                <tr key={service.id} className="hover:bg-[#161622] transition-colors">
+                <tr key={service.id} className="hover:bg-ink-850 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-white text-xs">{service.name}</span>
@@ -422,7 +422,7 @@ export const Services: React.FC<ServicesProps> = ({
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => handleEdit(service)}
-                        className="p-1.5 rounded-lg bg-[#1e1e2c] hover:bg-[#2a2a3e] text-gray-300 hover:text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white transition-colors"
                         title="Editar"
                       >
                         <IconEdit size={13} />
@@ -453,16 +453,16 @@ export const Services: React.FC<ServicesProps> = ({
 
       {/* Modal: Create / Edit Service */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-xl rounded-2xl bg-[#14141c] border border-gold-500/30 shadow-2xl p-6 overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-[#252536] pb-4 mb-5">
-              <h3 className="font-sans text-xl font-bold text-white flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-xl rounded-2xl bg-ink-900 border border-line shadow-raised animate-scale-up p-6 overflow-y-auto max-h-[90vh]">
+            <div className="flex items-center justify-between border-b border-line pb-4 mb-5">
+              <h3 className="font-sans text-xl font-semibold text-white flex items-center gap-2">
                 <IconSparkles size={20} className="text-gold-400" />
                 {editingService ? 'Editar Servicio' : 'Nuevo Servicio de Pestañas'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#222230]"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-ink-800 transition-colors"
               >
                 <IconX size={18} />
               </button>
@@ -479,7 +479,7 @@ export const Services: React.FC<ServicesProps> = ({
                   placeholder="Ej. Volumen Ruso Intenso"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                 />
               </div>
 
@@ -510,7 +510,7 @@ export const Services: React.FC<ServicesProps> = ({
                         placeholder="Ej. Cejas & Microblading, Masajes..."
                         value={customCatInput}
                         onChange={(e) => setCustomCatInput(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-gold-500/40 text-sm text-white focus:outline-none focus:border-gold-400 placeholder-gray-500"
+                        className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-gold-500/40 text-sm text-white focus:outline-none focus:border-gold-400 placeholder-gray-500"
                       />
                       <p className="text-[10px] text-gray-400 leading-snug">
                         Se guardará como categoría independiente en los filtros y listas.
@@ -532,7 +532,7 @@ export const Services: React.FC<ServicesProps> = ({
                           })
                         }
                       }}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                      className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                     >
                       {allCategories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -553,7 +553,7 @@ export const Services: React.FC<ServicesProps> = ({
                     placeholder="Ej. Más Popular, 3D-6D, Nuevo"
                     value={formData.badge}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white"
                   />
                 </div>
 
@@ -564,7 +564,7 @@ export const Services: React.FC<ServicesProps> = ({
                     required
                     value={formData.priceNumber}
                     onChange={(e) => setFormData({ ...formData, priceNumber: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white"
                   />
                 </div>
 
@@ -575,7 +575,7 @@ export const Services: React.FC<ServicesProps> = ({
                     placeholder="Ej. 30 min, 1 h, 1 h 15 min"
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white"
+                    className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white"
                   />
                 </div>
               </div>
@@ -587,7 +587,7 @@ export const Services: React.FC<ServicesProps> = ({
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Explica el efecto, las fibras utilizadas y para qué tipo de ojo se recomienda..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white focus:outline-none focus:border-gold-400"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-gold-400"
                 />
               </div>
 
@@ -600,12 +600,12 @@ export const Services: React.FC<ServicesProps> = ({
                     placeholder="Añadir punto incluido..."
                     value={newInclusion}
                     onChange={(e) => setNewInclusion(e.target.value)}
-                    className="flex-1 px-3.5 py-1.5 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-xs text-white"
+                    className="flex-1 px-3.5 py-1.5 rounded-xl bg-ink-800 border border-line-strong text-xs text-white"
                   />
                   <button
                     type="button"
                     onClick={handleAddInclusion}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#28283a] hover:bg-[#34344c] text-xs text-white font-medium"
+                    className="px-3.5 py-1.5 rounded-xl bg-ink-750 hover:bg-ink-750 text-xs text-white font-medium"
                   >
                     Añadir
                   </button>
@@ -614,7 +614,7 @@ export const Services: React.FC<ServicesProps> = ({
                   {formData.includes?.map((inc, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 rounded-lg bg-[#181824] border border-[#252536] text-xs text-gray-300"
+                      className="flex items-center justify-between p-2 rounded-lg bg-ink-800 border border-line text-xs text-gray-300"
                     >
                       <span>• {inc}</span>
                       <button
@@ -665,17 +665,17 @@ export const Services: React.FC<ServicesProps> = ({
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#222230]">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-[#20202e] hover:bg-[#28283a] text-gray-300 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 border border-line-strong text-gray-300 text-xs font-semibold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-bold text-xs uppercase tracking-wider shadow-gold-glow"
+                  className="px-6 py-2.5 rounded-xl bg-gold-500 hover:bg-gold-400 text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors"
                 >
                   Guardar Servicio
                 </button>
