@@ -169,6 +169,20 @@ export const Settings: React.FC<SettingsProps> = ({
   // Siri Voice Live Test
   const [isTestingSiri, setIsTestingSiri] = useState(false)
 
+  // Cloudflare Credentials State
+  const [cfAccountId, setCfAccountId] = useState(() => localStorage.getItem('goldblack_cf_account_id') || '')
+  const [cfApiToken, setCfApiToken] = useState(() => localStorage.getItem('goldblack_cf_api_token') || '')
+
+  const handleSaveCloudflare = () => {
+    localStorage.setItem('goldblack_cf_account_id', cfAccountId.trim())
+    localStorage.setItem('goldblack_cf_api_token', cfApiToken.trim())
+    showAlert({
+      title: 'Credenciales de Cloudflare',
+      message: 'Las credenciales de Cloudflare Workers AI se han guardado localmente con éxito.',
+      type: 'success',
+    })
+  }
+
   const handleTestSiriVoice = async () => {
     setIsTestingSiri(true)
     try {
@@ -861,6 +875,51 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Cloudflare Workers AI Configuration */}
+        <div className="p-6 rounded-2xl bg-[#12121a] border border-[#222230] space-y-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gold-500/20 to-gold-600/10 border border-gold-500/30 flex items-center justify-center text-gold-400 shadow-[0_0_15px_rgba(212,175,55,0.15)]">
+              <IconSparkles size={22} />
+            </div>
+            <div>
+              <h4 className="font-sans text-base font-bold tracking-tight text-white flex items-center gap-2">
+                <span>Asistente de IA y Voz (Cloudflare Workers AI)</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gold-950/60 text-gold-300 border border-gold-500/30">
+                  @cf/qwen/qwen3-30b-a3b-fp8
+                </span>
+              </h4>
+              <p className="text-xs text-gray-400">
+                Conecta tu cuenta de Cloudflare para activar el copiloto inteligente por voz y texto que te ayudará a gestionar la agenda, responder preguntas sobre clientas o consultar tarifas de forma totalmente autónoma.
+              </p>
+            </div>
+          </div>
+
+          {/* Wake Word Activation Checkbox */}
+          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gold-500/5 border border-gold-500/20 text-xs">
+            <input
+              type="checkbox"
+              id="continuousListenSofi"
+              checked={localStorage.getItem('goldblack_sofi_continuous_listen') === 'true'}
+              onChange={(e) => {
+                localStorage.setItem('goldblack_sofi_continuous_listen', e.target.checked ? 'true' : 'false')
+                window.dispatchEvent(new Event('goldblack:sofi_continuous_listen_changed'))
+                showAlert({
+                  title: e.target.checked ? 'Modo Manos Libres Activo' : 'Modo Manos Libres Desactivado',
+                  message: e.target.checked
+                    ? 'Sofi ahora te escuchará de fondo de forma continua. Solo di "Oye Sofi" seguido de tu consulta.'
+                    : 'La escucha de fondo de "Oye Sofi" se ha desactivado.',
+                  type: 'success',
+                })
+              }}
+              className="w-4 h-4 rounded border-gray-700 text-gold-500 focus:ring-gold-400 accent-gold-500 cursor-pointer"
+            />
+            <label htmlFor="continuousListenSofi" className="text-gray-300 cursor-pointer flex-1 leading-normal">
+              <span className="font-bold text-white">Activar modo manos libres continuo ("Oye Sofi")</span> — Si activas esta opción, el micrófono de tu Mac se mantendrá activo escuchando de fondo. Podrás dirigirte al asistente diciendo directamente <span className="text-gold-300 font-bold">&ldquo;Oye Sofi, ¿qué citas tengo hoy?&rdquo;</span> sin tener que pulsar ningún botón.
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Save Settings Button */}
         <div className="flex justify-end">
