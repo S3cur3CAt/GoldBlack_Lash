@@ -920,6 +920,43 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                Cloudflare Account ID
+              </label>
+              <input
+                type="text"
+                placeholder="Ingresa tu ID de cuenta..."
+                value={cfAccountId}
+                onChange={(e) => setCfAccountId(e.target.value.trim())}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                Cloudflare API Token (con permisos de Workers AI)
+              </label>
+              <input
+                type="password"
+                placeholder="Ingresa tu API Token..."
+                value={cfApiToken}
+                onChange={(e) => setCfApiToken(e.target.value.trim())}
+                className="w-full px-3.5 py-2 rounded-xl bg-[#1c1c28] border border-[#2b2b3d] text-sm text-white font-mono placeholder-gray-600 focus:outline-none focus:border-gold-400"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleSaveCloudflare}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-gold-500 hover:bg-gold-400 text-zinc-950 transition-colors cursor-pointer"
+            >
+              Guardar Credenciales de IA
+            </button>
+          </div>
+        </div>
 
         {/* Save Settings Button */}
         <div className="flex justify-end">
