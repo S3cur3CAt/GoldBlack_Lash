@@ -12,7 +12,7 @@ import { Settings } from './components/Settings'
 import { announceNewAppointmentVoice } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
 import { IconMic, IconSparkles, IconX } from './components/Icons'
-import { executeVoiceCommand } from './services/cloudflareAiService'
+import { executeVoiceCommand, SofiWakeWordManager } from './services/cloudflareAiService'
 
 import {
   Appointment,
@@ -129,6 +129,85 @@ export const App: React.FC = () => {
   const [voiceIsListening, setVoiceIsListening] = useState(false)
   const [voiceIsProcessing, setVoiceIsProcessing] = useState(false)
   const [voiceError, setVoiceError] = useState<string | null>(null)
+
+  // continuous listening manager reference
+  const sofiManagerRef = useRef<SofiWakeWordManager | null>(null)
+
+  // Active continuous background wake-word listening ("Oye Sofi")
+  useEffect(() => {
+    const isSofiEnabled = localStorage.getItem('goldblack_sofi_continuous_listen') === 'true'
+
+    const initSofi = () => {
+      if (isSofiEnabled) {
+        if (sofiManagerRef.current) {
+          sofiManagerRef.current.stop()
+        }
+
+        sofiManagerRef.current = new SofiWakeWordManager((state: any) => {
+          if (state.status === 'idle') {
+            setVoiceIsListening(true)
+            setVoiceIsProcessing(false)
+          } else if (state.status === 'processing') {
+            setIsVoiceActive(true)
+            setVoiceIsListening(false)
+            setVoiceIsProcessing(true)
+            setVoiceTranscript(state.text || '')
+            setVoiceResponse('')
+          } else if (state.status === 'speaking') {
+            setVoiceIsProcessing(false)
+            setVoiceResponse(state.response || '')
+          }
+        })
+
+        sofiManagerRef.current.updateContext({ appointments, clients, services })
+        sofiManagerRef.current.start()
+      } else {
+        if (sofiManagerRef.current) {
+          sofiManagerRef.current.stop()
+          sofiManagerRef.current = null
+        }
+      }
+    }
+
+    initSofi()
+
+    const handleToggle = () => {
+      const updatedEnabled = localStorage.getItem('goldblack_sofi_continuous_listen') === 'true'
+      if (updatedEnabled) {
+        if (!sofiManagerRef.current) {
+          sofiManagerRef.current = new SofiWakeWordManager((state: any) => {
+            if (state.status === 'idle') {
+              setVoiceIsListening(true)
+              setVoiceIsProcessing(false)
+            } else if (state.status === 'processing') {
+              setIsVoiceActive(true)
+              setVoiceIsListening(false)
+              setVoiceIsProcessing(true)
+              setVoiceTranscript(state.text || '')
+              setVoiceResponse('')
+            } else if (state.status === 'speaking') {
+              setVoiceIsProcessing(false)
+              setVoiceResponse(state.response || '')
+            }
+          })
+        }
+        sofiManagerRef.current.updateContext({ appointments, clients, services })
+        sofiManagerRef.current.start()
+      } else {
+        if (sofiManagerRef.current) {
+          sofiManagerRef.current.stop()
+          sofiManagerRef.current = null
+          setVoiceIsListening(false)
+          setVoiceIsProcessing(false)
+        }
+      }
+    }
+
+    window.addEventListener('goldblack:sofi_continuous_listen_changed', handleToggle)
+    return () => {
+      window.removeEventListener('goldblack:sofi_continuous_listen_changed', handleToggle)
+    }
+  }, [appointments, clients, services])
 
   const handleGlobalVoiceClick = async () => {
     setVoiceError(null)
