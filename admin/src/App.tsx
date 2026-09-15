@@ -11,6 +11,8 @@ import { Billing } from './components/Billing'
 import { Settings } from './components/Settings'
 import { announceNewAppointmentVoice } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
+import { IconMic, IconSparkles, IconX } from './components/Icons'
+import { executeVoiceCommand } from './services/cloudflareAiService'
 
 import {
   Appointment,
@@ -119,6 +121,42 @@ export const App: React.FC = () => {
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const { checkUpdates } = useUpdaterContext()
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
+
+  // Global Floating Voice Assistant State
+  const [isVoiceActive, setIsVoiceActive] = useState(false)
+  const [voiceTranscript, setVoiceTranscript] = useState('')
+  const [voiceResponse, setVoiceResponse] = useState('')
+  const [voiceIsListening, setVoiceIsListening] = useState(false)
+  const [voiceIsProcessing, setVoiceIsProcessing] = useState(false)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
+
+  const handleGlobalVoiceClick = async () => {
+    setVoiceError(null)
+    setVoiceTranscript('')
+    setVoiceResponse('')
+    setIsVoiceActive(true)
+
+    try {
+      await executeVoiceCommand(
+        (state) => {
+          setVoiceIsListening(state.isListening)
+          setVoiceIsProcessing(state.isProcessing)
+          if (state.transcript) {
+            setVoiceTranscript(state.transcript)
+          }
+          if (state.responseText) {
+            setVoiceResponse(state.responseText)
+          }
+          if (state.error) {
+            setVoiceError(state.error)
+          }
+        },
+        { appointments, clients, services }
+      )
+    } catch (err: any) {
+      setVoiceError(err.message || 'Error al iniciar reconocimiento de voz')
+    }
+  }
 
   // Sidebar reorder state - persistido en localStorage para personalización del orden del menú
   const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(() => {
@@ -938,6 +976,78 @@ export const App: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Global Floating Voice Assistant FAB & Widget */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+          {/* Active Voice Assistant Panel */}
+          {isVoiceActive && (
+            <div className="w-80 p-4 rounded-2xl bg-[#0c0c12]/95 backdrop-blur-xl border border-gold-500/35 shadow-[0_20px_50px_rgba(0,0,0,0.85),0_0_20px_rgba(212,175,55,0.15)] text-xs space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
+                <span className="font-bold text-white flex items-center gap-1.5">
+                  <IconSparkles size={14} className="text-gold-400 animate-pulse" />
+                  Copiloto de Voz Activo
+                </span>
+                <button
+                  onClick={() => setIsVoiceActive(false)}
+                  className="p-1 rounded-md hover:bg-zinc-900 text-gray-400 hover:text-white cursor-pointer"
+                >
+                  <IconX size={12} />
+                </button>
+              </div>
+
+              {voiceIsListening && (
+                <div className="flex items-center gap-2.5 py-2 text-gold-300 font-medium animate-pulse">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-gold-400"></span>
+                  </span>
+                  <span>Escuchando... Habla ahora</span>
+                </div>
+              )}
+
+              {voiceIsProcessing && (
+                <div className="flex items-center gap-2 py-2 text-zinc-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gold-400 animate-ping" />
+                  <span>Procesando consulta con Qwen 30B...</span>
+                </div>
+              )}
+
+              {voiceTranscript && (
+                <div className="bg-[#14141d] p-2.5 rounded-xl border border-zinc-800/60 text-[11px]">
+                  <span className="text-zinc-500 font-bold uppercase text-[9px] block mb-0.5">Entrada de Voz</span>
+                  <p className="text-zinc-300 italic">&ldquo;{voiceTranscript}&rdquo;</p>
+                </div>
+              )}
+
+              {voiceResponse && (
+                <div className="bg-gold-500/10 p-2.5 rounded-xl border border-gold-500/25 text-[11px]">
+                  <span className="text-gold-400 font-bold uppercase text-[9px] block mb-0.5">Respuesta de Siri IA</span>
+                  <p className="text-zinc-200 leading-relaxed font-medium">{voiceResponse}</p>
+                </div>
+              )}
+
+              {voiceError && (
+                <div className="bg-rose-950/30 border border-rose-500/30 text-rose-300 p-2.5 rounded-xl text-[10px]">
+                  {voiceError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Golden Floating Mic Button */}
+          <button
+            onClick={handleGlobalVoiceClick}
+            disabled={voiceIsListening || voiceIsProcessing}
+            title="Activar Copiloto de IA por Voz"
+            className={`w-14 h-14 rounded-full flex items-center justify-center text-zinc-950 shadow-gold-glow cursor-pointer transition-all duration-300 active:scale-90 ${
+              voiceIsListening
+                ? 'bg-rose-500 shadow-rose-500/40 animate-pulse'
+                : 'bg-gradient-to-br from-gold-400 via-gold-500 to-gold-600 hover:scale-105 hover:shadow-[0_0_25px_rgba(212,175,55,0.45)]'
+            }`}
+          >
+            <IconMic size={24} className="stroke-[2.5]" />
+          </button>
+        </div>
       </div>
     </div>
     </div>
