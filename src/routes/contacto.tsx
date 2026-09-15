@@ -3,6 +3,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { PageHero } from '#/components/PageHero'
+import { Reveal } from '#/components/Reveal'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
   business,
@@ -37,19 +38,21 @@ function Contacto() {
 
       <section className="section">
         <div className="wrap grid items-start gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:gap-12">
-          <BookingForm />
+          <Reveal>
+            <BookingForm />
+          </Reveal>
 
-          <aside className="space-y-7">
+          <Reveal delay={120} className="space-y-7">
             <DirectContact />
             <ContactDetails />
             <OpeningHours />
-          </aside>
+          </Reveal>
         </div>
       </section>
 
       <section className="pb-16 md:pb-24">
         <div className="wrap">
-          <div className="rounded-[2.5rem] bg-lilac/60 p-6 md:p-10 border border-line">
+          <div className="aurora-band rounded-[2.5rem] p-6 md:p-10">
             <div className="grid items-center gap-8 md:grid-cols-[0.8fr_1.2fr] md:gap-12">
               <div>
                 <p className="eyebrow">Te esperamos aquí</p>
@@ -75,7 +78,7 @@ function Contacto() {
                 </a>
               </div>
 
-              <div className="overflow-hidden rounded-4xl border-4 border-[#d4af37]/25 bg-surface shadow-soft">
+              <div className="overflow-hidden rounded-[1.75rem] border border-[#d4af37]/25 bg-surface shadow-soft">
                 <iframe
                   title={`Ubicación de ${business.name}`}
                   src={business.mapsEmbed}
@@ -95,7 +98,7 @@ function Contacto() {
 function DirectContact() {
   const business = useStudioConfig()
   return (
-    <div className="rounded-4xl border border-rose/15 bg-blush p-7 md:p-8">
+    <div className="bento-card bento-card-featured p-7 md:p-8">
       <p className="eyebrow">Atención personalizada</p>
 
       <h2 className="mt-3 font-display text-3xl">
@@ -129,7 +132,7 @@ function DirectContact() {
 function ContactDetails() {
   const business = useStudioConfig()
   return (
-    <div className="rounded-4xl border border-line bg-surface p-7 shadow-soft md:p-8">
+    <div className="bento-card p-7 md:p-8">
       <h2 className="eyebrow">También me encuentras aquí</h2>
 
       <dl className="mt-6 space-y-6 text-sm">
@@ -187,7 +190,7 @@ function ContactDetails() {
 function OpeningHours() {
   const business = useStudioConfig()
   return (
-    <div className="rounded-4xl border border-line bg-surface p-7 shadow-soft md:p-8">
+    <div className="bento-card p-7 md:p-8">
       <h2 className="eyebrow">Horario del estudio</h2>
 
       <ul className="mt-6 space-y-4">
@@ -322,10 +325,10 @@ function BookingForm() {
 
   if (isSuccess) {
     return (
-      <div className="rounded-4xl border border-rose/20 bg-blush/40 p-8 shadow-soft sm:p-12 text-center">
+      <div className="bento-card p-8 sm:p-12 text-center items-center">
         <span
           aria-hidden="true"
-          className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#181824] border border-[#d4af37]/35 text-3xl text-rose shadow-sm"
+          className="gold-node mx-auto grid h-16 w-16 place-items-center rounded-full text-3xl text-rose"
         >
           ✓
         </span>
@@ -340,7 +343,7 @@ function BookingForm() {
           Tu solicitud para <strong>{form.servicio}</strong> ha quedado registrada en nuestra agenda.
         </p>
 
-        <div className="mt-6 p-5 rounded-2xl bg-surface border border-rose/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
+        <div className="mt-6 p-5 rounded-2xl bg-[#101019] border border-rose/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
           <p>
             ✉ Hemos enviado un correo de confirmación a <strong className="text-ink">{form.email}</strong>.
           </p>
@@ -368,7 +371,7 @@ function BookingForm() {
       onSubmit={handleSubmit}
       aria-labelledby="booking-form-title"
       aria-describedby="booking-form-description"
-      className="rounded-4xl border border-line bg-surface p-6 shadow-soft sm:p-10"
+      className="bento-card p-6 sm:p-10"
     >
       <div>
         <p className="eyebrow">Solicitud de cita</p>
@@ -497,7 +500,7 @@ function BookingForm() {
       {error ? (
         <p
           role="alert"
-          className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+          className="mt-5 rounded-2xl border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.12)] p-4 text-sm text-[#fda4af]"
         >
           {error}
         </p>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
+import { Reveal } from '#/components/Reveal'
 import { openReservationModal } from '#/components/ReservationModal'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
 import { useStudioConfig } from '#/context/StudioConfigContext'
@@ -245,10 +246,10 @@ function ServiceCard({ service }: { service: Service }) {
   const config = useStudioConfig()
   return (
     <article
-      className={`relative rounded-4xl border p-6 shadow-soft transition-shadow hover:shadow-panel sm:p-8 ${
+      className={`relative rounded-[1.75rem] p-6 sm:p-8 ${
         service.featured
-          ? 'border-rose/20 bg-blush'
-          : 'border-line bg-surface'
+          ? 'bento-card bento-card-featured'
+          : 'bento-card'
       }`}
     >
       {service.featured ? (
@@ -339,7 +340,6 @@ function ServiceCard({ service }: { service: Service }) {
     </article>
   )
 }
-
 function ProcessBlock() {
   const steps = [
     {
@@ -365,30 +365,35 @@ function ProcessBlock() {
       <header className="mx-auto max-w-2xl text-center">
         <p className="eyebrow justify-center">La experiencia</p>
         <h2 className="section-title mt-5">
-          Así empieza tu nueva mirada.
+          Así empieza tu <span className="text-gold-gradient">nueva mirada.</span>
         </h2>
       </header>
 
-      <ol className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {steps.map((step, index) => (
-          <li
-            key={step.title}
-            className="rounded-4xl border border-line bg-surface p-7 text-center shadow-soft"
-          >
-            <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-blush font-display text-xl text-rose">
-              {index + 1}
-            </span>
+      <div className="relative mt-12">
+        <span
+          aria-hidden="true"
+          className="gold-line absolute top-6 right-[12%] left-[12%] hidden h-px lg:block"
+        />
+        <ol className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {steps.map((step, index) => (
+            <Reveal key={step.title} delay={index * 90} as="li">
+              <div className="bento-card h-full p-7 text-center">
+                <span className="gold-node relative z-10 mx-auto grid h-12 w-12 place-items-center rounded-full font-display text-xl text-rose">
+                  {index + 1}
+                </span>
 
-            <h3 className="mt-5 font-display text-xl">
-              {step.title}
-            </h3>
+                <h3 className="mt-5 font-display text-xl">
+                  {step.title}
+                </h3>
 
-            <p className="mt-3 text-sm leading-7 text-muted">
-              {step.body}
-            </p>
-          </li>
-        ))}
-      </ol>
+                <p className="mt-3 text-sm leading-7 text-muted">
+                  {step.body}
+                </p>
+              </div>
+            </Reveal>
+          ))}
+        </ol>
+      </div>
     </section>
   )
 }
@@ -396,7 +401,7 @@ function ProcessBlock() {
 function FaqBlock() {
   return (
     <section id="faq" className="scroll-mt-40 pb-16 md:pb-24">
-      <div className="rounded-[2.5rem] bg-lilac/60 p-6 sm:p-10 lg:p-12">
+      <div className="aurora-band rounded-[2.5rem] p-6 sm:p-10 lg:p-12">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14">
           <header>
             <p className="eyebrow">Con toda tranquilidad</p>
@@ -404,7 +409,7 @@ function FaqBlock() {
             <h2 className="section-title mt-5">
               Tus dudas,
               <br />
-              resueltas.
+              <span className="text-gold-gradient">resueltas.</span>
             </h2>
 
             <p className="body-copy mt-5">
@@ -422,26 +427,25 @@ function FaqBlock() {
           </header>
 
           <div className="space-y-3">
-            {faqs.map((faq) => (
-              <details
-                key={faq.q}
-                className="group rounded-[1.4rem] border border-line bg-surface px-5 py-5"
-              >
-                <summary className="flex list-none items-center justify-between gap-5 text-sm font-semibold leading-6">
-                  {faq.q}
+            {faqs.map((faq, index) => (
+              <Reveal key={faq.q} delay={index * 60}>
+                <details className="bento-card group rounded-[1.4rem] px-5 py-5">
+                  <summary className="flex list-none items-center justify-between gap-5 text-sm font-semibold leading-6">
+                    {faq.q}
 
-                  <span
-                    aria-hidden="true"
-                    className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-blush text-lg text-rose transition-transform group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </summary>
+                    <span
+                      aria-hidden="true"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full gold-node text-lg text-rose transition-transform duration-300 group-open:rotate-45"
+                    >
+                      +
+                    </span>
+                  </summary>
 
-                <p className="mt-4 text-sm leading-7 text-muted">
-                  {faq.a}
-                </p>
-              </details>
+                  <p className="mt-4 text-sm leading-7 text-muted">
+                    {faq.a}
+                  </p>
+                </details>
+              </Reveal>
             ))}
           </div>
         </div>

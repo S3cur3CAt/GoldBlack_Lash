@@ -2,6 +2,7 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 
 import { Diamond, PageHero } from '#/components/PageHero'
 import { openReservationModal } from '#/components/ReservationModal'
+import { Reveal } from '#/components/Reveal'
 import { StudioVisual } from '#/components/StudioVisual'
 import { business } from '#/data/site'
 
@@ -60,8 +61,8 @@ function SobreMi() {
 
       <section className="section">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
-          <div className="relative mx-auto w-full max-w-md pb-10">
-            <div className="overflow-hidden rounded-t-[12rem] rounded-b-[3rem] border-8 border-white shadow-panel">
+          <Reveal className="relative mx-auto w-full max-w-md pb-10">
+            <div className="overflow-hidden rounded-[2rem] border border-[#d4af37]/30 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -70,7 +71,7 @@ function SobreMi() {
               />
             </div>
 
-            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0e0e14]/95 px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
+            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0b0b12]/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
               <p className="font-display text-2xl italic text-rose">
                 Belleza con calma,
                 <br />
@@ -81,15 +82,15 @@ function SobreMi() {
                 {business.city} · Cita previa
               </p>
             </div>
-          </div>
+          </Reveal>
 
-          <div>
+          <Reveal delay={120}>
             <p className="eyebrow">Mi forma de trabajar</p>
 
             <h2 className="section-title mt-5">
               Primero tú.
               <br />
-              Después, la técnica.
+              <span className="text-gold-gradient">Después, la técnica.</span>
             </h2>
 
             <div className="body-copy mt-7 space-y-5">
@@ -117,12 +118,12 @@ function SobreMi() {
               Descubre nuestros servicios
               <span aria-hidden="true">↗</span>
             </Link>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       <section className="px-3 md:px-6">
-        <div className="rounded-[3rem] bg-blush/70 py-16 md:rounded-[4rem] md:py-20">
+        <div className="aurora-band rounded-[3rem] py-16 md:rounded-[4rem] md:py-20">
           <div className="wrap">
             <header className="mx-auto max-w-2xl text-center">
               <p className="eyebrow justify-center">
@@ -132,7 +133,7 @@ function SobreMi() {
               <h2 className="section-title mt-5">
                 El cuidado está
                 <br />
-                en los detalles.
+                en <span className="text-gold-gradient">los detalles.</span>
               </h2>
 
               <p className="body-copy mx-auto mt-5 max-w-lg">
@@ -142,26 +143,25 @@ function SobreMi() {
             </header>
 
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {values.map((value) => (
-                <article
-                  key={value.title}
-                  className="rounded-4xl border border-line bg-surface p-7 shadow-soft"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="grid h-12 w-12 place-items-center rounded-full bg-blush text-2xl text-rose"
-                  >
-                    {value.icon}
-                  </span>
+              {values.map((value, index) => (
+                <Reveal key={value.title} delay={index * 90}>
+                  <article className="bento-card h-full p-7">
+                    <span
+                      aria-hidden="true"
+                      className="gold-node grid h-12 w-12 place-items-center rounded-full text-2xl text-rose"
+                    >
+                      {value.icon}
+                    </span>
 
-                  <h3 className="mt-6 font-display text-2xl leading-tight">
-                    {value.title}
-                  </h3>
+                    <h3 className="mt-6 font-display text-2xl leading-tight">
+                      {value.title}
+                    </h3>
 
-                  <p className="mt-4 text-sm leading-7 text-muted">
-                    {value.body}
-                  </p>
-                </article>
+                    <p className="mt-4 text-sm leading-7 text-muted">
+                      {value.body}
+                    </p>
+                  </article>
+                </Reveal>
               ))}
             </div>
           </div>
@@ -216,7 +216,7 @@ function SobreMi() {
               </Link>
             </div>
 
-            <div className="rounded-[2.5rem] border border-line bg-surface p-7 shadow-soft sm:p-9">
+            <div className="bento-card p-7 sm:p-9">
               <h3 className="font-display text-2xl">
                 Algunas cosas que conviene contarme
               </h3>

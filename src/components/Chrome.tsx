@@ -61,9 +61,15 @@ export function Header() {
       }}
     >
       <div className="pointer-events-auto max-w-6xl mx-auto flex flex-col items-center">
-        {/* Main Floating Header Pill */}
-        <div className="w-full relative z-10 flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-2xl bg-[#0c0c11]/85 backdrop-blur-2xl border border-[#d4af37]/25 shadow-[0_16px_40px_-10px_rgba(0,0,0,0.85),0_0_0_1px_rgba(212,175,55,0.15)_inset,0_0_20px_rgba(212,175,55,0.1)]">
-        {/* Brand / Gleaming Rounded Logo */}
+        {/* Main Floating Header Pill — cristal con borde-degradado dorado */}
+        <div
+          className="w-full relative z-10 flex items-center justify-between gap-3 px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-2xl border border-transparent backdrop-blur-2xl bg-[#0a0a10]/85 shadow-[0_16px_40px_-10px_rgba(0,0,0,0.85)]"
+          style={{
+            background:
+              'linear-gradient(160deg, rgba(16,16,24,0.88), rgba(8,8,13,0.85)) padding-box, linear-gradient(155deg, rgba(212,175,55,0.45), rgba(212,175,55,0.08) 45%, rgba(255,255,255,0.06)) border-box',
+          }}
+        >
+        {/* Brand / Logo con halo dorado */}
         <Link
           to="/"
           onClick={() => setOpen(false)}
@@ -71,9 +77,9 @@ export function Header() {
           className="group flex items-center gap-2.5 sm:gap-3 py-0.5"
         >
           <div className="relative shrink-0">
-            {/* Elegant minimal luxury frame */}
-            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50 group-hover:shadow-[0_6px_20px_-4px_rgba(0,0,0,0.9)]">
-              <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#08080c] flex items-center justify-center">
+            <div className="absolute -inset-1 rounded-2xl bg-[radial-gradient(closest-side,rgba(212,175,55,0.35),transparent)] opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50">
+              <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
                 <img
                   src="/api/images/logo"
                   alt="GoldBlack Lash — logotipo"
@@ -87,7 +93,7 @@ export function Header() {
 
           <div className="flex flex-col text-left">
             <span className="font-display text-base sm:text-lg font-bold tracking-tight text-[#f5f5f7] group-hover:text-[#e5c158] transition-colors leading-none">
-              GoldBlack <span className="text-[#e5c158] font-serif italic">Lash</span>
+              GoldBlack <span className="font-serif italic text-gold-gradient">Lash</span>
             </span>
           </div>
         </Link>
@@ -112,12 +118,12 @@ export function Header() {
           ))}
         </nav>
 
-        {/* Action Button: Refined, smaller & gleaming */}
+        {/* Action Button: dorado con shimmer */}
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => openReservationModal()}
-            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_4px_12px_-2px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.5)] hover:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
+            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_4px_14px_-2px_rgba(212,175,55,0.5),inset_0_1px_0_rgba(255,255,255,0.5)] hover:shadow-[0_6px_20px_-2px_rgba(212,175,55,0.7),0_0_18px_rgba(229,193,88,0.35)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
           >
             <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             <span className="relative">Reserva tu momento</span>
@@ -132,7 +138,7 @@ export function Header() {
             aria-expanded={open}
             aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
             onClick={() => setOpen((value) => !value)}
-            className="flex items-center gap-2 rounded-xl border border-[#d4af37]/30 bg-[#121218]/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-[#f5f5f7] shadow-sm lg:hidden hover:bg-[#1c1c28] transition-all cursor-pointer"
+            className="flex items-center gap-2 rounded-xl border border-[#d4af37]/30 bg-[#101018]/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-[#f5f5f7] shadow-sm lg:hidden hover:bg-[#1a1a28] transition-all cursor-pointer"
           >
             <span>{open ? 'Cerrar' : 'Menú'}</span>
             <span aria-hidden="true" className="text-base text-[#e5c158] font-bold">
@@ -142,7 +148,7 @@ export function Header() {
         </div>
       </div>
 
-      {/* Fused U-Shape Bottom Tray — smooth opacity fade in and fade out on scroll */}
+      {/* U-Shape Bottom Tray — bandeja inferior con borde-degradado */}
       {subBar ? (
         <div
           className={`relative -mt-2 z-0 flex justify-center w-full transition-all duration-300 ease-out ${
@@ -152,7 +158,14 @@ export function Header() {
           }`}
           aria-hidden={!scrolled}
         >
-          <div className="pointer-events-auto no-scrollbar flex items-center justify-center pt-3 pb-2 px-3 sm:px-6 bg-[#0c0c11]/95 backdrop-blur-2xl border-x border-b border-[#d4af37]/25 rounded-b-xl sm:rounded-b-2xl shadow-[0_16px_36px_-10px_rgba(0,0,0,0.85),0_0_0_1px_rgba(212,175,55,0.12)_inset] max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto">
+          <div
+            className="pointer-events-auto no-scrollbar flex items-center justify-center pt-3 pb-2 px-3 sm:px-6 backdrop-blur-2xl border-x border-b rounded-b-xl sm:rounded-b-2xl max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto bg-[#0a0a10]/95 shadow-[0_16px_36px_-10px_rgba(0,0,0,0.85)]"
+            style={{
+              borderImage:
+                'linear-gradient(90deg, rgba(212,175,55,0.4), rgba(212,175,55,0.1)) 1',
+              borderImageSlice: '0 1 1 1',
+            }}
+          >
             {subBar}
           </div>
         </div>
@@ -164,7 +177,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-[#d4af37]/30 bg-[#0c0c11]/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-[#d4af37]/30 bg-[#0a0a10]/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="space-y-1">
             {tabs.map((tab) => (
@@ -204,13 +217,19 @@ export function Header() {
 export function Footer() {
   const business = useStudioConfig()
   return (
-    <footer className="rounded-t-[3rem] bg-[#060608] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
-      <div className="wrap pt-14 pb-7 md:pt-20">
+    <footer className="relative overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
+      {/* Halo aurora superior */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(212,175,55,0.16),transparent)] blur-2xl"
+      />
+
+      <div className="wrap relative pt-14 pb-7 md:pt-20">
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
               <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-                <div className="h-full w-full rounded-[11px] overflow-hidden bg-[#08080c] flex items-center justify-center">
+                <div className="h-full w-full rounded-[11px] overflow-hidden bg-[#050508] flex items-center justify-center">
                   <img
                     src="/api/images/logo"
                     alt="GoldBlack Lash — logotipo"
@@ -222,7 +241,7 @@ export function Footer() {
               </div>
               <div>
                 <span className="font-display text-xl font-bold tracking-tight text-white block">
-                  GoldBlack <span className="text-[#d4af37] font-serif italic">Lash</span>
+                  GoldBlack <span className="font-serif italic text-gold-gradient">Lash</span>
                 </span>
               </div>
             </div>

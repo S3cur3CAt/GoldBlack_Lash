@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { PageHero } from '#/components/PageHero'
 import { StudioVisual } from '#/components/StudioVisual'
+import { Reveal } from '#/components/Reveal'
 import { openReservationModal } from '#/components/ReservationModal'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
 import { useStudioConfig } from '#/context/StudioConfigContext'
@@ -175,16 +176,17 @@ function Galeria() {
 
           <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {pieces.map((piece, index) => (
-              <GalleryTile
-                key={piece.id}
-                piece={piece}
-                onOpen={() => setOpenIndex(index)}
-              />
+              <Reveal key={piece.id} delay={(index % 3) * 90}>
+                <GalleryTile
+                  piece={piece}
+                  onOpen={() => setOpenIndex(index)}
+                />
+              </Reveal>
             ))}
           </div>
 
           {!pieces.length ? (
-            <div className="rounded-4xl border border-line bg-surface px-6 py-14 text-center">
+            <div className="bento-card px-6 py-14 text-center items-center">
               <span aria-hidden="true" className="text-3xl text-rose">
                 ✧
               </span>
@@ -206,13 +208,13 @@ function Galeria() {
 
       <section className="pb-16 md:pb-24">
         <div className="wrap">
-          <div className="rounded-[2.5rem] bg-blush px-6 py-12 text-center md:py-16">
+          <div className="aurora-band rounded-[2.5rem] px-6 py-12 text-center md:py-16">
             <p className="eyebrow justify-center">
               Sigamos inspirándonos
             </p>
 
             <h2 className="mt-4 font-display text-4xl leading-tight md:text-5xl">
-              Más miradas, más detalles.
+              Más miradas, <span className="text-gold-gradient">más detalles.</span>
             </h2>
 
             <p className="body-copy mx-auto mt-5 max-w-lg">
@@ -261,23 +263,23 @@ function GalleryTile({
       aria-haspopup="dialog"
       aria-label={`Ver ${piece.title}, ${piece.technique}`}
       onClick={onOpen}
-      className="group relative min-w-0 rounded-4xl border border-line bg-surface p-3 text-left shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-[#d4af37]/45 hover:shadow-card-hover cursor-pointer"
+      className="bento-card group relative min-w-0 p-3 text-left cursor-pointer"
     >
-      <div className="relative overflow-hidden rounded-3xl">
+      <div className="relative overflow-hidden rounded-[1.35rem]">
         <StudioVisual
           src={piece.image}
           alt={piece.title}
           label={piece.technique}
-          className="transition-transform duration-500 group-hover:scale-[1.04]"
+          className="transition-transform duration-700 group-hover:scale-[1.06]"
         />
 
-        <span className="absolute top-4 left-4 max-w-[calc(100%-2rem)] rounded-lg bg-[#0c0c11]/90 border border-[#d4af37]/30 px-3 py-1.5 text-[0.6rem] font-bold text-[#e5c158] shadow-soft">
+        <span className="absolute top-4 left-4 z-10 max-w-[calc(100%-2rem)] rounded-full bg-[#0a0a10]/90 border border-[#d4af37]/30 px-3 py-1.5 text-[0.6rem] font-bold text-[#e5c158] shadow-soft backdrop-blur-md">
           {piece.technique}
         </span>
 
         <span
           aria-hidden="true"
-          className="absolute right-4 bottom-4 grid h-11 w-11 place-items-center rounded-lg bg-[#181824] border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft transition-all group-hover:bg-[#d4af37] group-hover:text-[#08080a]"
+          className="absolute right-4 bottom-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-[#101018]/85 border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft backdrop-blur-md transition-all duration-300 group-hover:bg-[#d4af37] group-hover:text-[#08080a] group-hover:shadow-glow"
         >
           ↗
         </span>
@@ -285,7 +287,7 @@ function GalleryTile({
 
       <div className="px-3 pt-5 pb-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="font-display text-2xl">
+          <h2 className="font-display text-2xl transition-colors group-hover:text-[#e5c158]">
             {piece.title}
           </h2>
           {piece.price && (
