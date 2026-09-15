@@ -3,6 +3,7 @@
  *
  * Utiliza el modelo avanzado @cf/qwen/qwen3-30b-a3b-fp8 para responder dudas,
  * gestionar citas y automatizar tareas del estudio por comandos de voz y texto.
+ * Incluye detección nativa de palabra de activación manos libres: "Oye Sofi".
  */
 
 import { speakWithFemaleVoice } from './voiceAssistant'
@@ -73,7 +74,7 @@ export async function generateAiResponse(
         .join('\n')
     : 'No hay servicios configurados.'
 
-  const systemContent = `Eres la IA asistente virtual del prestigioso estudio de belleza "GoldBlack Lash".
+  const systemContent = `Eres "Sofi", la IA asistente virtual por voz del prestigioso estudio de belleza "GoldBlack Lash".
 Ayudas a gestionar reservas, citas de pestañas, clientas y precios.
 
 Tienes acceso directo en tiempo real al estado del estudio:
@@ -87,7 +88,7 @@ ${formattedClients}
 [CATÁLOGO DE SERVICIOS]
 ${formattedServices}
 
-Responde preguntas de forma muy profesional, clara y ultra-breve (máximo 2 o 3 frases) en español, ya que tu respuesta será leída en voz alta por un sintetizador de voz (Siri).`
+Responde preguntas de forma muy profesional, atenta, cariñosa y ultra-breve (máximo 2 o 3 frases) en español, ya que tu respuesta será leída en voz alta por un sintetizador de voz (Siri).`
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -267,4 +268,104 @@ export async function executeVoiceCommand(
       })
     }
   })
+}
+
+/**
+ * Gestor avanzado de Escucha Continua en Segundo Plano ("Oye Sofi")
+ * No consume batería, usa SpeechRecognition nativo de macOS Monterey y reacciona de inmediato
+ */
+export class SofiWakeWordManager {
+  private recognition: any = null
+  private isActive: boolean = false
+  private context: any = null
+  private onStatusChange: (status: { status: 'idle' | 'listening_query' | 'processing' | 'speaking'; text?: string; response?: string }) => void
+
+  constructor(
+    onStatusChange: (status: { status: 'idle' | 'listening_query' | 'processing' | 'speaking'; text?: string; response?: string }) => void
+  ) {
+    this.onStatusChange = onStatusChange
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition()
+      this.recognition.continuous = true
+      this.recognition.interimResults = false
+      this.recognition.lang = 'es-ES'
+
+      this.recognition.onresult = async (event: any) => {
+        const lastResultIndex = event.results.length - 1
+        const transcript = event.results[lastResultIndex][0].transcript.toLowerCase().trim()
+        console.log('[Sofi Background Heard]:', transcript)
+
+        // Comprobar palabra clave de activación: "oye sofi" u "oye sofia"
+        if (transcript.includes('oye sofi') || transcript.includes('oye sofí') || transcript.includes('oye sofia') || transcript.includes('oye sofía')) {
+          // Extraer la pregunta después de la palabra clave
+          let query = ''
+          const keywords = ['oye sofía', 'oye sofia', 'oye sofí', 'oye sofi']
+          for (const keyword of keywords) {
+            const index = transcript.indexOf(keyword)
+            if (index !== -1) {
+              query = transcript.slice(index + keyword.length).trim()
+              break
+            }
+          }
+
+          if (query) {
+            await this.processQuery(query)
+          }
+        }
+      }
+
+      this.recognition.onerror = (e: any) => {
+        console.warn('[Sofi WakeWord Error]:', e.error)
+        // Auto-reiniciar si se detiene por error transitorio
+        if (this.isActive) {
+          setTimeout(() => this.start(), 1000)
+        }
+      }
+
+      this.recognition.onend = () => {
+        // Auto-reiniciar para mantener escucha constante en segundo plano
+        if (this.isActive) {
+          this.start()
+        }
+      }
+    }
+  }
+
+  private async processQuery(query: string) {
+    this.onStatusChange({ status: 'processing', text: query })
+    try {
+      const response = await generateAiResponse(query, this.context)
+      this.onStatusChange({ status: 'speaking', text: query, response })
+      await speakWithFemaleVoice(response)
+      this.onStatusChange({ status: 'idle' })
+    } catch (err: any) {
+      console.error('[Sofi Process Error]:', err)
+      this.onStatusChange({ status: 'idle' })
+    }
+  }
+
+  public updateContext(context: any) {
+    this.context = context
+  }
+
+  public start() {
+    if (!this.recognition) return
+    this.isActive = true
+    try {
+      this.recognition.start()
+      this.onStatusChange({ status: 'idle' })
+    } catch {}
+  }
+
+  public stop() {
+    this.isActive = false
+    if (this.recognition) {
+      try {
+        this.recognition.stop()
+      } catch {}
+    }
+  }
 }
