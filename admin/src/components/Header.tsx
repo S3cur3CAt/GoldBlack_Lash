@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { IconPlus, IconClock } from './Icons'
+import { IconPlus, IconClock, IconSparkles } from './Icons'
 import { StudioConfig } from '../types/admin'
+import { VoiceCopilotModal } from './VoiceCopilotModal'
 
 interface HeaderProps {
   title: string
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [currentTime, setCurrentTime] = useState<string>('')
   const [currentDate, setCurrentDate] = useState<string>('')
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false)
 
   const effectiveAction = onAction || onNewAppointment
   const effectiveLabel = actionLabel !== undefined ? actionLabel : 'Nueva Cita'
@@ -61,6 +63,16 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right controls: Dynamic Action CTA & Live Time */}
       <div className="flex items-center gap-4">
+        {/* Voice AI Copilot */}
+        <button
+          onClick={() => setIsCopilotOpen(true)}
+          title="Abrir Copiloto de IA por Voz"
+          className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#14141d] border border-gold-500/25 text-gold-400 hover:text-gold-300 font-bold text-xs tracking-wide uppercase transition-all duration-200 shadow-md hover:shadow-gold-glow cursor-pointer"
+        >
+          <IconSparkles size={15} className="animate-pulse" />
+          <span className="hidden sm:inline">Copiloto IA</span>
+        </button>
+
         {/* Dynamic CTA */}
         {effectiveAction && effectiveLabel && (
           <button
@@ -81,6 +93,11 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       </div>
+
+      <VoiceCopilotModal
+        isOpen={isCopilotOpen}
+        onClose={() => setIsCopilotOpen(false)}
+      />
     </header>
   )
 }
