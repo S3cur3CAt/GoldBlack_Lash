@@ -196,6 +196,7 @@ export const Settings: React.FC<SettingsProps> = ({
         clientPhone: '612345678',
         date: new Date().toISOString().split('T')[0],
         time: '17:00',
+        notes: 'Preferiblemente por las tardes a partir de las cinco',
       })
     } finally {
       setIsPlayingSampleAnnouncement(false)

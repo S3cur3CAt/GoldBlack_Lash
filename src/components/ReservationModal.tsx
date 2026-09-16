@@ -159,9 +159,7 @@ export function ReservationModal({
         price: 30,
         status: 'pendiente',
         paymentStatus: 'pendiente',
-        notes: notes.trim()
-          ? `Solicitud web: ${notes.trim()}`
-          : 'Solicitud de reserva online desde el sitio web',
+        notes: notes.trim() || '',
       }
 
       const res = await fetch('/api/appointments', {

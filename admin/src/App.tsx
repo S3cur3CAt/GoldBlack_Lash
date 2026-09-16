@@ -246,6 +246,7 @@ export const App: React.FC = () => {
                       clientPhone: newestApt.clientPhone,
                       date: newestApt.date,
                       time: newestApt.time,
+                      notes: newestApt.notes,
                     })
                   }, 650)
                 }

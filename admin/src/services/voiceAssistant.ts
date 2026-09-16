@@ -159,7 +159,28 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
 }
 
 /**
+ * Limpia y extrae el comentario o preferencia de horario para que Siri lo lea de forma natural
+ */
+function extractCommentForSpeech(rawNotes?: string): string {
+  if (!rawNotes || !rawNotes.trim()) return ''
+  let cleaned = rawNotes.trim()
+
+  // Descartar mensajes genéricos automáticos si no contienen un comentario real de la clienta
+  if (
+    cleaned.toLowerCase() === 'solicitud de reserva online desde el sitio web' ||
+    cleaned.toLowerCase() === 'solicitud web'
+  ) {
+    return ''
+  }
+
+  // Eliminar prefijos técnicos si venían de versiones anteriores
+  cleaned = cleaned.replace(/^solicitud\s+web\s*:\s*/i, '').trim()
+  return cleaned
+}
+
+/**
  * Anuncia automáticamente con la voz de Siri la llegada de una nueva reserva desde goldblacklash.com
+ * Incluye: Nombre completo, Teléfono, Tratamiento de interés y Preferencia de horario o comentario.
  */
 export async function announceNewAppointmentVoice(
   apt: {
@@ -168,21 +189,24 @@ export async function announceNewAppointmentVoice(
     clientPhone?: string
     date?: string
     time?: string
+    notes?: string
   }
 ): Promise<void> {
   const service = apt.serviceName || 'Servicio de extensiones de pestañas'
   const formattedPhone = apt.clientPhone ? formatPhoneForSpeech(apt.clientPhone) : ''
+  const comment = extractCommentForSpeech(apt.notes)
+  const commentClause = comment ? ` Preferencia de horario o comentario: ${comment}.` : ''
 
   let announcement = ''
   if (formattedPhone) {
     const templates = [
-      `Atención: Tienes una nueva reserva desde la página web. La clienta ${apt.clientName} ha reservado ${service}, y su teléfono es ${formattedPhone}.`,
-      `Nueva cita confirmada desde la web: ${apt.clientName} para ${service}. Teléfono de contacto: ${formattedPhone}.`,
-      `Aviso de GoldBlack Lash: Acaba de entrar una reserva de ${apt.clientName} para ${service}. Puedes contactarla al ${formattedPhone}.`,
+      `Atención: Tienes una nueva reserva desde la página web. La clienta ${apt.clientName} ha reservado ${service}, y su teléfono es ${formattedPhone}.${commentClause}`,
+      `Nueva cita confirmada desde la web: ${apt.clientName} para ${service}. Teléfono de contacto: ${formattedPhone}.${commentClause}`,
+      `Aviso de GoldBlack Lash: Acaba de entrar una reserva de ${apt.clientName} para ${service}. Teléfono: ${formattedPhone}.${commentClause}`,
     ]
     announcement = templates[Math.floor(Math.random() * templates.length)]
   } else {
-    announcement = `Atención: Tienes una nueva reserva desde el sitio web de la clienta ${apt.clientName} para ${service}.`
+    announcement = `Atención: Tienes una nueva reserva desde el sitio web de la clienta ${apt.clientName} para ${service}.${commentClause}`
   }
 
   await speakWithFemaleVoice(announcement)
