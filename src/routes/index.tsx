@@ -45,48 +45,63 @@ const heroVideos = [
 
 function Hero() {
   const [activeVideo, setActiveVideo] = useState(0)
-  const video0Ref = useRef<HTMLVideoElement>(null)
-  const video1Ref = useRef<HTMLVideoElement>(null)
-  const video2Ref = useRef<HTMLVideoElement>(null)
-  const videoRefs = [video0Ref, video1Ref, video2Ref]
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const heroRef = useRef<HTMLElement>(null)
 
-  const handleEnded = (index: number) => {
-    const nextIndex = (index + 1) % heroVideos.length
-    const nextVideo = videoRefs[nextIndex]?.current
-    if (nextVideo) {
-      nextVideo.currentTime = 0
-      nextVideo.play().catch(() => {})
-    }
-    setActiveVideo(nextIndex)
+  const handleEnded = () => {
+    setActiveVideo((prev) => (prev + 1) % heroVideos.length)
   }
 
+  // Pausar automáticamente el decodificador de vídeo cuando el hero no está visible
+  // Libera de forma masiva memoria y GPU en dispositivos móviles al hacer scroll
   useEffect(() => {
-    if (video0Ref.current) {
-      video0Ref.current.play().catch(() => {})
-    }
+    const heroEl = heroRef.current
+    const videoEl = videoRef.current
+    if (!heroEl || !videoEl) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          videoEl.play().catch(() => {})
+        } else {
+          videoEl.pause()
+        }
+      },
+      { threshold: 0.05 }
+    )
+
+    observer.observe(heroEl)
+    return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.load()
+      videoRef.current.play().catch(() => {})
+    }
+  }, [activeVideo])
+
+  const currentVid = heroVideos[activeVideo]
+
   return (
-    <section className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      {/* Videos de fondo en bucle alternado (servidos desde Supabase) */}
-      {heroVideos.map((vid, index) => (
-        <video
-          key={vid.key}
-          ref={videoRefs[index]}
-          autoPlay={index === 0}
-          muted
-          playsInline
-          preload={index === 0 ? 'auto' : 'metadata'}
-          aria-hidden="true"
-          tabIndex={-1}
-          onEnded={() => handleEnded(index)}
-          onError={() => handleEnded(index)}
-          className={`hero-video-bg ${activeVideo === index ? 'hero-video-active' : 'hero-video-inactive'}`}
-        >
-          <source src={`/${vid.file}`} type="video/mp4" />
-          <source src={`/api/images/${vid.key}`} type="video/mp4" />
-        </video>
-      ))}
+    <section ref={heroRef} className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
+      {/* Video de fondo optimizado: solo 1 decoder activo para máximo rendimiento en móviles */}
+      <video
+        ref={videoRef}
+        key={currentVid.key}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        onEnded={handleEnded}
+        onError={handleEnded}
+        className="hero-video-bg hero-video-active"
+      >
+        <source src={`/${currentVid.file}`} type="video/mp4" />
+        <source src={`/api/images/${currentVid.key}`} type="video/mp4" />
+      </video>
 
       {/* Velo aurora para legibilidad y elegancia */}
       <div className="hero-video-overlay" aria-hidden="true" />

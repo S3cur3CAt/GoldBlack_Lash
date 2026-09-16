@@ -140,16 +140,18 @@
     animation: aurora-drift 22s ease-in-out infinite alternate;
   }
 
-  /* Grano fílmico sutil sobre toda la página */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.035;
-    mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Grano fílmico sutil sobre toda la página (exclusivo para desktop para evitar caídas de FPS en móvil) */
+  @media (min-width: 1024px) {
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.035;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
   }
 
   h1,
@@ -1165,6 +1167,54 @@
 @media (min-width: 768px) {
   .wrap {
     width: min(100% - 5rem, 1200px);
+  }
+}
+
+/* ==========================================================================
+   MOBILE HIGH-PERFORMANCE ENGINE (Soluciona ralentizaciones y jank en móviles)
+   ========================================================================== */
+@media (max-width: 1023px) {
+  /* Elimina el repintado forzado de página completa en scroll */
+  body {
+    background-attachment: scroll !important;
+    animation: none !important;
+  }
+
+  /* Elimina el filtro de desenfoque computacional durante el scroll reveal */
+  .reveal {
+    filter: none !important;
+    transform: translateY(16px) !important;
+    transition: opacity 400ms ease, transform 400ms ease !important;
+  }
+
+  .reveal-in {
+    filter: none !important;
+  }
+
+  /* Optimiza el radio de desenfoque de los paneles translúcidos para mantener 60-120 fps */
+  .bento-card,
+  .beauty-card,
+  .soft-panel,
+  .booking-panel {
+    -webkit-backdrop-filter: blur(8px) saturate(130%) !important;
+    backdrop-filter: blur(8px) saturate(130%) !important;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Reduce coste de relleno de orbes decorativos */
+  .aurora-band::before,
+  .booking-panel::before,
+  .booking-panel::after {
+    filter: blur(25px) !important;
+    animation-duration: 28s !important;
+    opacity: 0.65 !important;
+  }
+
+  /* Evita el cálculo excesivo de layout en secciones lejanas fuera de pantalla */
+  .section {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 600px;
   }
 }
 

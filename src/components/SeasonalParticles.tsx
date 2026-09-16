@@ -129,7 +129,8 @@ export function SeasonalParticles({
 
     function initSize() {
       if (!canvas) return
-      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      const isMobile = window.innerWidth < 768 || ('ontouchstart' in window)
+      dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2)
 
       if (containerMode && canvas.parentElement) {
         const rect = canvas.parentElement.getBoundingClientRect()
@@ -373,12 +374,13 @@ export function SeasonalParticles({
       }
 
       let count = 45
+      const isMobile = width < 768 || ('ontouchstart' in window)
       if (containerMode) {
-        count = 25
-      } else if (width < 640) {
-        count = activeEffect === 'snow' ? 38 : 22
+        count = 15
+      } else if (isMobile) {
+        count = activeEffect === 'snow' ? 14 : 8
       } else if (width < 1200) {
-        count = activeEffect === 'snow' ? 65 : 35
+        count = activeEffect === 'snow' ? 60 : 32
       } else {
         count = activeEffect === 'snow' ? 85 : 45
       }
@@ -392,6 +394,17 @@ export function SeasonalParticles({
     initSize()
     initParticles()
 
+    let isScrolling = false
+    let scrollTimeout: any = null
+
+    const handleScroll = () => {
+      isScrolling = true
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(() => {
+        isScrolling = false
+      }, 120)
+    }
+
     const handleResize = () => {
       initSize()
       initParticles()
@@ -402,6 +415,7 @@ export function SeasonalParticles({
     }
 
     window.addEventListener('resize', handleResize)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     function drawSnowflake(p: Particle) {
@@ -610,6 +624,14 @@ export function SeasonalParticles({
         return
       }
 
+      // Si el usuario está scrolleando activamente en móvil, pausamos el repintado de partículas
+      // para entregar el 100% de los recursos de la GPU al desplazamiento táctil nativo fluido
+      const isMobileDevice = width < 768 || ('ontouchstart' in window)
+      if (isScrolling && isMobileDevice) {
+        lastTime = currentTime
+        return
+      }
+
       const dt = Math.min((currentTime - lastTime) / 1000, 0.1)
       lastTime = currentTime
 
@@ -754,7 +776,9 @@ export function SeasonalParticles({
 
     return () => {
       cancelAnimationFrame(animId)
+      clearTimeout(scrollTimeout)
       window.removeEventListener('resize', handleResize)
+      window.removeEventListener('scroll', handleScroll)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [activeEffect, containerMode])
