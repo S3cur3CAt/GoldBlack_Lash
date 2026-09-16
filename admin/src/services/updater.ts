@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { speakWithFemaleVoice } from './voiceAssistant'
+import { speakWithSiriOrSystemVoice } from './voiceAssistant'
 import { getStudioConfig } from './storage'
 
 export interface UpdateInfo {
@@ -17,7 +17,7 @@ export interface UpdateInfo {
 
 export type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'error'
 
-export const CURRENT_APP_VERSION = '0.7.4'
+export const CURRENT_APP_VERSION = '0.7.5'
 export const GITHUB_REPO = 'S3cur3CAt/GoldBlack_Lash'
 const GITHUB_TOKEN = [103, 104, 112, 95, 57, 75, 74, 54, 114, 81, 75, 81, 105, 65, 50, 79, 115, 115, 52, 104, 65, 49, 102, 86, 50, 48, 75, 100, 65, 102, 100, 86, 81, 106, 49, 76, 116, 69, 118, 116].map(c => String.fromCharCode(c)).join('')
 
@@ -138,7 +138,7 @@ export function useUpdater() {
               if (conf.voiceAnnounceUpdates ?? true) {
                 setTimeout(() => {
                   const versionClean = (result.latestVersion || '').replace(/^v/, '')
-                  speakWithFemaleVoice(
+                  speakWithSiriOrSystemVoice(
                     `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
                   )
                 }, 650)
@@ -198,7 +198,7 @@ export function useUpdater() {
                 if (conf.voiceAnnounceUpdates ?? true) {
                   setTimeout(() => {
                     const versionClean = tag.replace(/^v/, '')
-                    speakWithFemaleVoice(
+                    speakWithSiriOrSystemVoice(
                       `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
                     )
                   }, 650)
@@ -329,7 +329,7 @@ export function useUpdater() {
     // Reproducir anuncio de prueba por voz
     setTimeout(() => {
       const versionClean = fakeVersion.replace(/^v/, '')
-      speakWithFemaleVoice(
+      speakWithSiriOrSystemVoice(
         `Tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
       )
     }, 650)

@@ -18,6 +18,7 @@ import {
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
   speakWithElevenLabs,
+  speakWithSiriOrSystemVoice,
   getElevenLabsApiKey,
   setElevenLabsApiKey,
   getElevenLabsVoiceId,
@@ -265,13 +266,13 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   }
 
-  // Live Test of Update Voice Announcement
+  // Live Test of Update Voice Announcement (Always Siri to save ElevenLabs credits)
   const [isPlayingUpdateVoiceTest, setIsPlayingUpdateVoiceTest] = useState(false)
 
   const handleTestUpdateVoice = async () => {
     setIsPlayingUpdateVoiceTest(true)
     try {
-      await speakWithFemaleVoice('Tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
+      await speakWithSiriOrSystemVoice('Tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
     } finally {
       setIsPlayingUpdateVoiceTest(false)
     }
@@ -925,7 +926,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar actualizaciones del sistema por voz</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará en voz alta diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
+                <span className="font-semibold text-white">Anunciar actualizaciones del sistema con voz Siri</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará con la voz de Siri de tu Mac para no consumir créditos de ElevenLabs diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
               </label>
             </div>
 
@@ -965,8 +966,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Aviso de Actualización</span>
-                  <p className="text-[11px] text-gray-500">Escucha la locución cuando la aplicación detecta una nueva actualización disponible.</p>
+                  <span className="font-semibold text-white">Probar Aviso de Actualización (Voz Siri • 0 Créditos)</span>
+                  <p className="text-[11px] text-gray-500">Escucha la locución cuando hay una nueva actualización disponible. Se reproduce gratis con Siri en tu Mac sin consumir créditos de ElevenLabs.</p>
                 </div>
                 <button
                   type="button"
@@ -975,7 +976,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-amber-500/30 text-amber-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
                 >
                   <IconVolume2 size={14} />
-                  <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
+                  <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización (Siri)'}</span>
                 </button>
               </div>
 

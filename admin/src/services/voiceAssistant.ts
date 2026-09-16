@@ -217,27 +217,16 @@ export async function speakWithElevenLabs(
 }
 
 /**
- * Síntesis de voz hablada general:
- * 1. Prioridad 1: ElevenLabs AI Voice (si la API key y Voice ID están configurados en Ajustes)
- * 2. Prioridad 2: En Electron (macOS), voz nativa de Siri
- * 3. Prioridad 3: Web Speech Synthesis en el navegador
+/**
+ * Síntesis de voz gratuita con Siri en macOS (o Web Speech en navegador).
+ * NO consume créditos de ElevenLabs (ideal para avisos del sistema y actualizaciones).
  */
-export async function speakWithFemaleVoice(text: string): Promise<void> {
+export async function speakWithSiriOrSystemVoice(text: string): Promise<void> {
   if (!text || !text.trim()) return
 
-  // 1. ElevenLabs AI Voice si está configurado en Ajustes
-  const apiKey = getElevenLabsApiKey()
-  const voiceId = getElevenLabsVoiceId()
-  if (apiKey && voiceId) {
-    try {
-      const res = await speakWithElevenLabs(text, voiceId, apiKey)
-      if (res.success) return
-    } catch (e) {
-      console.warn('[ElevenLabs Fallback a Siri/WebSpeech]:', e)
-    }
-  }
+  await stopSpeechSynthesis()
 
-  // 2. En Electron (macOS), invocar voz nativa de Siri
+  // 1. En Electron (macOS), invocar directamente la voz nativa de Siri
   if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
     try {
       const handled = await (window as any).electronAPI.speakWithSiri(text)
@@ -247,7 +236,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
     }
   }
 
-  // 3. Fallback con Web Speech Synthesis en el navegador
+  // 2. Fallback con Web Speech Synthesis en el navegador
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       resolve()
@@ -339,6 +328,31 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
     }
   })
 }
+
+/**
+ * Síntesis de voz hablada para reservas de clientes:
+ * 1. Prioridad 1: ElevenLabs AI Voice (con la clave e ID de voz configurados en Ajustes)
+ * 2. Fallback: Siri nativo en macOS o Web Speech en el navegador (0 créditos)
+ */
+export async function speakWithFemaleVoice(text: string): Promise<void> {
+  if (!text || !text.trim()) return
+
+  // 1. ElevenLabs AI Voice si está configurado en Ajustes
+  const apiKey = getElevenLabsApiKey()
+  const voiceId = getElevenLabsVoiceId()
+  if (apiKey && voiceId) {
+    try {
+      const res = await speakWithElevenLabs(text, voiceId, apiKey)
+      if (res.success) return
+    } catch (e) {
+      console.warn('[ElevenLabs Fallback a Siri/WebSpeech]:', e)
+    }
+  }
+
+  // 2. Fallback a voz de Siri o sistema (0 créditos)
+  await speakWithSiriOrSystemVoice(text)
+}
+
 
 /**
  * Limpia y extrae el comentario o preferencia de horario para que la voz lo lea de forma natural
