@@ -129,7 +129,7 @@ function Galeria() {
       <HeaderSubBarPortal>
         <ul
           aria-label="Filtrar diseños por técnica"
-          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1"
+          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1 min-w-max"
         >
           {techniques.map((technique) => (
             <li key={technique} className="shrink-0">

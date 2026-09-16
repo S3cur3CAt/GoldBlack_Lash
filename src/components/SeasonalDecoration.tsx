@@ -286,7 +286,7 @@ export const SeasonalHeaderDecor: React.FC<SeasonalHeaderDecorProps> = ({ effect
   if (activeEffect === 'new_year') {
     return (
       <span
-        className="absolute -top-3 -right-3 z-20 pointer-events-none drop-shadow-md select-none animate-pulse"
+        className="absolute -top-3 -right-3 z-20 pointer-events-none drop-shadow-md select-none"
         title="¡Feliz Año Nuevo! Fuegos Artificiales"
       >
         <span className="text-base" role="img" aria-label="Fuegos Artificiales Fin de Año">🎆</span>

@@ -159,11 +159,10 @@ export function Header() {
           aria-hidden={!scrolled}
         >
           <div
-            className="pointer-events-auto no-scrollbar flex items-center justify-center pt-3 pb-2 px-3 sm:px-6 backdrop-blur-2xl border-x border-b rounded-b-xl sm:rounded-b-2xl max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto mx-auto bg-[#0a0a10]/95 shadow-[0_16px_36px_-10px_rgba(0,0,0,0.85)]"
+            className="pointer-events-auto no-scrollbar flex items-center justify-start sm:justify-center pt-2.5 pb-2 px-3 sm:px-6 rounded-2xl border border-transparent backdrop-blur-2xl max-w-[calc(100%-1.5rem)] sm:max-w-[calc(100%-3rem)] overflow-x-auto overscroll-x-contain touch-pan-x mx-auto shadow-[0_16px_36px_-10px_rgba(0,0,0,0.85)]"
             style={{
-              borderImage:
-                'linear-gradient(90deg, rgba(212,175,55,0.4), rgba(212,175,55,0.1)) 1',
-              borderImageSlice: '0 1 1 1',
+              background:
+                'linear-gradient(160deg, rgba(16,16,24,0.88), rgba(8,8,13,0.85)) padding-box, linear-gradient(155deg, rgba(212,175,55,0.45), rgba(212,175,55,0.08) 45%, rgba(255,255,255,0.06)) border-box',
             }}
           >
             {subBar}

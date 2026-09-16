@@ -134,7 +134,7 @@ function Servicios() {
       <HeaderSubBarPortal>
         <ul
           aria-label="Categorías de servicios"
-          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1"
+          className="flex items-center gap-1.5 sm:gap-2 py-1 px-1 min-w-max"
         >
           {categories.map((category) => (
             <li key={category.id} className="shrink-0">
