@@ -776,7 +776,7 @@ export function SeasonalParticles({
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 pointer-events-none z-35 ${className}`}
+      className={`fixed inset-0 pointer-events-none z-0 ${className}`}
       aria-hidden="true"
     />
   )

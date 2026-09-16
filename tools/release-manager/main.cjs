@@ -306,6 +306,70 @@ async function buildAdminInstallers() {
   return { success: true }
 }
 
+/**
+ * Comprueba si los instaladores generados están desactualizados respecto al
+ * código fuente. Devuelve { stale, reason } para poder mostrar al usuario
+ * por qué se recompila. Esto garantiza que la release publicada en GitHub
+ * siempre lleve el zip/exe con el frontend más reciente, aunque ya existiera
+ * un instalador previo con el mismo número de versión.
+ */
+function checkInstallersStale(installerPaths) {
+  // Fuentes cuyo cambio exige recompilar: frontend, proceso principal de
+  // Electron, scripts de build y manifiesto de paquete.
+  const sourceRoots = [
+    path.join(adminRoot, 'src'),
+    path.join(adminRoot, 'electron'),
+    path.join(adminRoot, 'scripts'),
+  ]
+  const sourceFiles = [path.join(adminRoot, 'package.json')]
+
+  const collectFiles = (dir) => {
+    let entries = []
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch (e) {
+      return
+    }
+    for (const entry of entries) {
+      const full = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (entry.name === 'node_modules' || entry.name === 'dist') continue
+        collectFiles(full)
+      } else if (entry.isFile()) {
+        sourceFiles.push(full)
+      }
+    }
+  }
+  for (const root of sourceRoots) collectFiles(root)
+
+  let newestSourceMtime = 0
+  let newestSourceFile = ''
+  for (const file of sourceFiles) {
+    try {
+      const mtime = fs.statSync(file).mtimeMs
+      if (mtime > newestSourceMtime) {
+        newestSourceMtime = mtime
+        newestSourceFile = file
+      }
+    } catch (e) {}
+  }
+
+  for (const installerPath of installerPaths) {
+    if (!fs.existsSync(installerPath)) {
+      return { stale: true, reason: `falta ${path.basename(installerPath)}` }
+    }
+    const installerMtime = fs.statSync(installerPath).mtimeMs
+    if (newestSourceMtime > installerMtime) {
+      return {
+        stale: true,
+        reason: `el código fuente es más reciente que ${path.basename(installerPath)} (cambiado: ${path.relative(adminRoot, newestSourceFile)})`,
+      }
+    }
+  }
+
+  return { stale: false, reason: 'instaladores ya actualizados con el código actual' }
+}
+
 ipcMain.handle('publisher:build-installer', async (event, payload) => {
   const version = payload?.version
   if (version) {
@@ -537,8 +601,16 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
   const expectedMacName = `GoldBlack-Lash-Admin-${cleanVersion}-macOS-Monterey.zip`
   const expectedMacPath = path.join(distInstallersDir, expectedMacName)
 
-  // STEP 2: If autoBuild is requested OR if expected installers do not exist yet:
-  if (autoBuild || !fs.existsSync(expectedWinPath) || !fs.existsSync(expectedMacPath)) {
+  // STEP 2: Recompilar si se pidió autoBuild, si falta algún instalador o si
+  // el código fuente es más reciente que los instaladores ya generados (para
+  // no subir nunca a GitHub un zip con frontend antiguo).
+  const staleness = checkInstallersStale([expectedWinPath, expectedMacPath])
+  console.log(`[Publisher] Estado de instaladores: ${staleness.reason}`)
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('publisher:build-log', `\nℹ Instaladores: ${staleness.reason}\n`)
+  }
+
+  if (autoBuild || staleness.stale) {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('publisher:upload-progress', {
         step: 'compiling',

@@ -11,8 +11,6 @@ import { Billing } from './components/Billing'
 import { Settings } from './components/Settings'
 import { announceNewAppointmentVoice } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
-import { SofiWakeWordManager } from './services/cloudflareAiService'
-import { SofiOrb } from './components/SofiOrb'
 
 import {
   Appointment,
@@ -121,113 +119,6 @@ export const App: React.FC = () => {
   const [isBillingModalOpen, setIsBillingModalOpen] = useState(false)
   const { checkUpdates } = useUpdaterContext()
   const [syncToast, setSyncToast] = useState<{ status: string; message: string } | null>(null)
-
-  // Global Floating Voice Assistant State
-  const [isVoiceActive, setIsVoiceActive] = useState(false)
-  const [voiceTranscript, setVoiceTranscript] = useState('')
-  const [voiceResponse, setVoiceResponse] = useState('')
-  const [voiceIsListening, setVoiceIsListening] = useState(false)
-  const [voiceIsProcessing, setVoiceIsProcessing] = useState(false)
-  const [voiceError, setVoiceError] = useState<string | null>(null)
-
-  // continuous listening manager reference
-  const sofiManagerRef = useRef<SofiWakeWordManager | null>(null)
-
-  // auto-dismiss: el orbe se cierra solo unos segundos después de responder
-  const sofiDismissTimerRef = useRef<number | null>(null)
-
-  const cancelSofiDismiss = () => {
-    if (sofiDismissTimerRef.current !== null) {
-      window.clearTimeout(sofiDismissTimerRef.current)
-      sofiDismissTimerRef.current = null
-    }
-  }
-
-  const scheduleSofiDismiss = () => {
-    cancelSofiDismiss()
-    sofiDismissTimerRef.current = window.setTimeout(() => setIsVoiceActive(false), 6000)
-  }
-
-  // Active continuous background wake-word listening ("Oye Sofi")
-  useEffect(() => {
-    const isSofiEnabled = localStorage.getItem('goldblack_sofi_continuous_listen') === 'true'
-
-    const initSofi = () => {
-      if (isSofiEnabled) {
-        if (sofiManagerRef.current) {
-          sofiManagerRef.current.stop()
-        }
-
-        sofiManagerRef.current = new SofiWakeWordManager((state: any) => {
-          if (state.status === 'idle') {
-            setVoiceIsListening(true)
-            setVoiceIsProcessing(false)
-            scheduleSofiDismiss()
-          } else if (state.status === 'processing') {
-            cancelSofiDismiss()
-            setIsVoiceActive(true)
-            setVoiceIsListening(false)
-            setVoiceIsProcessing(true)
-            setVoiceTranscript(state.text || '')
-            setVoiceResponse('')
-          } else if (state.status === 'speaking') {
-            setVoiceIsProcessing(false)
-            setVoiceResponse(state.response || '')
-          }
-        })
-
-        sofiManagerRef.current.updateContext({ appointments, clients, services })
-        sofiManagerRef.current.start()
-      } else {
-        if (sofiManagerRef.current) {
-          sofiManagerRef.current.stop()
-          sofiManagerRef.current = null
-        }
-      }
-    }
-
-    initSofi()
-
-    const handleToggle = () => {
-      const updatedEnabled = localStorage.getItem('goldblack_sofi_continuous_listen') === 'true'
-      if (updatedEnabled) {
-        if (!sofiManagerRef.current) {
-          sofiManagerRef.current = new SofiWakeWordManager((state: any) => {
-            if (state.status === 'idle') {
-              setVoiceIsListening(true)
-              setVoiceIsProcessing(false)
-              scheduleSofiDismiss()
-            } else if (state.status === 'processing') {
-              cancelSofiDismiss()
-              setIsVoiceActive(true)
-              setVoiceIsListening(false)
-              setVoiceIsProcessing(true)
-              setVoiceTranscript(state.text || '')
-              setVoiceResponse('')
-            } else if (state.status === 'speaking') {
-              setVoiceIsProcessing(false)
-              setVoiceResponse(state.response || '')
-            }
-          })
-        }
-        sofiManagerRef.current.updateContext({ appointments, clients, services })
-        sofiManagerRef.current.start()
-      } else {
-        if (sofiManagerRef.current) {
-          sofiManagerRef.current.stop()
-          sofiManagerRef.current = null
-          setVoiceIsListening(false)
-          setVoiceIsProcessing(false)
-        }
-      }
-    }
-
-    window.addEventListener('goldblack:sofi_continuous_listen_changed', handleToggle)
-    return () => {
-      window.removeEventListener('goldblack:sofi_continuous_listen_changed', handleToggle)
-      cancelSofiDismiss()
-    }
-  }, [appointments, clients, services])
 
   // Sidebar reorder state - persistido en localStorage para personalización del orden del menú
   const [sidebarOrder, setSidebarOrder] = useState<TabId[]>(() => {
@@ -1046,16 +937,6 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Sofi — asistente de voz estilo Siri; se activa solo con «Oye Sofi» */}
-        <SofiOrb
-          isActive={isVoiceActive}
-          isListening={voiceIsListening}
-          isProcessing={voiceIsProcessing}
-          transcript={voiceTranscript}
-          response={voiceResponse}
-          error={voiceError}
-          onClose={() => setIsVoiceActive(false)}
-        />
       </div>
     </div>
     </div>

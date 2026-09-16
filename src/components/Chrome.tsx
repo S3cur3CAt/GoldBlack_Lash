@@ -217,7 +217,7 @@ export function Header() {
 export function Footer() {
   const business = useStudioConfig()
   return (
-    <footer className="relative overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
+    <footer className="relative z-10 overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
       {/* Halo aurora superior */}
       <div
         aria-hidden="true"

@@ -141,7 +141,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 
               <Header />
 
-              <main id="contenido" tabIndex={-1}>
+              <main id="contenido" tabIndex={-1} className="relative z-10">
                 {children}
               </main>
 

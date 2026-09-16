@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, Notification, systemPreferences } = require('electron')
+const { app, BrowserWindow, Menu, shell, ipcMain, Notification } = require('electron')
 const path = require('path')
 const https = require('https')
 const { exec, spawn, execSync } = require('child_process')
@@ -348,7 +348,7 @@ ipcMain.handle('voice:stop-siri', async () => {
   return true
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow()
 
   app.on('activate', () => {
