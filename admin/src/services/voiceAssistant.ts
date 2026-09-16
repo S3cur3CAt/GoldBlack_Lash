@@ -99,6 +99,57 @@ export async function stopSpeechSynthesis(): Promise<void> {
 }
 
 /**
+ * Detecta si el error devuelto por ElevenLabs se debe a créditos agotados,
+ * límite de caracteres alcanzado o restricciones de plan.
+ */
+export function isElevenLabsQuotaExceededError(errorText: string, status?: number): boolean {
+  const lower = (errorText || '').toLowerCase()
+  return (
+    status === 402 ||
+    status === 429 ||
+    lower.includes('quota_exceeded') ||
+    lower.includes('insufficient_credits') ||
+    lower.includes('credit') ||
+    lower.includes('character_limit') ||
+    lower.includes('payment_required') ||
+    lower.includes('paid_plan_required') ||
+    lower.includes('upgrade your subscription') ||
+    lower.includes('free users cannot use') ||
+    lower.includes('too many requests')
+  )
+}
+
+let elevenLabsQuotaExhaustedTime: number | null = null
+const QUOTA_CACHE_TTL_MS = 15 * 60 * 1000 // 15 minutos de memoria para no reintentar en bucle si no hay créditos
+
+export function isElevenLabsQuotaExhausted(): boolean {
+  if (!elevenLabsQuotaExhaustedTime) return false
+  if (Date.now() - elevenLabsQuotaExhaustedTime > QUOTA_CACHE_TTL_MS) {
+    elevenLabsQuotaExhaustedTime = null
+    return false
+  }
+  return true
+}
+
+export function clearElevenLabsQuotaCache(): void {
+  elevenLabsQuotaExhaustedTime = null
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('goldblack:elevenlabs-status', { detail: { exhausted: false } })
+    )
+  }
+}
+
+export function setElevenLabsQuotaExhausted(reason?: string): void {
+  elevenLabsQuotaExhaustedTime = Date.now()
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('goldblack:elevenlabs-status', { detail: { exhausted: true, reason } })
+    )
+  }
+}
+
+/**
  * Realiza una petición POST a la API de ElevenLabs para generar audio en formato MP3
  */
 async function requestElevenLabsAudio(
@@ -107,39 +158,62 @@ async function requestElevenLabsAudio(
   apiKey: string
 ): Promise<Blob> {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': apiKey,
-      'Content-Type': 'application/json',
-      Accept: 'audio/mpeg',
-    },
-    body: JSON.stringify({
-      text,
-      model_id: 'eleven_multilingual_v2',
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.8,
+
+  // Timeout de seguridad de 4.5s para no retrasar nunca la locución si ElevenLabs va lento
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 4500)
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
       },
-    }),
-  })
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.8,
+        },
+      }),
+      signal: controller.signal,
+    })
 
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '')
-    try {
-      const parsed = JSON.parse(errorText)
-      if (parsed?.detail?.message) {
-        throw new Error(parsed.detail.message)
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '')
+      let cleanMessage = errorText
+      try {
+        const parsed = JSON.parse(errorText)
+        if (parsed?.detail?.message) {
+          cleanMessage = parsed.detail.message
+        }
+      } catch {}
+
+      if (isElevenLabsQuotaExceededError(cleanMessage, response.status)) {
+        setElevenLabsQuotaExhausted(cleanMessage)
       }
-    } catch (e: any) {
-      if (e?.message && e.message !== errorText) {
-        throw e
-      }
+
+      throw new Error(cleanMessage || `ElevenLabs HTTP ${response.status}`)
     }
-    throw new Error(`ElevenLabs HTTP ${response.status}: ${errorText}`)
-  }
 
-  return await response.blob()
+    // Petición exitosa: si estaba marcado como agotado, limpiamos el estado
+    if (elevenLabsQuotaExhaustedTime) {
+      clearElevenLabsQuotaCache()
+    }
+
+    return await response.blob()
+  } catch (err: any) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Tiempo de espera agotado al conectar con ElevenLabs (más de 4.5s).')
+    }
+    throw err
+  }
 }
 
 /**
@@ -188,7 +262,7 @@ export async function speakWithElevenLabs(
   text: string,
   customVoiceId?: string,
   customApiKey?: string
-): Promise<{ success: boolean; voiceUsed?: string; error?: string }> {
+): Promise<{ success: boolean; voiceUsed?: string; error?: string; isQuotaExceeded?: boolean }> {
   if (typeof window === 'undefined') {
     return { success: false, error: 'Entorno no soportado' }
   }
@@ -211,8 +285,12 @@ export async function speakWithElevenLabs(
     return { success: true, voiceUsed: voiceId }
   } catch (err: any) {
     const errMsg = String(err?.message || 'Error desconocido en ElevenLabs')
-    console.warn('[ElevenLabs TTS Error]:', errMsg)
-    return { success: false, error: errMsg }
+    const isQuota = isElevenLabsQuotaExceededError(errMsg)
+    if (isQuota) {
+      setElevenLabsQuotaExhausted(errMsg)
+    }
+    console.warn('[ElevenLabs TTS Error]:', errMsg, isQuota ? '(Cambio automático a Siri activado)' : '')
+    return { success: false, error: errMsg, isQuotaExceeded: isQuota }
   }
 }
 
@@ -332,24 +410,36 @@ export async function speakWithSiriOrSystemVoice(text: string): Promise<void> {
 /**
  * Síntesis de voz hablada para reservas de clientes:
  * 1. Prioridad 1: ElevenLabs AI Voice (con la clave e ID de voz configurados en Ajustes)
- * 2. Fallback: Siri nativo en macOS o Web Speech en el navegador (0 créditos)
+ * 2. Si se han agotado los créditos de ElevenLabs o hay error, cambia instantáneamente a Siri
+ *    en macOS (o Web Speech en el navegador) garantizando que Laura siempre reciba la locución sin demoras.
  */
 export async function speakWithFemaleVoice(text: string): Promise<void> {
   if (!text || !text.trim()) return
 
-  // 1. ElevenLabs AI Voice si está configurado en Ajustes
+  // 1. Intentar ElevenLabs si está configurado y no sabemos que la cuota está agotada
   const apiKey = getElevenLabsApiKey()
   const voiceId = getElevenLabsVoiceId()
-  if (apiKey && voiceId) {
+
+  if (apiKey && voiceId && !isElevenLabsQuotaExhausted()) {
     try {
       const res = await speakWithElevenLabs(text, voiceId, apiKey)
       if (res.success) return
+
+      if (res.isQuotaExceeded) {
+        console.warn(
+          '[ElevenLabs Créditos Agotados]: Cambiando automáticamente y sin demora a Siri de respaldo.'
+        )
+      }
     } catch (e) {
       console.warn('[ElevenLabs Fallback a Siri/WebSpeech]:', e)
     }
+  } else if (isElevenLabsQuotaExhausted()) {
+    console.info(
+      '[ElevenLabs en pausa por créditos agotados]: Locutando directamente con Siri de respaldo.'
+    )
   }
 
-  // 2. Fallback a voz de Siri o sistema (0 créditos)
+  // 2. Fallback a voz de Siri o sistema (0 créditos, instantáneo)
   await speakWithSiriOrSystemVoice(text)
 }
 

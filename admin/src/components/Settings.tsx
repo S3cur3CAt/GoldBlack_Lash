@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDialog } from '../context/DialogContext'
 import { StudioConfig } from '../types/admin'
 import {
@@ -23,6 +23,8 @@ import {
   setElevenLabsApiKey,
   getElevenLabsVoiceId,
   setElevenLabsVoiceId,
+  isElevenLabsQuotaExhausted,
+  clearElevenLabsQuotaCache,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -181,6 +183,15 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false)
   const [isTestingEleven, setIsTestingEleven] = useState(false)
   const [isTestingSiri, setIsTestingSiri] = useState(false)
+  const [quotaExhausted, setQuotaExhausted] = useState(() => isElevenLabsQuotaExhausted())
+
+  useEffect(() => {
+    const handleStatus = (e: any) => {
+      setQuotaExhausted(!!e.detail?.exhausted)
+    }
+    window.addEventListener('goldblack:elevenlabs-status', handleStatus)
+    return () => window.removeEventListener('goldblack:elevenlabs-status', handleStatus)
+  }, [])
 
   const handleTestElevenVoice = async () => {
     if (!elevenApiKey.trim()) {
@@ -200,6 +211,7 @@ export const Settings: React.FC<SettingsProps> = ({
       return
     }
 
+    clearElevenLabsQuotaCache()
     setIsTestingEleven(true)
     try {
       const res = await speakWithElevenLabs(
@@ -208,11 +220,24 @@ export const Settings: React.FC<SettingsProps> = ({
         elevenApiKey
       )
       if (res.success) {
+        setQuotaExhausted(false)
         showAlert({
           title: 'Voz de ElevenLabs Activa',
           message: `La voz con ID "${res.voiceUsed || elevenVoiceId}" ha reproducido la locución con éxito.`,
           type: 'success',
         })
+      } else if (res.isQuotaExceeded) {
+        setQuotaExhausted(true)
+        showAlert({
+          title: 'Créditos de ElevenLabs Agotados',
+          message:
+            'Tus créditos de la suscripción de ElevenLabs se han agotado o el plan no permite esta voz. El sistema ha cambiado automáticamente a la voz de Siri de tu Mac para que nunca te quedes sin avisos de reservas. Escucha a continuación la prueba con Siri.',
+          type: 'info',
+        })
+        // Reproducir inmediatamente con Siri para que Laura compruebe el respaldo en directo
+        await speakWithSiriOrSystemVoice(
+          'Hola Laura, tus créditos de Eleven Labs se han agotado, así que el sistema ha cambiado automáticamente a la voz de Siri de tu Mac para avisarte de todas las reservas.'
+        )
       } else {
         showAlert({
           title: 'Aviso de ElevenLabs',
@@ -840,6 +865,42 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           <div className="space-y-4">
+            {/* Banner de Créditos Agotados */}
+            {quotaExhausted && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
+                <IconAlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <p className="font-semibold text-amber-300">
+                    Créditos de ElevenLabs agotados — Siri activo como respaldo automático
+                  </p>
+                  <p className="text-gray-300 leading-relaxed">
+                    Tus créditos mensuales o saldo de ElevenLabs han alcanzado el límite. El sistema ha cambiado automáticamente a la voz nativa de <strong>Siri de tu Mac (0€)</strong> para seguir anunciando todas las reservas web de las clientas sin que pierdas ningún aviso. En cuanto renueves o recargues tus créditos en ElevenLabs, volverá a sonar ElevenLabs automáticamente.
+                  </p>
+                  <div className="pt-1 flex items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        clearElevenLabsQuotaCache()
+                        setQuotaExhausted(false)
+                        handleTestElevenVoice()
+                      }}
+                      className="text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
+                    >
+                      Reintentar conexión con ElevenLabs
+                    </button>
+                    <a
+                      href="https://elevenlabs.io/app/subscription"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-white underline cursor-pointer"
+                    >
+                      Ver saldo en ElevenLabs ↗
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ElevenLabs API Key & Voice ID Inputs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-ink-800 border border-line">
               <div className="space-y-1.5">
