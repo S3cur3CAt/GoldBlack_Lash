@@ -71,6 +71,11 @@ const PRIORITY_TECHNIQUES = [
   'Densidad y Negro Intenso',
 ]
 
+function getTechniqueSlug(technique: string) {
+  if (technique === 'Todas') return 'galeria-inicio'
+  return `tech-${technique.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+}
+
 function Galeria() {
   const loaderPieces = Route.useLoaderData() || fallbackPieces
   const techniques = useMemo(() => {
@@ -94,28 +99,108 @@ function Galeria() {
     return ['Todas', ...list]
   }, [loaderPieces])
 
-  const [filter, setFilter] = useState('Todas')
+  const [activeTechnique, setActiveTechnique] = useState('Todas')
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const isUserClicking = useRef(false)
 
-  const pieces = useMemo(
-    () =>
-      filter === 'Todas'
-        ? loaderPieces
-        : loaderPieces.filter((piece: any) => piece.technique === filter),
-    [filter, loaderPieces],
-  )
-
-  const current = openIndex === null ? undefined : pieces[openIndex]
+  const current = openIndex === null ? undefined : loaderPieces[openIndex]
 
   const move = (direction: number) => {
-    if (pieces.length < 2) return
+    if (loaderPieces.length < 2) return
 
     setOpenIndex((index) =>
       index === null
         ? null
-        : (index + direction + pieces.length) % pieces.length,
+        : (index + direction + loaderPieces.length) % loaderPieces.length,
     )
   }
+
+  // Smooth scroll to section when tapping button
+  const handleTechniqueClick = (technique: string) => {
+    setActiveTechnique(technique)
+    setOpenIndex(null)
+    isUserClicking.current = true
+
+    const slug = getTechniqueSlug(technique)
+    const el = document.getElementById(slug)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+
+    setTimeout(() => {
+      isUserClicking.current = false
+    }, 800)
+  }
+
+  // Auto-scroll the subbar horizontally to center the active button on mobile & desktop
+  useEffect(() => {
+    const btn = buttonRefs.current[activeTechnique]
+    if (btn) {
+      btn.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      })
+    }
+  }, [activeTechnique])
+
+  // Scroll-spy observer: automatically select the button of the technique currently on screen
+  useEffect(() => {
+    const techList = techniques.filter((t) => t !== 'Todas')
+    const ids = ['galeria-inicio', ...techList.map((t) => getTechniqueSlug(t))]
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isUserClicking.current) return
+
+        if (window.scrollY < 250) {
+          setActiveTechnique('Todas')
+          return
+        }
+
+        const visible = entries.filter((entry) => entry.isIntersecting)
+        if (visible.length > 0) {
+          visible.sort(
+            (a, b) =>
+              Math.abs(a.boundingClientRect.top - 150) -
+              Math.abs(b.boundingClientRect.top - 150),
+          )
+          const targetId = visible[0].target.id
+          if (targetId === 'galeria-inicio') {
+            setActiveTechnique('Todas')
+          } else {
+            const match = techList.find((t) => getTechniqueSlug(t) === targetId)
+            if (match) {
+              setActiveTechnique(match)
+            }
+          }
+        }
+      },
+      {
+        rootMargin: '-20% 0px -60% 0px',
+        threshold: 0,
+      },
+    )
+
+    ids.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    const onScroll = () => {
+      if (isUserClicking.current) return
+      if (window.scrollY < 250) {
+        setActiveTechnique('Todas')
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [techniques])
 
   return (
     <>
@@ -131,39 +216,41 @@ function Galeria() {
           aria-label="Filtrar diseños por técnica"
           className="flex items-center gap-1.5 sm:gap-2 py-1 px-1 min-w-max"
         >
-          {techniques.map((technique) => (
-            <li key={technique} className="shrink-0">
-              <button
-                type="button"
-                aria-pressed={filter === technique}
-                onClick={() => {
-                  setFilter(technique)
-                  setOpenIndex(null)
-                }}
-                className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer outline-none focus:outline-none ${
-                  filter === technique
-                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70'
-                    : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
-                }`}
-              >
-                {technique}
-              </button>
-            </li>
-          ))}
+          {techniques.map((technique) => {
+            const isActive = activeTechnique === technique
+            return (
+              <li key={technique} className="shrink-0">
+                <button
+                  ref={(el) => {
+                    buttonRefs.current[technique] = el
+                  }}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => handleTechniqueClick(technique)}
+                  className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer outline-none focus:outline-none ${
+                    isActive
+                      ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70'
+                      : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
+                  }`}
+                >
+                  {technique}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </HeaderSubBarPortal>
 
       <section className="section">
         <div className="wrap">
-          <div className="mb-9 flex flex-wrap items-center justify-between gap-4">
+          <div id="galeria-inicio" className="scroll-mt-40 mb-9 flex flex-wrap items-center justify-between gap-4">
             <p
               aria-live="polite"
               aria-atomic="true"
               className="text-xs text-muted"
             >
-              {pieces.length} {pieces.length === 1 ? 'diseño' : 'diseños'}
-              {' · '}
-              {filter}
+              {loaderPieces.length} {loaderPieces.length === 1 ? 'diseño' : 'diseños'}
+              {activeTechnique !== 'Todas' ? ` · ${activeTechnique}` : ''}
             </p>
 
             <p className="text-xs text-muted">
@@ -174,18 +261,87 @@ function Galeria() {
             </p>
           </div>
 
-          <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
-            {pieces.map((piece, index) => (
-              <Reveal key={piece.id} delay={(index % 3) * 90}>
-                <GalleryTile
-                  piece={piece}
-                  onOpen={() => setOpenIndex(index)}
-                />
-              </Reveal>
-            ))}
+          <div className="space-y-16">
+            {techniques
+              .filter((t) => t !== 'Todas')
+              .map((technique) => {
+                const techPieces = loaderPieces.filter(
+                  (p: any) => p.technique === technique,
+                )
+                if (!techPieces.length) return null
+                const slug = getTechniqueSlug(technique)
+
+                return (
+                  <section
+                    key={technique}
+                    id={slug}
+                    className="scroll-mt-36 pt-2"
+                  >
+                    <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="h-2 w-2 rounded-full bg-[#d4af37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+                        <h2 className="font-display text-2xl font-bold tracking-tight text-[#f5f5f7] sm:text-3xl">
+                          {technique}
+                        </h2>
+                      </div>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted">
+                        {techPieces.length} {techPieces.length === 1 ? 'diseño' : 'diseños'}
+                      </span>
+                    </div>
+
+                    <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                      {techPieces.map((piece: any) => {
+                        const globalIndex = loaderPieces.findIndex((p: any) => p.id === piece.id)
+                        return (
+                          <Reveal key={piece.id} delay={0}>
+                            <GalleryTile
+                              piece={piece}
+                              onOpen={() => setOpenIndex(globalIndex >= 0 ? globalIndex : 0)}
+                            />
+                          </Reveal>
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              })}
+
+            {/* Any pieces that don't belong to recognized techniques */}
+            {(() => {
+              const standardTechniques = techniques.filter((t) => t !== 'Todas')
+              const miscPieces = loaderPieces.filter(
+                (p: any) => !standardTechniques.includes(p.technique),
+              )
+              if (!miscPieces.length) return null
+              return (
+                <section id="tech-otros" className="scroll-mt-36 pt-2">
+                  <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                    <h2 className="font-display text-2xl font-bold tracking-tight text-[#f5f5f7] sm:text-3xl">
+                      Otros diseños
+                    </h2>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted">
+                      {miscPieces.length} diseños
+                    </span>
+                  </div>
+                  <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                    {miscPieces.map((piece: any) => {
+                      const globalIndex = loaderPieces.findIndex((p: any) => p.id === piece.id)
+                      return (
+                        <Reveal key={piece.id} delay={0}>
+                          <GalleryTile
+                            piece={piece}
+                            onOpen={() => setOpenIndex(globalIndex >= 0 ? globalIndex : 0)}
+                          />
+                        </Reveal>
+                      )
+                    })}
+                  </div>
+                </section>
+              )
+            })()}
           </div>
 
-          {!pieces.length ? (
+          {!loaderPieces.length ? (
             <div className="bento-card px-6 py-14 text-center items-center">
               <span aria-hidden="true" className="text-3xl text-rose">
                 ✧
@@ -194,12 +350,12 @@ function Galeria() {
                 Pronto habrá más inspiración
               </h2>
               <p className="mt-3 text-sm text-muted">
-                Todavía no hay diseños en esta categoría.
+                Todavía no hay diseños disponibles.
               </p>
             </div>
           ) : null}
 
-          <p className="mx-auto mt-10 max-w-xl text-center text-xs leading-7 text-muted">
+          <p className="mx-auto mt-14 max-w-xl text-center text-xs leading-7 text-muted">
             Las ilustraciones decorativas no representan resultados del
             tratamiento. Cada diseño se valora de forma individual.
           </p>
@@ -239,7 +395,7 @@ function Galeria() {
         <Lightbox
           piece={current}
           position={openIndex + 1}
-          total={pieces.length}
+          total={loaderPieces.length}
           onClose={() => setOpenIndex(null)}
           onPrevious={() => move(-1)}
           onNext={() => move(1)}
