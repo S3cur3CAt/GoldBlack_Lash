@@ -17,6 +17,11 @@ import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../servi
 import {
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
+  speakWithElevenLabs,
+  getElevenLabsApiKey,
+  setElevenLabsApiKey,
+  getElevenLabsVoiceId,
+  setElevenLabsVoiceId,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -165,18 +170,75 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   }
 
-  // Siri Voice Live Test
+  // ElevenLabs Voice & Siri Configuration & Testing
+  const [elevenApiKey, setElevenApiKey] = useState(
+    () => getElevenLabsApiKey() || config.elevenLabsApiKey || ''
+  )
+  const [elevenVoiceId, setElevenVoiceId] = useState(
+    () => getElevenLabsVoiceId() || config.elevenLabsVoiceId || ''
+  )
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [isTestingEleven, setIsTestingEleven] = useState(false)
   const [isTestingSiri, setIsTestingSiri] = useState(false)
+
+  const handleTestElevenVoice = async () => {
+    if (!elevenApiKey.trim()) {
+      showAlert({
+        title: 'Clave API requerida',
+        message: 'Por favor, introduce tu clave API de ElevenLabs en el campo de texto.',
+        type: 'warning',
+      })
+      return
+    }
+    if (!elevenVoiceId.trim()) {
+      showAlert({
+        title: 'ID de Voz requerido',
+        message: 'Por favor, introduce el ID de voz de ElevenLabs que deseas utilizar.',
+        type: 'warning',
+      })
+      return
+    }
+
+    setIsTestingEleven(true)
+    try {
+      const res = await speakWithElevenLabs(
+        'Hola, las alertas por voz con Eleven Labs están conectadas y funcionando a la perfección.',
+        elevenVoiceId,
+        elevenApiKey
+      )
+      if (res.success) {
+        showAlert({
+          title: 'Voz de ElevenLabs Activa',
+          message: `La voz con ID "${res.voiceUsed || elevenVoiceId}" ha reproducido la locución con éxito.`,
+          type: 'success',
+        })
+      } else {
+        showAlert({
+          title: 'Aviso de ElevenLabs',
+          message: res.error || 'No se pudo reproducir con ElevenLabs. Comprueba la clave API y el ID de voz.',
+          type: 'error',
+        })
+      }
+    } finally {
+      setIsTestingEleven(false)
+    }
+  }
 
   const handleTestSiriVoice = async () => {
     setIsTestingSiri(true)
     try {
-      await speakWithFemaleVoice(
-        'El sistema de alertas por voz con Siri está funcionando a la perfección.'
-      )
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
+        await (window as any).electronAPI.speakWithSiri(
+          'La voz nativa de Siri en macOS está funcionando correctamente como respaldo.'
+        )
+      } else {
+        await speakWithFemaleVoice(
+          'La voz de respaldo está funcionando correctamente.'
+        )
+      }
       showAlert({
-        title: 'Voz Nativa Siri Activa',
-        message: 'La voz nativa de Siri ha reproducido la prueba con éxito.',
+        title: 'Voz de Respaldo Reproducida',
+        message: 'La locución de prueba se ha reproducido con éxito.',
         type: 'success',
       })
     } finally {
@@ -218,7 +280,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      await onSaveConfig(formData)
+      setElevenLabsApiKey(elevenApiKey)
+      setElevenLabsVoiceId(elevenVoiceId)
+      await onSaveConfig({
+        ...formData,
+        elevenLabsApiKey: elevenApiKey.trim(),
+        elevenLabsVoiceId: elevenVoiceId.trim(),
+      })
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 4000)
       showAlert({
@@ -751,7 +819,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Voice Alerts with Siri Configuration */}
+        {/* Voice Alerts with ElevenLabs AI & Siri Fallback Configuration */}
         <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
@@ -759,18 +827,70 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <div>
               <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
-                <span>Alertas y Anuncios por Voz con Siri</span>
+                <span>Alertas y Anuncios por Voz (ElevenLabs AI)</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25">
-                  macOS • 0€
+                  ElevenLabs • Multilingual v2
                 </span>
               </h4>
               <p className="text-xs text-gray-400">
-                Recibe avisos locutados con la voz natural de Siri en tu Mac o navegador cuando entren nuevas reservas desde el sitio web o existan actualizaciones.
+                Escribe tu clave API y el ID de voz de ElevenLabs para recibir avisos hablados de ultra-alta calidad cuando entren reservas desde el sitio web o haya actualizaciones (con respaldo automático de Siri en macOS).
               </p>
             </div>
           </div>
 
           <div className="space-y-4">
+            {/* ElevenLabs API Key & Voice ID Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-ink-800 border border-line">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="elevenApiKey" className="text-xs font-semibold text-gray-200">
+                    Clave API de ElevenLabs
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    {showApiKey ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
+                <input
+                  id="elevenApiKey"
+                  type={showApiKey ? 'text' : 'password'}
+                  value={elevenApiKey}
+                  onChange={(e) => {
+                    setElevenApiKey(e.target.value)
+                    setElevenLabsApiKey(e.target.value)
+                  }}
+                  placeholder="sk_..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-line text-xs font-mono text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Introduce aquí tu clave API privada de ElevenLabs.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="elevenVoiceId" className="text-xs font-semibold text-gray-200 block">
+                  ID de Voz de ElevenLabs
+                </label>
+                <input
+                  id="elevenVoiceId"
+                  type="text"
+                  value={elevenVoiceId}
+                  onChange={(e) => {
+                    setElevenVoiceId(e.target.value)
+                    setElevenLabsVoiceId(e.target.value)
+                  }}
+                  placeholder="Ej: eZxqQzb5CuYo3Kl6EXfZ"
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-line text-xs font-mono text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50"
+                />
+                <p className="text-[10px] text-gray-400">
+                  Introduce aquí el ID de la voz de ElevenLabs que deseas utilizar.
+                </p>
+              </div>
+            </div>
+
             {/* Checkbox for Announcing New Web Appointments */}
             <div className="flex items-center gap-3 p-3 rounded-xl bg-ink-800 border border-line">
               <input
@@ -786,7 +906,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar reservas de la web en tiempo real con voz de Siri</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado y su número de teléfono.
+                <span className="font-semibold text-white">Anunciar reservas de la web en tiempo real por voz</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado, su número de teléfono y su preferencia o comentario.
               </label>
             </div>
 
@@ -813,24 +933,24 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="p-4 rounded-xl bg-ink-850 border border-line space-y-4">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Voz de Siri (macOS)</span>
-                  <p className="text-[11px] text-gray-500">Reproduce una locución de prueba con la voz nativa de Siri de tu Mac.</p>
+                  <span className="font-semibold text-white">Probar Voz de ElevenLabs</span>
+                  <p className="text-[11px] text-gray-500">Reproduce una locución con la API Key y el ID de voz escritos arriba.</p>
                 </div>
                 <button
                   type="button"
-                  onClick={handleTestSiriVoice}
-                  disabled={isTestingSiri}
+                  onClick={handleTestElevenVoice}
+                  disabled={isTestingEleven}
                   className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-semibold text-xs transition-colors cursor-pointer shrink-0"
                 >
                   <IconSparkles size={14} />
-                  <span>{isTestingSiri ? 'Reproduciendo...' : '🔊 Probar Voz de Siri'}</span>
+                  <span>{isTestingEleven ? 'Generando...' : '🔊 Probar Voz de ElevenLabs'}</span>
                 </button>
               </div>
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
                   <span className="font-semibold text-white">Probar Anuncio de Nueva Reserva Web</span>
-                  <p className="text-[11px] text-gray-500">Escucha cómo Siri anunciará una reserva web entrante con nombre, servicio y teléfono.</p>
+                  <p className="text-[11px] text-gray-500">Escucha cómo anunciará una reserva web entrante con nombre, servicio, teléfono y comentario.</p>
                 </div>
                 <button
                   type="button"
@@ -845,7 +965,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Aviso de Actualización (Voz Siri)</span>
+                  <span className="font-semibold text-white">Probar Aviso de Actualización</span>
                   <p className="text-[11px] text-gray-500">Escucha la locución cuando la aplicación detecta una nueva actualización disponible.</p>
                 </div>
                 <button
@@ -856,6 +976,22 @@ export const Settings: React.FC<SettingsProps> = ({
                 >
                   <IconVolume2 size={14} />
                   <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización'}</span>
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-xs text-gray-300">
+                  <span className="font-semibold text-white">Probar Voz de Respaldo Siri (macOS)</span>
+                  <p className="text-[11px] text-gray-500">Comprueba la voz nativa de Siri de tu Mac que actúa de respaldo si ElevenLabs no tiene conexión.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestSiriVoice}
+                  disabled={isTestingSiri}
+                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-zinc-700 text-gray-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
+                >
+                  <IconVolume2 size={14} />
+                  <span>{isTestingSiri ? 'Reproduciendo...' : '🔊 Probar Respaldo Siri'}</span>
                 </button>
               </div>
             </div>

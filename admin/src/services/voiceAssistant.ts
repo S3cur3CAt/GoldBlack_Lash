@@ -1,12 +1,56 @@
 /**
- * GoldBlack Lash Studio — Sistema de Alertas por Voz con Siri (macOS • 0€)
+ * GoldBlack Lash Studio — Sistema de Alertas por Voz con ElevenLabs AI y Siri
  *
- * Emite alertas sonoras y anuncios hablados con la voz nativa de Siri en español (España)
- * cuando entran nuevas reservas desde el sitio web o cuando hay actualizaciones del sistema.
+ * Emite alertas sonoras y anuncios hablados con ElevenLabs AI
+ * (configurado desde la sección de Ajustes del panel de administración)
+ * con fallback automático a Siri en macOS o síntesis del navegador.
  */
 
+export function getElevenLabsApiKey(): string {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('goldblack_elevenlabs_api_key')
+    if (custom && custom.trim()) return custom.trim()
+  }
+  return ''
+}
+
+export function setElevenLabsApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    const trimmed = (key || '').trim()
+    if (!trimmed) {
+      localStorage.removeItem('goldblack_elevenlabs_api_key')
+    } else {
+      localStorage.setItem('goldblack_elevenlabs_api_key', trimmed)
+    }
+  }
+}
+
+export function getElevenLabsVoiceId(): string {
+  if (typeof window !== 'undefined') {
+    const custom = localStorage.getItem('goldblack_elevenlabs_voice_id')
+    if (custom && custom.trim()) return custom.trim()
+  }
+  return ''
+}
+
+export function setElevenLabsVoiceId(voiceId: string): void {
+  if (typeof window !== 'undefined') {
+    const trimmed = (voiceId || '').trim()
+    if (!trimmed) {
+      localStorage.removeItem('goldblack_elevenlabs_voice_id')
+    } else {
+      localStorage.setItem('goldblack_elevenlabs_voice_id', trimmed)
+    }
+  }
+}
+
 /**
- * Formatea un número de teléfono para que Siri lo dicte de forma natural en grupos de 2-3 dígitos
+ * Referencia al elemento de audio actualmente en reproducción
+ */
+let currentAudio: HTMLAudioElement | null = null
+
+/**
+ * Formatea un número de teléfono para que se dicte de forma natural en grupos de 2-3 dígitos
  */
 export function formatPhoneForSpeech(phone?: string): string {
   if (!phone) return ''
@@ -32,9 +76,16 @@ export function formatPhoneForSpeech(phone?: string): string {
 }
 
 /**
- * Detiene cualquier síntesis de voz en curso (Siri o Web Speech)
+ * Detiene cualquier síntesis de voz en curso (ElevenLabs, Siri o Web Speech)
  */
 export async function stopSpeechSynthesis(): Promise<void> {
+  if (currentAudio) {
+    try {
+      currentAudio.pause()
+      currentAudio.currentTime = 0
+    } catch {}
+    currentAudio = null
+  }
   if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
     try {
       await (window as any).electronAPI.stopSiri()
@@ -48,23 +99,155 @@ export async function stopSpeechSynthesis(): Promise<void> {
 }
 
 /**
- * Síntesis de voz hablada utilizando la voz nativa de Siri en macOS,
- * o voces en español de alta calidad en navegadores web.
+ * Realiza una petición POST a la API de ElevenLabs para generar audio en formato MP3
+ */
+async function requestElevenLabsAudio(
+  text: string,
+  voiceId: string,
+  apiKey: string
+): Promise<Blob> {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'xi-api-key': apiKey,
+      'Content-Type': 'application/json',
+      Accept: 'audio/mpeg',
+    },
+    body: JSON.stringify({
+      text,
+      model_id: 'eleven_multilingual_v2',
+      voice_settings: {
+        stability: 0.5,
+        similarity_boost: 0.8,
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '')
+    try {
+      const parsed = JSON.parse(errorText)
+      if (parsed?.detail?.message) {
+        throw new Error(parsed.detail.message)
+      }
+    } catch (e: any) {
+      if (e?.message && e.message !== errorText) {
+        throw e
+      }
+    }
+    throw new Error(`ElevenLabs HTTP ${response.status}: ${errorText}`)
+  }
+
+  return await response.blob()
+}
+
+/**
+ * Reproduce un Blob de audio mediante el objeto HTMLAudioElement
+ */
+function playAudioBlob(blob: Blob): Promise<void> {
+  return new Promise((resolve, reject) => {
+    try {
+      const audioUrl = URL.createObjectURL(blob)
+      const audio = new Audio(audioUrl)
+      currentAudio = audio
+
+      const cleanup = () => {
+        try {
+          URL.revokeObjectURL(audioUrl)
+        } catch {}
+        if (currentAudio === audio) {
+          currentAudio = null
+        }
+      }
+
+      audio.onended = () => {
+        cleanup()
+        resolve()
+      }
+
+      audio.onerror = (e) => {
+        cleanup()
+        reject(e)
+      }
+
+      audio.play().catch((err) => {
+        cleanup()
+        reject(err)
+      })
+    } catch (err) {
+      reject(err)
+    }
+  })
+}
+
+/**
+ * Síntesis de voz con ElevenLabs utilizando la API Key y Voice ID configurados en Ajustes.
+ */
+export async function speakWithElevenLabs(
+  text: string,
+  customVoiceId?: string,
+  customApiKey?: string
+): Promise<{ success: boolean; voiceUsed?: string; error?: string }> {
+  if (typeof window === 'undefined') {
+    return { success: false, error: 'Entorno no soportado' }
+  }
+
+  const apiKey = (customApiKey || getElevenLabsApiKey()).trim()
+  const voiceId = (customVoiceId || getElevenLabsVoiceId()).trim()
+
+  if (!apiKey) {
+    return { success: false, error: 'No se ha configurado la clave API de ElevenLabs en Ajustes.' }
+  }
+  if (!voiceId) {
+    return { success: false, error: 'No se ha configurado el ID de voz de ElevenLabs en Ajustes.' }
+  }
+
+  await stopSpeechSynthesis()
+
+  try {
+    const blob = await requestElevenLabsAudio(text, voiceId, apiKey)
+    await playAudioBlob(blob)
+    return { success: true, voiceUsed: voiceId }
+  } catch (err: any) {
+    const errMsg = String(err?.message || 'Error desconocido en ElevenLabs')
+    console.warn('[ElevenLabs TTS Error]:', errMsg)
+    return { success: false, error: errMsg }
+  }
+}
+
+/**
+ * Síntesis de voz hablada general:
+ * 1. Prioridad 1: ElevenLabs AI Voice (si la API key y Voice ID están configurados en Ajustes)
+ * 2. Prioridad 2: En Electron (macOS), voz nativa de Siri
+ * 3. Prioridad 3: Web Speech Synthesis en el navegador
  */
 export async function speakWithFemaleVoice(text: string): Promise<void> {
   if (!text || !text.trim()) return
 
-  // 1. En Electron (macOS), invocar directamente la voz nativa de Siri del sistema
+  // 1. ElevenLabs AI Voice si está configurado en Ajustes
+  const apiKey = getElevenLabsApiKey()
+  const voiceId = getElevenLabsVoiceId()
+  if (apiKey && voiceId) {
+    try {
+      const res = await speakWithElevenLabs(text, voiceId, apiKey)
+      if (res.success) return
+    } catch (e) {
+      console.warn('[ElevenLabs Fallback a Siri/WebSpeech]:', e)
+    }
+  }
+
+  // 2. En Electron (macOS), invocar voz nativa de Siri
   if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
     try {
       const handled = await (window as any).electronAPI.speakWithSiri(text)
       if (handled) return
     } catch (e) {
-      console.warn('[Siri Native TTS Error, fallback a Web Speech]:', e)
+      console.warn('[Siri Native TTS Fallback]:', e)
     }
   }
 
-  // 2. Fallback con Web Speech Synthesis en el navegador
+  // 3. Fallback con Web Speech Synthesis en el navegador
   return new Promise((resolve) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) {
       resolve()
@@ -89,7 +272,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
 
           const voices = window.speechSynthesis.getVoices()
 
-          // 1st Prioridad: Voz Siri en español si está disponible en el navegador
+          // Prioridad: Siri o voces de alta calidad en español
           const siriVoice = voices.find(
             (v) =>
               (v.lang.startsWith('es') || v.lang === '') &&
@@ -98,7 +281,6 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
           if (siriVoice) {
             utterance.voice = siriVoice
           } else {
-            // 2nd Prioridad: Voces de alta calidad en español de España
             const preferred = [
               'monica',
               'paulina',
@@ -159,7 +341,7 @@ export async function speakWithFemaleVoice(text: string): Promise<void> {
 }
 
 /**
- * Limpia y extrae el comentario o preferencia de horario para que Siri lo lea de forma natural
+ * Limpia y extrae el comentario o preferencia de horario para que la voz lo lea de forma natural
  */
 function extractCommentForSpeech(rawNotes?: string): string {
   if (!rawNotes || !rawNotes.trim()) return ''
@@ -179,7 +361,7 @@ function extractCommentForSpeech(rawNotes?: string): string {
 }
 
 /**
- * Anuncia automáticamente con la voz de Siri la llegada de una nueva reserva desde goldblacklash.com
+ * Anuncia automáticamente con voz la llegada de una nueva reserva desde goldblacklash.com
  * Incluye: Nombre completo, Teléfono, Tratamiento de interés y Preferencia de horario o comentario.
  */
 export async function announceNewAppointmentVoice(

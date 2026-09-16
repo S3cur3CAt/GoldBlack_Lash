@@ -15,6 +15,7 @@ if (process.platform === 'darwin') {
   app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 }
 app.commandLine.appendSwitch('ignore-certificate-errors')
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 
 // Bypass certificate validation errors on macOS for studio backend and Supabase
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {

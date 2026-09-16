@@ -32,6 +32,8 @@ export const DEFAULT_CONFIG: StudioConfig = {
   ],
   voiceAnnounceNewAppointments: true,
   voiceAnnounceUpdates: true,
+  elevenLabsApiKey: '',
+  elevenLabsVoiceId: '',
 }
 
 // Initial Services matching site.ts

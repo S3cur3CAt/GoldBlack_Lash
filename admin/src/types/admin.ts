@@ -77,6 +77,8 @@ export interface StudioConfig {
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
   voiceAnnounceNewAppointments?: boolean
   voiceAnnounceUpdates?: boolean
+  elevenLabsApiKey?: string
+  elevenLabsVoiceId?: string
 }
 
 export interface GalleryItem {
