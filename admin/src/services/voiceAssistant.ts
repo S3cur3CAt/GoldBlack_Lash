@@ -396,13 +396,13 @@ export async function announceNewAppointmentVoice(
   let announcement = ''
   if (formattedPhone) {
     const templates = [
-      `Atención: Tienes una nueva reserva desde la página web. La clienta ${apt.clientName} ha reservado ${service}, y su teléfono es ${formattedPhone}.${commentClause}`,
-      `Nueva cita confirmada desde la web: ${apt.clientName} para ${service}. Teléfono de contacto: ${formattedPhone}.${commentClause}`,
-      `Aviso de GoldBlack Lash: Acaba de entrar una reserva de ${apt.clientName} para ${service}. Teléfono: ${formattedPhone}.${commentClause}`,
+      `Laura, tienes una nueva reserva desde la página web. La clienta ${apt.clientName} ha solicitado el tratamiento de ${service}, su número de teléfono móvil es ${formattedPhone}.${commentClause}`,
+      `Laura, nueva cita confirmada desde la web: la clienta ${apt.clientName} para el tratamiento de ${service}. Su teléfono móvil de contacto es ${formattedPhone}.${commentClause}`,
+      `Laura, aviso de GoldBlack Lash: acaba de entrar una reserva de la clienta ${apt.clientName} para el tratamiento de ${service}. Número de teléfono: ${formattedPhone}.${commentClause}`,
     ]
     announcement = templates[Math.floor(Math.random() * templates.length)]
   } else {
-    announcement = `Atención: Tienes una nueva reserva desde el sitio web de la clienta ${apt.clientName} para ${service}.${commentClause}`
+    announcement = `Laura, tienes una nueva reserva desde la página web de la clienta ${apt.clientName} para el tratamiento de ${service}.${commentClause}`
   }
 
   await speakWithFemaleVoice(announcement)

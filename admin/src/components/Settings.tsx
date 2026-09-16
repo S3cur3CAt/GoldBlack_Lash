@@ -203,7 +203,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setIsTestingEleven(true)
     try {
       const res = await speakWithElevenLabs(
-        'Hola, las alertas por voz con Eleven Labs están conectadas y funcionando a la perfección.',
+        'Hola Laura, las alertas por voz con Eleven Labs están conectadas y funcionando a la perfección en GoldBlack Lash.',
         elevenVoiceId,
         elevenApiKey
       )
@@ -230,11 +230,11 @@ export const Settings: React.FC<SettingsProps> = ({
     try {
       if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
         await (window as any).electronAPI.speakWithSiri(
-          'La voz nativa de Siri en macOS está funcionando correctamente como respaldo.'
+          'Hola Laura, la voz nativa de Siri en macOS está funcionando correctamente como respaldo.'
         )
       } else {
         await speakWithFemaleVoice(
-          'La voz de respaldo está funcionando correctamente.'
+          'Hola Laura, la voz de respaldo está funcionando correctamente.'
         )
       }
       showAlert({
@@ -272,7 +272,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleTestUpdateVoice = async () => {
     setIsPlayingUpdateVoiceTest(true)
     try {
-      await speakWithSiriOrSystemVoice('Tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
+      await speakWithSiriOrSystemVoice('Laura, tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
     } finally {
       setIsPlayingUpdateVoiceTest(false)
     }
@@ -926,7 +926,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
               />
               <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar actualizaciones del sistema con voz Siri</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará con la voz de Siri de tu Mac para no consumir créditos de ElevenLabs diciendo <span className="text-amber-300 italic">&ldquo;Tienes una nueva actualización disponible...&rdquo;</span>.
+                <span className="font-semibold text-white">Anunciar actualizaciones del sistema con voz Siri</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará con la voz de Siri de tu Mac para no consumir créditos de ElevenLabs diciendo <span className="text-amber-300 italic">&ldquo;Laura, tienes una nueva actualización disponible...&rdquo;</span>.
               </label>
             </div>
 
