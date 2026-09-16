@@ -279,7 +279,6 @@ function Galeria() {
                   >
                     <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
                       <div className="flex items-center gap-3">
-                        <span className="h-2 w-2 rounded-full bg-[#d4af37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
                         <h2 className="font-display text-2xl font-bold tracking-tight text-[#f5f5f7] sm:text-3xl">
                           {technique}
                         </h2>

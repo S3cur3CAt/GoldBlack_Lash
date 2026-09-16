@@ -225,7 +225,7 @@ function ServicesPreview() {
                   <ul className="mt-6 space-y-2 border-t border-[#d4af37]/15 pt-4">
                     {service.includes.map((inc) => (
                       <li key={inc} className="flex items-center gap-2.5 text-xs text-zinc-300">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37] shadow-[0_0_8px_rgba(212,175,55,0.8)]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]/60" />
                         <span>{inc}</span>
                       </li>
                     ))}
