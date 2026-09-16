@@ -94,6 +94,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
     .sort(([, a], [, b]) => b - a)
     .slice(0, 4)
 
+function getTimeBasedGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 6 && hour < 13) {
+    return 'Buenos días, Laura'
+  } else if (hour >= 13 && hour < 21) {
+    return 'Buenas tardes, Laura'
+  } else {
+    return 'Buenas noches, Laura'
+  }
+}
+
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto overflow-y-auto h-full">
       {/* Top Welcome Banner */}
@@ -102,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-xl font-semibold font-sans tracking-tight text-white">
-              Bienvenida
+              {getTimeBasedGreeting()}
             </h3>
             <p className="text-sm text-muted mt-1 max-w-xl">
               {todayAppointments.length > 0 ? (

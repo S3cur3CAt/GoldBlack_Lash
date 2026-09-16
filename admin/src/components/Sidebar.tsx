@@ -195,9 +195,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <h1 className="font-sans text-lg font-bold tracking-tight text-white leading-tight">
               GoldBlack <span className="text-gold-400 font-light">Lash</span>
             </h1>
-            <p className="text-[10px] tracking-widest uppercase text-muted font-medium">
-              Studio Manager
-            </p>
           </div>
         </div>
       </div>
@@ -433,8 +430,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
 
         {/* Footer Version: automatic background polling every 5s */}
-        <div className="px-4 py-2.5 flex justify-between items-center text-gray-500 text-[10px]">
-          <span className="text-gray-500 font-medium">GoldBlack Studio</span>
+        <div className="px-4 py-2.5 flex justify-end items-center text-gray-500 text-[10px]">
           <span
             title={`Versión instalada: v${CURRENT_APP_VERSION} (Búsqueda automática cada 5 segundos)`}
             className="font-mono px-2 py-0.5 rounded bg-ink-800 text-gold-400/90 border border-line select-none font-semibold"
