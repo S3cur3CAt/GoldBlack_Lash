@@ -13,11 +13,20 @@ import {
   IconX,
   IconReceipt,
   IconGripVertical,
+  IconGlobe,
 } from './Icons'
 import { CURRENT_APP_VERSION, formatBytes } from '../services/updater'
 import { useUpdaterContext } from '../context/UpdaterContext'
 
-export type TabId = 'dashboard' | 'appointments' | 'services' | 'clients' | 'gallery' | 'billing' | 'settings'
+export type TabId =
+  | 'dashboard'
+  | 'appointments'
+  | 'services'
+  | 'clients'
+  | 'gallery'
+  | 'billing'
+  | 'website'
+  | 'settings'
 
 export const DEFAULT_SIDEBAR_ORDER: TabId[] = [
   'dashboard',
@@ -26,6 +35,7 @@ export const DEFAULT_SIDEBAR_ORDER: TabId[] = [
   'clients',
   'gallery',
   'billing',
+  'website',
   'settings',
 ]
 
@@ -107,6 +117,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Facturación & Caja',
       subtitle: 'Tickets, cobros y caja',
       icon: IconReceipt,
+    },
+    {
+      id: 'website' as TabId,
+      label: 'Sitio Web',
+      subtitle: 'goldblacklash.com en vivo',
+      icon: IconGlobe,
     },
     {
       id: 'settings' as TabId,

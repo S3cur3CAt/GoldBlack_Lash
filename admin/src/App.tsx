@@ -8,6 +8,7 @@ import { Services } from './components/Services'
 import { Clients } from './components/Clients'
 import { GalleryManager } from './components/GalleryManager'
 import { Billing } from './components/Billing'
+import { WebsitePreview } from './components/WebsitePreview'
 import { Settings } from './components/Settings'
 import { announceNewAppointmentVoice } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
@@ -722,6 +723,10 @@ export const App: React.FC = () => {
       title: 'Facturación & Control de Caja',
       subtitle: 'Facturas oficiales, registro de cobros, TPV/Bizum/Efectivo y balance de caja',
     },
+    website: {
+      title: 'Sitio Web en Vivo',
+      subtitle: 'Previsualización interactiva de goldblacklash.com en móvil y escritorio',
+    },
     settings: {
       title: 'Ajustes del Estudio',
       subtitle: 'Datos de contacto, horarios y copias de seguridad',
@@ -761,6 +766,11 @@ export const App: React.FC = () => {
         return {
           actionLabel: 'Emitir Factura',
           onAction: () => setIsBillingModalOpen(true),
+        }
+      case 'website':
+        return {
+          actionLabel: 'Abrir Sitio Web ↗',
+          onAction: () => window.open('https://www.goldblacklash.com/', '_blank', 'noopener,noreferrer'),
         }
       case 'settings':
       default:
@@ -901,6 +911,10 @@ export const App: React.FC = () => {
               isCreateModalOpen={isBillingModalOpen}
               setIsCreateModalOpen={setIsBillingModalOpen}
             />
+          )}
+
+          {activeTab === 'website' && (
+            <WebsitePreview />
           )}
 
           {activeTab === 'settings' && (
