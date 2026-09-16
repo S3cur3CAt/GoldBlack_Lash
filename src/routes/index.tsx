@@ -134,7 +134,6 @@ function Hero() {
               src="/api/images/pieza-01"
               alt="Detalle de un diseño de pestañas clásicas"
             />
-            <span className="hero-chip" aria-hidden="true">Clásicas</span>
           </div>
 
           <div className="hero-tile hero-tile-main">
@@ -143,7 +142,6 @@ function Hero() {
               alt="Detalle de un diseño de pestañas híbridas"
               priority
             />
-            <span className="hero-chip" aria-hidden="true">Diseño a medida</span>
           </div>
 
           <div className="hero-tile hero-tile-side hero-tile-side-right">
@@ -151,7 +149,6 @@ function Hero() {
               src="/api/images/pieza-05"
               alt="Detalle de lifting natural con efecto apertura"
             />
-            <span className="hero-chip" aria-hidden="true">Lifting</span>
           </div>
         </div>
       </div>

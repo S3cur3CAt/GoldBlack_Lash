@@ -117,19 +117,7 @@ function Servicios() {
         title="El efecto perfecto es el que va contigo."
         lead="Natural, definido o con un poquito más de volumen. Descubre nuestros servicios y elegimos juntas cómo realzar tu mirada."
         crumbs={[{ label: 'Servicios' }]}
-      >
-        <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
-            Diseño personalizado
-          </span>
-          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
-            Atención con cita previa
-          </span>
-          <span className="rounded-xl border border-[#d4af37]/25 bg-[#14141c]/80 px-4 py-2 text-[0.65rem] text-[#9e9ea7]">
-            Asesoría de cuidados
-          </span>
-        </div>
-      </PageHero>
+      />
 
       <HeaderSubBarPortal>
         <ul

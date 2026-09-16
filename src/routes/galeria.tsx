@@ -429,10 +429,6 @@ function GalleryTile({
           className="transition-transform duration-700 group-hover:scale-[1.06]"
         />
 
-        <span className="absolute top-4 left-4 z-10 max-w-[calc(100%-2rem)] rounded-full bg-[#0a0a10]/90 border border-[#d4af37]/30 px-3 py-1.5 text-[0.6rem] font-bold text-[#e5c158] shadow-soft backdrop-blur-md">
-          {piece.technique}
-        </span>
-
         <span
           aria-hidden="true"
           className="absolute right-4 bottom-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-[#101018]/85 border border-[#d4af37]/35 text-lg text-[#e5c158] shadow-soft backdrop-blur-md transition-all duration-300 group-hover:bg-[#d4af37] group-hover:text-[#08080a] group-hover:shadow-glow"
