@@ -112,29 +112,29 @@ export const EmailModal: React.FC<EmailModalProps> = ({
       case 'confirmar':
         return {
           subject: `✨ Confirmación de Cita — ${studioName}`,
-          message: `Hola ${safeName},\n\nTu cita en ${studioName} ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio.\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n💶 Precio: ${safePrice} €\n📍 Ubicación: ${address}\n\nPor favor, recuerda acudir con los ojos limpios, sin restos de maquillaje ni rímel. Si utilizas lentillas, te recomendamos traer estuche para retirarlas durante la sesión.\n\nSi necesitas realizar cualquier cambio en tu reserva, responde a este correo o llámanos al ${phone}.\n\n¡Te esperamos!`,
-          whatsappMessage: `✨ *Confirmación de Cita — ${studioName}* ✨\n\n¡Hola *${safeName}*! Tu cita ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n💶 *Precio:* ${safePrice} €\n📍 *Ubicación:* ${address}\n\n*Pautas para tu sesión:*\n• Acude con los ojos limpios, sin restos de maquillaje ni rímel.\n• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la puesta.\n\nSi necesitas modificar tu horario o tienes alguna duda, puedes respondernos directamente por aquí o llamarnos al ${phone}.\n\n¡Te esperamos con muchas ganas! 💕`,
+          message: `https://www.goldblacklash.com/\n\nHola ${safeName},\n\nTu cita en ${studioName} ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio.\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n💶 Precio: ${safePrice} €\n📍 Ubicación: ${address}\n\nPor favor, recuerda acudir con los ojos limpios, sin restos de maquillaje ni rímel. Si utilizas lentillas, te recomendamos traer estuche para retirarlas durante la sesión.\n\nSi necesitas realizar cualquier cambio en tu reserva, responde a este correo o llámanos al ${phone}.\n\n¡Te esperamos!`,
+          whatsappMessage: `✨ *Confirmación de Cita — ${studioName}* ✨\n🌐 https://www.goldblacklash.com/\n\n¡Hola *${safeName}*! Tu cita ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n💶 *Precio:* ${safePrice} €\n📍 *Ubicación:* ${address}\n\n*Pautas para tu sesión:*\n• Acude con los ojos limpios, sin restos de maquillaje ni rímel.\n• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la puesta.\n\nSi necesitas modificar tu horario o tienes alguna duda, puedes respondernos directamente por aquí o llamarnos al ${phone}.\n\n¡Te esperamos con muchas ganas! 💕`,
         }
 
       case 'recordar':
         return {
           subject: `🗓 Recordatorio de Cita — ${studioName}`,
-          message: `Hola ${safeName},\n\nTe recordamos tu cita para mañana en ${studioName}:\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n📍 Dirección: ${address}\n\nRecomendaciones para tu sesión:\n• Acudir sin maquillaje en ojos ni restos de máscara de pestañas.\n• Evitar cremas grasas u oleosas en el contorno de ojos las horas previas.\n\nSi necesitas modificar tu horario, por favor avísanos con la mayor antelación posible.\n\n¡Hasta pronto!`,
-          whatsappMessage: `🗓 *Recordatorio de Cita — ${studioName}* 🗓\n\n¡Hola *${safeName}*! Te recordamos con cariño tu cita programada para mañana:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n📍 *Dirección:* ${address}\n\n*Recomendaciones:*\n• Acude sin maquillaje en pestañas ni párpados.\n• Evita cafeína o bebidas estimulantes justo antes de la cita para una mayor relajación.\n\nPor favor, si necesitas realizar cualquier cambio avísanos con antelación.\n\n¡Hasta mañana! ✨`,
+          message: `https://www.goldblacklash.com/\n\nHola ${safeName},\n\nTe recordamos tu cita para mañana en ${studioName}:\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n📍 Dirección: ${address}\n\nRecomendaciones para tu sesión:\n• Acudir sin maquillaje en ojos ni restos de máscara de pestañas.\n• Evitar cremas grasas u oleosas en el contorno de ojos las horas previas.\n\nSi necesitas modificar tu horario, por favor avísanos con la mayor antelación posible.\n\n¡Hasta pronto!`,
+          whatsappMessage: `🗓 *Recordatorio de Cita — ${studioName}* 🗓\n🌐 https://www.goldblacklash.com/\n\n¡Hola *${safeName}*! Te recordamos con cariño tu cita programada para mañana:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n📍 *Dirección:* ${address}\n\n*Recomendaciones:*\n• Acude sin maquillaje en pestañas ni párpados.\n• Evita cafeína o bebidas estimulantes justo antes de la cita para una mayor relajación.\n\nPor favor, si necesitas realizar cualquier cambio avísanos con antelación.\n\n¡Hasta mañana! ✨`,
         }
 
       case 'cuidados':
         return {
           subject: `🌸 Recomendaciones y Cuidados Previos — ${studioName}`,
-          message: `Hola ${safeName},\n\nPara que tu sesión de ${safeService} en ${studioName} sea perfecta y obtengas la máxima retención y duración en tus extensiones, te compartimos estas recomendaciones:\n\n1. Higiene: Acude con las pestañas completamente desmaquilladas y libres de grasa.\n2. Lentillas: Es preferible retirarlas antes de comenzar la aplicación.\n3. Cafeína: Recomendamos evitar café o bebidas estimulantes justo antes para tener los párpados relajados.\n\nCualquier duda que tengas, estamos a tu entera disposición.\n\n¡Un saludo cordial!`,
-          whatsappMessage: `🌸 *Recomendaciones y Cuidados Previos — ${studioName}* 🌸\n\n¡Hola *${safeName}*! Para que tu sesión de *${safeService}* quede impecable y obtengas la máxima retención y duración en tus extensiones, te compartimos estos consejos:\n\n1️⃣ *Higiene total:* Acude con las pestañas bien limpias, sin restos de máscara, delineador ni sombras.\n2️⃣ *Lentillas:* Es preferible retirarlas antes de comenzar la sesión.\n3️⃣ *Relax:* Procura evitar café o bebidas energéticas antes para tener los párpados completamente tranquilos.\n\nCualquier duda que tengas, estamos aquí para ayudarte.\n\n¡Un abrazo! 💖`,
+          message: `https://www.goldblacklash.com/\n\nHola ${safeName},\n\nPara que tu sesión de ${safeService} en ${studioName} sea perfecta y obtengas la máxima retención y duración en tus extensiones, te compartimos estas recomendaciones:\n\n1. Higiene: Acude con las pestañas completamente desmaquilladas y libres de grasa.\n2. Lentillas: Es preferible retirarlas antes de comenzar la aplicación.\n3. Cafeína: Recomendamos evitar café o bebidas estimulantes justo antes para tener los párpados relajados.\n\nCualquier duda que tengas, estamos a tu entera disposición.\n\n¡Un saludo cordial!`,
+          whatsappMessage: `🌸 *Recomendaciones y Cuidados Previos — ${studioName}* 🌸\n🌐 https://www.goldblacklash.com/\n\n¡Hola *${safeName}*! Para que tu sesión de *${safeService}* quede impecable y obtengas la máxima retención y duración en tus extensiones, te compartimos estos consejos:\n\n1️⃣ *Higiene total:* Acude con las pestañas bien limpias, sin restos de máscara, delineador ni sombras.\n2️⃣ *Lentillas:* Es preferible retirarlas antes de comenzar la sesión.\n3️⃣ *Relax:* Procura evitar café o bebidas energéticas antes para tener los párpados completamente tranquilos.\n\nCualquier duda que tengas, estamos aquí para ayudarte.\n\n¡Un abrazo! 💖`,
         }
 
       case 'retoque':
         return {
           subject: `💖 ¡Hora de mimar tu mirada! Retoque en ${studioName}`,
-          message: `Hola ${safeName},\n\nEsperamos que estés teniendo una excelente semana. Hemos visto que han pasado varias semanas desde tu última puesta de pestañas.\n\nPara mantener tu set siempre tupido, equilibrado y uniforme, lo ideal es realizar un retoque a las 2 o 3 semanas.\n\n¿Te gustaría que te reservemos un hueco estos días? Responde a este correo indicándonos qué días u horarios te vienen mejor y coordinamos tu cita.\n\n¡Nos encantará verte de nuevo!`,
-          whatsappMessage: `💖 *¡Momento de renovar tu mirada! — ${studioName}* 💖\n\n¡Hola *${safeName}*! Esperamos que estés genial.\n\nHemos visto que han pasado más de 20 días desde tu última puesta de extensiones. Para que tu mirada se mantenga siempre tupida, uniforme y en su máxima expresión, es el momento ideal para realizar tu *mantenimiento/retoque*.\n\n¿Te gustaría que te reservemos un hueco estos días? Indícanos qué días u horarios te vienen mejor y coordinamos tu cita enseguida.\n\n¡Nos encantará verte de nuevo en el estudio! ✨`,
+          message: `https://www.goldblacklash.com/\n\nHola ${safeName},\n\nEsperamos que estés teniendo una excelente semana. Hemos visto que han pasado varias semanas desde tu última puesta de pestañas.\n\nPara mantener tu set siempre tupido, equilibrado y uniforme, lo ideal es realizar un retoque a las 2 o 3 semanas.\n\n¿Te gustaría que te reservemos un hueco estos días? Responde a este correo indicándonos qué días u horarios te vienen mejor y coordinamos tu cita.\n\n¡Nos encantará verte de nuevo!`,
+          whatsappMessage: `💖 *¡Momento de renovar tu mirada! — ${studioName}* 💖\n🌐 https://www.goldblacklash.com/\n\n¡Hola *${safeName}*! Esperamos que estés genial.\n\nHemos visto que han pasado más de 20 días desde tu última puesta de extensiones. Para que tu mirada se mantenga siempre tupida, uniforme y en su máxima expresión, es el momento ideal para realizar tu *mantenimiento/retoque*.\n\n¿Te gustaría que te reservemos un hueco estos días? Indícanos qué días u horarios te vienen mejor y coordinamos tu cita enseguida.\n\n¡Nos encantará verte de nuevo en el estudio! ✨`,
         }
 
       case 'responder':
@@ -143,8 +143,8 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           : ''
         return {
           subject: `💬 Respuesta de ${studioName} sobre tu cita`,
-          message: `Hola ${safeName},\n\nTe escribimos desde ${studioName} en relación a tu consulta sobre tu cita de ${safeService}:\n\n${noteContext}Gracias por comunicarte con nosotras. [Escribe aquí tu respuesta]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\nAtentamente,\n${studioName}`,
-          whatsappMessage: `💬 *Hola ${safeName}*,\n\nTe escribimos desde *${studioName}*:\n\n${noteContext}[Escribe aquí tu mensaje...]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\n¡Un saludo cordial! ✨`,
+          message: `https://www.goldblacklash.com/\n\nHola ${safeName},\n\nTe escribimos desde ${studioName} en relación a tu consulta sobre tu cita de ${safeService}:\n\n${noteContext}Gracias por comunicarte con nosotras. [Escribe aquí tu respuesta]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\nAtentamente,\n${studioName}`,
+          whatsappMessage: `💬 *Hola ${safeName}*,\n🌐 https://www.goldblacklash.com/\n\nTe escribimos desde *${studioName}*:\n\n${noteContext}[Escribe aquí tu mensaje...]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\n¡Un saludo cordial! ✨`,
         }
     }
   }
@@ -359,8 +359,13 @@ export const EmailModal: React.FC<EmailModalProps> = ({
             <h1 style="color: #d4af37; font-size: 24px; letter-spacing: 0.05em; margin: 0 0 8px 0; text-transform: uppercase;">
               ${config.name}
             </h1>
-            <p style="color: #888899; font-size: 13px; margin: 0;">
+            <p style="color: #888899; font-size: 13px; margin: 0 0 8px 0;">
               ${config.tagline}
+            </p>
+            <p style="margin: 0;">
+              <a href="https://www.goldblacklash.com/" target="_blank" rel="noopener noreferrer" style="color: #d4af37; text-decoration: underline; font-size: 13px; font-weight: 500;">
+                https://www.goldblacklash.com/
+              </a>
             </p>
           </div>
           
@@ -852,20 +857,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium cursor-pointer"
             >
               Cerrar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const updated = saveAppointmentChanges()
-                if (updated) {
-                  setSendSuccess(`¡Cita guardada correctamente para el ${aptDate} a las ${aptTime}!`)
-                  setTimeout(() => setSendSuccess(null), 3000)
-                }
-              }}
-              title="Guardar los cambios de fecha, hora y servicio sin enviar mensaje"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <span>💾 Guardar Cambios</span>
             </button>
           </div>
 

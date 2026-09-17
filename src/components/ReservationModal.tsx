@@ -122,10 +122,10 @@ export function ReservationModal({
       return
     }
     if (!trimmedPhone || trimmedPhone.replace(/\D/g, '').length < 9) {
-      setError('Por favor, introduce un teléfono de contacto válido (mínimo 9 dígitos).')
+      setError('Por favor, introduce tu número de WhatsApp válido (mínimo 9 dígitos).')
       return
     }
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       setError('Por favor, introduce una dirección de correo electrónico válida.')
       return
     }
@@ -230,11 +230,13 @@ export function ReservationModal({
 
             <div className="reservation-notice-box max-w-md mx-auto space-y-1.5">
               <p className="text-xs text-muted leading-relaxed">
-                Hemos enviado un correo con todos los detalles a <strong className="text-ink font-semibold">{clientEmail}</strong>.
+                💬 Te enviaremos un mensaje de confirmación por WhatsApp a tu móvil <strong className="text-ink font-mono font-semibold">{clientPhone}</strong>.
               </p>
-              <p className="text-xs text-muted leading-relaxed">
-                Nos pondremos en contacto contigo al número <strong className="text-ink font-mono">{clientPhone}</strong> para coordinar tu horario ideal.
-              </p>
+              {clientEmail ? (
+                <p className="text-xs text-muted leading-relaxed">
+                  También te hemos enviado un correo con los detalles a <strong className="text-ink font-semibold">{clientEmail}</strong>.
+                </p>
+              ) : null}
             </div>
 
             <button
@@ -251,7 +253,7 @@ export function ReservationModal({
             <div className="reservation-header">
               <h2 className="reservation-title">Reserva tu momento</h2>
               <p className="reservation-subtitle">
-                Introduce tus datos para registrar tu cita. Nos pondremos en contacto contigo para coordinar tu horario ideal.
+                Introduce tus datos para registrar tu cita. Te enviaremos la confirmación por WhatsApp para coordinar tu horario ideal.
               </p>
             </div>
 
@@ -283,33 +285,10 @@ export function ReservationModal({
                     </div>
                   </div>
 
-                  {/* Email */}
-                  <div className="reservation-field-group">
-                    <label htmlFor="res-email" className="reservation-label">
-                      Correo electrónico para confirmación <span className="text-rose">*</span>
-                    </label>
-                    <div className="reservation-input-wrapper">
-                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                      </svg>
-                      <input
-                        id="res-email"
-                        type="email"
-                        required
-                        placeholder="tu-correo@ejemplo.com"
-                        value={clientEmail}
-                        onChange={(e) => setClientEmail(e.target.value)}
-                        className="reservation-input"
-                        autoComplete="email"
-                      />
-                    </div>
-                  </div>
-
                   {/* Phone */}
                   <div className="reservation-field-group">
                     <label htmlFor="res-phone" className="reservation-label">
-                      Número de teléfono móvil <span className="text-rose">*</span>
+                      WhatsApp / Teléfono móvil <span className="text-rose">*</span>
                     </label>
                     <div className="reservation-input-wrapper">
                       <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -324,6 +303,28 @@ export function ReservationModal({
                         onChange={(e) => setClientPhone(e.target.value)}
                         className="reservation-input font-mono"
                         autoComplete="tel"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div className="reservation-field-group">
+                    <label htmlFor="res-email" className="reservation-label">
+                      Correo electrónico <span className="text-muted text-xs font-normal">(opcional)</span>
+                    </label>
+                    <div className="reservation-input-wrapper">
+                      <svg className="reservation-input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                      </svg>
+                      <input
+                        id="res-email"
+                        type="email"
+                        placeholder="tu-correo@ejemplo.com"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        className="reservation-input"
+                        autoComplete="email"
                       />
                     </div>
                   </div>

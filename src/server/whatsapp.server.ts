@@ -46,6 +46,7 @@ export function generateStudioWhatsAppAlertText(
 
   const lines = [
     `🔔 *NUEVA RESERVA WEB — ${studioName.toUpperCase()}* 🔔`,
+    `🌐 https://www.goldblacklash.com/`,
     '',
     `✨ *Clienta:* ${apt.clientName}`,
     `📱 *Teléfono:* ${apt.clientPhone}`,

@@ -73,6 +73,11 @@ export function generateBookingEmailHtml(data: BookingEmailData): string {
                     <div style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #b66f79; font-weight: 600; margin-top: 4px;">
                       Estudio de Pestañas · Belleza de Autor
                     </div>
+                    <div style="margin-top: 6px;">
+                      <a href="https://www.goldblacklash.com/" target="_blank" rel="noopener noreferrer" style="color: #b66f79; font-size: 12px; text-decoration: underline; font-weight: 500;">
+                        https://www.goldblacklash.com/
+                      </a>
+                    </div>
                   </td>
                 </tr>
               </table>

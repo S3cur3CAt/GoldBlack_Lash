@@ -258,13 +258,13 @@ function BookingForm() {
       return
     }
 
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setError('Por favor introduce un correo electrónico válido para enviarte la confirmación.')
+    if (!trimmedTelefono || trimmedTelefono.replace(/\D/g, '').length < 9) {
+      setError('Por favor introduce un teléfono móvil o WhatsApp válido (mínimo 9 dígitos).')
       return
     }
 
-    if (!trimmedTelefono || trimmedTelefono.replace(/\D/g, '').length < 9) {
-      setError('Por favor introduce un teléfono de contacto válido (mínimo 9 dígitos).')
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError('Por favor introduce un correo electrónico válido.')
       return
     }
 
@@ -345,11 +345,13 @@ function BookingForm() {
 
         <div className="mt-6 p-5 rounded-2xl bg-[#101019] border border-rose/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
           <p>
-            ✉ Hemos enviado un correo de confirmación a <strong className="text-ink">{form.email}</strong>.
+            💬 Te enviaremos la confirmación por WhatsApp a tu móvil <strong className="text-ink font-mono">{form.telefono}</strong>.
           </p>
-          <p>
-            📞 Te contactaremos al <strong className="text-ink font-mono">{form.telefono}</strong> para coordinar tu cita en el mejor horario para ti.
-          </p>
+          {form.email ? (
+            <p>
+              ✉ También te hemos enviado un correo con todos los detalles a <strong className="text-ink">{form.email}</strong>.
+            </p>
+          ) : null}
         </div>
 
         <button
@@ -388,7 +390,7 @@ function BookingForm() {
         id="booking-form-description"
         className="mt-5 text-sm leading-7 text-muted"
       >
-        Rellena estos datos para coordinar tu cita. Te responderemos personalmente y te enviaremos una confirmación por correo.
+        Rellena estos datos para coordinar tu cita. Te responderemos personalmente y te enviaremos la confirmación por WhatsApp.
       </p>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-2">
@@ -408,22 +410,7 @@ function BookingForm() {
         </label>
 
         <label className="block">
-          <span className="field-label">Correo electrónico *</span>
-          <input
-            type="email"
-            name="email"
-            autoComplete="email"
-            required
-            maxLength={100}
-            value={form.email}
-            onChange={(event) => update('email', event.target.value)}
-            placeholder="tu-email@ejemplo.com"
-            className="field"
-          />
-        </label>
-
-        <label className="block sm:col-span-2">
-          <span className="field-label">Teléfono móvil de contacto *</span>
+          <span className="field-label">WhatsApp / Móvil para confirmación *</span>
           <input
             type="tel"
             name="telefono"
@@ -433,6 +420,20 @@ function BookingForm() {
             value={form.telefono}
             onChange={(event) => update('telefono', event.target.value)}
             placeholder="+34 604 18 76 76"
+            className="field font-mono"
+          />
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="field-label">Correo electrónico <span className="text-xs text-muted font-normal">(opcional)</span></span>
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            maxLength={100}
+            value={form.email}
+            onChange={(event) => update('email', event.target.value)}
+            placeholder="tu-email@ejemplo.com"
             className="field"
           />
         </label>
