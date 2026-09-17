@@ -479,14 +479,16 @@ async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, t
           parsedUrl,
           {
             method: 'POST',
+            agent: false,
             headers: {
               'User-Agent': 'GoldBlack-Release-Publisher',
               Authorization: `token ${token.trim()}`,
               Accept: 'application/vnd.github.v3+json',
               'Content-Type': contentType,
               'Content-Length': totalBytes,
+              'Connection': 'close',
             },
-            timeout: 600000, // 10 minutos
+            timeout: 1800000, // 30 minutos para subidas grandes en conexiones lentas
           },
           (res) => {
             let respBody = ''
@@ -507,30 +509,40 @@ async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, t
         )
 
         uploadReq.on('timeout', () => {
-          uploadReq.destroy(new Error('Timeout de red en la subida a GitHub.'))
+          uploadReq.destroy(new Error('Timeout de red (30 min) en la subida a GitHub.'))
         })
 
         uploadReq.on('error', (err) => {
           reject(err)
         })
 
-        const fileStream = fs.createReadStream(filePath)
+        const fileStream = fs.createReadStream(filePath, { highWaterMark: 256 * 1024 })
         fileStream.on('data', (chunk) => {
           uploadedBytes += chunk.length
+          const ok = uploadReq.write(chunk)
+          if (!ok) {
+            fileStream.pause()
+          }
           const now = Date.now()
-          if (now - lastReport > 120 || uploadedBytes === totalBytes) {
+          if (now - lastReport > 200 || uploadedBytes === totalBytes) {
             lastReport = now
             const percent = Math.round((uploadedBytes / totalBytes) * 100)
             onProgress?.({ fileName, uploadedBytes, totalBytes, percent })
           }
         })
 
+        uploadReq.on('drain', () => {
+          fileStream.resume()
+        })
+
+        fileStream.on('end', () => {
+          uploadReq.end()
+        })
+
         fileStream.on('error', (err) => {
           uploadReq.destroy()
           reject(err)
         })
-
-        fileStream.pipe(uploadReq)
       })
 
       return { fileName, size: totalBytes }
@@ -805,39 +817,61 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
 
   // 3. Publish Release (Convert draft: true -> draft: false now that all assets are attached)
   const publishPayload = JSON.stringify({ draft: false })
-  const publishedRelease = await new Promise((resolve, reject) => {
-    const patchReq = https.request(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/${releaseData.id}`,
-      {
-        method: 'PATCH',
-        headers: {
-          'User-Agent': 'GoldBlack-Release-Publisher',
-          Authorization: `token ${token.trim()}`,
-          Accept: 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(publishPayload),
-        },
-      },
-      (res) => {
-        let respBody = ''
-        res.on('data', (c) => (respBody += c))
-        res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            try {
-              resolve(JSON.parse(respBody))
-            } catch (e) {
-              resolve(releaseData)
-            }
-          } else {
-            reject(new Error(`Error al publicar release tras subir assets: HTTP ${res.statusCode}`))
+  let publishedRelease = null
+  let patchLastError = null
+
+  for (let patchAttempt = 1; patchAttempt <= 3; patchAttempt++) {
+    try {
+      publishedRelease = await new Promise((resolve, reject) => {
+        const patchReq = https.request(
+          `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/${releaseData.id}`,
+          {
+            method: 'PATCH',
+            agent: false,
+            headers: {
+              'User-Agent': 'GoldBlack-Release-Publisher',
+              Authorization: `token ${token.trim()}`,
+              Accept: 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json',
+              'Content-Length': Buffer.byteLength(publishPayload),
+              'Connection': 'close',
+            },
+            timeout: 30000,
+          },
+          (res) => {
+            let respBody = ''
+            res.on('data', (c) => (respBody += c))
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try {
+                  resolve(JSON.parse(respBody))
+                } catch (e) {
+                  resolve(releaseData)
+                }
+              } else {
+                reject(new Error(`Error al publicar release tras subir assets: HTTP ${res.statusCode}`))
+              }
+            })
           }
-        })
+        )
+        patchReq.on('timeout', () => patchReq.destroy(new Error('Timeout publicando release')))
+        patchReq.on('error', reject)
+        patchReq.write(publishPayload)
+        patchReq.end()
+      })
+      break
+    } catch (err) {
+      patchLastError = err
+      console.warn(`[Publisher] Intento ${patchAttempt} de publicación falló:`, err.message)
+      if (patchAttempt < 3) {
+        await new Promise((r) => setTimeout(r, 2000))
       }
-    )
-    patchReq.on('error', reject)
-    patchReq.write(publishPayload)
-    patchReq.end()
-  })
+    }
+  }
+
+  if (!publishedRelease) {
+    throw patchLastError || new Error('No se pudo publicar la release oficial en GitHub.')
+  }
 
   return {
     success: true,
