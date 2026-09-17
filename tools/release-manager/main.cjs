@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const https = require('https')
-const { spawn } = require('child_process')
+const { spawn, spawnSync } = require('child_process')
 
 const REPO_OWNER = 'S3cur3CAt'
 const REPO_NAME = 'GoldBlack_Lash'
@@ -428,8 +428,59 @@ function getReleaseAssets(releaseId, token) {
   })
 }
 
-// Upload Single Asset Helper with Automatic Retry and Collision Protection
-async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, token, onProgress, onStatus) {
+function hasGhCli() {
+  try {
+    const res = spawnSync('gh', ['--version'], { encoding: 'utf8', windowsHide: true })
+    return res.status === 0
+  } catch {
+    return false
+  }
+}
+
+function uploadWithGhCli(tag, filePath, token, onProgress) {
+  return new Promise((resolve, reject) => {
+    const fileName = path.basename(filePath)
+    const stat = fs.statSync(filePath)
+    const totalBytes = stat.size
+
+    let currentPct = 5
+    const timer = setInterval(() => {
+      if (currentPct < 90) {
+        currentPct += 5
+        const uploadedBytes = Math.round((currentPct / 100) * totalBytes)
+        onProgress?.({ fileName, uploadedBytes, totalBytes, percent: currentPct })
+      }
+    }, 4000)
+
+    const child = spawn(
+      'gh',
+      ['release', 'upload', tag, filePath, '--clobber', '--repo', `${REPO_OWNER}/${REPO_NAME}`],
+      {
+        env: { ...process.env, GH_TOKEN: token.trim() },
+        windowsHide: true,
+      }
+    )
+
+    let stderr = ''
+    child.stderr?.on('data', (c) => (stderr += c))
+    child.on('close', (code) => {
+      clearInterval(timer)
+      if (code === 0) {
+        onProgress?.({ fileName, uploadedBytes: totalBytes, totalBytes, percent: 100 })
+        resolve({ fileName, size: totalBytes })
+      } else {
+        reject(new Error(stderr || `gh exited with code ${code}`))
+      }
+    })
+    child.on('error', (err) => {
+      clearInterval(timer)
+      reject(err)
+    })
+  })
+}
+
+// Upload Single Asset Helper with Automatic Retry, GH CLI Acceleration and Collision Protection
+async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, token, cleanTag, onProgress, onStatus) {
   if (!fs.existsSync(filePath)) {
     throw new Error(`Archivo no encontrado: ${filePath}`)
   }
@@ -437,6 +488,18 @@ async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, t
   const fileName = path.basename(filePath)
   const fileStat = fs.statSync(filePath)
   const totalBytes = fileStat.size
+
+  // Si GitHub CLI oficial está disponible en el sistema, usarlo para subidas inmunes a timeouts
+  if (hasGhCli() && cleanTag) {
+    try {
+      console.log(`[Publisher] Subiendo ${fileName} con GitHub CLI oficial (HTTP/2 optimizado)...`)
+      onStatus?.(`Subiendo ${fileName} mediante GitHub CLI optimizado...`)
+      const res = await uploadWithGhCli(cleanTag, filePath, token, onProgress)
+      return res
+    } catch (ghErr) {
+      console.warn(`[Publisher] GitHub CLI falló (${ghErr.message}), usando uploader nativo con reintentos...`)
+    }
+  }
 
   const cleanBaseUrl = rawUploadUrlTemplate.replace(/\{[^{}]*\}$/, '')
   const targetUploadUrl = `${cleanBaseUrl}?name=${encodeURIComponent(fileName)}`
@@ -778,6 +841,7 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
       releaseData.upload_url,
       asset.path,
       token,
+      cleanTag,
       (prog) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('publisher:upload-progress', {
