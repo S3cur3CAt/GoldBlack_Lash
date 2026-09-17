@@ -191,3 +191,77 @@ export async function sendStudioTelegramAlert(
     }
   }
 }
+
+/**
+ * Configura el botón permanente de menú en Telegram para abrir la Mini App de Nueva Cita
+ */
+export async function setupTelegramBotMenuButton(
+  botToken: string,
+  webAppUrl = 'https://www.goldblacklash.com/nueva-cita'
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const endpoint = `https://api.telegram.org/bot${botToken}/setChatMenuButton`
+    const payload = {
+      menu_button: {
+        type: 'web_app',
+        text: '📅 Crear Cita',
+        web_app: {
+          url: webAppUrl,
+        },
+      },
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.ok) {
+      return { ok: false, error: data.description || `HTTP ${res.status}` }
+    }
+    return { ok: true }
+  } catch (e: any) {
+    return { ok: false, error: e?.message || 'Error al configurar botón de menú en Telegram' }
+  }
+}
+
+/**
+ * Genera el mensaje formateado con estilo formal para WhatsApp de la clienta
+ */
+export function generateWhatsAppBookingConfirmationMessage(data: {
+  clientName: string
+  date: string
+  time: string
+  serviceName: string
+  price?: number | string
+  studioName?: string
+  address?: string
+}): string {
+  const studio = data.studioName || 'GoldBlack Lash'
+  const address = data.address || 'Calle Numa, Montequinto (Dos Hermanas)'
+  const priceFormatted = data.price ? `\n💶 *Precio:* ${data.price} €` : ''
+
+  return [
+    `✨ *Confirmación de Cita — ${studio}* ✨`,
+    `🌐 https://www.goldblacklash.com/`,
+    ``,
+    `¡Hola *${data.clientName}*! Tu cita ha sido confirmada con éxito en nuestro estudio:`,
+    ``,
+    `📅 *Fecha:* ${data.date}`,
+    `⏰ *Hora:* ${data.time}`,
+    `🌸 *Tratamiento:* ${data.serviceName}${priceFormatted}`,
+    `📍 *Ubicación:* ${address}`,
+    ``,
+    `*Pautas para tu sesión:*`,
+    `• Acude con la zona de los ojos completamente desmaquillada (sin rímel ni sombras).`,
+    `• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la puesta.`,
+    ``,
+    `Si necesitas modificar tu horario o tienes cualquier consulta, puedes respondernos directamente por aquí.`,
+    ``,
+    `¡Te esperamos con ganas! 💕`,
+    `${studio}`,
+  ].join('\n')
+}
+

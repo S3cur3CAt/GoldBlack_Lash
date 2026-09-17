@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { sendStudioTelegramAlert } from '../server/telegram.server'
+import { sendStudioTelegramAlert, setupTelegramBotMenuButton } from '../server/telegram.server'
 import { fetchConfigFromDb } from '../server/config.server'
 
 const CORS_HEADERS = {
@@ -33,10 +33,24 @@ export const Route = createFileRoute('/api/telegram')({
           const body = await request.json().catch(() => ({}))
           const liveConfig = await fetchConfigFromDb().catch(() => ({} as any))
 
+          const botToken = body.telegramBotToken || liveConfig.telegramBotToken
+          const chatId = body.telegramChatId || liveConfig.telegramChatId
+
+          if (body.action === 'setup_menu_button') {
+            if (!botToken) {
+              return Response.json(
+                { ok: false, error: 'Falta el Token del Bot de Telegram' },
+                { status: 400, headers: CORS_HEADERS }
+              )
+            }
+            const res = await setupTelegramBotMenuButton(botToken, body.webAppUrl)
+            return Response.json(res, { headers: CORS_HEADERS })
+          }
+
           const mergedConfig = {
             ...liveConfig,
-            telegramBotToken: body.telegramBotToken || liveConfig.telegramBotToken,
-            telegramChatId: body.telegramChatId || liveConfig.telegramChatId,
+            telegramBotToken: botToken,
+            telegramChatId: chatId,
             telegramAlertsEnabled:
               typeof body.telegramAlertsEnabled === 'boolean'
                 ? body.telegramAlertsEnabled

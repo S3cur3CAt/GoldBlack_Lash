@@ -28,6 +28,10 @@ export function Header() {
     setOpen(false)
   }, [pathname])
 
+  if (pathname.includes('nueva-cita')) {
+    return null
+  }
+
   // Show U-dock only after user scrolls past 200px
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 200)
@@ -215,6 +219,13 @@ export function Header() {
 
 export function Footer() {
   const business = useStudioConfig()
+  const pathname = useLocation({
+    select: (location) => location.pathname,
+  })
+
+  if (pathname.includes('nueva-cita')) {
+    return null
+  }
   return (
     <footer className="relative z-10 overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
       {/* Halo aurora superior */}
