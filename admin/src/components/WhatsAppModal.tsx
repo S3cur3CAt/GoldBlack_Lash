@@ -254,7 +254,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
                 </span>
               </h3>
               <p className="text-xs text-gray-400">
-                Abre directamente el chat en tu aplicación de WhatsApp de Mac o en WhatsApp Web
+                Abre directamente el chat en tu aplicación de WhatsApp de Mac
               </p>
             </div>
           </div>
@@ -535,16 +535,6 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
               className="px-3.5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
             >
               Cerrar
-            </button>
-
-            <button
-              type="button"
-              onClick={handleOpenWhatsAppWeb}
-              disabled={!isPhoneValid}
-              title="Abrir WhatsApp en el navegador (WhatsApp Web)"
-              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all cursor-pointer hover:border-emerald-400/50"
-            >
-              <span>🌐 WhatsApp Web ↗</span>
             </button>
 
             <button

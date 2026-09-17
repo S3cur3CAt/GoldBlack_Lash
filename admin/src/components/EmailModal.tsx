@@ -154,7 +154,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     setTimeout(() => setCopied(false), 2500)
   }
 
-  // Despacho por WhatsApp (Nativo macOS Monterey o Web)
+  // Despacho directo a la aplicación nativa de WhatsApp en macOS Monterey
   const handleOpenWhatsApp = async (target: 'app' | 'web' = 'app') => {
     if (!isPhoneValid) {
       setError('Por favor, indica un número de teléfono móvil válido para la clienta (mínimo 9 dígitos).')
@@ -169,17 +169,6 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     const textToSend = whatsappMessage || message
     const nativeUrl = `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(textToSend)}`
     const universalUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(textToSend)}`
-    const webUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(textToSend)}`
-
-    if (target === 'web') {
-      if (typeof window !== 'undefined' && (window as any).electronAPI?.openExternal) {
-        await (window as any).electronAPI.openExternal(webUrl)
-      } else {
-        window.open(webUrl, '_blank', 'noopener,noreferrer')
-      }
-      setSendSuccess(`WhatsApp Web abierto para ${clientName}`)
-      return
-    }
 
     // App nativa de macOS Monterey / Desktop
     if (typeof window !== 'undefined' && (window as any).electronAPI?.openExternal) {
@@ -339,31 +328,26 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-2xl rounded-2xl bg-ink-900 border border-line shadow-2xl overflow-hidden flex flex-col max-h-[94vh] animate-scale-up"
+        className="w-full max-w-5xl rounded-2xl bg-ink-900 border border-line shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-scale-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="p-5 border-b border-line flex items-center justify-between bg-gradient-to-r from-ink-950 via-ink-900 to-ink-850">
+        <div className="px-5 py-3.5 border-b border-line flex items-center justify-between bg-gradient-to-r from-ink-950 via-ink-900 to-ink-850">
           <div className="flex items-center gap-3">
             <div
-              className={`w-10 h-10 rounded-xl border flex items-center justify-center shadow-md transition-colors ${theme.bg} ${theme.text} ${theme.border}`}
+              className={`w-9 h-9 rounded-xl border flex items-center justify-center shadow-md transition-colors ${theme.bg} ${theme.text} ${theme.border}`}
             >
-              {mode === 'confirmar' && <IconCheck size={22} />}
-              {mode === 'recordar' && <IconClock size={22} />}
-              {mode === 'cuidados' && <IconSparkles size={22} />}
-              {mode === 'retoque' && <span className="text-lg">💖</span>}
-              {mode === 'responder' && <IconMessageSquare size={22} />}
+              {mode === 'confirmar' && <IconCheck size={20} />}
+              {mode === 'recordar' && <IconClock size={20} />}
+              {mode === 'cuidados' && <IconSparkles size={20} />}
+              {mode === 'retoque' && <span className="text-base">💖</span>}
+              {mode === 'responder' && <IconMessageSquare size={20} />}
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white text-base tracking-tight">
-                  {getModeTitle()}
-                </h3>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full border bg-ink-800 text-gold-300 border-gold-500/30">
-                  WhatsApp + Correo
-                </span>
-              </div>
-              <p className="text-xs text-muted mt-0.5">
+              <h3 className="font-semibold text-white text-base tracking-tight leading-none">
+                {getModeTitle()}
+              </h3>
+              <p className="text-xs text-muted mt-1 leading-none">
                 Clienta: <strong className="text-gold-300 font-semibold">{clientName}</strong>
                 {appointment && (
                   <span> • {aptDate} {aptTime} ({serviceName})</span>
@@ -379,12 +363,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           </button>
         </div>
 
-        {/* Template Selector Bar (Quick action tabs) */}
-        <div className="px-5 pt-3 pb-1 border-b border-line/60 bg-ink-950/40">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-medium text-gray-400">Tipo de mensaje:</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5 pb-2">
+        {/* Horizontal Menu Bar: Templates on Left, Channel Tabs on Right (Single unified horizontal row) */}
+        <div className="px-5 py-2.5 bg-ink-950/50 border-b border-line flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Template Selector Pills (Horizontal) */}
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
             <button
               type="button"
               onClick={() => handleModeChange('confirmar')}
@@ -450,94 +432,23 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               <span>Personalizado</span>
             </button>
           </div>
-        </div>
 
-        {/* Client Contact Info Bar: WhatsApp Phone & Email (Always visible & editable) */}
-        <div className="px-5 pt-3 pb-2 bg-ink-850/60 border-b border-line">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Phone for WhatsApp */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                  <IconWhatsApp size={13} className="text-emerald-400" />
-                  <span>Móvil / WhatsApp Clienta:</span>
-                </label>
-                <span className="text-[10px] font-mono text-gray-400">
-                  {isPhoneValid ? (
-                    <span className="text-emerald-400 font-bold">+{cleanPhone}</span>
-                  ) : (
-                    <span className="text-amber-400/80">⚠️ Sin teléfono</span>
-                  )}
-                </span>
-              </div>
-              <input
-                type="tel"
-                value={recipientPhone}
-                onChange={(e) => {
-                  setRecipientPhone(e.target.value)
-                  setError(null)
-                }}
-                onBlur={() => {
-                  if (recipientPhone && onClientPhoneUpdated) {
-                    onClientPhoneUpdated(recipientPhone)
-                  }
-                }}
-                placeholder="Ej. +34 604 18 76 76"
-                className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-
-            {/* Email for Resend */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[11px] font-semibold text-gray-300 flex items-center gap-1.5">
-                  <IconMail size={13} className="text-gold-400" />
-                  <span>Correo Electrónico Clienta:</span>
-                </label>
-                <span className="text-[10px] font-mono text-gray-400">
-                  {isEmailValid ? (
-                    <span className="text-gold-400">✓ Válido</span>
-                  ) : (
-                    <span className="text-amber-400/80">⚠️ Sin correo</span>
-                  )}
-                </span>
-              </div>
-              <input
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => {
-                  setRecipientEmail(e.target.value)
-                  setError(null)
-                }}
-                onBlur={() => {
-                  if (recipientEmail && onClientEmailUpdated) {
-                    onClientEmailUpdated(recipientEmail)
-                  }
-                }}
-                placeholder="ejemplo@correo.com"
-                className="w-full px-3 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Channel Selector Switcher (WhatsApp vs Email Editor) */}
-        <div className="px-5 pt-3 pb-1">
-          <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-ink-850 border border-line">
+          {/* Right: Channel Switcher (Horizontal tabs) */}
+          <div className="flex items-center gap-1 p-0.5 rounded-xl bg-ink-850 border border-line shrink-0">
             <button
               type="button"
               onClick={() => {
                 setChannel('whatsapp')
                 setError(null)
               }}
-              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 channel === 'whatsapp'
                   ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
                   : 'text-gray-400 hover:text-gray-200 hover:bg-ink-800'
               }`}
             >
-              <IconWhatsApp size={16} className="text-emerald-400" />
-              <span>Redactar WhatsApp (App de Mac)</span>
+              <IconWhatsApp size={14} className="text-emerald-400" />
+              <span>WhatsApp</span>
             </button>
 
             <button
@@ -546,124 +457,190 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 setChannel('email')
                 setError(null)
               }}
-              className={`flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 channel === 'email'
                   ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-sm'
                   : 'text-gray-400 hover:text-gray-200 hover:bg-ink-800'
               }`}
             >
-              <IconMail size={16} className="text-gold-400" />
-              <span>Redactar Correo Corporativo (Resend)</span>
+              <IconMail size={14} className="text-gold-400" />
+              <span>Correo</span>
             </button>
           </div>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-4 text-xs flex-1 custom-scrollbar">
-          {/* VIEW A: WHATSAPP CHANNEL */}
-          {channel === 'whatsapp' && (
-            <div className="space-y-4">
-              {/* WhatsApp Message Content */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-gray-300">
-                    Mensaje de WhatsApp ({whatsappMessage.length} caracteres)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleCopy}
-                    className="text-[11px] text-gray-400 hover:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <IconCopy size={13} />
-                    <span>{copied ? '¡Copiado!' : 'Copiar mensaje'}</span>
-                  </button>
-                </div>
-                <textarea
-                  rows={8}
-                  value={whatsappMessage}
-                  onChange={(e) => setWhatsappMessage(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-ink-800 border border-line text-xs text-gray-100 focus:outline-none focus:border-emerald-500 font-sans leading-relaxed resize-y custom-scrollbar"
-                  placeholder="Mensaje que recibirá la clienta en WhatsApp..."
-                />
-              </div>
+        {/* Horizontal Contact Bar (Móvil & Correo side-by-side in one compact row) */}
+        <div className="px-5 py-2 bg-ink-850/40 border-b border-line flex flex-col sm:flex-row items-center gap-4">
+          {/* Phone for WhatsApp */}
+          <div className="flex-1 w-full flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-gray-400 shrink-0 flex items-center gap-1">
+              <IconWhatsApp size={13} className="text-emerald-400" /> Móvil WhatsApp:
+            </span>
+            <input
+              type="tel"
+              value={recipientPhone}
+              onChange={(e) => {
+                setRecipientPhone(e.target.value)
+                setError(null)
+              }}
+              onBlur={() => {
+                if (recipientPhone && onClientPhoneUpdated) {
+                  onClientPhoneUpdated(recipientPhone)
+                }
+              }}
+              placeholder="Ej. +34 604 18 76 76"
+              className="flex-1 px-3 py-1 rounded-lg bg-ink-800 border border-line text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+            />
+            {isPhoneValid && (
+              <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">+{cleanPhone}</span>
+            )}
+          </div>
 
-              {/* WhatsApp Live Chat Preview Bubble */}
-              <div className="p-3.5 rounded-xl bg-[#0b141a] border border-line space-y-2">
-                <div className="flex items-center justify-between text-[11px] text-emerald-400 font-semibold border-b border-white/5 pb-2">
-                  <span className="flex items-center gap-1.5">
-                    <IconWhatsApp size={13} />
-                    Vista Previa en WhatsApp (Móvil de {clientName})
-                  </span>
-                  <span className="text-[10px] text-gray-500 font-normal font-mono">
-                    +{cleanPhone || '34...'}
-                  </span>
-                </div>
-                <div className="flex justify-end py-1">
-                  <div className="max-w-[92%] bg-[#005c4b] text-gray-100 rounded-2xl rounded-tr-none px-3.5 py-2.5 shadow-md border border-emerald-600/30">
-                    <div className="text-[11.5px] leading-relaxed whitespace-pre-wrap font-sans break-words text-gray-100">
-                      {whatsappMessage}
-                    </div>
-                    <div className="flex items-center justify-end gap-1 mt-1 text-[9px] text-emerald-200/70 font-mono">
-                      <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className="text-cyan-300 font-bold">✓✓</span>
+          {/* Email for Resend */}
+          <div className="flex-1 w-full flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-gray-400 shrink-0 flex items-center gap-1">
+              <IconMail size={13} className="text-gold-400" /> Correo:
+            </span>
+            <input
+              type="email"
+              value={recipientEmail}
+              onChange={(e) => {
+                setRecipientEmail(e.target.value)
+                setError(null)
+              }}
+              onBlur={() => {
+                if (recipientEmail && onClientEmailUpdated) {
+                  onClientEmailUpdated(recipientEmail)
+                }
+              }}
+              placeholder="ejemplo@correo.com"
+              className="flex-1 px-3 py-1 rounded-lg bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
+            />
+            {isEmailValid && (
+              <span className="text-[10px] font-mono text-gold-400 shrink-0">✓ Válido</span>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Body: Horizontal 2-Column Split (Editor on Left, Live Preview on Right) */}
+        <div className="p-5 overflow-y-auto flex-1 custom-scrollbar">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch min-h-[300px]">
+            {/* Column 1 (Left): Text Editor */}
+            <div className="flex flex-col space-y-3">
+              {channel === 'whatsapp' ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-gray-300">
+                      Mensaje de WhatsApp ({whatsappMessage.length} caracteres)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="text-[11px] text-gray-400 hover:text-emerald-300 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <IconCopy size={13} />
+                      <span>{copied ? '¡Copiado!' : 'Copiar mensaje'}</span>
+                    </button>
+                  </div>
+                  <textarea
+                    rows={12}
+                    value={whatsappMessage}
+                    onChange={(e) => setWhatsappMessage(e.target.value)}
+                    className="w-full flex-1 min-h-[220px] p-3 rounded-xl bg-ink-800 border border-line text-xs text-gray-100 focus:outline-none focus:border-emerald-500 font-sans leading-relaxed resize-y custom-scrollbar"
+                    placeholder="Mensaje que recibirá la clienta en WhatsApp..."
+                  />
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="modal-email-subject" className="block text-xs font-semibold text-gray-300 mb-1">
+                      Asunto del Correo *
+                    </label>
+                    <input
+                      id="modal-email-subject"
+                      type="text"
+                      value={subject}
+                      onChange={(e) => setSubject(e.target.value)}
+                      placeholder="Asunto..."
+                      className="w-full px-3 py-1.5 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="modal-email-msg" className="text-xs font-semibold text-gray-300">
+                      Cuerpo del Mensaje de Correo
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      className="text-[11px] text-gray-400 hover:text-gold-300 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <IconCopy size={13} />
+                      <span>{copied ? '¡Copiado!' : 'Copiar texto'}</span>
+                    </button>
+                  </div>
+                  <textarea
+                    id="modal-email-msg"
+                    rows={9}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full flex-1 min-h-[170px] p-3 rounded-xl bg-ink-800 border border-line text-xs text-gray-200 focus:outline-none focus:border-gold-500/50 font-sans leading-relaxed resize-y custom-scrollbar"
+                  />
+                </>
+              )}
+            </div>
+
+            {/* Column 2 (Right): Live Real-Time Preview (Side-by-Side) */}
+            <div className="flex flex-col">
+              {channel === 'whatsapp' ? (
+                <div className="h-full flex flex-col rounded-2xl bg-[#0b141a] border border-line overflow-hidden shadow-inner p-3.5">
+                  <div className="flex items-center justify-between text-[11px] text-emerald-400 font-semibold border-b border-white/5 pb-2 mb-2">
+                    <span className="flex items-center gap-1.5">
+                      <IconWhatsApp size={13} />
+                      Vista Previa en WhatsApp (Móvil de {clientName})
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      +{cleanPhone || '34...'}
+                    </span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col justify-end py-1">
+                    <div className="self-end max-w-[95%] bg-[#005c4b] text-gray-100 rounded-2xl rounded-tr-none px-3.5 py-2.5 shadow-md border border-emerald-600/30">
+                      <div className="text-[11.5px] leading-relaxed whitespace-pre-wrap font-sans break-words text-gray-100">
+                        {whatsappMessage}
+                      </div>
+                      <div className="flex items-center justify-end gap-1 mt-1 text-[9px] text-emerald-200/70 font-mono">
+                        <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="text-cyan-300 font-bold">✓✓</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW B: EMAIL CHANNEL */}
-          {channel === 'email' && (
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="modal-email-subject" className="block text-xs font-semibold text-gray-300 mb-1">
-                  Asunto del Correo *
-                </label>
-                <input
-                  id="modal-email-subject"
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Asunto..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
-                />
-              </div>
-
-              {/* Message Content */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="modal-email-msg" className="text-xs font-semibold text-gray-300">
-                    Cuerpo del Mensaje de Correo
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleCopy}
-                    className="text-[11px] text-gray-400 hover:text-gold-300 flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <IconCopy size={13} />
-                    <span>{copied ? '¡Copiado!' : 'Copiar texto'}</span>
-                  </button>
+              ) : (
+                <div className="h-full flex flex-col rounded-2xl bg-[#0c0c10] border border-line overflow-hidden p-4">
+                  <div className="flex items-center justify-between text-[11px] text-gold-400 font-semibold border-b border-white/5 pb-2 mb-2">
+                    <span className="flex items-center gap-1.5">
+                      <IconMail size={13} />
+                      Vista Previa de Correo Corporativo
+                    </span>
+                    <span className="text-[10px] text-gray-500 font-mono">
+                      {config.senderEmail || 'citas@goldblacklash.com'}
+                    </span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-3.5 rounded-xl bg-[#14141c] border border-line space-y-2">
+                    <div className="text-xs font-bold text-white border-b border-white/5 pb-1">
+                      {subject}
+                    </div>
+                    <div className="text-[11.5px] text-gray-300 whitespace-pre-line leading-relaxed">
+                      {message}
+                    </div>
+                  </div>
                 </div>
-                <textarea
-                  id="modal-email-msg"
-                  rows={8}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-ink-800 border border-line text-xs text-gray-200 focus:outline-none focus:border-gold-500/50 font-sans leading-relaxed resize-y custom-scrollbar"
-                />
-              </div>
-
-              <div className="p-3 rounded-xl bg-ink-850 border border-line text-[11px] text-gray-400 flex items-center justify-between">
-                <span>Remitente corporativo: <strong className="text-gray-200">{config.senderEmail || 'citas@goldblacklash.com'}</strong></span>
-                <span className="text-gold-400">⚡ Plantilla Luxury GoldBlack</span>
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Error Notice */}
           {error && (
-            <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+            <div className="mt-3 p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
               <IconAlertCircle size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
@@ -671,43 +648,26 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
           {/* Success Notice */}
           {sendSuccess && (
-            <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+            <div className="mt-3 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
               <IconCheck size={16} className="shrink-0" />
               <span>{sendSuccess}</span>
             </div>
           )}
         </div>
 
-        {/* Modal Footer: ALWAYS PROVIDES BOTH WHATSAPP AND EMAIL DISPATCH */}
-        <div className="p-4 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 bg-ink-900">
-          <div className="text-[11px] text-gray-500 flex items-center gap-2 w-full sm:w-auto">
-            <span>🔒 Cifrado extremo a extremo</span>
-            <span>•</span>
-            <span>macOS Monterey</span>
-          </div>
+        {/* Modal Footer: Clean & Horizontal */}
+        <div className="p-4 border-t border-line flex items-center justify-between bg-ink-900">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium cursor-pointer"
+          >
+            Cerrar
+          </button>
 
-          {/* Actions: Always allow sending by WhatsApp OR Email */}
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium cursor-pointer"
-            >
-              Cerrar
-            </button>
-
-            {/* 1. WhatsApp Web (Optional Browser fallback) */}
-            <button
-              type="button"
-              onClick={() => handleOpenWhatsApp('web')}
-              disabled={!isPhoneValid}
-              title={isPhoneValid ? 'Abrir en WhatsApp Web en el navegador' : 'Introduce el teléfono de la clienta'}
-              className="px-2.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 disabled:opacity-30 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <span>🌐 Web ↗</span>
-            </button>
-
-            {/* 2. WhatsApp Desktop Native App (macOS Monterey) */}
+          {/* Primary Action Buttons */}
+          <div className="flex items-center gap-2.5">
+            {/* WhatsApp Desktop Native App (macOS Monterey) */}
             <button
               type="button"
               onClick={() => handleOpenWhatsApp('app')}
@@ -719,7 +679,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               <span>Enviar por WhatsApp (Mac) ↗</span>
             </button>
 
-            {/* 3. Send Email via Resend */}
+            {/* Send Email via Resend */}
             <button
               type="button"
               onClick={handleSendEmail}
