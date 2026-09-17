@@ -461,13 +461,14 @@ function getTimeBasedGreeting(): string {
         </div>
       </div>
 
-      {/* Email Modal */}
+      {/* Email & Appointment Modal */}
       <EmailModal
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
         appointment={selectedEmailApt}
         client={selectedEmailClient}
         config={config}
+        services={services}
         initialMode={emailModalMode}
       />
 

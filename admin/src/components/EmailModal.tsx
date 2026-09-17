@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Appointment, Client, StudioConfig } from '../types/admin'
+import { Appointment, Client, StudioConfig, AdminService, AppointmentStatus } from '../types/admin'
 import {
   IconMail,
   IconSend,
@@ -11,6 +11,7 @@ import {
   IconCopy,
   IconAlertCircle,
   IconWhatsApp,
+  IconCalendar,
 } from './Icons'
 import { sendEmailViaResend } from '../services/storage'
 import { formatWhatsAppPhone } from './WhatsAppModal'
@@ -18,14 +19,28 @@ import { formatWhatsAppPhone } from './WhatsAppModal'
 export type EmailModalMode = 'confirmar' | 'recordar' | 'cuidados' | 'responder' | 'retoque'
 export type CommunicationChannel = 'whatsapp' | 'email'
 
+export const parseDurationMinutes = (durationStr?: string): number => {
+  const d = (durationStr || '').toLowerCase()
+  if (d.includes('30 min') || d.includes('30m')) return 30
+  if (d.includes('1 h 15') || d.includes('1h 15') || d.includes('75 min') || d.includes('75m')) return 75
+  if (d.includes('1 h 30') || d.includes('1h 30') || d.includes('90 min') || d.includes('90m')) return 90
+  if (d.includes('2 h 30') || d.includes('2h 30') || d.includes('150 min')) return 150
+  if (d.includes('2 h') || d.includes('2h') || d.includes('120 min')) return 120
+  if (d.includes('1 h') || d.includes('1h') || d.includes('60 min')) return 60
+  if (d.includes('45 min') || d.includes('45m')) return 45
+  return 90
+}
+
 interface EmailModalProps {
   isOpen: boolean
   onClose: () => void
   appointment?: Appointment | null
   client?: Client | null
   config: StudioConfig
+  services?: AdminService[]
   initialMode?: EmailModalMode
   initialChannel?: CommunicationChannel
+  onSaveAppointment?: (appointment: Appointment) => void
   onClientEmailUpdated?: (email: string) => void
   onClientPhoneUpdated?: (phone: string) => void
 }
@@ -36,8 +51,10 @@ export const EmailModal: React.FC<EmailModalProps> = ({
   appointment,
   client,
   config,
+  services = [],
   initialMode = 'confirmar',
   initialChannel,
+  onSaveAppointment,
   onClientEmailUpdated,
   onClientPhoneUpdated,
 }) => {
@@ -45,85 +62,128 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     initialChannel || (appointment?.clientPhone || client?.phone ? 'whatsapp' : 'email')
   )
   const [mode, setMode] = useState<EmailModalMode>(initialMode)
+
+  // Client Details
+  const [clientName, setClientName] = useState('')
   const [recipientEmail, setRecipientEmail] = useState('')
   const [recipientPhone, setRecipientPhone] = useState('')
+
+  // Appointment Details (Date, Time, Service, Price, Notes, Status)
+  const [aptDate, setAptDate] = useState('')
+  const [aptTime, setAptTime] = useState('')
+  const [aptServiceId, setAptServiceId] = useState('')
+  const [aptServiceName, setAptServiceName] = useState('')
+  const [aptPrice, setAptPrice] = useState<number>(30)
+  const [aptDuration, setAptDuration] = useState<number>(90)
+  const [aptStatus, setAptStatus] = useState<AppointmentStatus>('pendiente')
+  const [aptNotes, setAptNotes] = useState('')
+
+  // Message Content
   const [subject, setSubject] = useState('')
   const [message, setMessage] = useState('')
   const [whatsappMessage, setWhatsappMessage] = useState('')
+
+  // UI States
   const [isSending, setIsSending] = useState(false)
   const [sendSuccess, setSendSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const clientName = appointment?.clientName || client?.name || 'Clienta'
-  const serviceName = appointment?.serviceName || 'Tratamiento de Pestañas'
-  const aptDate = appointment?.date || new Date().toISOString().split('T')[0]
-  const aptTime = appointment?.time || '11:00'
-  const aptPrice = appointment?.price || 30
-
-  // Genera plantillas dinámicas tanto para Correo como para WhatsApp
-  const getTemplateData = (
-    targetMode: EmailModalMode
+  // Genera plantillas dinámicas según los datos actuales de la cita (reactivo al cambio de hora, fecha o servicio)
+  const generateTemplates = (
+    targetMode: EmailModalMode,
+    cName: string,
+    cDate: string,
+    cTime: string,
+    cService: string,
+    cPrice: number,
+    cNotes: string
   ): { subject: string; message: string; whatsappMessage: string } => {
     const studioName = config.name || 'GoldBlack Lash'
     const address = config.address ? `${config.address}, ${config.city}` : 'Montequinto, Dos Hermanas'
     const phone = config.phoneDisplay || '+34 604 18 76 76'
+    const safeName = cName.trim() || 'Clienta'
+    const safeDate = cDate || new Date().toISOString().split('T')[0]
+    const safeTime = cTime || '11:00'
+    const safeService = cService || 'Tratamiento de Pestañas'
+    const safePrice = cPrice || 30
 
     switch (targetMode) {
       case 'confirmar':
         return {
           subject: `✨ Confirmación de Cita — ${studioName}`,
-          message: `Hola ${clientName},\n\nTu cita en ${studioName} ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio.\n\n📅 Fecha: ${aptDate}\n⏰ Hora: ${aptTime}\n🌸 Tratamiento: ${serviceName}\n💶 Precio: ${aptPrice} €\n📍 Ubicación: ${address}\n\nPor favor, recuerda acudir con los ojos limpios, sin restos de maquillaje ni rímel. Si utilizas lentillas, te recomendamos traer estuche para retirarlas durante la sesión.\n\nSi necesitas realizar cualquier cambio en tu reserva, responde a este correo o llámanos al ${phone}.\n\n¡Te esperamos!`,
-          whatsappMessage: `✨ *Confirmación de Cita — ${studioName}* ✨\n\n¡Hola *${clientName}*! Tu cita ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio:\n\n📅 *Fecha:* ${aptDate}\n⏰ *Hora:* ${aptTime}\n🌸 *Tratamiento:* ${serviceName}\n💶 *Precio:* ${aptPrice} €\n📍 *Ubicación:* ${address}\n\n*Pautas para tu sesión:*\n• Acude con los ojos limpios, sin restos de maquillaje ni rímel.\n• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la puesta.\n\nSi necesitas modificar tu horario o tienes alguna duda, puedes respondernos directamente por aquí o llamarnos al ${phone}.\n\n¡Te esperamos con muchas ganas! 💕`,
+          message: `Hola ${safeName},\n\nTu cita en ${studioName} ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio.\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n💶 Precio: ${safePrice} €\n📍 Ubicación: ${address}\n\nPor favor, recuerda acudir con los ojos limpios, sin restos de maquillaje ni rímel. Si utilizas lentillas, te recomendamos traer estuche para retirarlas durante la sesión.\n\nSi necesitas realizar cualquier cambio en tu reserva, responde a este correo o llámanos al ${phone}.\n\n¡Te esperamos!`,
+          whatsappMessage: `✨ *Confirmación de Cita — ${studioName}* ✨\n\n¡Hola *${safeName}*! Tu cita ha sido confirmada con éxito. Nos complacerá recibirte en nuestro estudio:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n💶 *Precio:* ${safePrice} €\n📍 *Ubicación:* ${address}\n\n*Pautas para tu sesión:*\n• Acude con los ojos limpios, sin restos de maquillaje ni rímel.\n• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la puesta.\n\nSi necesitas modificar tu horario o tienes alguna duda, puedes respondernos directamente por aquí o llamarnos al ${phone}.\n\n¡Te esperamos con muchas ganas! 💕`,
         }
 
       case 'recordar':
         return {
           subject: `🗓 Recordatorio de Cita — ${studioName}`,
-          message: `Hola ${clientName},\n\nTe recordamos tu cita para mañana en ${studioName}:\n\n📅 Fecha: ${aptDate}\n⏰ Hora: ${aptTime}\n🌸 Tratamiento: ${serviceName}\n📍 Dirección: ${address}\n\nRecomendaciones para tu sesión:\n• Acudir sin maquillaje en ojos ni restos de máscara de pestañas.\n• Evitar cremas grasas u oleosas en el contorno de ojos las horas previas.\n\nSi necesitas modificar tu horario, por favor avísanos con la mayor antelación posible.\n\n¡Hasta pronto!`,
-          whatsappMessage: `🗓 *Recordatorio de Cita — ${studioName}* 🗓\n\n¡Hola *${clientName}*! Te recordamos con cariño tu cita programada para mañana:\n\n📅 *Fecha:* ${aptDate}\n⏰ *Hora:* ${aptTime}\n🌸 *Tratamiento:* ${serviceName}\n📍 *Dirección:* ${address}\n\n*Recomendaciones:*\n• Acude sin maquillaje en pestañas ni párpados.\n• Evita cafeína o bebidas estimulantes justo antes de la cita para una mayor relajación.\n\nPor favor, si necesitas realizar cualquier cambio avísanos con antelación.\n\n¡Hasta mañana! ✨`,
+          message: `Hola ${safeName},\n\nTe recordamos tu cita para mañana en ${studioName}:\n\n📅 Fecha: ${safeDate}\n⏰ Hora: ${safeTime}\n🌸 Tratamiento: ${safeService}\n📍 Dirección: ${address}\n\nRecomendaciones para tu sesión:\n• Acudir sin maquillaje en ojos ni restos de máscara de pestañas.\n• Evitar cremas grasas u oleosas en el contorno de ojos las horas previas.\n\nSi necesitas modificar tu horario, por favor avísanos con la mayor antelación posible.\n\n¡Hasta pronto!`,
+          whatsappMessage: `🗓 *Recordatorio de Cita — ${studioName}* 🗓\n\n¡Hola *${safeName}*! Te recordamos con cariño tu cita programada para mañana:\n\n📅 *Fecha:* ${safeDate}\n⏰ *Hora:* ${safeTime}\n🌸 *Tratamiento:* ${safeService}\n📍 *Dirección:* ${address}\n\n*Recomendaciones:*\n• Acude sin maquillaje en pestañas ni párpados.\n• Evita cafeína o bebidas estimulantes justo antes de la cita para una mayor relajación.\n\nPor favor, si necesitas realizar cualquier cambio avísanos con antelación.\n\n¡Hasta mañana! ✨`,
         }
 
       case 'cuidados':
         return {
           subject: `🌸 Recomendaciones y Cuidados Previos — ${studioName}`,
-          message: `Hola ${clientName},\n\nPara que tu sesión de ${serviceName} en ${studioName} sea perfecta y obtengas la máxima retención y duración en tus extensiones, te compartimos estas recomendaciones:\n\n1. Higiene: Acude con las pestañas completamente desmaquilladas y libres de grasa.\n2. Lentillas: Es preferible retirarlas antes de comenzar la aplicación.\n3. Cafeína: Recomendamos evitar café o bebidas estimulantes justo antes para tener los párpados relajados.\n\nCualquier duda que tengas, estamos a tu entera disposición.\n\n¡Un saludo cordial!`,
-          whatsappMessage: `🌸 *Recomendaciones y Cuidados Previos — ${studioName}* 🌸\n\n¡Hola *${clientName}*! Para que tu sesión de *${serviceName}* quede impecable y obtengas la máxima retención y duración en tus extensiones, te compartimos estos consejos:\n\n1️⃣ *Higiene total:* Acude con las pestañas bien limpias, sin restos de máscara, delineador ni sombras.\n2️⃣ *Lentillas:* Es preferible retirarlas antes de comenzar la sesión.\n3️⃣ *Relax:* Procura evitar café o bebidas energéticas antes para tener los párpados completamente tranquilos.\n\nCualquier duda que tengas, estamos aquí para ayudarte.\n\n¡Un abrazo! 💖`,
+          message: `Hola ${safeName},\n\nPara que tu sesión de ${safeService} en ${studioName} sea perfecta y obtengas la máxima retención y duración en tus extensiones, te compartimos estas recomendaciones:\n\n1. Higiene: Acude con las pestañas completamente desmaquilladas y libres de grasa.\n2. Lentillas: Es preferible retirarlas antes de comenzar la aplicación.\n3. Cafeína: Recomendamos evitar café o bebidas estimulantes justo antes para tener los párpados relajados.\n\nCualquier duda que tengas, estamos a tu entera disposición.\n\n¡Un saludo cordial!`,
+          whatsappMessage: `🌸 *Recomendaciones y Cuidados Previos — ${studioName}* 🌸\n\n¡Hola *${safeName}*! Para que tu sesión de *${safeService}* quede impecable y obtengas la máxima retención y duración en tus extensiones, te compartimos estos consejos:\n\n1️⃣ *Higiene total:* Acude con las pestañas bien limpias, sin restos de máscara, delineador ni sombras.\n2️⃣ *Lentillas:* Es preferible retirarlas antes de comenzar la sesión.\n3️⃣ *Relax:* Procura evitar café o bebidas energéticas antes para tener los párpados completamente tranquilos.\n\nCualquier duda que tengas, estamos aquí para ayudarte.\n\n¡Un abrazo! 💖`,
         }
 
       case 'retoque':
         return {
           subject: `💖 ¡Hora de mimar tu mirada! Retoque en ${studioName}`,
-          message: `Hola ${clientName},\n\nEsperamos que estés teniendo una excelente semana. Hemos visto que han pasado varias semanas desde tu última puesta de pestañas.\n\nPara mantener tu set siempre tupido, equilibrado y uniforme, lo ideal es realizar un retoque a las 2 o 3 semanas.\n\n¿Te gustaría que te reservemos un hueco estos días? Responde a este correo indicándonos qué días u horarios te vienen mejor y coordinamos tu cita.\n\n¡Nos encantará verte de nuevo!`,
-          whatsappMessage: `💖 *¡Momento de renovar tu mirada! — ${studioName}* 💖\n\n¡Hola *${clientName}*! Esperamos que estés genial.\n\nHemos visto que han pasado más de 20 días desde tu última puesta de extensiones. Para que tu mirada se mantenga siempre tupida, uniforme y en su máxima expresión, es el momento ideal para realizar tu *mantenimiento/retoque*.\n\n¿Te gustaría que te reservemos un hueco estos días? Indícanos qué días u horarios te vienen mejor y coordinamos tu cita enseguida.\n\n¡Nos encantará verte de nuevo en el estudio! ✨`,
+          message: `Hola ${safeName},\n\nEsperamos que estés teniendo una excelente semana. Hemos visto que han pasado varias semanas desde tu última puesta de pestañas.\n\nPara mantener tu set siempre tupido, equilibrado y uniforme, lo ideal es realizar un retoque a las 2 o 3 semanas.\n\n¿Te gustaría que te reservemos un hueco estos días? Responde a este correo indicándonos qué días u horarios te vienen mejor y coordinamos tu cita.\n\n¡Nos encantará verte de nuevo!`,
+          whatsappMessage: `💖 *¡Momento de renovar tu mirada! — ${studioName}* 💖\n\n¡Hola *${safeName}*! Esperamos que estés genial.\n\nHemos visto que han pasado más de 20 días desde tu última puesta de extensiones. Para que tu mirada se mantenga siempre tupida, uniforme y en su máxima expresión, es el momento ideal para realizar tu *mantenimiento/retoque*.\n\n¿Te gustaría que te reservemos un hueco estos días? Indícanos qué días u horarios te vienen mejor y coordinamos tu cita enseguida.\n\n¡Nos encantará verte de nuevo en el estudio! ✨`,
         }
 
       case 'responder':
-        const noteContext = appointment?.notes?.trim()
-          ? `Respecto a lo que nos comentabas en tu reserva ("${appointment.notes.trim()}"):\n\n`
+        const noteContext = cNotes.trim()
+          ? `Respecto a lo que nos comentabas en tu reserva ("${cNotes.trim()}"):\n\n`
           : ''
         return {
           subject: `💬 Respuesta de ${studioName} sobre tu cita`,
-          message: `Hola ${clientName},\n\nTe escribimos desde ${studioName} en relación a tu consulta sobre tu cita de ${serviceName}:\n\n${noteContext}Gracias por comunicarte con nosotras. [Escribe aquí tu respuesta]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\nAtentamente,\n${studioName}`,
-          whatsappMessage: `💬 *Hola ${clientName}*,\n\nTe escribimos desde *${studioName}*:\n\n${noteContext}[Escribe aquí tu mensaje...]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\n¡Un saludo cordial! ✨`,
+          message: `Hola ${safeName},\n\nTe escribimos desde ${studioName} en relación a tu consulta sobre tu cita de ${safeService}:\n\n${noteContext}Gracias por comunicarte con nosotras. [Escribe aquí tu respuesta]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\nAtentamente,\n${studioName}`,
+          whatsappMessage: `💬 *Hola ${safeName}*,\n\nTe escribimos desde *${studioName}*:\n\n${noteContext}[Escribe aquí tu mensaje...]\n\nQuedamos a tu entera disposición para cualquier aclaración.\n\n¡Un saludo cordial! ✨`,
         }
     }
   }
 
-  // Sincronizar estado cuando se abre el modal
+  // Sincronizar estado cuando se abre el modal con los datos de la cita
   useEffect(() => {
     if (isOpen) {
       const email = appointment?.clientEmail || client?.email || ''
       const phone = appointment?.clientPhone || client?.phone || ''
+      const name = appointment?.clientName || client?.name || 'Clienta'
+      const date = appointment?.date || new Date().toISOString().split('T')[0]
+      const time = appointment?.time || '11:00'
+      const sName = appointment?.serviceName || services[0]?.name || 'Tratamiento de Pestañas'
+      const sId = appointment?.serviceId || services[0]?.id || ''
+      const price = appointment?.price ?? services[0]?.priceNumber ?? 30
+      const duration = appointment?.durationMinutes || 90
+      const status = appointment?.status || 'pendiente'
+      const notes = appointment?.notes || ''
+
+      setClientName(name)
       setRecipientEmail(email)
       setRecipientPhone(phone)
+      setAptDate(date)
+      setAptTime(time)
+      setAptServiceId(sId)
+      setAptServiceName(sName)
+      setAptPrice(price)
+      setAptDuration(duration)
+      setAptStatus(status)
+      setAptNotes(notes)
+
       setMode(initialMode)
       if (initialChannel) {
         setChannel(initialChannel)
       } else {
         setChannel(phone ? 'whatsapp' : 'email')
       }
-      const tpl = getTemplateData(initialMode)
+
+      const tpl = generateTemplates(initialMode, name, date, time, sName, price, notes)
       setSubject(tpl.subject)
       setMessage(tpl.message)
       setWhatsappMessage(tpl.whatsappMessage)
@@ -132,15 +192,99 @@ export const EmailModal: React.FC<EmailModalProps> = ({
       setIsSending(false)
       setCopied(false)
     }
-  }, [isOpen, appointment, client, initialMode, initialChannel])
+  }, [isOpen, appointment, client, initialMode, initialChannel, services])
+
+  // Cambio reactivo de fecha, hora, servicio o precio: actualiza la cita y las plantillas en tiempo real
+  const handleAppointmentFieldChange = (fields: {
+    date?: string
+    time?: string
+    serviceId?: string
+    serviceName?: string
+    price?: number
+    duration?: number
+    notes?: string
+    clientName?: string
+  }) => {
+    const updatedDate = fields.date !== undefined ? fields.date : aptDate
+    const updatedTime = fields.time !== undefined ? fields.time : aptTime
+    const updatedServiceId = fields.serviceId !== undefined ? fields.serviceId : aptServiceId
+    const updatedServiceName = fields.serviceName !== undefined ? fields.serviceName : aptServiceName
+    const updatedPrice = fields.price !== undefined ? fields.price : aptPrice
+    const updatedDuration = fields.duration !== undefined ? fields.duration : aptDuration
+    const updatedNotes = fields.notes !== undefined ? fields.notes : aptNotes
+    const updatedName = fields.clientName !== undefined ? fields.clientName : clientName
+
+    if (fields.date !== undefined) setAptDate(updatedDate)
+    if (fields.time !== undefined) setAptTime(updatedTime)
+    if (fields.serviceId !== undefined) setAptServiceId(updatedServiceId)
+    if (fields.serviceName !== undefined) setAptServiceName(updatedServiceName)
+    if (fields.price !== undefined) setAptPrice(updatedPrice)
+    if (fields.duration !== undefined) setAptDuration(updatedDuration)
+    if (fields.notes !== undefined) setAptNotes(updatedNotes)
+    if (fields.clientName !== undefined) setClientName(updatedName)
+
+    // Regenerar plantillas automáticamente para que el nuevo horario o servicio aparezca en WhatsApp y Correo
+    const tpl = generateTemplates(
+      mode,
+      updatedName,
+      updatedDate,
+      updatedTime,
+      updatedServiceName,
+      updatedPrice,
+      updatedNotes
+    )
+    setSubject(tpl.subject)
+    setMessage(tpl.message)
+    setWhatsappMessage(tpl.whatsappMessage)
+  }
 
   const handleModeChange = (newMode: EmailModalMode) => {
     setMode(newMode)
-    const tpl = getTemplateData(newMode)
+    const tpl = generateTemplates(
+      newMode,
+      clientName,
+      aptDate,
+      aptTime,
+      aptServiceName,
+      aptPrice,
+      aptNotes
+    )
     setSubject(tpl.subject)
     setMessage(tpl.message)
     setWhatsappMessage(tpl.whatsappMessage)
     setError(null)
+  }
+
+  // Construye y guarda la cita actualizada en la base de datos
+  const saveAppointmentChanges = (newStatus?: AppointmentStatus): Appointment | null => {
+    if (!appointment) return null
+    const finalStatus = newStatus || (mode === 'confirmar' ? 'confirmada' : aptStatus)
+    const updated: Appointment = {
+      ...appointment,
+      clientName: clientName.trim() || appointment.clientName,
+      clientPhone: recipientPhone.trim() || appointment.clientPhone,
+      clientEmail: recipientEmail.trim() || appointment.clientEmail,
+      date: aptDate || appointment.date,
+      time: aptTime || appointment.time,
+      serviceId: aptServiceId || appointment.serviceId,
+      serviceName: aptServiceName || appointment.serviceName,
+      price: aptPrice,
+      durationMinutes: aptDuration,
+      status: finalStatus,
+      notes: aptNotes,
+    }
+
+    if (onSaveAppointment) {
+      onSaveAppointment(updated)
+    }
+    if (recipientPhone && onClientPhoneUpdated) {
+      onClientPhoneUpdated(recipientPhone)
+    }
+    if (recipientEmail && onClientEmailUpdated) {
+      onClientEmailUpdated(recipientEmail)
+    }
+    setAptStatus(finalStatus)
+    return updated
   }
 
   const cleanPhone = formatWhatsAppPhone(recipientPhone)
@@ -154,7 +298,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     setTimeout(() => setCopied(false), 2500)
   }
 
-  // Despacho directo a la aplicación nativa de WhatsApp en macOS Monterey
+  // Despacho directo a la aplicación nativa de WhatsApp en macOS Monterey (guardando la cita con la nueva hora)
   const handleOpenWhatsApp = async (target: 'app' | 'web' = 'app') => {
     if (!isPhoneValid) {
       setError('Por favor, indica un número de teléfono móvil válido para la clienta (mínimo 9 dígitos).')
@@ -162,9 +306,8 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     }
     setError(null)
 
-    if (recipientPhone && onClientPhoneUpdated) {
-      onClientPhoneUpdated(recipientPhone)
-    }
+    // Guardar automáticamente la cita (actualizando hora, fecha, servicio y estado 'confirmada')
+    saveAppointmentChanges(mode === 'confirmar' ? 'confirmada' : undefined)
 
     const textToSend = whatsappMessage || message
     const nativeUrl = `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(textToSend)}`
@@ -189,13 +332,13 @@ export const EmailModal: React.FC<EmailModalProps> = ({
       }, 1200)
     }
 
-    setSendSuccess(`¡Abriendo chat de WhatsApp para ${clientName}!`)
+    setSendSuccess(`¡Cita guardada y chat de WhatsApp abierto para ${clientName} (${aptDate} a las ${aptTime})!`)
     setTimeout(() => {
       setSendSuccess(null)
     }, 4000)
   }
 
-  // Despacho por Correo (Resend)
+  // Despacho por Correo (Resend) con guardado automático de la nueva hora
   const handleSendEmail = async () => {
     const trimmedEmail = recipientEmail.trim()
     if (!trimmedEmail || !isEmailValid) {
@@ -207,6 +350,9 @@ export const EmailModal: React.FC<EmailModalProps> = ({
     setError(null)
 
     try {
+      // Guardar cita con la hora y fecha actualizadas
+      saveAppointmentChanges(mode === 'confirmar' ? 'confirmada' : undefined)
+
       const emailHtml = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0c0c10; color: #f0f0f5; padding: 40px 30px; border-radius: 16px; border: 1px solid #28283c;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -247,11 +393,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
         throw new Error(result.error || 'Error al enviar correo corporativo')
       }
 
-      if (recipientEmail && onClientEmailUpdated) {
-        onClientEmailUpdated(recipientEmail)
-      }
-
-      setSendSuccess(`¡Correo enviado con éxito a ${recipientEmail}!`)
+      setSendSuccess(`¡Cita guardada y correo enviado con éxito a ${recipientEmail}!`)
       setTimeout(() => {
         onClose()
       }, 1600)
@@ -348,10 +490,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                 {getModeTitle()}
               </h3>
               <p className="text-xs text-muted mt-1 leading-none">
-                Clienta: <strong className="text-gold-300 font-semibold">{clientName}</strong>
-                {appointment && (
-                  <span> • {aptDate} {aptTime} ({serviceName})</span>
-                )}
+                Gestión y horario de cita con <strong className="text-gold-300 font-semibold">{clientName}</strong>
               </p>
             </div>
           </div>
@@ -469,56 +608,105 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           </div>
         </div>
 
-        {/* Horizontal Contact Bar (Móvil & Correo side-by-side in one compact row) */}
-        <div className="px-5 py-2 bg-ink-850/40 border-b border-line flex flex-col sm:flex-row items-center gap-4">
-          {/* Phone for WhatsApp */}
-          <div className="flex-1 w-full flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-gray-400 shrink-0 flex items-center gap-1">
-              <IconWhatsApp size={13} className="text-emerald-400" /> Móvil WhatsApp:
-            </span>
-            <input
-              type="tel"
-              value={recipientPhone}
-              onChange={(e) => {
-                setRecipientPhone(e.target.value)
-                setError(null)
-              }}
-              onBlur={() => {
-                if (recipientPhone && onClientPhoneUpdated) {
-                  onClientPhoneUpdated(recipientPhone)
-                }
-              }}
-              placeholder="Ej. +34 604 18 76 76"
-              className="flex-1 px-3 py-1 rounded-lg bg-ink-800 border border-line text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-            />
-            {isPhoneValid && (
-              <span className="text-[10px] font-mono text-emerald-400 font-bold shrink-0">+{cleanPhone}</span>
-            )}
-          </div>
+        {/* Horizontal Appointment Details & Schedule Editor (Fecha, Hora acordada, Servicio, Precio, Móvil, Correo) */}
+        <div className="px-5 py-3 bg-ink-850/50 border-b border-line">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 items-end">
+            {/* 1. Date Picker */}
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                <IconCalendar size={12} className="text-gold-400" />
+                <span>Fecha</span>
+              </label>
+              <input
+                type="date"
+                value={aptDate}
+                onChange={(e) => handleAppointmentFieldChange({ date: e.target.value })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white focus:outline-none focus:border-gold-400"
+              />
+            </div>
 
-          {/* Email for Resend */}
-          <div className="flex-1 w-full flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-gray-400 shrink-0 flex items-center gap-1">
-              <IconMail size={13} className="text-gold-400" /> Correo:
-            </span>
-            <input
-              type="email"
-              value={recipientEmail}
-              onChange={(e) => {
-                setRecipientEmail(e.target.value)
-                setError(null)
-              }}
-              onBlur={() => {
-                if (recipientEmail && onClientEmailUpdated) {
-                  onClientEmailUpdated(recipientEmail)
-                }
-              }}
-              placeholder="ejemplo@correo.com"
-              className="flex-1 px-3 py-1 rounded-lg bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
-            />
-            {isEmailValid && (
-              <span className="text-[10px] font-mono text-gold-400 shrink-0">✓ Válido</span>
-            )}
+            {/* 2. Time Selector / Picker */}
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                <IconClock size={12} className="text-emerald-400" />
+                <span>Hora Acordada *</span>
+              </label>
+              <input
+                type="time"
+                value={aptTime}
+                onChange={(e) => handleAppointmentFieldChange({ time: e.target.value })}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white font-bold focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+
+            {/* 3. Service Dropdown */}
+            <div className="sm:col-span-2 lg:col-span-2">
+              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                <IconSparkles size={12} className="text-purple-400" />
+                <span>Servicio / Tratamiento</span>
+              </label>
+              <select
+                value={aptServiceId}
+                onChange={(e) => {
+                  const sId = e.target.value
+                  const matchedService = services.find((s) => s.id === sId)
+                  const dur = matchedService ? parseDurationMinutes(matchedService.duration) : aptDuration
+                  handleAppointmentFieldChange({
+                    serviceId: sId,
+                    serviceName: matchedService ? matchedService.name : aptServiceName,
+                    price: matchedService ? matchedService.priceNumber : aptPrice,
+                    duration: dur,
+                  })
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white focus:outline-none focus:border-purple-400"
+              >
+                {services && services.length > 0 ? (
+                  services.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — {s.price} ({s.duration})
+                    </option>
+                  ))
+                ) : (
+                  <option value={aptServiceId}>{aptServiceName}</option>
+                )}
+              </select>
+            </div>
+
+            {/* 4. WhatsApp Phone */}
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                <IconWhatsApp size={12} className="text-emerald-400" />
+                <span>Móvil WhatsApp</span>
+              </label>
+              <input
+                type="tel"
+                value={recipientPhone}
+                onChange={(e) => {
+                  setRecipientPhone(e.target.value)
+                  setError(null)
+                }}
+                placeholder="604187676"
+                className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* 5. Client Email */}
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+                <IconMail size={12} className="text-gold-400" />
+                <span>Correo Clienta</span>
+              </label>
+              <input
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => {
+                  setRecipientEmail(e.target.value)
+                  setError(null)
+                }}
+                placeholder="clienta@correo.com"
+                className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gold-500/50"
+              />
+            </div>
           </div>
         </div>
 
@@ -655,15 +843,31 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer: Clean & Horizontal */}
-        <div className="p-4 border-t border-line flex items-center justify-between bg-ink-900">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium cursor-pointer"
-          >
-            Cerrar
-          </button>
+        {/* Modal Footer: Clean, Powerful & Horizontal */}
+        <div className="p-4 border-t border-line flex flex-col sm:flex-row items-center justify-between gap-3 bg-ink-900">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-ink-800 transition-colors text-xs font-medium cursor-pointer"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const updated = saveAppointmentChanges()
+                if (updated) {
+                  setSendSuccess(`¡Cita guardada correctamente para el ${aptDate} a las ${aptTime}!`)
+                  setTimeout(() => setSendSuccess(null), 3000)
+                }
+              }}
+              title="Guardar los cambios de fecha, hora y servicio sin enviar mensaje"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line text-xs font-semibold transition-colors cursor-pointer"
+            >
+              <span>💾 Guardar Cambios</span>
+            </button>
+          </div>
 
           {/* Primary Action Buttons */}
           <div className="flex items-center gap-2.5">
@@ -672,7 +876,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               type="button"
               onClick={() => handleOpenWhatsApp('app')}
               disabled={!isPhoneValid}
-              title={isPhoneValid ? `Enviar ${getModeTitle()} por WhatsApp a ${clientName}` : 'Introduce el teléfono de la clienta arriba'}
+              title={isPhoneValid ? `Guardar cita a las ${aptTime} y abrir WhatsApp de ${clientName}` : 'Introduce el teléfono de la clienta arriba'}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-30 disabled:pointer-events-none text-ink-950 font-bold text-xs shadow-md shadow-emerald-950/50 transition-all cursor-pointer active:scale-95"
             >
               <IconWhatsApp size={16} />
@@ -684,7 +888,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
               type="button"
               onClick={handleSendEmail}
               disabled={isSending || !isEmailValid}
-              title={isEmailValid ? `Enviar ${getModeTitle()} por Correo a ${recipientEmail}` : 'Introduce el correo de la clienta arriba'}
+              title={isEmailValid ? `Guardar cita a las ${aptTime} y enviar Correo a ${recipientEmail}` : 'Introduce el correo de la clienta arriba'}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gold-500 hover:bg-gold-400 disabled:opacity-30 disabled:pointer-events-none text-ink-950 font-semibold text-xs uppercase tracking-wider transition-colors cursor-pointer"
             >
               {isSending ? (

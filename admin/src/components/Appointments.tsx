@@ -1277,45 +1277,36 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                 </div>
 
                 {/* Right: Finalize Button, Email Actions & Admin Controls */}
-                <div className="flex flex-wrap items-center gap-2.5 self-end lg:self-center">
-                  {/* Prominent "Finalizar Servicio" button */}
-                  {apt.status !== 'completada' ? (
-                    <button
-                      type="button"
-                      onClick={() => setFinalizingApt(apt)}
-                      title="Finalizar servicio y emitir factura automáticamente en Facturación & Caja"
-                      className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/35 hover:border-gold-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
-                    >
-                      <IconCheck size={14} className="text-gold-400 stroke-[2.5]" />
-                      <span>Finalizar Servicio</span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#14120c] border border-gold-500/25 text-gold-300 text-xs font-medium">
-                      <IconCheck size={13} className="text-gold-400 stroke-[2.5]" />
-                      <span>Servicio Finalizado</span>
-                      {(() => {
-                        const inv = invoices.find((i) => i.appointmentId === apt.id)
-                        return inv ? <span className="text-[10.5px] text-gold-400 font-mono">({inv.number})</span> : null
-                      })()}
-                    </div>
-                  )}
+                {/* Right: Actions, Status & Finalize */}
+                <div className="flex flex-wrap items-center gap-2 self-end lg:self-center">
+                  {/* Status Selector */}
+                  <select
+                    value={apt.status}
+                    onChange={(e) => onUpdateStatus(apt.id, e.target.value as AppointmentStatus)}
+                    className="px-2.5 py-1.5 rounded-xl bg-ink-800 border border-line-strong text-xs font-medium text-gray-200 focus:outline-none focus:border-gold-500"
+                  >
+                    <option value="pendiente">⏳ Pendiente</option>
+                    <option value="confirmada">✅ Confirmada</option>
+                    <option value="completada">✨ Completada</option>
+                    <option value="cancelada">❌ Cancelada</option>
+                  </select>
 
-                  {/* Action Buttons: Confirmar, Recordar, Cuidados, Correo (WhatsApp + Email) */}
-                  <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-800 border border-line">
+                  {/* Unified Action Buttons: Confirmar, Recordar, Cuidados, Mensaje (with schedule & WhatsApp inside) */}
+                  <div className="flex items-center gap-1 p-1 rounded-xl bg-ink-800 border border-line">
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'confirmar')}
-                      title="Confirmar cita por WhatsApp o Correo"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors cursor-pointer"
+                      title="Confirmar cita, acordar hora y enviar por WhatsApp o Correo"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-colors cursor-pointer active:scale-95"
                     >
-                      <IconCheck size={14} />
-                      <span className="hidden sm:inline">Confirmar</span>
+                      <IconCheck size={14} className="text-blue-400" />
+                      <span>Confirmar Cita</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'recordar')}
                       title="Enviar recordatorio 24h por WhatsApp o Correo"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 text-xs font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-ink-750 text-emerald-400 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconClock size={14} />
                       <span className="hidden sm:inline">Recordar</span>
@@ -1324,7 +1315,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'cuidados')}
                       title="Enviar pautas de cuidados previos por WhatsApp o Correo"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border border-purple-500/30 text-xs font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-ink-750 text-purple-300 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconSparkles size={14} />
                       <span className="hidden sm:inline">Cuidados</span>
@@ -1333,44 +1324,34 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'responder')}
                       title="Redactar mensaje personalizado (WhatsApp o Correo)"
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gold-950/40 hover:bg-gold-900/60 text-gold-300 border border-gold-500/30 text-xs font-medium transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-ink-750 text-gold-300 text-xs font-medium transition-colors cursor-pointer"
                     >
-                      <IconMail size={14} />
-                      <span className="hidden sm:inline">Correo</span>
+                      <IconMessageSquare size={14} />
+                      <span className="hidden sm:inline">Mensaje</span>
                     </button>
                   </div>
 
-                  {/* WhatsApp Action Button - Direct chat in wa.me */}
-                  <button
-                    type="button"
-                    onClick={() => handleOpenWhatsApp(apt, 'confirmar')}
-                    title="Enviar mensaje por WhatsApp a la clienta (Confirmar, Recordar, Cuidados...)"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/35 hover:border-emerald-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
-                  >
-                    <IconWhatsApp size={14} className="text-emerald-400 shrink-0" />
-                    <span>WhatsApp</span>
-                  </button>
-
-                  {/* Status Change Selector */}
-                  <select
-                    value={apt.status}
-                    onChange={(e) => onUpdateStatus(apt.id, e.target.value as AppointmentStatus)}
-                    className="px-2.5 py-1.5 rounded-xl bg-ink-800 border border-line-strong text-xs text-gray-200 focus:outline-none focus:border-gold-500"
-                  >
-                    <option value="pendiente">Marcar Pendiente</option>
-                    <option value="confirmada">Marcar Confirmada</option>
-                    <option value="completada">Marcar Completada</option>
-                    <option value="cancelada">Marcar Cancelada</option>
-                  </select>
-
-                  {/* Edit Button */}
-                  <button
-                    onClick={() => handleEdit(apt)}
-                    title="Editar detalles de la cita"
-                    className="p-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-300 hover:text-white border border-line-strong transition-colors"
-                  >
-                    <IconEdit size={15} />
-                  </button>
+                  {/* Finalizar Servicio / Invoicing */}
+                  {apt.status !== 'completada' ? (
+                    <button
+                      type="button"
+                      onClick={() => setFinalizingApt(apt)}
+                      title="Finalizar servicio y emitir factura automáticamente en Facturación & Caja"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-300 hover:text-gold-200 border border-gold-500/35 hover:border-gold-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <IconCheck size={14} className="text-gold-400 stroke-[2.5]" />
+                      <span>Finalizar</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#14120c] border border-gold-500/25 text-gold-300 text-xs font-medium">
+                      <IconCheck size={13} className="text-gold-400 stroke-[2.5]" />
+                      <span>Cobrado</span>
+                      {(() => {
+                        const inv = invoices.find((i) => i.appointmentId === apt.id)
+                        return inv ? <span className="text-[10.5px] text-gold-400 font-mono">({inv.number})</span> : null
+                      })()}
+                    </div>
+                  )}
 
                   {/* Delete Button */}
                   <button
@@ -1384,9 +1365,9 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       })
                     }}
                     title="Eliminar cita"
-                    className="p-2 rounded-xl bg-red-950/30 hover:bg-red-900/40 text-red-400 border border-red-500/20 transition-colors"
+                    className="p-2 rounded-xl bg-red-950/20 hover:bg-red-900/40 text-red-400/80 hover:text-red-300 border border-red-500/15 hover:border-red-500/30 transition-colors"
                   >
-                    <IconTrash size={15} />
+                    <IconTrash size={14} />
                   </button>
                 </div>
               </div>
@@ -1656,13 +1637,18 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         </div>
       )}
 
-      {/* Communication Modal (WhatsApp & Email via Resend) */}
+      {/* Unified Appointment Management & Communication Modal */}
       <EmailModal
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
         appointment={selectedEmailApt}
         config={config}
+        services={services}
         initialMode={emailModalMode}
+        onSaveAppointment={(updated) => {
+          setSelectedEmailApt(updated)
+          onSaveAppointment(updated)
+        }}
         onClientEmailUpdated={(email) => {
           if (selectedEmailApt) {
             const updated = { ...selectedEmailApt, clientEmail: email }
