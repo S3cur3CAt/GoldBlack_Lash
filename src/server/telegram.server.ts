@@ -139,9 +139,7 @@ export async function sendStudioTelegramAlert(
   const inlineKeyboard: Array<Array<{ text: string; url: string }>> = []
 
   if (cleanPhone) {
-    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
-      `Hola ${options.appointment?.clientName || ''}, te escribo desde GoldBlack Lash sobre tu cita del ${options.appointment?.date || ''} a las ${options.appointment?.time || ''}.`
-    )}`
+    const waUrl = `https://wa.me/${cleanPhone}`
 
     inlineKeyboard.push([
       { text: '💬 Abrir WhatsApp de la Clienta', url: waUrl },
