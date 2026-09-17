@@ -138,9 +138,9 @@ const GALLERY_PRESETS = [
   { label: 'Volumen Ruso (Pieza 01)', path: '/galeria/pieza-01.jpg' },
   { label: 'Volumen 3D-5D (Pieza 02)', path: '/galeria/pieza-02.jpg' },
   { label: 'Retoque / Natural (Pieza 03)', path: '/galeria/pieza-03.jpg' },
-  { label: 'Volumen Clásico (Pieza 04)', path: '/galeria/pieza-04.jpg' },
+  { label: 'Retirada de Extensiones (Pieza 04)', path: '/galeria/pieza-04.jpg' },
   { label: 'Efecto Intenso (Pieza 05)', path: '/galeria/pieza-05.jpg' },
-  { label: 'Limpieza Facial', path: '/galeria/limpieza-facial.jpg' },
+  { label: 'Limpieza Facial Profunda', path: '/galeria/limpieza-facial.jpg' },
 ]
 
 const LASH_TYPE_PRESETS = [
@@ -184,13 +184,42 @@ function cleanPhoneForWhatsApp(raw: string): string {
   return cleaned
 }
 
-function formatServiceImageUrl(rawUrl?: string | null): string {
-  if (!rawUrl) return '/galeria/pieza-01.jpg'
-  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:image/')) {
-    return rawUrl
+function getServiceImageFallback(serviceName = '', serviceId = ''): string {
+  const norm = `${serviceId || ''} ${serviceName || ''}`.toLowerCase()
+  if (norm.includes('facial') || norm.includes('limpieza') || norm.includes('higiene') || norm.includes('cutis')) {
+    return '/galeria/limpieza-facial.jpg'
   }
-  const clean = rawUrl.replace(/^(\.\/|\/)?(galeria\/)?/, '')
-  return `/galeria/${clean}`
+  if (norm.includes('retirada') || norm.includes('quitar') || norm.includes('remover')) {
+    return '/galeria/pieza-04.jpg'
+  }
+  if (norm.includes('ruso') || norm.includes('russian')) {
+    return '/galeria/pieza-01.jpg'
+  }
+  if (norm.includes('3d') || norm.includes('4d') || norm.includes('5d') || norm.includes('6d') || norm.includes('volumen')) {
+    return '/galeria/pieza-02.jpg'
+  }
+  if (norm.includes('retoque') || norm.includes('mantenimiento') || norm.includes('relleno')) {
+    return '/galeria/pieza-03.jpg'
+  }
+  if (norm.includes('lifting') || norm.includes('tinte') || norm.includes('cejas') || norm.includes('laminado')) {
+    return '/galeria/pieza-03.jpg'
+  }
+  return '/galeria/pieza-02.jpg'
+}
+
+function formatServiceImageUrl(rawUrl?: string | null, serviceName = '', serviceId = ''): string {
+  if (rawUrl && typeof rawUrl === 'string' && rawUrl.trim() !== '') {
+    const cleanUrl = rawUrl.trim()
+    if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://') || cleanUrl.startsWith('data:image/')) {
+      return cleanUrl
+    }
+    if (cleanUrl.startsWith('/api/images/')) {
+      return cleanUrl
+    }
+    const clean = cleanUrl.replace(/^(\.\/|\/)?(galeria\/)?/, '')
+    return `/galeria/${clean}`
+  }
+  return getServiceImageFallback(serviceName, serviceId)
 }
 
 type TabType = 'citas' | 'crear' | 'facturacion' | 'clientas' | 'servicios' | 'promo'
@@ -298,9 +327,13 @@ function StudioMobileHubPage() {
           badge: s.badge || undefined,
           description: s.description || undefined,
           includes: Array.isArray(s.includes) ? s.includes : [],
-          image: s.image || null,
+          image: s.image || getServiceImageFallback(s.name, s.id),
         }))
         setServices(mapped)
+        setSelectedService((prev) => {
+          const found = mapped.find((item) => item.id === prev.id)
+          return found || mapped[0]
+        })
       }
     } catch (err) {
       console.warn('[Services Load Error]', err)
@@ -385,7 +418,7 @@ function StudioMobileHubPage() {
       setServiceFormBadge(serviceToEdit.badge || '')
       setServiceFormDescription(serviceToEdit.description || '')
       setServiceFormIncludes((serviceToEdit.includes || []).join('\n'))
-      setServiceFormImage(serviceToEdit.image || '/galeria/pieza-01.jpg')
+      setServiceFormImage(serviceToEdit.image || getServiceImageFallback(serviceToEdit.name, serviceToEdit.id))
     } else {
       setEditingServiceId(null)
       setServiceFormName('')
@@ -395,7 +428,7 @@ function StudioMobileHubPage() {
       setServiceFormBadge('')
       setServiceFormDescription('')
       setServiceFormIncludes('Diseño anatómico personalizado\nFibras de alta gama\nSellado profesional')
-      setServiceFormImage('/galeria/pieza-01.jpg')
+      setServiceFormImage('/galeria/pieza-02.jpg')
     }
     setServiceModalOpen(true)
   }
@@ -765,13 +798,24 @@ function StudioMobileHubPage() {
       {/* HEADER SUPERIOR */}
       <header className="sticky top-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-b border-[#d4af37]/20 px-4 py-3 shadow-lg">
         <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#d4af37] to-[#f3e5ab] flex items-center justify-center text-black font-serif font-black text-xs shadow-md">
-              GB
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0">
+              <div className="h-10 w-10 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/60 via-[#d4af37]/20 to-white/10 border border-[#d4af37]/40 shadow-[0_4px_16px_-4px_rgba(212,175,55,0.4)]">
+                <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
+                  <img
+                    src="/api/images/logo"
+                    alt="GoldBlack Lash — logotipo oficial"
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
             </div>
             <div>
-              <h1 className="text-sm font-semibold tracking-wide text-white leading-tight font-serif">
-                {business.name}
+              <h1 className="text-sm font-semibold tracking-wide text-white leading-tight font-serif flex items-center gap-1.5">
+                <span>GoldBlack</span>
+                <span className="italic text-[#d4af37]">Lash</span>
               </h1>
               <p className="text-[10px] text-[#d4af37] tracking-widest uppercase font-mono">
                 Panel Studio Móvil
@@ -1065,8 +1109,17 @@ function StudioMobileHubPage() {
           <div className="space-y-4">
             {createdAppointment ? (
               <div className="p-5 rounded-3xl bg-[#121218] border border-emerald-500/30 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
-                <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
-                  ✓
+                <div className="relative w-16 h-16 mx-auto">
+                  <div className="w-16 h-16 rounded-2xl p-[1.5px] bg-gradient-to-b from-[#d4af37] via-[#d4af37]/40 to-transparent shadow-lg shadow-[#d4af37]/20 overflow-hidden">
+                    <img
+                      src="/api/images/logo"
+                      alt="GoldBlack Lash"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-black font-bold flex items-center justify-center text-xs shadow-md">
+                    ✓
+                  </div>
                 </div>
 
                 <div>
@@ -1117,6 +1170,32 @@ function StudioMobileHubPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmitAppointment} className="space-y-4">
+                {/* Cabecera con Logotipo Oficial del Sitio Web */}
+                <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#181410] via-[#121218] to-[#1a1410] border border-[#d4af37]/30 shadow-xl flex items-center gap-3">
+                  <div className="relative shrink-0">
+                    <div className="w-12 h-12 rounded-xl p-[1.5px] bg-gradient-to-b from-[#d4af37] via-[#d4af37]/40 to-transparent shadow-md shadow-[#d4af37]/20">
+                      <div className="w-full h-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
+                        <img
+                          src="/api/images/logo"
+                          alt="GoldBlack Lash Studio"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[10px] text-[#d4af37] font-mono tracking-widest uppercase font-semibold block">
+                      GoldBlack Lash Studio
+                    </span>
+                    <h2 className="text-sm font-bold text-white font-serif tracking-wide truncate">
+                      Nueva Cita en la Agenda
+                    </h2>
+                    <p className="text-[11px] text-zinc-400 truncate">
+                      Sincronización en tiempo real y confirmación por WhatsApp
+                    </p>
+                  </div>
+                </div>
+
                 {/* 1. Selección de Servicio */}
                 <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
                   <div className="flex items-center justify-between">
@@ -1129,7 +1208,7 @@ function StudioMobileHubPage() {
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
                     {services.map((s) => {
                       const isSelected = !isCustomService && selectedService.id === s.id
-                      const sImg = formatServiceImageUrl(s.image)
+                      const sImg = formatServiceImageUrl(s.image, s.name, s.id)
                       return (
                         <div
                           key={s.id}
@@ -1588,7 +1667,7 @@ function StudioMobileHubPage() {
             ) : (
               <div className="space-y-3">
                 {services.map((s) => {
-                  const sImg = formatServiceImageUrl(s.image)
+                  const sImg = formatServiceImageUrl(s.image, s.name, s.id)
                   return (
                     <div
                       key={s.id}
@@ -1689,13 +1768,22 @@ function StudioMobileHubPage() {
             {/* Cabecera Seria y Profesional de Promociones */}
             <div className="p-4 rounded-3xl bg-gradient-to-b from-[#181512] via-[#121216] to-[#0d0d10] border border-[#d4af37]/30 space-y-4 shadow-2xl">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div>
-                  <span className="text-[10px] text-[#d4af37] font-mono tracking-widest uppercase font-semibold block">
-                    GoldBlack Lash Studio
-                  </span>
-                  <h2 className="text-base font-bold text-white font-serif tracking-wide">
-                    Promociones del Estudio
-                  </h2>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/60 to-transparent border border-[#d4af37]/40 overflow-hidden shrink-0">
+                    <img
+                      src="/api/images/logo"
+                      alt="GoldBlack Lash"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-[#d4af37] font-mono tracking-widest uppercase font-semibold block">
+                      GoldBlack Lash Studio
+                    </span>
+                    <h2 className="text-base font-bold text-white font-serif tracking-wide">
+                      Promociones del Estudio
+                    </h2>
+                  </div>
                 </div>
                 <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] font-medium">
                   Campaña WhatsApp
