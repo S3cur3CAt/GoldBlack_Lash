@@ -105,13 +105,14 @@ export async function sendStudioWhatsAppAlert(
     return { ok: false, error: 'Las alertas de WhatsApp están desactivadas en la configuración' }
   }
 
-  // Resolver teléfono destino del estudio
+  // Resolver teléfono destino del estudio (definido dinámicamente en Ajustes)
   const rawTargetPhone =
     cfg.whatsappAlertPhone ||
+    cfg.phoneClean ||
+    cfg.phoneDisplay ||
     process.env.STUDIO_WHATSAPP_PHONE ||
     process.env.CALLMEBOT_PHONE ||
-    cfg.phoneDisplay ||
-    '+34 604 18 76 76'
+    ''
 
   const targetPhoneClean = formatWhatsAppPhone(rawTargetPhone)
 
