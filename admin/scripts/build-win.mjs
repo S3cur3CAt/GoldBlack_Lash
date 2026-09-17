@@ -23,7 +23,7 @@ console.log('\n[1/4] Compilando frontend React con Vite...')
 execSync('pnpm run build', { cwd: adminRoot, stdio: 'inherit' })
 
 // 3. Package Windows with electron-packager
-console.log('\n[2/4] Empaquetando runtime de escritorio Windows 11 (x64, Electron 11.5.0)...')
+console.log('\n[2/4] Empaquetando runtime de escritorio Windows 11 (x64, Electron 40.0.0)...')
 const packager = (await import('electron-packager')).default
 
 const appPaths = await packager({
@@ -32,7 +32,7 @@ const appPaths = await packager({
   executableName: 'GoldBlack-Lash-Admin',
   platform: 'win32',
   arch: 'x64',
-  electronVersion: '11.5.0',
+  electronVersion: '40.0.0',
   icon: join(adminRoot, 'build', 'icon.ico'),
   out: distPackages,
   overwrite: true,
