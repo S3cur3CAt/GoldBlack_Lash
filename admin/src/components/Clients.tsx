@@ -725,7 +725,7 @@ export const Clients: React.FC<ClientsProps> = ({
         </div>
       )}
 
-      {/* Email Modal for CRM Communication (Resend) */}
+      {/* Communication Modal for CRM (WhatsApp & Resend) */}
       <EmailModal
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
@@ -735,6 +735,13 @@ export const Clients: React.FC<ClientsProps> = ({
         onClientEmailUpdated={(email) => {
           if (selectedEmailClient) {
             const updated = { ...selectedEmailClient, email }
+            setSelectedEmailClient(updated)
+            onSaveClient(updated)
+          }
+        }}
+        onClientPhoneUpdated={(phone) => {
+          if (selectedEmailClient) {
+            const updated = { ...selectedEmailClient, phone }
             setSelectedEmailClient(updated)
             onSaveClient(updated)
           }

@@ -1300,12 +1300,12 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     </div>
                   )}
 
-                  {/* Email Action Buttons - Sends luxury email via Resend */}
+                  {/* Action Buttons: Confirmar, Recordar, Cuidados, Correo (WhatsApp + Email) */}
                   <div className="flex items-center gap-1.5 p-1 rounded-xl bg-ink-800 border border-line">
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'confirmar')}
-                      title="Enviar confirmación de cita por correo"
+                      title="Confirmar cita por WhatsApp o Correo"
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconCheck size={14} />
@@ -1314,7 +1314,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'recordar')}
-                      title="Enviar recordatorio 24h por correo"
+                      title="Enviar recordatorio 24h por WhatsApp o Correo"
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconClock size={14} />
@@ -1323,7 +1323,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'cuidados')}
-                      title="Enviar pautas de cuidados previos por correo"
+                      title="Enviar pautas de cuidados previos por WhatsApp o Correo"
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/60 text-purple-300 border border-purple-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconSparkles size={14} />
@@ -1332,7 +1332,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                     <button
                       type="button"
                       onClick={() => handleOpenEmail(apt, 'responder')}
-                      title="Redactar correo personalizado a la clienta"
+                      title="Redactar mensaje personalizado (WhatsApp o Correo)"
                       className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gold-950/40 hover:bg-gold-900/60 text-gold-300 border border-gold-500/30 text-xs font-medium transition-colors cursor-pointer"
                     >
                       <IconMail size={14} />
@@ -1656,7 +1656,7 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         </div>
       )}
 
-      {/* Email Customize & Send Modal (Resend) */}
+      {/* Communication Modal (WhatsApp & Email via Resend) */}
       <EmailModal
         isOpen={emailModalOpen}
         onClose={() => setEmailModalOpen(false)}
@@ -1666,6 +1666,13 @@ export const Appointments: React.FC<AppointmentsProps> = ({
         onClientEmailUpdated={(email) => {
           if (selectedEmailApt) {
             const updated = { ...selectedEmailApt, clientEmail: email }
+            setSelectedEmailApt(updated)
+            onSaveAppointment(updated)
+          }
+        }}
+        onClientPhoneUpdated={(phone) => {
+          if (selectedEmailApt) {
+            const updated = { ...selectedEmailApt, clientPhone: phone }
             setSelectedEmailApt(updated)
             onSaveAppointment(updated)
           }
