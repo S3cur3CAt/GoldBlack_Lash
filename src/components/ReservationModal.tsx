@@ -298,7 +298,7 @@ export function ReservationModal({
                         id="res-phone"
                         type="tel"
                         required
-                        placeholder="Ej. 604 18 76 76"
+                        placeholder="Ej. 600 00 00 00"
                         value={clientPhone}
                         onChange={(e) => setClientPhone(e.target.value)}
                         className="reservation-input font-mono"

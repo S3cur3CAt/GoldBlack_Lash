@@ -633,7 +633,7 @@ export const Clients: React.FC<ClientsProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="Ej. 604 18 76 76"
+                    placeholder="Ej. 600 00 00 00"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gold-400 font-mono"

@@ -284,7 +284,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
                     setRecipientPhone(e.target.value)
                     setPhoneError(null)
                   }}
-                  placeholder="Ej. +34 604 18 76 76 o 604187676"
+                  placeholder="Ej. +34 600 00 00 00 o 600000000"
                   className="flex-1 px-3 py-1.5 rounded-lg bg-ink-800 border border-line-strong text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
                 />
                 <span className="text-[11px] font-mono text-emerald-400 font-bold shrink-0">

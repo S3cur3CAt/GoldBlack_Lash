@@ -868,7 +868,7 @@ export const Billing: React.FC<BillingProps> = ({
                     type="text"
                     value={formData.clientPhone || ''}
                     onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                    placeholder="604 18 76 76"
+                    placeholder="600 00 00 00"
                     className="w-full px-3.5 py-2.5 rounded-xl bg-ink-850 border border-line-strong text-white focus:outline-none focus:border-gold-500 font-mono"
                   />
                 </div>

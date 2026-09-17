@@ -419,7 +419,7 @@ function BookingForm() {
             maxLength={30}
             value={form.telefono}
             onChange={(event) => update('telefono', event.target.value)}
-            placeholder="+34 604 18 76 76"
+            placeholder="+34 600 00 00 00"
             className="field font-mono"
           />
         </label>
