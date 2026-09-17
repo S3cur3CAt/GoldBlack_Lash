@@ -10,7 +10,6 @@ import {
   IconDownload,
   IconRefreshCw,
   IconCheck,
-  IconX,
   IconReceipt,
   IconGripVertical,
   IconGlobe,
@@ -71,7 +70,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     errorMessage,
     startDownload,
     applyAndRestart,
-    dismiss,
   } = useUpdaterContext()
 
   const [draggedId, setDraggedId] = React.useState<TabId | null>(null)
@@ -348,24 +346,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3 pb-2 border-b border-line/60">
             <div className="p-3 rounded-xl bg-ink-850 border border-gold-500/25 flex flex-col space-y-2 transition-all">
               {/* Header info */}
-              <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-1.5">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-gold-400"></span>
-                  </span>
-                  <span className="text-[11px] font-bold text-gold-300">
-                    {status === 'downloaded' ? 'Actualización lista' : `Nueva versión ${updateInfo?.latestVersion || ''}`}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={dismiss}
-                  className="text-gray-400 hover:text-white p-1 rounded-md hover:bg-ink-800 transition-colors cursor-pointer"
-                  title="Ocultar aviso"
-                >
-                  <IconX size={12} />
-                </button>
+              <div className="flex items-center gap-1.5 w-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-gold-400"></span>
+                </span>
+                <span className="text-[11px] font-bold text-gold-300">
+                  {status === 'downloaded' ? 'Actualización lista' : `Nueva versión ${updateInfo?.latestVersion || ''}`}
+                </span>
               </div>
 
               {/* State: Available -> Button "Actualizar" */}

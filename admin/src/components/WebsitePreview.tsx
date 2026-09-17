@@ -303,8 +303,7 @@ export const WebsitePreview: React.FC = () => {
               style={{
                 width: mobileFrameWidth,
                 height: mobileFrameHeight,
-                transform: `scale(${scale})`,
-                transformOrigin: 'center center',
+                zoom: scale,
               }}
             >
               {/* Dynamic Island Pill with Camera Sensor */}
@@ -375,8 +374,7 @@ export const WebsitePreview: React.FC = () => {
               style={{
                 width: desktopFrameWidth,
                 height: desktopFrameHeight,
-                transform: `scale(${scale})`,
-                transformOrigin: 'center center',
+                zoom: scale,
               }}
             >
               {/* macOS Window Header Bar */}
@@ -389,27 +387,6 @@ export const WebsitePreview: React.FC = () => {
                   <span className="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]/50 inline-block shadow-sm" />
                   <span className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]/50 inline-block shadow-sm" />
                   <span className="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]/50 inline-block shadow-sm" />
-                </div>
-
-                {/* macOS Safari Style Centered Address Bar */}
-                <div className="flex-1 max-w-xl mx-auto flex items-center justify-center gap-2 px-4 py-1 rounded-lg bg-black/40 border border-line text-xs text-gray-300 font-mono">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-emerald-400 shrink-0"
-                  >
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  <span className="text-gray-500">https://</span>
-                  <span className="text-gold-300 font-semibold">www.goldblacklash.com</span>
-                  <span className="text-gray-500">/</span>
                 </div>
 
                 {/* Mac Resolution Badge */}
