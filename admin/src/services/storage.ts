@@ -38,7 +38,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   whatsappAlertsEnabled: true,
   whatsappAlertPhone: '+34 604 18 76 76',
   whatsappProvider: 'callmebot',
-  whatsappCallMeBotApiKey: '',
+  whatsappCallMeBotApiKey: '2809396',
   whatsappWebhookUrl: '',
 }
 
