@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import {
   fetchAppointmentsFromDb,
   saveAppointmentToDb,
+  updateAppointmentStatusInDb,
   deleteAppointmentFromDb,
 } from '../server/appointments.server'
 import {
@@ -211,6 +212,43 @@ export const Route = createFileRoute('/api/appointments')({
           console.error('[API Appointments POST error]', e)
           return Response.json(
             { error: e?.message || 'Error guardando cita' },
+            {
+              status: 500,
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
+        }
+      },
+      PATCH: async ({ request }) => {
+        try {
+          const body = await request.json().catch(() => ({}))
+          if (!body || !body.id) {
+            return Response.json(
+              { error: 'Falta el id de la cita' },
+              { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } }
+            )
+          }
+          await updateAppointmentStatusInDb(body.id, {
+            status: body.status,
+            paymentStatus: body.paymentStatus,
+            notes: body.notes,
+          })
+          return Response.json(
+            { ok: true, message: 'Cita actualizada correctamente' },
+            {
+              headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                'Access-Control-Allow-Headers': '*',
+              },
+            }
+          )
+        } catch (e: any) {
+          return Response.json(
+            { error: e?.message || 'Error actualizando cita' },
             {
               status: 500,
               headers: {

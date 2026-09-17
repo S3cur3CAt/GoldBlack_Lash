@@ -1,14 +1,14 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { business } from '#/data/site'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 
 export const Route = createFileRoute('/nueva-cita')({
-  component: NuevaCitaPage,
+  component: StudioMobileHubPage,
   head: () => ({
     meta: [
-      { title: `Crear Cita — ${business.name} (Telegram Assistant)` },
-      { name: 'description', content: `Asistente de creación y confirmación rápida de citas para ${business.name}` },
+      { title: `Panel Studio — ${business.name} (Telegram Assistant)` },
+      { name: 'description', content: `Panel de control móvil y asistente de gestión para ${business.name}` },
       { name: 'theme-color', content: '#08080a' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
     ],
@@ -18,16 +18,62 @@ export const Route = createFileRoute('/nueva-cita')({
   }),
 })
 
+// Tipos
 interface ServiceOption {
   id: string
   name: string
   priceNumber: number
   priceFormatted: string
+  originalPriceFormatted?: string
   duration: string
   badge?: string
+  isPromo?: boolean
 }
 
-const DEFAULT_SERVICES_LIST: ServiceOption[] = [
+interface AppointmentItem {
+  id: string
+  clientName: string
+  clientPhone: string
+  clientEmail?: string
+  date: string
+  time: string
+  durationMinutes: number
+  serviceId?: string
+  serviceName: string
+  price: number
+  status: 'pendiente' | 'confirmada' | 'completada' | 'cancelada'
+  paymentStatus: 'pendiente' | 'seña_pagada' | 'pagado'
+  curl?: string
+  length?: string
+  style?: string
+  notes?: string
+  createdAt?: string
+}
+
+interface ClientSummary {
+  name: string
+  phone: string
+  email?: string
+  totalVisits: number
+  totalSpent: number
+  lastVisitDate: string
+  lastServiceName: string
+  preferredCurl?: string
+  notes?: string
+}
+
+// Catálogo Oficial de Servicios (con la OFERTA ESPECIAL 23 € en 1ª posición)
+const STUDIO_SERVICES: ServiceOption[] = [
+  {
+    id: 'promo-extensiones-23',
+    name: 'Extensiones de Pestañas (Oferta Especial)',
+    priceNumber: 23,
+    priceFormatted: '23 €',
+    originalPriceFormatted: '27 €',
+    duration: '1 h 15 min',
+    badge: '🔥 AHORA SOLO 23 €',
+    isPromo: true,
+  },
   {
     id: 'volumen-3d6d',
     name: 'Volumen (3D, 4D, 5D y 6D)',
@@ -60,6 +106,23 @@ const DEFAULT_SERVICES_LIST: ServiceOption[] = [
   },
 ]
 
+const PROMO_WHATSAPP_TEXT = `✨👁️ *OFERTA ESPECIAL* 👁️✨
+
+💖 *EXTENSIONES DE PESTAÑAS* 💖
+
+~Precio habitual: 27 €~
+🔥 *AHORA SOLO 23 €* 🔥
+
+✨ Realza tu mirada
+✨ Pestañas bonitas y definidas
+✨ Acabado elegante y personalizado
+
+📅 *Oferta por tiempo limitado*
+
+📩 *Reserva tu cita ahora*
+💗 ¡Te encantará el resultado!
+🌐 https://www.goldblacklash.com/`
+
 function getFormattedDate(offsetDays = 0): string {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -75,15 +138,31 @@ function cleanPhoneForWhatsApp(raw: string): string {
   return cleaned
 }
 
-function NuevaCitaPage() {
+type TabType = 'crear' | 'citas' | 'facturacion' | 'clientas' | 'servicios' | 'promo'
+
+function StudioMobileHubPage() {
   const config = useStudioConfig()
 
-  // Form State
-  const [selectedService, setSelectedService] = useState<ServiceOption>(DEFAULT_SERVICES_LIST[0])
+  // Navegación de pestañas
+  const [currentTab, setCurrentTab] = useState<TabType>('citas')
+
+  // Estado de Datos en Vivo
+  const [appointments, setAppointments] = useState<AppointmentItem[]>([])
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(false)
+  const [appointmentsError, setAppointmentsError] = useState<string | null>(null)
+  const [lastSyncTime, setLastSyncTime] = useState<string>('')
+
+  // Filtro de Citas
+  const [agendaFilter, setAgendaFilter] = useState<'hoy' | 'proximas' | 'todas'>('hoy')
+
+  // Búsqueda en Clientas
+  const [clientSearch, setClientSearch] = useState('')
+
+  // Form State (Crear Cita)
+  const [selectedService, setSelectedService] = useState<ServiceOption>(STUDIO_SERVICES[0])
   const [isCustomService, setIsCustomService] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
   const [customPrice, setCustomPrice] = useState('30')
-
   const [date, setDate] = useState<string>(getFormattedDate(0))
   const [time, setTime] = useState<string>('16:30')
   const [clientName, setClientName] = useState<string>('')
@@ -91,536 +170,1268 @@ function NuevaCitaPage() {
   const [notes, setNotes] = useState<string>('')
   const [curl, setCurl] = useState<string>('D')
 
-  // UI state
+  // UI state para crear cita
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null)
   const [createdAppointment, setCreatedAppointment] = useState<any | null>(null)
 
-  // Initialize Telegram WebApp SDK if opened inside Telegram
+  // Feedback de copiado en promo
+  const [copiedPromo, setCopiedPromo] = useState(false)
+
+  // Cargar citas desde Supabase
+  const loadAppointments = async () => {
+    setIsLoadingAppointments(true)
+    setAppointmentsError(null)
+    try {
+      const res = await fetch(`/api/appointments?_t=${Date.now()}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setAppointments(data)
+        setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
+      }
+    } catch (err: any) {
+      setAppointmentsError(err?.message || 'Error cargando citas')
+    } finally {
+      setIsLoadingAppointments(false)
+    }
+  }
+
+  // Inicializar Telegram WebApp SDK y cargar citas al abrir
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp
-      try {
-        tg.ready()
-        tg.expand()
-        if (tg.setHeaderColor) tg.setHeaderColor('#08080a')
-        if (tg.setBackgroundColor) tg.setBackgroundColor('#08080a')
-      } catch (e) {
-        console.warn('Telegram WebApp init notice:', e)
-      }
+      tg.ready()
+      tg.expand()
+      if (tg.setHeaderColor) tg.setHeaderColor('#08080a')
+      if (tg.setBackgroundColor) tg.setBackgroundColor('#08080a')
     }
+    loadAppointments()
   }, [])
 
+  // Actualizar estado de una cita en Supabase
+  const handleUpdateStatus = async (
+    id: string,
+    newStatus: 'pendiente' | 'confirmada' | 'completada' | 'cancelada',
+    newPayment?: 'pendiente' | 'seña_pagada' | 'pagado'
+  ) => {
+    try {
+      const payload: any = { id, status: newStatus }
+      if (newPayment) payload.paymentStatus = newPayment
+
+      // Optimistic update
+      setAppointments((prev) =>
+        prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus, ...(newPayment ? { paymentStatus: newPayment } : {}) } : apt))
+      )
+
+      const res = await fetch('/api/appointments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) {
+        // Recargar si falló
+        loadAppointments()
+      }
+    } catch {
+      loadAppointments()
+    }
+  }
+
+  // Citas filtradas
+  const todayStr = getFormattedDate(0)
+  const filteredAppointments = useMemo(() => {
+    if (agendaFilter === 'hoy') {
+      return appointments.filter((a) => a.date === todayStr)
+    }
+    if (agendaFilter === 'proximas') {
+      return appointments.filter((a) => a.date >= todayStr)
+    }
+    return appointments
+  }, [appointments, agendaFilter, todayStr])
+
+  // Métricas Financieras (Facturación)
+  const metrics = useMemo(() => {
+    const today = todayStr
+    // Cálculo inicio de semana (lunes)
+    const now = new Date()
+    const day = now.getDay()
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(now.setDate(diff)).toISOString().split('T')[0]
+    const currentMonth = today.substring(0, 7) // YYYY-MM
+
+    let totalHoy = 0
+    let totalSemana = 0
+    let totalMes = 0
+    let countCompletadas = 0
+    let countTotal = appointments.length
+    let totalCobrado = 0
+    let totalPendienteCobro = 0
+
+    const serviceCounts: Record<string, { count: number; total: number }> = {}
+
+    appointments.forEach((apt) => {
+      const price = Number(apt.price) || 0
+      const isCancelled = apt.status === 'cancelada'
+
+      if (!isCancelled) {
+        if (apt.date === today) totalHoy += price
+        if (apt.date >= monday && apt.date <= today) totalSemana += price
+        if (apt.date.startsWith(currentMonth)) totalMes += price
+
+        if (apt.paymentStatus === 'pagado') {
+          totalCobrado += price
+        } else {
+          totalPendienteCobro += price
+        }
+
+        const sName = apt.serviceName || 'Otros'
+        if (!serviceCounts[sName]) serviceCounts[sName] = { count: 0, total: 0 }
+        serviceCounts[sName].count += 1
+        serviceCounts[sName].total += price
+      }
+
+      if (apt.status === 'completada') {
+        countCompletadas += 1
+      }
+    })
+
+    const monthCount = appointments.filter(a => a.date.startsWith(currentMonth)).length || 1
+    const ticketMedio = countTotal > 0 ? Math.round(totalMes / monthCount) : 0
+
+    return {
+      totalHoy,
+      totalSemana,
+      totalMes,
+      countTotal,
+      countCompletadas,
+      totalCobrado,
+      totalPendienteCobro,
+      ticketMedio,
+      serviceCounts: Object.entries(serviceCounts).sort((a, b) => b[1].total - a[1].total),
+    }
+  }, [appointments, todayStr])
+
+  // Directorio de Clientas Deducido
+  const clientsList = useMemo<ClientSummary[]>(() => {
+    const map = new Map<string, ClientSummary>()
+
+    appointments.forEach((apt) => {
+      const phone = (apt.clientPhone || '').trim()
+      const key = phone ? cleanPhoneForWhatsApp(phone) : apt.clientName.toLowerCase().trim()
+      if (!key) return
+
+      const existing = map.get(key)
+      const price = Number(apt.price) || 0
+
+      if (!existing) {
+        map.set(key, {
+          name: apt.clientName,
+          phone: apt.clientPhone,
+          email: apt.clientEmail,
+          totalVisits: 1,
+          totalSpent: price,
+          lastVisitDate: apt.date,
+          lastServiceName: apt.serviceName,
+          preferredCurl: apt.curl,
+          notes: apt.notes,
+        })
+      } else {
+        existing.totalVisits += 1
+        existing.totalSpent += price
+        if (apt.date > existing.lastVisitDate) {
+          existing.lastVisitDate = apt.date
+          existing.lastServiceName = apt.serviceName
+          if (apt.curl) existing.preferredCurl = apt.curl
+        }
+        if (apt.notes && !existing.notes?.includes(apt.notes)) {
+          existing.notes = (existing.notes ? existing.notes + ' | ' : '') + apt.notes
+        }
+      }
+    })
+
+    const list = Array.from(map.values()).sort((a, b) => b.totalVisits - a.totalVisits || b.totalSpent - a.totalSpent)
+    if (!clientSearch) return list
+
+    const q = clientSearch.toLowerCase()
+    return list.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
+  }, [appointments, clientSearch])
+
+  // Validación de teléfono para WhatsApp
   const cleanPhone = cleanPhoneForWhatsApp(clientPhone)
-  const isPhoneValid = cleanPhone.length >= 9
+  const isValidPhone = cleanPhone.length >= 9
 
-  const finalServiceName = isCustomService ? customServiceName || 'Servicio personalizado' : selectedService.name
-  const finalPrice = isCustomService ? Number(customPrice) || 0 : selectedService.priceNumber
+  // Generador de mensaje de confirmación de WhatsApp
+  const generateWhatsAppMessage = (data: {
+    clientName: string
+    date: string
+    time: string
+    serviceName: string
+    price: number | string
+    isPromo?: boolean
+  }): string => {
+    const studio = config?.name || business.name || 'GoldBlack Lash'
+    const address = config?.address || 'Calle Numa, Montequinto (Dos Hermanas)'
 
-  const quickTimes = ['10:00', '11:30', '13:00', '16:00', '17:30', '19:00']
-
-  // Generador del mensaje formal de confirmación de WhatsApp
-  const generateWhatsAppMessage = () => {
-    const studio = config.name || 'GoldBlack Lash'
-    const address = config.address ? `${config.address}, ${config.city}` : 'Calle Numa, Montequinto (Dos Hermanas)'
+    const promoBanner = data.isPromo
+      ? `\n🎉 *¡Promoción Especial Aplicada!* (23 € en vez de 27 €)\n`
+      : ''
 
     return [
       `✨ *Confirmación de Cita — ${studio}* ✨`,
       `🌐 https://www.goldblacklash.com/`,
+      promoBanner,
+      `¡Hola *${data.clientName}*! Tu cita ha sido agendada con éxito en nuestro estudio:`,
       ``,
-      `¡Hola *${clientName.trim()}*! Tu cita ha sido reservada y confirmada en nuestro estudio:`,
-      ``,
-      `📅 *Fecha:* ${date}`,
-      `⏰ *Hora:* ${time}`,
-      `🌸 *Tratamiento:* ${finalServiceName}`,
-      `💶 *Precio:* ${finalPrice} €`,
+      `📅 *Fecha:* ${data.date}`,
+      `⏰ *Hora:* ${data.time}`,
+      `🌸 *Tratamiento:* ${data.serviceName}`,
+      `💶 *Precio:* ${data.price} €${data.isPromo ? ' (~Antes: 27 €~)' : ''}`,
       `📍 *Ubicación:* ${address}`,
       ``,
       `*Pautas para tu sesión:*`,
-      `• Acude con la zona de los ojos completamente limpia y desmaquillada (sin rímel ni sombras).`,
+      `• Acude con la zona de los ojos completamente desmaquillada (sin rímel ni sombras).`,
       `• Si usas lentillas, te aconsejamos traer estuche para retirarlas durante la sesión.`,
       ``,
-      `Si necesitas cambiar tu horario o tienes cualquier consulta, puedes responder directamente a este mensaje.`,
+      `Si necesitas ajustar tu horario o tienes alguna duda, puedes respondernos directamente por aquí.`,
       ``,
       `¡Te esperamos con muchas ganas! 💕`,
       `${studio}`,
-    ].join('\n')
+    ].filter(Boolean).join('\n')
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Envío de Cita
+  const handleSubmitAppointment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!clientName.trim()) {
-      setErrorMsg('Por favor introduce el nombre de la clienta')
+      setSubmitErrorMsg('Por favor escribe el nombre de la clienta')
       return
     }
-    if (!isPhoneValid) {
-      setErrorMsg('Por favor introduce un número de teléfono móvil válido')
+    if (!isValidPhone) {
+      setSubmitErrorMsg('Por favor introduce un teléfono móvil válido (9 dígitos)')
       return
     }
-    setErrorMsg(null)
-    setIsSubmitting(true)
 
-    const appointmentId = `apt-tg-${Date.now()}`
-    const aptPayload = {
-      id: appointmentId,
+    setIsSubmitting(true)
+    setSubmitErrorMsg(null)
+
+    const finalServiceName = isCustomService
+      ? customServiceName.trim() || 'Servicio Personalizado'
+      : selectedService.name
+    const finalPrice = isCustomService
+      ? parseFloat(customPrice) || 0
+      : selectedService.priceNumber
+
+    const appointmentPayload = {
+      id: `apt-tg-${Date.now()}`,
       clientName: clientName.trim(),
       clientPhone: clientPhone.trim(),
       date,
       time,
-      serviceName: finalServiceName,
       serviceId: isCustomService ? 'custom' : selectedService.id,
+      serviceName: finalServiceName,
       price: finalPrice,
-      durationMinutes: 75,
+      durationMinutes: isCustomService ? 60 : 75,
+      curl: curl || 'D',
+      notes: notes.trim() || undefined,
       status: 'confirmada',
       paymentStatus: 'pendiente',
-      curl,
-      notes: notes.trim() || undefined,
     }
 
     try {
-      // 1. Guardar en la base de datos Supabase en la nube (24/7)
       const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(aptPayload),
+        body: JSON.stringify(appointmentPayload),
       })
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || `Error en el servidor (HTTP ${res.status})`)
+        const errData = await res.json().catch(() => ({}))
+        throw new Error(errData.error || `Error HTTP ${res.status}`)
       }
 
-      // 2. Enviar notificación al chat del bot en Telegram (para dejar registro en tu chat)
-      try {
-        await fetch('/api/telegram', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appointment: {
-              clientName: clientName.trim(),
-              clientPhone: clientPhone.trim(),
-              serviceName: finalServiceName,
-              date,
-              time,
-              price: finalPrice,
-              duration: 75,
-            },
-          }),
-        })
-      } catch (tgErr) {
-        console.warn('Aviso notificando a Telegram:', tgErr)
-      }
-
-      // 3. Pasar al estado de éxito con botón directo de WhatsApp
-      setCreatedAppointment({
-        ...aptPayload,
-        cleanPhone,
-        whatsappText: generateWhatsAppMessage(),
+      const whatsappMsg = generateWhatsAppMessage({
+        clientName: clientName.trim(),
+        date,
+        time,
+        serviceName: finalServiceName,
+        price: finalPrice,
+        isPromo: selectedService.isPromo,
       })
 
-      // Haptic feedback de Telegram si está disponible
-      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-        ;(window as any).Telegram.WebApp.HapticFeedback.notificationOccurred('success')
-      }
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`
+
+      setCreatedAppointment({
+        ...appointmentPayload,
+        whatsappUrl,
+        whatsappMsg,
+      })
+
+      // Recargar citas en segundo plano
+      loadAppointments()
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error al guardar la cita en la nube.')
+      setSubmitErrorMsg(err?.message || 'Error al conectar con la base de datos')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleResetForm = () => {
-    setCreatedAppointment(null)
-    setClientName('')
-    setClientPhone('')
-    setNotes('')
-    setErrorMsg(null)
-  }
-
-  const handleCloseApp = () => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.close) {
-      ;(window as any).Telegram.WebApp.close()
-    } else {
-      window.close()
+  // Copiar anuncio promocional
+  const handleCopyPromo = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(PROMO_WHATSAPP_TEXT)
+      setCopiedPromo(true)
+      setTimeout(() => setCopiedPromo(false), 2500)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col justify-start px-4 py-6 sm:py-10 max-w-xl mx-auto font-sans selection:bg-amber-400 selection:text-black">
-      {/* Background Ambience Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-gradient-to-b from-amber-500/15 via-amber-600/5 to-transparent blur-3xl"></div>
-      </div>
-
-      {/* Top Branding Bar */}
-      <header className="flex items-center justify-between pb-6 border-b border-zinc-800/80 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-[1px] shadow-lg shadow-amber-500/20">
-            <div className="w-full h-full bg-[#0d0d12] rounded-[11px] flex items-center justify-center font-bold text-amber-400 text-sm">
+    <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col font-sans pb-24 selection:bg-[#d4af37]/30 selection:text-[#f3e5ab]">
+      {/* HEADER SUPERIOR */}
+      <header className="sticky top-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-b border-[#d4af37]/20 px-4 py-3 shadow-lg">
+        <div className="max-w-md mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#d4af37] to-[#f3e5ab] flex items-center justify-center text-black font-serif font-black text-xs shadow-md">
               GB
             </div>
-          </div>
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-widest text-amber-400">
-              GoldBlack Lash
-            </div>
-            <h1 className="text-base font-bold text-white tracking-tight">
-              {createdAppointment ? 'Cita Guardada' : 'Crear Nueva Cita'}
-            </h1>
-          </div>
-        </div>
-
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30">
-          Telegram Bot
-        </span>
-      </header>
-
-      {/* 1. SUCCESS VIEW (CITA GUARDADA + BOTÓN WHATSAPP LISTO) */}
-      {createdAppointment ? (
-        <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-          {/* Success Banner */}
-          <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 mt-0.5">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-            </div>
             <div>
-              <h2 className="text-sm font-bold text-emerald-300">
-                ¡Cita registrada con éxito en la nube!
-              </h2>
-              <p className="text-xs text-emerald-400/80 mt-1 leading-relaxed">
-                Guardada en la base de datos central de Supabase. Aparecerá en tu Mac automáticamente al abrir el panel de administración.
+              <h1 className="text-sm font-semibold tracking-wide text-white leading-tight font-serif">
+                {business.name}
+              </h1>
+              <p className="text-[10px] text-[#d4af37] tracking-widest uppercase font-mono">
+                Panel Studio Móvil
               </p>
             </div>
           </div>
 
-          {/* Appointment Summary Card */}
-          <div className="rounded-2xl bg-zinc-900/90 border border-zinc-800 p-5 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <span className="text-xs text-zinc-400">Clienta:</span>
-              <span className="text-sm font-bold text-white">{createdAppointment.clientName}</span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <span className="text-xs text-zinc-400">Teléfono:</span>
-              <span className="text-sm font-mono text-zinc-300">{createdAppointment.clientPhone}</span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <span className="text-xs text-zinc-400">Tratamiento:</span>
-              <span className="text-sm font-semibold text-amber-300">{createdAppointment.serviceName}</span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <span className="text-xs text-zinc-400">Fecha y Hora:</span>
-              <span className="text-sm font-bold text-white">
-                {createdAppointment.date} a las {createdAppointment.time} h
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs text-zinc-400">Precio:</span>
-              <span className="text-base font-bold text-amber-400">{createdAppointment.price} €</span>
-            </div>
-          </div>
-
-          {/* THE BIG WHATSAPP BUTTON (AUTOMATIC PRE-FILLED MESSAGE) */}
-          <div className="pt-2 space-y-3">
-            <a
-              href={`https://wa.me/${createdAppointment.cleanPhone}?text=${encodeURIComponent(createdAppointment.whatsappText)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-950/60 transition-all transform active:scale-98 cursor-pointer"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadAppointments}
+              title="Actualizar datos"
+              disabled={isLoadingAppointments}
+              className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-[#d4af37]/40 text-[11px] text-zinc-300 flex items-center gap-1.5 transition-all active:scale-95"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.075-2.037-.482-1.615-.67-2.658-2.308-2.738-2.416-.08-.107-.648-.864-.648-1.648 0-.785.412-1.17.558-1.327.146-.157.32-.196.427-.196.106 0 .213.002.306.007.098.005.23-.037.36.275.133.32.453 1.107.493 1.187.04.079.066.173.013.28-.053.107-.08.173-.16.267-.08.093-.167.208-.24.28-.08.08-.163.167-.07.327.094.16.417.688.895 1.114.615.547 1.134.717 1.294.797.16.079.253.066.346-.04.093-.107.4-.467.507-.627.107-.16.213-.133.36-.08.146.053.933.44 1.093.52.16.08.267.12.307.187.04.066.04.386-.104.791z"/>
-              </svg>
-              <span>Enviar WhatsApp a la Clienta ↗</span>
-            </a>
-
-            <div className="flex gap-2.5">
-              <button
-                type="button"
-                onClick={handleResetForm}
-                className="flex-1 py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-300 transition-colors cursor-pointer"
-              >
-                + Crear Otra Cita
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCloseApp}
-                className="py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-semibold text-zinc-400 transition-colors cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
+              <span className={`w-2 h-2 rounded-full ${isLoadingAppointments ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
+              <span>{isLoadingAppointments ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
+            </button>
           </div>
         </div>
-      ) : (
-        /* 2. FORM VIEW (NUEVA CITA) */
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-medium flex items-center gap-2">
-              <span className="text-red-400 font-bold">✗</span>
-              <span>{errorMsg}</span>
-            </div>
-          )}
 
-          {/* Section: Servicio */}
-          <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
-              <span>1. Tratamiento / Servicio</span>
-              <span className="text-amber-400/80 font-normal lowercase">selecciona uno</span>
-            </label>
+        {/* NAVEGACIÓN DE PESTAÑAS (Scrollable horizontal) */}
+        <div className="max-w-md mx-auto mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          <button
+            onClick={() => setCurrentTab('citas')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'citas'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>📅 Citas</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+              {appointments.filter(a => a.date === todayStr).length}
+            </span>
+          </button>
 
-            <div className="grid grid-cols-1 gap-2">
-              {DEFAULT_SERVICES_LIST.map((srv) => {
-                const isSelected = !isCustomService && selectedService.id === srv.id
-                return (
-                  <button
-                    key={srv.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedService(srv)
-                      setIsCustomService(false)
-                    }}
-                    className={`text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'bg-amber-500/10 border-amber-500/60 shadow-md shadow-amber-500/10'
-                        : 'bg-zinc-900/70 border-zinc-800/80 hover:border-zinc-700 text-zinc-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold ${isSelected ? 'text-amber-300' : 'text-zinc-200'}`}>
-                          {srv.name}
-                        </span>
-                        {srv.badge && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20">
-                            {srv.badge}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-[11px] text-zinc-500 mt-0.5">{srv.duration}</div>
-                    </div>
-                    <div className="text-sm font-bold text-white font-mono">
-                      {srv.priceFormatted}
-                    </div>
-                  </button>
-                )
-              })}
+          <button
+            onClick={() => setCurrentTab('crear')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'crear'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>➕ Crear Cita</span>
+          </button>
 
-              {/* Opción personalizada */}
+          <button
+            onClick={() => setCurrentTab('facturacion')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'facturacion'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>💶 Facturación</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('clientas')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'clientas'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>👥 Clientas</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+              {clientsList.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('promo')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'promo'
+                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white font-semibold shadow-md'
+                : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+            }`}
+          >
+            <span>🔥 Oferta 23€</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('servicios')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'servicios'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>🌸 Servicios</span>
+          </button>
+        </div>
+      </header>
+
+      {/* CONTENIDO PRINCIPAL SEGÚN PESTAÑA */}
+      <main className="max-w-md w-full mx-auto p-4 flex-1">
+        {/* ========================================================================= */}
+        {/* PESTAÑA 1: AGENDA DE CITAS */}
+        {/* ========================================================================= */}
+        {currentTab === 'citas' && (
+          <div className="space-y-4">
+            {/* Selector de Filtro */}
+            <div className="flex items-center justify-between bg-[#121218] p-1.5 rounded-2xl border border-white/5">
               <button
-                type="button"
-                onClick={() => setIsCustomService(true)}
-                className={`text-left p-3 rounded-xl border transition-all flex items-center justify-between cursor-pointer ${
-                  isCustomService
-                    ? 'bg-amber-500/10 border-amber-500/60 shadow-md shadow-amber-500/10'
-                    : 'bg-zinc-900/70 border-zinc-800/80 hover:border-zinc-700 text-zinc-400'
+                onClick={() => setAgendaFilter('hoy')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  agendaFilter === 'hoy'
+                    ? 'bg-[#d4af37] text-black font-semibold'
+                    : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                <span className="text-xs font-medium">+ Otro servicio / Precio a medida</span>
-                <span className="text-xs font-mono text-zinc-500">Manual</span>
+                Hoy ({appointments.filter(a => a.date === todayStr).length})
               </button>
+              <button
+                onClick={() => setAgendaFilter('proximas')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  agendaFilter === 'proximas'
+                    ? 'bg-[#d4af37] text-black font-semibold'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Próximas
+              </button>
+              <button
+                onClick={() => setAgendaFilter('todas')}
+                className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  agendaFilter === 'todas'
+                    ? 'bg-[#d4af37] text-black font-semibold'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                Todas ({appointments.length})
+              </button>
+            </div>
 
-              {isCustomService && (
-                <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-xl space-y-3 mt-1">
-                  <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Nombre del Servicio</label>
-                    <input
-                      type="text"
-                      value={customServiceName}
-                      onChange={(e) => setCustomServiceName(e.target.value)}
-                      placeholder="Ej. Retoque exprés, Lifting, etc."
-                      className="w-full px-3 py-2 bg-black border border-zinc-800 rounded-lg text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400"
-                    />
+            {/* Listado de Citas */}
+            {isLoadingAppointments && appointments.length === 0 ? (
+              <div className="text-center py-12 text-zinc-500 space-y-2">
+                <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs">Consultando citas en la nube...</p>
+              </div>
+            ) : filteredAppointments.length === 0 ? (
+              <div className="text-center py-12 px-4 rounded-3xl bg-[#121218] border border-white/5 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto text-2xl">
+                  📅
+                </div>
+                <h3 className="text-sm font-medium text-white">
+                  {agendaFilter === 'hoy' ? 'No hay citas programadas para hoy' : 'No se encontraron citas'}
+                </h3>
+                <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                  Puedes agendar una nueva cita en cualquier momento y enviarle la confirmación a la clienta por WhatsApp.
+                </p>
+                <button
+                  onClick={() => setCurrentTab('crear')}
+                  className="mt-2 px-4 py-2 rounded-xl bg-[#d4af37] text-black font-semibold text-xs transition-all active:scale-95 shadow-md shadow-[#d4af37]/20"
+                >
+                  ➕ Crear Nueva Cita
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredAppointments.map((apt) => {
+                  const aptPhoneClean = cleanPhoneForWhatsApp(apt.clientPhone)
+                  const statusColors = {
+                    confirmada: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+                    pendiente: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+                    completada: 'bg-[#d4af37]/10 text-[#d4af37] border-[#d4af37]/30',
+                    cancelada: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+                  }
+
+                  return (
+                    <div
+                      key={apt.id}
+                      className="p-4 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all space-y-3 shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-base font-bold text-white font-serif tracking-tight">
+                              {apt.clientName}
+                            </span>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded-full border uppercase tracking-wider font-semibold ${
+                                statusColors[apt.status] || statusColors.pendiente
+                              }`}
+                            >
+                              {apt.status}
+                            </span>
+                          </div>
+                          <p className="text-xs text-zinc-400 mt-0.5">
+                            📞 {apt.clientPhone}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-[#d4af37] font-mono">
+                            {apt.price} €
+                          </div>
+                          <span
+                            className={`text-[9px] px-1.5 py-0.5 rounded ${
+                              apt.paymentStatus === 'pagado'
+                                ? 'bg-emerald-950 text-emerald-300'
+                                : 'bg-zinc-800 text-zinc-400'
+                            }`}
+                          >
+                            {apt.paymentStatus === 'pagado' ? 'Pagado' : 'Cobro Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#d4af37]">🕒</span>
+                          <span className="font-medium text-zinc-200">
+                            {apt.date} · {apt.time}
+                          </span>
+                        </div>
+                        <div className="text-zinc-400 truncate max-w-[150px]">
+                          🌸 {apt.serviceName}
+                        </div>
+                      </div>
+
+                      {apt.notes && (
+                        <p className="text-[11px] text-zinc-400 bg-white/5 p-2 rounded-lg italic">
+                          📝 {apt.notes}
+                        </p>
+                      )}
+
+                      {/* Botones de Acción de Cita */}
+                      <div className="pt-1 flex items-center gap-2 flex-wrap">
+                        {aptPhoneClean && (
+                          <a
+                            href={`https://wa.me/${aptPhoneClean}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                          >
+                            <span>💬 WhatsApp</span>
+                          </a>
+                        )}
+
+                        {apt.status !== 'completada' && (
+                          <button
+                            onClick={() => handleUpdateStatus(apt.id, 'completada', 'pagado')}
+                            className="py-1.5 px-3 rounded-xl bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-95"
+                          >
+                            <span>⭐ Completar</span>
+                          </button>
+                        )}
+
+                        {apt.status === 'pendiente' && (
+                          <button
+                            onClick={() => handleUpdateStatus(apt.id, 'confirmada')}
+                            className="py-1.5 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold transition-all active:scale-95"
+                          >
+                            <span>✓ Confirmar</span>
+                          </button>
+                        )}
+
+                        {apt.status !== 'cancelada' && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`¿Cancelar la cita de ${apt.clientName}?`)) {
+                                handleUpdateStatus(apt.id, 'cancelada')
+                              }
+                            }}
+                            className="py-1.5 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-all active:scale-95"
+                          >
+                            <span>✕</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PESTAÑA 2: CREAR CITA (CON OFERTA ESPECIAL 23 €) */}
+        {/* ========================================================================= */}
+        {currentTab === 'crear' && (
+          <div className="space-y-4">
+            {createdAppointment ? (
+              <div className="p-5 rounded-3xl bg-[#121218] border border-emerald-500/30 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl">
+                  ✓
+                </div>
+
+                <div>
+                  <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-mono font-semibold">
+                    Cita Registrada 24/7 en la Nube
+                  </span>
+                  <h2 className="text-xl font-bold text-white font-serif mt-1">
+                    {createdAppointment.clientName}
+                  </h2>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    {createdAppointment.date} a las {createdAppointment.time} · {createdAppointment.serviceName}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-black/50 border border-[#d4af37]/20 text-left space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">Teléfono:</span>
+                    <span className="font-mono text-zinc-200">{createdAppointment.clientPhone}</span>
                   </div>
-                  <div>
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-wider block mb-1">Precio (€)</label>
-                    <input
-                      type="number"
-                      value={customPrice}
-                      onChange={(e) => setCustomPrice(e.target.value)}
-                      placeholder="30"
-                      className="w-28 px-3 py-2 bg-black border border-zinc-800 rounded-lg text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-mono"
-                    />
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400">Total a cobrar:</span>
+                    <span className="font-mono font-bold text-[#d4af37]">{createdAppointment.price} €</span>
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Section: Fecha y Hora */}
-          <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              2. Fecha y Hora de la Cita
-            </label>
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={createdAppointment.whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98]"
+                  >
+                    <span>💬 Enviar WhatsApp a la Clienta ↗</span>
+                  </a>
 
-            {/* Quick date chips */}
-            <div className="flex gap-2">
-              {[
-                { label: 'Hoy', val: getFormattedDate(0) },
-                { label: 'Mañana', val: getFormattedDate(1) },
-                { label: 'Pasado mañana', val: getFormattedDate(2) },
-              ].map((chip) => (
+                  <button
+                    onClick={() => {
+                      setCreatedAppointment(null)
+                      setClientName('')
+                      setClientPhone('')
+                      setNotes('')
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
+                  >
+                    Agendar otra cita
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmitAppointment} className="space-y-4">
+                {/* 1. Selección de Servicio */}
+                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="text-[#d4af37]">1.</span> Tratamiento / Servicio
+                    </label>
+                    <span className="text-[10px] text-[#d4af37]">Precios oficiales</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {STUDIO_SERVICES.map((s) => {
+                      const isSelected = !isCustomService && selectedService.id === s.id
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => {
+                            setSelectedService(s)
+                            setIsCustomService(false)
+                          }}
+                          className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between ${
+                            isSelected
+                              ? s.isPromo
+                                ? 'bg-amber-500/15 border-amber-500/60 shadow-lg shadow-amber-500/10'
+                                : 'bg-[#d4af37]/15 border-[#d4af37] shadow-md shadow-[#d4af37]/10'
+                              : 'bg-black/30 border-white/5 hover:border-white/15'
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-semibold ${isSelected ? (s.isPromo ? 'text-amber-300 font-bold' : 'text-white') : 'text-zinc-300'}`}>
+                                {s.name}
+                              </span>
+                              {s.badge && (
+                                <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
+                                  s.isPromo ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white animate-pulse' : 'bg-[#d4af37]/20 text-[#f3e5ab]'
+                                }`}>
+                                  {s.badge}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-zinc-500 flex items-center gap-2">
+                              <span>⏱️ {s.duration}</span>
+                              {s.originalPriceFormatted && (
+                                <span className="line-through text-zinc-600">Habitual: {s.originalPriceFormatted}</span>
+                              )}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <span className={`text-sm font-bold font-mono ${s.isPromo ? 'text-amber-400 text-base' : 'text-[#d4af37]'}`}>
+                              {s.priceFormatted}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+
+                    {/* Opción Personalizada */}
+                    <div
+                      onClick={() => setIsCustomService(true)}
+                      className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between ${
+                        isCustomService
+                          ? 'bg-[#d4af37]/15 border-[#d4af37]'
+                          : 'bg-black/30 border-white/5 hover:border-white/15'
+                      }`}
+                    >
+                      <span className="text-xs font-semibold text-zinc-300">
+                        + Otro servicio personalizado
+                      </span>
+                      <span className="text-xs text-zinc-500 font-mono">Editar</span>
+                    </div>
+
+                    {isCustomService && (
+                      <div className="p-3 rounded-xl bg-black/40 border border-[#d4af37]/30 space-y-2">
+                        <input
+                          type="text"
+                          placeholder="Nombre del servicio (ej. Lifting + Tinte)"
+                          value={customServiceName}
+                          onChange={(e) => setCustomServiceName(e.target.value)}
+                          className="w-full bg-[#121218] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
+                        />
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-zinc-400">Precio (€):</span>
+                          <input
+                            type="number"
+                            value={customPrice}
+                            onChange={(e) => setCustomPrice(e.target.value)}
+                            className="w-24 bg-[#121218] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#d4af37]"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Fecha y Hora */}
+                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+                  <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-[#d4af37]">2.</span> Fecha y Hora
+                  </label>
+
+                  {/* Chips rápidos de fecha */}
+                  <div className="flex items-center gap-1.5">
+                    {[
+                      { label: 'Hoy', offset: 0 },
+                      { label: 'Mañana', offset: 1 },
+                      { label: 'Pasado', offset: 2 },
+                    ].map((d) => {
+                      const dStr = getFormattedDate(d.offset)
+                      const isSel = date === dStr
+                      return (
+                        <button
+                          key={d.label}
+                          type="button"
+                          onClick={() => setDate(dStr)}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                            isSel
+                              ? 'bg-[#d4af37] text-black border-[#d4af37] font-semibold'
+                              : 'bg-black/30 border-white/10 text-zinc-400 hover:text-white'
+                          }`}
+                        >
+                          {d.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block mb-1">Día de la cita</span>
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block mb-1">Hora de inicio</span>
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Chips rápidos de horas habituales */}
+                  <div className="pt-1 flex items-center gap-1.5 flex-wrap">
+                    {['10:00', '11:30', '13:00', '16:00', '17:30', '19:00'].map((h) => (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setTime(h)}
+                        className={`px-2 py-1 rounded-md text-[11px] font-mono border transition-all ${
+                          time === h
+                            ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#f3e5ab]'
+                            : 'bg-black/30 border-white/5 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. Datos de la Clienta y WhatsApp */}
+                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="text-[#d4af37]">3.</span> Clienta y Teléfono
+                    </label>
+                    {isValidPhone && (
+                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        WhatsApp: +{cleanPhone}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Nombre de la clienta *"
+                      value={clientName}
+                      onChange={(e) => setClientName(e.target.value)}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
+                    />
+
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Teléfono móvil (ej. 612 34 56 78) *"
+                      value={clientPhone}
+                      onChange={(e) => setClientPhone(e.target.value)}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37] font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block mb-1">Curvatura habitual</span>
+                      <select
+                        value={curl}
+                        onChange={(e) => setCurl(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                      >
+                        <option value="D">Curva D (Marcada)</option>
+                        <option value="CC">Curva CC (Media)</option>
+                        <option value="C">Curva C (Natural)</option>
+                        <option value="M">Curva M (Foxy / Rasgado)</option>
+                        <option value="L">Curva L (Especial)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] text-zinc-400 block mb-1">Notas / Preferencias</span>
+                      <input
+                        type="text"
+                        placeholder="Ej. Ojo sensible, efecto ardilla"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {submitErrorMsg && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                    ⚠️ {submitErrorMsg}
+                  </div>
+                )}
+
+                {/* Botón de Guardado */}
                 <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => setDate(chip.val)}
-                  className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                    date === chip.val
-                      ? 'bg-amber-400/15 border-amber-400/50 text-amber-300'
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
-                  }`}
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] via-[#f3e5ab] to-[#aa8c2c] hover:opacity-95 text-black font-bold text-sm tracking-wide shadow-xl shadow-[#d4af37]/25 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
-                  {chip.label}
+                  {isSubmitting ? 'Guardando en la nube...' : '✨ GUARDAR CITA Y GENERAR ENLACE WHATSAPP'}
                 </button>
-              ))}
-            </div>
+              </form>
+            )}
+          </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Fecha</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
-                />
+        {/* ========================================================================= */}
+        {/* PESTAÑA 3: FACTURACIÓN Y MÉTRICAS */}
+        {/* ========================================================================= */}
+        {currentTab === 'facturacion' && (
+          <div className="space-y-4">
+            {/* Tarjetas Principales */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-1">
+                <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Facturado Hoy</span>
+                <div className="text-2xl font-bold text-white font-mono">
+                  {metrics.totalHoy} €
+                </div>
+                <p className="text-[10px] text-emerald-400">
+                  {appointments.filter(a => a.date === todayStr && a.status !== 'cancelada').length} citas programadas
+                </p>
               </div>
 
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Hora</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400 font-mono"
-                />
+              <div className="p-4 rounded-2xl bg-[#121218] border border-[#d4af37]/30 space-y-1 bg-gradient-to-br from-[#121218] to-[#1a170d]">
+                <span className="text-[10px] text-[#d4af37] uppercase tracking-widest font-semibold">Este Mes</span>
+                <div className="text-2xl font-bold text-[#d4af37] font-mono">
+                  {metrics.totalMes} €
+                </div>
+                <p className="text-[10px] text-zinc-400">
+                  Semana: {metrics.totalSemana} €
+                </p>
               </div>
             </div>
 
-            {/* Quick time chips */}
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {quickTimes.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTime(t)}
-                  className={`px-2.5 py-1 rounded-md text-[10.5px] font-mono transition-all cursor-pointer ${
-                    time === t
-                      ? 'bg-amber-400 text-black font-bold'
-                      : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
+            {/* Desglose de Cobros */}
+            <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+              <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+                Balance de Cobros
+              </h3>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
+                  <span className="text-[10px] text-emerald-300 block">Total Pagado</span>
+                  <span className="text-lg font-bold text-emerald-400 font-mono">{metrics.totalCobrado} €</span>
+                </div>
+                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/20">
+                  <span className="text-[10px] text-amber-300 block">Pendiente de Cobro</span>
+                  <span className="text-lg font-bold text-amber-400 font-mono">{metrics.totalPendienteCobro} €</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5 text-zinc-400">
+                <span>Citas completadas: <strong className="text-white">{metrics.countCompletadas}</strong></span>
+                <span>Ticket medio estimado: <strong className="text-[#d4af37] font-mono">{metrics.ticketMedio} €</strong></span>
+              </div>
+            </div>
+
+            {/* Desglose por Servicios */}
+            <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+              <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+                Ingresos por Tratamiento
+              </h3>
+
+              <div className="space-y-2">
+                {metrics.serviceCounts.map(([serviceName, data]) => (
+                  <div key={serviceName} className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-medium text-zinc-200 block">{serviceName}</span>
+                      <span className="text-[10px] text-zinc-500">{data.count} cita{data.count !== 1 ? 's' : ''}</span>
+                    </div>
+                    <span className="font-bold text-[#d4af37] font-mono">{data.total} €</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Section: Clienta y Teléfono */}
+        {/* ========================================================================= */}
+        {/* PESTAÑA 4: DIRECTORIO DE CLIENTAS */}
+        {/* ========================================================================= */}
+        {currentTab === 'clientas' && (
           <div className="space-y-3">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              3. Datos de la Clienta
-            </label>
-
-            <div>
-              <label className="text-[10px] text-zinc-500 uppercase tracking-wider block mb-1">Nombre Completo *</label>
+            {/* Buscador de Clientas */}
+            <div className="relative">
               <input
                 type="text"
-                required
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                placeholder="Ej. Laura Gómez"
-                className="w-full px-3.5 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-medium"
+                placeholder="Buscar clienta por nombre o teléfono..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="w-full bg-[#121218] border border-white/10 rounded-xl pl-3.5 pr-8 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
               />
+              {clientSearch && (
+                <button
+                  onClick={() => setClientSearch('')}
+                  className="absolute right-3 top-2.5 text-zinc-400 text-xs"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-[10px] text-zinc-500 uppercase tracking-wider block">Teléfono WhatsApp *</label>
-                {isPhoneValid && (
-                  <span className="text-[10px] font-mono font-bold text-emerald-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    WhatsApp: +{cleanPhone}
-                  </span>
-                )}
+            {clientsList.length === 0 ? (
+              <div className="text-center py-12 text-zinc-500 text-xs">
+                No se encontraron clientas en la base de datos.
               </div>
-              <input
-                type="tel"
-                required
-                value={clientPhone}
-                onChange={(e) => setClientPhone(e.target.value)}
-                placeholder="Ej. 612 34 56 78"
-                className="w-full px-3.5 py-2.5 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 font-mono"
-              />
+            ) : (
+              <div className="space-y-2.5">
+                {clientsList.map((client) => {
+                  const clientPhoneClean = cleanPhoneForWhatsApp(client.phone)
+                  return (
+                    <div
+                      key={client.phone || client.name}
+                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="text-sm font-bold text-white font-serif tracking-tight">
+                            {client.name}
+                          </h4>
+                          <p className="text-xs text-zinc-400 font-mono">
+                            📞 {client.phone}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#d4af37]/10 text-[#d4af37] font-bold">
+                            {client.totalVisits} visita{client.totalVisits !== 1 ? 's' : ''}
+                          </span>
+                          <span className="block text-xs font-mono font-bold text-zinc-300 mt-1">
+                            {client.totalSpent} € total
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-white/5 pt-1.5">
+                        <span>Última vez: {client.lastVisitDate} ({client.lastServiceName})</span>
+                        {client.preferredCurl && (
+                          <span className="text-[#f3e5ab] font-bold">Curva {client.preferredCurl}</span>
+                        )}
+                      </div>
+
+                      {client.notes && (
+                        <p className="text-[10px] text-zinc-500 italic">
+                          📝 {client.notes}
+                        </p>
+                      )}
+
+                      {clientPhoneClean && (
+                        <div className="pt-1 flex items-center gap-2">
+                          <a
+                            href={`https://wa.me/${clientPhoneClean}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                          >
+                            <span>💬 Escribir por WhatsApp</span>
+                          </a>
+
+                          <button
+                            onClick={() => {
+                              setClientName(client.name)
+                              setClientPhone(client.phone)
+                              if (client.preferredCurl) setCurl(client.preferredCurl)
+                              setCurrentTab('crear')
+                            }}
+                            className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
+                          >
+                            ➕ Agendar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PESTAÑA 5: OFERTA ESPECIAL Y DIFUSIÓN EN WHATSAPP */}
+        {/* ========================================================================= */}
+        {currentTab === 'promo' && (
+          <div className="space-y-4">
+            <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1c1208] via-[#121218] to-[#12081c] border border-amber-500/40 shadow-xl space-y-4">
+              <div className="text-center space-y-1">
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold uppercase tracking-wider">
+                  🔥 PROMOCIÓN ACTIVA
+                </span>
+                <h2 className="text-lg font-bold text-white font-serif mt-1">
+                  Extensiones de Pestañas — Oferta 23 €
+                </h2>
+                <p className="text-xs text-amber-300">
+                  Difunde esta promoción directamente por WhatsApp o aplícala a nuevas citas
+                </p>
+              </div>
+
+              {/* Vista previa del mensaje */}
+              <div className="p-4 rounded-2xl bg-black/60 border border-white/10 text-xs text-zinc-300 font-sans whitespace-pre-line leading-relaxed shadow-inner">
+                {PROMO_WHATSAPP_TEXT}
+              </div>
+
+              {/* Acciones de Difusión */}
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleCopyPromo}
+                    className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <span>{copiedPromo ? '✓ ¡Copiado!' : '📋 Copiar Texto'}</span>
+                  </button>
+
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(PROMO_WHATSAPP_TEXT)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    <span>💬 Enviar por WhatsApp</span>
+                  </a>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSelectedService(STUDIO_SERVICES[0])
+                    setIsCustomService(false)
+                    setCurrentTab('crear')
+                  }}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                >
+                  📅 Crear Cita con esta Oferta (23 €)
+                </button>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Section: Notas / Curvatura */}
-          <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              4. Curvatura y Notas (Opcional)
-            </label>
+        {/* ========================================================================= */}
+        {/* PESTAÑA 6: SERVICIOS Y PRECIOS OFICIALES */}
+        {/* ========================================================================= */}
+        {currentTab === 'servicios' && (
+          <div className="space-y-3">
+            <div className="text-center pb-1">
+              <h2 className="text-sm font-bold text-white font-serif">
+                Catálogo de Servicios y Precios
+              </h2>
+              <p className="text-[11px] text-zinc-400">
+                Pulsa en cualquier servicio para agendar una cita al instante
+              </p>
+            </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-zinc-500">Curvatura:</span>
-              {['C', 'CC', 'D', 'L', 'M'].map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCurl(c)}
-                  className={`w-7 h-7 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer ${
-                    curl === c
-                      ? 'bg-amber-400 text-black shadow'
-                      : 'bg-zinc-900 text-zinc-400 border border-zinc-800'
-                  }`}
+            <div className="space-y-2.5">
+              {STUDIO_SERVICES.map((s) => (
+                <div
+                  key={s.id}
+                  className="p-4 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all flex items-center justify-between gap-3"
                 >
-                  {c}
-                </button>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs font-bold text-white">
+                        {s.name}
+                      </h4>
+                      {s.badge && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#d4af37]/20 text-[#f3e5ab] font-bold">
+                          {s.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-zinc-500">
+                      ⏱️ Duración: {s.duration}
+                    </p>
+                  </div>
+
+                  <div className="text-right flex flex-col items-end gap-1.5">
+                    <span className="text-sm font-bold text-[#d4af37] font-mono">
+                      {s.priceFormatted}
+                    </span>
+                    <button
+                      onClick={() => {
+                        setSelectedService(s)
+                        setIsCustomService(false)
+                        setCurrentTab('crear')
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-[#d4af37] text-black font-bold text-[10px] hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      Agendar
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
-
-            <textarea
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Detalles sobre el diseño, longitud deseada, o preferencias..."
-              className="w-full px-3 py-2 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-amber-400 resize-none"
-            />
           </div>
+        )}
+      </main>
 
-          {/* Submit Button */}
-          <div className="pt-3">
-            <button
-              type="submit"
-              disabled={isSubmitting || !clientName.trim() || !isPhoneValid}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/20 transition-all cursor-pointer active:scale-98 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-zinc-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Guardando en la nube...</span>
-                </>
-              ) : (
-                <>
-                  <span>✨ Guardar Cita y Generar Enlace WhatsApp</span>
-                </>
-              )}
-            </button>
-            <p className="text-center text-[11px] text-zinc-500 mt-2.5">
-              Se sincronizará en Supabase 24/7 y se abrirá WhatsApp con los datos listos.
-            </p>
-          </div>
-        </form>
-      )}
+      {/* BARRA INFERIOR FLOTANTE (DOCK PARA MÓVIL) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-t border-white/10 px-4 py-2">
+        <div className="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
+          <button
+            onClick={() => setCurrentTab('citas')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'citas' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-base">📅</span>
+            <span className="text-[10px]">Citas</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('crear')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'crear' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-base">➕</span>
+            <span className="text-[10px]">Crear</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('facturacion')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'facturacion' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-base">💶</span>
+            <span className="text-[10px]">Facturas</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('clientas')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'clientas' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-base">👥</span>
+            <span className="text-[10px]">Clientas</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('promo')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'promo' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-base">🔥</span>
+            <span className="text-[10px]">Oferta</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

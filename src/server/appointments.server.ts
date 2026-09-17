@@ -170,8 +170,36 @@ export async function saveAppointmentToDb(appointment: {
   return true
 }
 
+export async function updateAppointmentStatusInDb(
+  id: string,
+  patch: { status?: string; paymentStatus?: string; notes?: string }
+): Promise<boolean> {
+  const client = await getSql()
+  if (patch.status && patch.paymentStatus) {
+    await client`
+      UPDATE studio_appointments
+      SET status = ${patch.status}, payment_status = ${patch.paymentStatus}, updated_at = NOW()
+      WHERE id = ${id}
+    `
+  } else if (patch.status) {
+    await client`
+      UPDATE studio_appointments
+      SET status = ${patch.status}, updated_at = NOW()
+      WHERE id = ${id}
+    `
+  } else if (patch.paymentStatus) {
+    await client`
+      UPDATE studio_appointments
+      SET payment_status = ${patch.paymentStatus}, updated_at = NOW()
+      WHERE id = ${id}
+    `
+  }
+  return true
+}
+
 export async function deleteAppointmentFromDb(id: string): Promise<boolean> {
   const client = await getSql()
   await client`DELETE FROM studio_appointments WHERE id = ${id}`
   return true
 }
+

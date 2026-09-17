@@ -193,18 +193,19 @@ export async function sendStudioTelegramAlert(
 }
 
 /**
- * Configura el botón permanente de menú en Telegram para abrir la Mini App de Nueva Cita
+ * Configura el botón permanente de menú en Telegram para abrir el Panel Móvil de GoldBlack Lash
  */
 export async function setupTelegramBotMenuButton(
   botToken: string,
-  webAppUrl = 'https://www.goldblacklash.com/nueva-cita'
+  webAppUrl = 'https://www.goldblacklash.com/nueva-cita',
+  buttonText = '💼 Panel Studio'
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     const endpoint = `https://api.telegram.org/bot${botToken}/setChatMenuButton`
     const payload = {
       menu_button: {
         type: 'web_app',
-        text: '📅 Crear Cita',
+        text: buttonText,
         web_app: {
           url: webAppUrl,
         },
@@ -221,6 +222,22 @@ export async function setupTelegramBotMenuButton(
     if (!res.ok || !data.ok) {
       return { ok: false, error: data.description || `HTTP ${res.status}` }
     }
+
+    // Configurar también comandos rápidos del bot
+    try {
+      await fetch(`https://api.telegram.org/bot${botToken}/setMyCommands`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commands: [
+            { command: 'panel', description: '💼 Abrir Panel Móvil (Citas, Facturación, Clientas)' },
+            { command: 'nueva', description: '📅 Formulario Rápido de Crear Cita' },
+            { command: 'promo', description: '🔥 Ver Oferta Especial de Pestañas (23 €)' },
+          ],
+        }),
+      })
+    } catch {}
+
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Error al configurar botón de menú en Telegram' }
