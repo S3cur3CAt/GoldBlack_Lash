@@ -9,7 +9,7 @@ import {
   generateBookingEmailText,
 } from '../server/emails/bookingEmail'
 import { fetchConfigFromDb } from '../server/config.server'
-import { sendStudioWhatsAppAlert } from '../server/whatsapp.server'
+import { sendStudioTelegramAlert } from '../server/telegram.server'
 
 export const Route = createFileRoute('/api/appointments')({
   server: {
@@ -174,20 +174,20 @@ export const Route = createFileRoute('/api/appointments')({
             }
           }
 
-          // Send instant WhatsApp alert to studio owner (Laura)
-          let studioWhatsAppSent = false
+          // Send instant Telegram alert to studio owner (Laura) in 0s with HTML format
+          let studioTelegramSent = false
           try {
             const liveConfig = await fetchConfigFromDb().catch(() => null)
-            const waResult = await sendStudioWhatsAppAlert({
+            const tgResult = await sendStudioTelegramAlert({
               appointment: aptRecord,
               config: liveConfig || undefined,
             })
-            studioWhatsAppSent = waResult.ok
-            if (!waResult.ok && waResult.error) {
-              console.info('[WhatsApp Alert Notice]', waResult.error)
+            studioTelegramSent = tgResult.ok
+            if (!tgResult.ok && tgResult.error) {
+              console.info('[Telegram Alert Notice]', tgResult.error)
             }
-          } catch (waErr) {
-            console.warn('[WhatsApp Alert Error]', waErr)
+          } catch (tgErr) {
+            console.warn('[Telegram Alert Error]', tgErr)
           }
 
           return Response.json(
@@ -196,7 +196,7 @@ export const Route = createFileRoute('/api/appointments')({
               message: 'Cita registrada correctamente en el sistema de administración',
               appointment: aptRecord,
               emailSent: clientEmailSent,
-              whatsappAlertSent: studioWhatsAppSent,
+              telegramAlertSent: studioTelegramSent,
             },
             {
               headers: {

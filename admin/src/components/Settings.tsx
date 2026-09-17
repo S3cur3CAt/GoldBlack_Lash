@@ -16,8 +16,9 @@ import {
   IconBell,
   IconBellOff,
   IconWhatsApp,
+  IconTelegram,
 } from './Icons'
-import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestWhatsAppAlert } from '../services/storage'
+import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestTelegramAlert } from '../services/storage'
 import {
   announceNewAppointmentVoice,
   announceUpdateVoice,
@@ -111,33 +112,48 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
-  // Live WhatsApp alert test state
-  const [isSendingWhatsAppTest, setIsSendingWhatsAppTest] = useState(false)
-  const [whatsAppTestResult, setWhatsAppTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  // Live Telegram alert test state
+  const [isSendingTelegramTest, setIsSendingTelegramTest] = useState(false)
+  const [telegramTestResult, setTelegramTestResult] = useState<{ success: boolean; message: string } | null>(null)
 
-  const handleTestWhatsApp = async () => {
-    setIsSendingWhatsAppTest(true)
-    setWhatsAppTestResult(null)
+  const handleTestTelegram = async () => {
+    if (!formData.telegramBotToken?.trim()) {
+      setTelegramTestResult({
+        success: false,
+        message: 'Por favor, introduce el Token de tu Bot de Telegram antes de realizar la prueba.',
+      })
+      return
+    }
+    if (!formData.telegramChatId?.trim()) {
+      setTelegramTestResult({
+        success: false,
+        message: 'Por favor, introduce tu Chat ID de Telegram antes de realizar la prueba.',
+      })
+      return
+    }
+
+    setIsSendingTelegramTest(true)
+    setTelegramTestResult(null)
     try {
-      const res = await sendTestWhatsAppAlert(formData)
+      const res = await sendTestTelegramAlert(formData)
       if (res.ok) {
-        setWhatsAppTestResult({
+        setTelegramTestResult({
           success: true,
-          message: res.message || '✓ ¡Alerta de WhatsApp enviada con éxito a tu móvil!',
+          message: res.message || '✓ ¡Alerta instantánea (0s) enviada con éxito a tu Telegram!',
         })
       } else {
-        setWhatsAppTestResult({
+        setTelegramTestResult({
           success: false,
-          message: res.error || 'No se pudo enviar la alerta de prueba.',
+          message: res.error || 'No se pudo enviar la alerta de prueba a Telegram.',
         })
       }
     } catch (err: any) {
-      setWhatsAppTestResult({
+      setTelegramTestResult({
         success: false,
-        message: err?.message || 'Error de conexión con el servicio de WhatsApp.',
+        message: err?.message || 'Error de conexión con el servicio de Telegram.',
       })
     } finally {
-      setIsSendingWhatsAppTest(false)
+      setIsSendingTelegramTest(false)
     }
   }
 
@@ -799,204 +815,179 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* WhatsApp Instant Booking Alerts Configuration (Studio / Laura) */}
-        <div className="p-6 rounded-2xl bg-ink-850 border border-emerald-500/30 space-y-5 shadow-lg shadow-emerald-950/20">
-          <div className="flex items-center justify-between gap-4">
+        {/* Alertas Instantáneas por Telegram Bot (0 segundos) */}
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm shadow-emerald-950/40">
-                <IconWhatsApp size={22} />
+              <div className="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-sm shadow-sky-950/40 shrink-0">
+                <IconTelegram size={22} />
               </div>
               <div>
-                <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
-                  <span>Alertas de Citas por WhatsApp (Móvil de Laura)</span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    Directo • Instantáneo
+                <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2 flex-wrap">
+                  <span>Alertas Instantáneas por Telegram Bot</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                    ⚡ Instantáneo (0s) • 100% Gratis
                   </span>
                 </h4>
                 <p className="text-xs text-gray-400">
-                  Recibe en tu WhatsApp exactamente lo mismo que por Gmail cada vez que una clienta reserve en tu web, con enlace directo para chatear con ella.
+                  Recibe en tu móvil y tu Mac un aviso inmediato en menos de 1 segundo cada vez que una clienta reserve en la web, con tarjeta de diseño en HTML y botón para abrir su WhatsApp.
                 </p>
               </div>
             </div>
 
-            {/* Toggle switch for WhatsApp Alerts */}
+            {/* Toggle switch for Telegram Alerts */}
             <label className="relative inline-flex items-center cursor-pointer shrink-0">
               <input
                 type="checkbox"
-                checked={formData.whatsappAlertsEnabled !== false}
+                checked={formData.telegramAlertsEnabled !== false}
                 onChange={(e) =>
-                  setFormData({ ...formData, whatsappAlertsEnabled: e.target.checked })
+                  setFormData({ ...formData, telegramAlertsEnabled: e.target.checked })
                 }
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-ink-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-line"></div>
+              <div className="w-11 h-6 bg-ink-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500 border border-line"></div>
             </label>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1">
-                Tu Número de WhatsApp para Recibir Alertas *
+                Token del Bot de Telegram (@BotFather) *
               </label>
               <input
-                type="tel"
-                placeholder="+34 604 18 76 76"
-                value={formData.whatsappAlertPhone || ''}
+                type="password"
+                placeholder="Pega tu token (ej. 1234567890:ABCdefGHI...)"
+                value={formData.telegramBotToken || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, whatsappAlertPhone: e.target.value.trim() })
+                  setFormData({ ...formData, telegramBotToken: e.target.value.trim() })
                 }
-                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-sky-400"
               />
               <p className="text-[11px] text-gray-500 mt-1">
-                A este número te llegará el aviso con el nombre, teléfono y tratamiento reservado.
+                El token privado que te entrega @BotFather al crear el bot de tu estudio.
               </p>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1">
-                Servicio Proveedor de Envío
+                Tu Chat ID de Telegram *
               </label>
-              <select
-                value={formData.whatsappProvider || 'callmebot'}
+              <input
+                type="text"
+                placeholder="Tu ID numérico (ej. 123456789)"
+                value={formData.telegramChatId || ''}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    whatsappProvider: e.target.value as 'callmebot' | 'webhook',
-                  })
+                  setFormData({ ...formData, telegramChatId: e.target.value.trim() })
                 }
-                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-emerald-400"
-              >
-                <option value="callmebot">CallMeBot (Recomendado • 100% Gratis y Directo)</option>
-                <option value="webhook">Webhook Personalizado (Make / Zapier / Twilio / n8n)</option>
-              </select>
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-sky-400"
+              />
               <p className="text-[11px] text-gray-500 mt-1">
-                CallMeBot envía mensajes directos sin necesidad de pagar planes mensuales de WhatsApp Business.
+                Tu identificador de usuario en Telegram para que el bot te entregue las alertas a ti.
               </p>
             </div>
           </div>
 
-          {/* Conditional: CallMeBot API Key */}
-          {(!formData.whatsappProvider || formData.whatsappProvider === 'callmebot') && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Clave API de CallMeBot
-                </label>
-                <input
-                  type="password"
-                  placeholder="Pega aquí tu clave API de CallMeBot (ej. 1234567)"
-                  value={formData.whatsappCallMeBotApiKey || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, whatsappCallMeBotApiKey: e.target.value.trim() })
-                  }
-                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
-                />
-              </div>
-
-              {/* CallMeBot 15-second setup instructions banner */}
-              <div className="p-4 rounded-xl bg-ink-800/80 border border-emerald-500/20 text-xs space-y-2 text-gray-300">
-                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <span>💡 ¿Cómo obtener tu clave gratuita de CallMeBot en 15 segundos?</span>
-                </div>
-                <p className="text-[11px] text-gray-400">
-                  CallMeBot utiliza números móviles activos que puedes abrir directamente con un solo clic:
-                </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <a
-                    href="https://wa.me/34623912204?text=I%20allow%20callmebot%20to%20send%20me%20messages"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 font-medium text-xs transition-colors"
-                  >
-                    <span>💬 Abrir Bot 1 (+34 623 91 22 04)</span>
-                  </a>
-                  <a
-                    href="https://wa.me/34694257952?text=I%20allow%20callmebot%20to%20send%20me%20messages"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-xs transition-colors"
-                  >
-                    <span>💬 Abrir Bot 2 (+34 694 25 79 52)</span>
-                  </a>
-                  <a
-                    href="https://wa.me/34644263377?text=I%20allow%20callmebot%20to%20send%20me%20messages"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-xs transition-colors"
-                  >
-                    <span>💬 Abrir Bot 3 (+34 644 26 33 77)</span>
-                  </a>
-                </div>
-                <ol className="list-decimal list-inside space-y-1 text-[11.5px] text-gray-300 pt-1">
-                  <li>
-                    Haz clic en cualquiera de los botones de arriba para abrir el chat en tu WhatsApp.
-                  </li>
-                  <li>
-                    Envíale el mensaje que ya viene escrito:{' '}
-                    <span className="px-1.5 py-0.5 rounded bg-black font-mono text-emerald-300">
-                      I allow callmebot to send me messages
-                    </span>
-                  </li>
-                  <li>
-                    CallMeBot te responderá al instante con tu <strong>apikey</strong>. Pégala en la casilla de arriba y pulsa Guardar Cambios.
-                  </li>
-                </ol>
+          {/* Telegram 1-minute setup instructions banner */}
+          <div className="p-4 rounded-xl bg-ink-800/80 border border-sky-500/20 text-xs space-y-3 text-gray-300">
+            <div className="font-semibold text-sky-400 flex items-center justify-between flex-wrap gap-2">
+              <span className="flex items-center gap-1.5">
+                <span>💡 ¿Cómo configurar tu Bot de Telegram en 1 minuto? (100% Gratis y Privado)</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="https://t.me/BotFather"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-950/60 border border-sky-500/30 text-sky-300 hover:bg-sky-900/60 font-medium text-[11px] transition-colors"
+                >
+                  <span>1. Abrir @BotFather</span>
+                </a>
+                <a
+                  href="https://t.me/userinfobot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-[11px] transition-colors"
+                >
+                  <span>2. Abrir @userinfobot</span>
+                </a>
               </div>
             </div>
-          )}
 
-          {/* Conditional: Webhook URL */}
-          {formData.whatsappProvider === 'webhook' && (
-            <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
-                URL del Webhook de WhatsApp (HTTP POST)
-              </label>
-              <input
-                type="url"
-                placeholder="https://hook.eu1.make.com/... o Zapier / Twilio URL"
-                value={formData.whatsappWebhookUrl || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, whatsappWebhookUrl: e.target.value.trim() })
-                }
-                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
-              />
-              <p className="text-[11px] text-gray-500 mt-1">
-                Se enviará un payload JSON con {'{ phone, message, appointment }'} cada vez que una clienta reserve.
+            <ol className="list-decimal list-inside space-y-1.5 text-[11.5px] text-gray-300">
+              <li>
+                <strong>Crea tu Bot:</strong> Abre Telegram, busca a <strong>@BotFather</strong> y pulsa <em>Iniciar</em>. Escríbele <code className="px-1.5 py-0.5 rounded bg-black font-mono text-sky-300">/newbot</code>.
+              </li>
+              <li>
+                <strong>Elige el nombre:</strong> Ponle de nombre <code className="px-1.5 py-0.5 rounded bg-black font-mono text-sky-300">GoldBlack Lash Citas</code> y un usuario que termine en 'bot' (ej. <code className="px-1.5 py-0.5 rounded bg-black font-mono text-sky-300">goldblacklash_citas_bot</code>). @BotFather te responderá con tu <strong>Token</strong>. Pégalo en la casilla de arriba.
+              </li>
+              <li>
+                <strong>Inicia tu Bot y obtén tu Chat ID:</strong> Haz clic en el enlace de tu nuevo bot y pulsa <em>Iniciar</em> (o escribe <code className="px-1.5 py-0.5 rounded bg-black font-mono text-sky-300">/start</code>). Luego habla con <strong>@userinfobot</strong> para ver tu número de <strong>Id</strong> y pégalo en la casilla de Chat ID.
+              </li>
+            </ol>
+          </div>
+
+          {/* Visual Preview of Telegram HTML Card */}
+          <div className="p-4 rounded-xl bg-black/40 border border-line space-y-2">
+            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider block">
+              Vista Previa de la Alerta en Telegram (Tarjeta con HTML y Botones Interactivos):
+            </span>
+            <div className="p-3.5 rounded-xl bg-[#17212b] border border-line-strong max-w-lg space-y-2 text-xs font-sans text-white shadow-lg">
+              <div className="font-bold text-gold-400 flex items-center gap-1.5">
+                <span>✨ ¡NUEVA CITA REGISTRADA! — GoldBlack Lash</span>
+              </div>
+              <div className="border-l-2 border-gold-400 pl-2.5 py-1 text-[11.5px] text-gray-300 space-y-1 bg-white/5 rounded-r-lg">
+                <p>👤 <strong>Clienta:</strong> Elena Morales</p>
+                <p>💅 <strong>Tratamiento:</strong> Volumen Ruso</p>
+                <p>💎 <strong>Detalles:</strong> 55 € • 120 min</p>
+                <p>📅 <strong>Fecha y Hora:</strong> <code className="bg-black/50 px-1 py-0.5 rounded text-gold-300 font-mono">2026-09-20 a las 17:00 h</code></p>
+                <p>📱 <strong>WhatsApp:</strong> <code className="bg-black/50 px-1 py-0.5 rounded text-emerald-400 font-mono">+34 600 00 00 00</code></p>
+              </div>
+              <p className="text-[10.5px] text-gray-400 italic">
+                ⚡ Recibido al instante en 0 segundos. Pulsa el botón inferior para abrir WhatsApp con la clienta:
               </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <div className="px-3 py-1.5 rounded-lg bg-[#242f3d] text-sky-400 text-center text-xs font-semibold border border-sky-500/20 shadow-sm flex items-center justify-center gap-1.5">
+                  <IconWhatsApp size={14} className="text-emerald-400" />
+                  <span>💬 Abrir WhatsApp</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-[#242f3d] text-gray-300 text-center text-xs font-semibold border border-line shadow-sm flex items-center justify-center gap-1.5">
+                  <span>📞 Llamar</span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* Live Test Box for WhatsApp */}
+          {/* Live Test Box for Telegram */}
           <div className="p-4 rounded-xl bg-ink-800/60 border border-line space-y-3">
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-xs font-semibold text-gray-300">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Probar Recepción de Alerta en tu WhatsApp
+                <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                Probar Recepción de Alerta en tu Telegram
               </label>
-              <span className="text-[11px] text-gray-500">Envía un mensaje de prueba a tu móvil</span>
+              <span className="text-[11px] text-gray-500">Envía un mensaje de prueba con HTML y botones</span>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
               <button
                 type="button"
-                onClick={handleTestWhatsApp}
-                disabled={isSendingWhatsAppTest}
-                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-ink-950 font-bold text-xs shadow-md shadow-emerald-950/50 transition-all cursor-pointer active:scale-95"
+                onClick={handleTestTelegram}
+                disabled={isSendingTelegramTest}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-sky-950/50 transition-all cursor-pointer active:scale-95"
               >
-                <IconWhatsApp size={16} />
-                <span>{isSendingWhatsAppTest ? 'Enviando WhatsApp...' : 'Enviar Alerta de Prueba a mi WhatsApp'}</span>
+                <IconTelegram size={16} />
+                <span>{isSendingTelegramTest ? 'Enviando Alerta a Telegram...' : 'Enviar Alerta de Prueba a mi Telegram'}</span>
               </button>
             </div>
 
-            {whatsAppTestResult && (
+            {telegramTestResult && (
               <div
                 className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
-                  whatsAppTestResult.success
+                  telegramTestResult.success
                     ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
                     : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
                 }`}
               >
-                <span>{whatsAppTestResult.message}</span>
+                <span>{telegramTestResult.message}</span>
               </div>
             )}
           </div>

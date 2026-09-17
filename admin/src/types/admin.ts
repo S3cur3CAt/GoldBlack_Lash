@@ -81,11 +81,10 @@ export interface StudioConfig {
   voiceAnnounceUpdates?: boolean
   voiceVolume?: number
   notificationSoundVolume?: number
-  whatsappAlertsEnabled?: boolean
   whatsappAlertPhone?: string
-  whatsappProvider?: 'callmebot' | 'webhook'
-  whatsappCallMeBotApiKey?: string
-  whatsappWebhookUrl?: string
+  telegramAlertsEnabled?: boolean
+  telegramBotToken?: string
+  telegramChatId?: string
 }
 
 export interface GalleryItem {

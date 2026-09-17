@@ -84,8 +84,6 @@ export interface SendWhatsAppAlertOptions {
     name?: string
     whatsappAlertsEnabled?: boolean
     whatsappAlertPhone?: string
-    whatsappProvider?: 'callmebot' | 'webhook'
-    whatsappCallMeBotApiKey?: string
     whatsappWebhookUrl?: string
     phoneDisplay?: string
     phoneClean?: string
@@ -135,57 +133,8 @@ export async function sendStudioWhatsAppAlert(
     messageText = `✨ *Prueba de Alerta WhatsApp — ${cfg.name || 'GoldBlack Lash'}*\n\n¡La conexión de WhatsApp está funcionando correctamente! Recibirás aquí un aviso instantáneo cada vez que una clienta reserve en la web.`
   }
 
-  const provider = cfg.whatsappProvider || 'callmebot'
-
-  // MÉTODO 1: CallMeBot API (Directo y Gratuito)
-  if (provider === 'callmebot' || (!cfg.whatsappWebhookUrl && !process.env.WHATSAPP_WEBHOOK_URL)) {
-    const apiKey =
-      cfg.whatsappCallMeBotApiKey?.trim() ||
-      process.env.CALLMEBOT_API_KEY ||
-      process.env.VITE_CALLMEBOT_API_KEY ||
-      ''
-
-    if (!apiKey) {
-      return {
-        ok: false,
-        error:
-          'Falta la clave API de CallMeBot. Puedes obtenerla gratis en 15 segundos desde los Ajustes de la aplicación.',
-      }
-    }
-
-    try {
-      const encodedMsg = encodeURIComponent(messageText)
-      const callMeBotUrl = `https://api.callmebot.com/whatsapp.php?phone=${targetPhoneClean}&text=${encodedMsg}&apikey=${apiKey}`
-
-      const res = await fetch(callMeBotUrl, {
-        method: 'GET',
-      })
-
-      const responseText = await res.text().catch(() => '')
-
-      // CallMeBot devuelve texto plano con confirmación o mensaje de error
-      if (res.ok && !responseText.toLowerCase().includes('error')) {
-        return {
-          ok: true,
-          message: 'Alerta de WhatsApp enviada correctamente a tu móvil',
-        }
-      } else {
-        return {
-          ok: false,
-          error: responseText || `Error al despachar mensaje con CallMeBot (Código ${res.status})`,
-        }
-      }
-    } catch (err: any) {
-      console.error('[CallMeBot Error]', err)
-      return {
-        ok: false,
-        error: err?.message || 'Error de conexión con el servidor de CallMeBot',
-      }
-    }
-  }
-
-  // MÉTODO 2: Webhook genérico (Make / Zapier / Twilio / n8n / Meta Cloud API)
-  if (provider === 'webhook' || cfg.whatsappWebhookUrl || process.env.WHATSAPP_WEBHOOK_URL) {
+  // Envío a través de Webhook (Make / Zapier / Twilio / n8n / Meta Cloud API)
+  if (cfg.whatsappWebhookUrl || process.env.WHATSAPP_WEBHOOK_URL) {
     const webhookUrl =
       cfg.whatsappWebhookUrl?.trim() ||
       process.env.WHATSAPP_WEBHOOK_URL ||

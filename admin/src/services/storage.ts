@@ -34,12 +34,10 @@ export const DEFAULT_CONFIG: StudioConfig = {
   voiceAnnounceNewAppointments: true,
   voiceAnnounceUpdates: true,
   voiceVolume: 80,
-  notificationSoundVolume: 80,
-  whatsappAlertsEnabled: true,
   whatsappAlertPhone: '+34 604 18 76 76',
-  whatsappProvider: 'callmebot',
-  whatsappCallMeBotApiKey: '2809396',
-  whatsappWebhookUrl: '',
+  telegramAlertsEnabled: true,
+  telegramBotToken: '',
+  telegramChatId: '',
 }
 
 // Initial Services matching site.ts
@@ -1606,46 +1604,66 @@ export async function sendEmailViaResend(options: {
   }
 }
 
-// WhatsApp Studio Alert Testing (Vercel Backend / Direct CallMeBot Gateway)
-export async function sendTestWhatsAppAlert(config: StudioConfig): Promise<{ ok: boolean; message?: string; error?: string }> {
+// Telegram Studio Alert Testing (Vercel Backend / Direct Telegram Gateway)
+export async function sendTestTelegramAlert(config: StudioConfig): Promise<{ ok: boolean; message?: string; error?: string }> {
   const baseUrl = getApiBaseUrl()
   try {
-    const res = await fetch(`${baseUrl}/api/whatsapp`, {
+    const res = await fetch(`${baseUrl}/api/telegram`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        whatsappAlertPhone: config.whatsappAlertPhone,
-        whatsappProvider: config.whatsappProvider,
-        whatsappCallMeBotApiKey: config.whatsappCallMeBotApiKey,
-        whatsappWebhookUrl: config.whatsappWebhookUrl,
-        whatsappAlertsEnabled: config.whatsappAlertsEnabled !== false,
-        message: `✨ *Prueba de Alerta WhatsApp — ${config.name || 'GoldBlack Lash'}*\n\n¡Enhorabuena! La conexión con tu WhatsApp está funcionando correctamente. Recibirás un aviso instantáneo cada vez que una clienta reserve en tu web.`,
+        telegramBotToken: config.telegramBotToken,
+        telegramChatId: config.telegramChatId,
+        telegramAlertsEnabled: config.telegramAlertsEnabled !== false,
+        message: [
+          `✨ <b>Prueba de Alerta Instantánea (0s) — ${config.name || 'GoldBlack Lash'}</b>`,
+          ``,
+          `<blockquote>`,
+          `✅ ¡Tu Bot de Telegram está conectado y funcionando en tiempo real!`,
+          `⚡ Recibirás un aviso instantáneo en <b>0 segundos</b> cada vez que una clienta reserve en tu web.`,
+          `</blockquote>`,
+          ``,
+          `<i>Enviado con éxito desde el Panel de Administración.</i>`,
+        ].join('\n'),
       }),
     })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      return { ok: false, error: data?.error || `Error ${res.status} al enviar prueba de WhatsApp` }
+      return { ok: false, error: data?.error || `Error ${res.status} al enviar prueba a Telegram` }
     }
-    return { ok: true, message: data.message || 'Mensaje de prueba enviado con éxito a tu WhatsApp' }
+    return { ok: true, message: data.message || 'Mensaje de prueba enviado con éxito a tu Telegram' }
   } catch (err: any) {
-    // Direct CallMeBot fallback if backend is offline
-    if (config.whatsappProvider === 'callmebot' && config.whatsappCallMeBotApiKey) {
+    // Direct Telegram API fallback if local backend is offline
+    if (config.telegramBotToken?.trim() && config.telegramChatId?.trim()) {
       try {
-        let phone = (config.whatsappAlertPhone || '+34 604 18 76 76').replace(/\D/g, '')
-        if (phone.length === 9 && /^[6789]/.test(phone)) phone = '34' + phone
-        const testText = encodeURIComponent(
-          `✨ *Prueba de Alerta WhatsApp — ${config.name || 'GoldBlack Lash'}*\n\n¡Enhorabuena! La conexión con tu WhatsApp está funcionando correctamente.`
-        )
-        const directRes = await fetch(
-          `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${testText}&apikey=${config.whatsappCallMeBotApiKey}`
-        )
-        const text = await directRes.text().catch(() => '')
-        if (directRes.ok && !text.toLowerCase().includes('error')) {
-          return { ok: true, message: 'Alerta de prueba enviada con éxito a tu WhatsApp' }
+        const token = config.telegramBotToken.trim()
+        const chatId = config.telegramChatId.trim()
+        const endpoint = `https://api.telegram.org/bot${token}/sendMessage`
+        const directRes = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: [
+              `✨ <b>Prueba de Alerta Instantánea (0s) — ${config.name || 'GoldBlack Lash'}</b>`,
+              ``,
+              `<blockquote>`,
+              `✅ ¡Tu Bot de Telegram está conectado directamente desde tu Mac!`,
+              `⚡ Las alertas llegarán aquí en <b>0 segundos</b> con formato HTML.`,
+              `</blockquote>`,
+              ``,
+              `<i>Enviado directamente desde tu Mac.</i>`,
+            ].join('\n'),
+            parse_mode: 'HTML',
+          }),
+        })
+        const textData = await directRes.json().catch(() => ({}))
+        if (directRes.ok && textData.ok) {
+          return { ok: true, message: 'Alerta de prueba enviada con éxito a tu Telegram' }
         }
-        return { ok: false, error: text || 'Error al conectar con CallMeBot' }
+        return { ok: false, error: textData?.description || 'Error al conectar con Telegram' }
       } catch (e: any) {
-        return { ok: false, error: e?.message || 'Error de conexión con CallMeBot' }
+        return { ok: false, error: e?.message || 'Error de conexión directa con Telegram' }
       }
     }
     return { ok: false, error: err?.message || 'Error de conexión con el servicio de alertas' }

@@ -20,9 +20,10 @@ export interface StudioConfigData {
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
   whatsappAlertsEnabled?: boolean
   whatsappAlertPhone?: string
-  whatsappProvider?: 'callmebot' | 'webhook'
-  whatsappCallMeBotApiKey?: string
   whatsappWebhookUrl?: string
+  telegramAlertsEnabled?: boolean
+  telegramBotToken?: string
+  telegramChatId?: string
 }
 
 let sqlPromise: Promise<any> | null = null

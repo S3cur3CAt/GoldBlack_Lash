@@ -690,7 +690,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
                   setRecipientPhone(e.target.value)
                   setError(null)
                 }}
-                placeholder="604187676"
+                placeholder="600000000"
                 className="w-full px-2.5 py-1.5 rounded-lg bg-ink-800 border border-line text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
