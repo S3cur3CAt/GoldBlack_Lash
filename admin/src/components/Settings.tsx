@@ -896,30 +896,49 @@ export const Settings: React.FC<SettingsProps> = ({
               {/* CallMeBot 15-second setup instructions banner */}
               <div className="p-4 rounded-xl bg-ink-800/80 border border-emerald-500/20 text-xs space-y-2 text-gray-300">
                 <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <span>💡 ¿Cómo obtener tu clave gratuita en 15 segundos?</span>
+                  <span>💡 ¿Cómo obtener tu clave gratuita de CallMeBot en 15 segundos?</span>
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-[11.5px] text-gray-300">
+                <p className="text-[11px] text-gray-400">
+                  CallMeBot utiliza números móviles activos que puedes abrir directamente con un solo clic:
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <a
+                    href="https://wa.me/34623912204?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60 font-medium text-xs transition-colors"
+                  >
+                    <span>💬 Abrir Bot 1 (+34 623 91 22 04)</span>
+                  </a>
+                  <a
+                    href="https://wa.me/34694257952?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-xs transition-colors"
+                  >
+                    <span>💬 Abrir Bot 2 (+34 694 25 79 52)</span>
+                  </a>
+                  <a
+                    href="https://wa.me/34644263377?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-xs transition-colors"
+                  >
+                    <span>💬 Abrir Bot 3 (+34 644 26 33 77)</span>
+                  </a>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[11.5px] text-gray-300 pt-1">
                   <li>
-                    Guarda en tus contactos el número de WhatsApp de CallMeBot:{' '}
-                    <strong className="text-white font-mono">+34 911 06 43 00</strong> (o pulsa{' '}
-                    <a
-                      href="https://wa.me/34911064300?text=I%20allow%20callmebot%20to%20send%20me%20messages"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-emerald-400 underline hover:text-emerald-300"
-                    >
-                      abrir chat directo
-                    </a>
-                    ).
+                    Haz clic en cualquiera de los botones de arriba para abrir el chat en tu WhatsApp.
                   </li>
                   <li>
-                    Envíale este mensaje exacto por WhatsApp:{' '}
+                    Envíale el mensaje que ya viene escrito:{' '}
                     <span className="px-1.5 py-0.5 rounded bg-black font-mono text-emerald-300">
                       I allow callmebot to send me messages
                     </span>
                   </li>
                   <li>
-                    CallMeBot te responderá al instante con tu <strong>apikey</strong>. Pégala en la casilla de arriba y pulsa Guardar Ajustes.
+                    CallMeBot te responderá al instante con tu <strong>apikey</strong>. Pégala en la casilla de arriba y pulsa Guardar Cambios.
                   </li>
                 </ol>
               </div>
