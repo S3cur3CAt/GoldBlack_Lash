@@ -12,20 +12,18 @@ import {
   IconAlertCircle,
   IconRefreshCw,
   IconVolume2,
+  IconVolumeX,
+  IconBell,
+  IconBellOff,
   IconWhatsApp,
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestWhatsAppAlert } from '../services/storage'
 import {
   announceNewAppointmentVoice,
-  speakWithFemaleVoice,
-  speakWithElevenLabs,
+  announceUpdateVoice,
   speakWithSiriOrSystemVoice,
-  getElevenLabsApiKey,
-  setElevenLabsApiKey,
-  getElevenLabsVoiceId,
-  setElevenLabsVoiceId,
-  isElevenLabsQuotaExhausted,
-  clearElevenLabsQuotaCache,
+  playNotificationChime,
+  playUpdateChime,
 } from '../services/voiceAssistant'
 import { SeasonalPreviewCanvas, SeasonalEffectType } from './SeasonalPreviewCanvas'
 import { getCurrentSeasonalInfo, resolveSeasonalEffect } from '../utils/seasonalCalendar'
@@ -204,131 +202,55 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   }
 
-  // ElevenLabs Voice & Siri Configuration & Testing
-  const [elevenApiKey, setElevenApiKey] = useState(
-    () => getElevenLabsApiKey() || config.elevenLabsApiKey || ''
-  )
-  const [elevenVoiceId, setElevenVoiceId] = useState(
-    () => getElevenLabsVoiceId() || config.elevenLabsVoiceId || ''
-  )
-  const [showApiKey, setShowApiKey] = useState(false)
-  const [isTestingEleven, setIsTestingEleven] = useState(false)
-  const [isTestingSiri, setIsTestingSiri] = useState(false)
-  const [quotaExhausted, setQuotaExhausted] = useState(() => isElevenLabsQuotaExhausted())
-
-  useEffect(() => {
-    const handleStatus = (e: any) => {
-      setQuotaExhausted(!!e.detail?.exhausted)
-    }
-    window.addEventListener('goldblack:elevenlabs-status', handleStatus)
-    return () => window.removeEventListener('goldblack:elevenlabs-status', handleStatus)
-  }, [])
-
-  const handleTestElevenVoice = async () => {
-    if (!elevenApiKey.trim()) {
-      showAlert({
-        title: 'Clave API requerida',
-        message: 'Por favor, introduce tu clave API de ElevenLabs en el campo de texto.',
-        type: 'warning',
-      })
-      return
-    }
-    if (!elevenVoiceId.trim()) {
-      showAlert({
-        title: 'ID de Voz requerido',
-        message: 'Por favor, introduce el ID de voz de ElevenLabs que deseas utilizar.',
-        type: 'warning',
-      })
-      return
-    }
-
-    clearElevenLabsQuotaCache()
-    setIsTestingEleven(true)
-    try {
-      const res = await speakWithElevenLabs(
-        'Hola Laura, las alertas por voz con Eleven Labs están conectadas y funcionando a la perfección en GoldBlack Lash.',
-        elevenVoiceId,
-        elevenApiKey
-      )
-      if (res.success) {
-        setQuotaExhausted(false)
-        showAlert({
-          title: 'Voz de ElevenLabs Activa',
-          message: `La voz con ID "${res.voiceUsed || elevenVoiceId}" ha reproducido la locución con éxito.`,
-          type: 'success',
-        })
-      } else if (res.isQuotaExceeded) {
-        setQuotaExhausted(true)
-        showAlert({
-          title: 'Créditos de ElevenLabs Agotados',
-          message:
-            'Tus créditos de la suscripción de ElevenLabs se han agotado o el plan no permite esta voz. El sistema ha cambiado automáticamente a la voz de Siri de tu Mac para que nunca te quedes sin avisos de reservas. Escucha a continuación la prueba con Siri.',
-          type: 'info',
-        })
-        // Reproducir inmediatamente con Siri para que Laura compruebe el respaldo en directo
-        await speakWithSiriOrSystemVoice(
-          'Hola Laura, tus créditos de Eleven Labs se han agotado, así que el sistema ha cambiado automáticamente a la voz de Siri de tu Mac para avisarte de todas las reservas.'
-        )
-      } else {
-        showAlert({
-          title: 'Aviso de ElevenLabs',
-          message: res.error || 'No se pudo reproducir con ElevenLabs. Comprueba la clave API y el ID de voz.',
-          type: 'error',
-        })
-      }
-    } finally {
-      setIsTestingEleven(false)
-    }
-  }
-
-  const handleTestSiriVoice = async () => {
-    setIsTestingSiri(true)
-    try {
-      if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
-        await (window as any).electronAPI.speakWithSiri(
-          'Hola Laura, la voz nativa de Siri en macOS está funcionando correctamente como respaldo.'
-        )
-      } else {
-        await speakWithFemaleVoice(
-          'Hola Laura, la voz de respaldo está funcionando correctamente.'
-        )
-      }
-      showAlert({
-        title: 'Voz de Respaldo Reproducida',
-        message: 'La locución de prueba se ha reproducido con éxito.',
-        type: 'success',
-      })
-    } finally {
-      setIsTestingSiri(false)
-    }
-  }
-
-  // Live Test of Female Voice Announcement
+  // Audio, Notification Sound & Siri Voice Controls
+  const [isTestingVoice, setIsTestingVoice] = useState(false)
+  const [isTestingSound, setIsTestingSound] = useState(false)
   const [isPlayingSampleAnnouncement, setIsPlayingSampleAnnouncement] = useState(false)
+  const [isPlayingUpdateVoiceTest, setIsPlayingUpdateVoiceTest] = useState(false)
+
+  const handleTestVoice = async (testVol?: number) => {
+    setIsTestingVoice(true)
+    try {
+      const vol = testVol !== undefined ? testVol : (formData.voiceVolume ?? 80)
+      await speakWithSiriOrSystemVoice(
+        'Hola Laura, este es el volumen de voz configurado en GoldBlack Lash.',
+        vol
+      )
+    } finally {
+      setIsTestingVoice(false)
+    }
+  }
+
+  const handleTestNotificationSound = (testVol?: number) => {
+    setIsTestingSound(true)
+    const vol = testVol !== undefined ? testVol : (formData.notificationSoundVolume ?? 80)
+    playNotificationChime(vol)
+    setTimeout(() => setIsTestingSound(false), 1200)
+  }
 
   const handleTestAnnouncement = async () => {
     setIsPlayingSampleAnnouncement(true)
     try {
-      await announceNewAppointmentVoice({
-        clientName: 'Elena Morales',
-        serviceName: 'Volumen Ruso',
-        clientPhone: '612345678',
-        date: new Date().toISOString().split('T')[0],
-        time: '17:00',
-        notes: 'Preferiblemente por las tardes a partir de las cinco',
-      })
+      await announceNewAppointmentVoice(
+        {
+          clientName: 'Elena Morales',
+          serviceName: 'Volumen Ruso',
+          clientPhone: '612345678',
+          date: new Date().toISOString().split('T')[0],
+          time: '17:00',
+          notes: 'Preferiblemente por las tardes a partir de las cinco',
+        },
+        formData.voiceVolume ?? 80
+      )
     } finally {
       setIsPlayingSampleAnnouncement(false)
     }
   }
 
-  // Live Test of Update Voice Announcement (Always Siri to save ElevenLabs credits)
-  const [isPlayingUpdateVoiceTest, setIsPlayingUpdateVoiceTest] = useState(false)
-
   const handleTestUpdateVoice = async () => {
     setIsPlayingUpdateVoiceTest(true)
     try {
-      await speakWithSiriOrSystemVoice('Laura, tienes una nueva actualización disponible de GoldBlack Lash, versión 0.4.0.')
+      await announceUpdateVoice(CURRENT_APP_VERSION || '0.7.23', formData.voiceVolume ?? 80)
     } finally {
       setIsPlayingUpdateVoiceTest(false)
     }
@@ -337,12 +259,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      setElevenLabsApiKey(elevenApiKey)
-      setElevenLabsVoiceId(elevenVoiceId)
       await onSaveConfig({
         ...formData,
-        elevenLabsApiKey: elevenApiKey.trim(),
-        elevenLabsVoiceId: elevenVoiceId.trim(),
+        muteAllNotifications: !!formData.muteAllNotifications,
+        voiceAnnounceNewAppointments: formData.voiceAnnounceNewAppointments ?? true,
+        voiceAnnounceUpdates: formData.voiceAnnounceUpdates ?? true,
+        voiceVolume: Number(formData.voiceVolume ?? 80),
+        notificationSoundVolume: Number(formData.notificationSoundVolume ?? 80),
       })
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 4000)
@@ -1060,216 +983,316 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Voice Alerts with ElevenLabs AI & Siri Fallback Configuration */}
-        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-400">
-              <IconVolume2 size={22} />
+        {/* Notificaciones, Sonidos del Sistema y Control de Voz Siri */}
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-6">
+          {/* Section Header */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gold-500/10 border border-gold-500/25 flex items-center justify-center text-gold-400">
+                <IconVolume2 size={22} />
+              </div>
+              <div>
+                <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
+                  <span>Notificaciones, Sonido del Sistema y Voz Siri</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-gold-500/10 text-gold-400 border border-gold-500/25">
+                    Audio &amp; Voz macOS
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Control maestro de volumen, alertas sonoras del sistema y avisos hablados nativos con Siri.
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
-                <span>Alertas y Anuncios por Voz (ElevenLabs AI)</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25">
-                  ElevenLabs • Multilingual v2
-                </span>
-              </h4>
-              <p className="text-xs text-gray-400">
-                Escribe tu clave API y el ID de voz de ElevenLabs para recibir avisos hablados de ultra-alta calidad cuando entren reservas desde el sitio web o haya actualizaciones (con respaldo automático de Siri en macOS).
-              </p>
-            </div>
+
+            {formData.muteAllNotifications && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold animate-pulse">
+                <IconBellOff size={14} />
+                Modo Silencio Activo
+              </span>
+            )}
           </div>
 
-          <div className="space-y-4">
-            {/* Banner de Créditos Agotados */}
-            {quotaExhausted && (
-              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
-                <IconAlertCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
-                <div className="text-xs space-y-1">
-                  <p className="font-semibold text-amber-300">
-                    Créditos de ElevenLabs agotados — Siri activo como respaldo automático
-                  </p>
-                  <p className="text-gray-300 leading-relaxed">
-                    Tus créditos mensuales o saldo de ElevenLabs han alcanzado el límite. El sistema ha cambiado automáticamente a la voz nativa de <strong>Siri de tu Mac (0€)</strong> para seguir anunciando todas las reservas web de las clientas sin que pierdas ningún aviso. En cuanto renueves o recargues tus créditos en ElevenLabs, volverá a sonar ElevenLabs automáticamente.
-                  </p>
-                  <div className="pt-1 flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearElevenLabsQuotaCache()
-                        setQuotaExhausted(false)
-                        handleTestElevenVoice()
-                      }}
-                      className="text-amber-400 hover:text-amber-300 underline font-medium cursor-pointer"
-                    >
-                      Reintentar conexión con ElevenLabs
-                    </button>
-                    <a
-                      href="https://elevenlabs.io/app/subscription"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-gray-400 hover:text-white underline cursor-pointer"
-                    >
-                      Ver saldo en ElevenLabs ↗
-                    </a>
+          <div className="space-y-5">
+            {/* Master Silence Toggle */}
+            <div
+              className={`p-4 rounded-xl border transition-all ${
+                formData.muteAllNotifications
+                  ? 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                  : 'bg-ink-800 border-line hover:border-line-strong'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                      formData.muteAllNotifications
+                        ? 'bg-rose-500/20 text-rose-400'
+                        : 'bg-ink-900 text-gray-400'
+                    }`}
+                  >
+                    {formData.muteAllNotifications ? <IconBellOff size={20} /> : <IconBell size={20} />}
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-white block">
+                      Silenciar Todas las Notificaciones de la Aplicación
+                    </span>
+                    <p className="text-[11px] text-gray-400">
+                      Desactiva todas las campanadas sonoras y las locuciones de voz de Siri en toda la aplicación.
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* ElevenLabs API Key & Voice ID Inputs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-ink-800 border border-line">
-              <div className="space-y-1.5">
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    id="muteAllNotificationsToggle"
+                    checked={formData.muteAllNotifications ?? false}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        muteAllNotifications: e.target.checked,
+                      })
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-ink-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500 border border-line-strong"></div>
+                </label>
+              </div>
+            </div>
+
+            {/* Sliders Grid: Voice Volume & Sound Volume */}
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 gap-4 transition-opacity ${
+                formData.muteAllNotifications ? 'opacity-50 pointer-events-none' : 'opacity-100'
+              }`}
+            >
+              {/* Voice Volume Slider (Siri) */}
+              <div className="p-4 rounded-xl bg-ink-800 border border-line space-y-3">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="elevenApiKey" className="text-xs font-semibold text-gray-200">
-                    Clave API de ElevenLabs
+                  <label htmlFor="voiceVolumeSlider" className="text-xs font-semibold text-gray-200 flex items-center gap-2">
+                    <IconVolume2 size={16} className="text-gold-400" />
+                    <span>Volumen de la Voz (Siri)</span>
                   </label>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-ink-900 border border-line text-gold-400">
+                    {formData.voiceVolume ?? 80}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <IconVolumeX size={16} className="text-gray-500 shrink-0" />
+                  <input
+                    id="voiceVolumeSlider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.voiceVolume ?? 80}
+                    onChange={(e) => {
+                      const newVol = Number(e.target.value)
+                      setFormData({ ...formData, voiceVolume: newVol })
+                    }}
+                    className="w-full h-2 bg-ink-950 rounded-lg appearance-none cursor-pointer accent-gold-500"
+                  />
+                  <IconVolume2 size={16} className="text-gold-400 shrink-0" />
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-[10px] text-gray-400">
+                    Gradúa el nivel de voz de Siri para los avisos hablados.
+                  </p>
                   <button
                     type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="text-[11px] text-amber-400 hover:text-amber-300 transition-colors cursor-pointer"
+                    onClick={() => handleTestVoice(formData.voiceVolume ?? 80)}
+                    disabled={isTestingVoice || formData.muteAllNotifications}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-900 hover:bg-ink-750 border border-gold-500/30 text-gold-300 hover:text-gold-200 font-medium text-[11px] transition-colors cursor-pointer shrink-0 disabled:opacity-40"
                   >
-                    {showApiKey ? 'Ocultar' : 'Mostrar'}
+                    <IconVolume2 size={13} />
+                    <span>{isTestingVoice ? 'Hablando...' : 'Probar Voz'}</span>
                   </button>
                 </div>
-                <input
-                  id="elevenApiKey"
-                  type={showApiKey ? 'text' : 'password'}
-                  value={elevenApiKey}
-                  onChange={(e) => {
-                    setElevenApiKey(e.target.value)
-                    setElevenLabsApiKey(e.target.value)
-                  }}
-                  placeholder="sk_..."
-                  className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-line text-xs font-mono text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50"
-                />
-                <p className="text-[10px] text-gray-400">
-                  Introduce aquí tu clave API privada de ElevenLabs.
-                </p>
               </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="elevenVoiceId" className="text-xs font-semibold text-gray-200 block">
-                  ID de Voz de ElevenLabs
-                </label>
-                <input
-                  id="elevenVoiceId"
-                  type="text"
-                  value={elevenVoiceId}
-                  onChange={(e) => {
-                    setElevenVoiceId(e.target.value)
-                    setElevenLabsVoiceId(e.target.value)
-                  }}
-                  placeholder="Ej: eZxqQzb5CuYo3Kl6EXfZ"
-                  className="w-full px-3.5 py-2 rounded-xl bg-ink-900 border border-line text-xs font-mono text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50"
-                />
-                <p className="text-[10px] text-gray-400">
-                  Introduce aquí el ID de la voz de ElevenLabs que deseas utilizar.
-                </p>
+              {/* System Notification Sound Volume Slider */}
+              <div className="p-4 rounded-xl bg-ink-800 border border-line space-y-3">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="soundVolumeSlider" className="text-xs font-semibold text-gray-200 flex items-center gap-2">
+                    <IconBell size={16} className="text-gold-400" />
+                    <span>Sonido de Notificación (Campana)</span>
+                  </label>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-ink-900 border border-line text-gold-400">
+                    {formData.notificationSoundVolume ?? 80}%
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <IconVolumeX size={16} className="text-gray-500 shrink-0" />
+                  <input
+                    id="soundVolumeSlider"
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={formData.notificationSoundVolume ?? 80}
+                    onChange={(e) => {
+                      const newVol = Number(e.target.value)
+                      setFormData({ ...formData, notificationSoundVolume: newVol })
+                    }}
+                    className="w-full h-2 bg-ink-950 rounded-lg appearance-none cursor-pointer accent-gold-500"
+                  />
+                  <IconBell size={16} className="text-gold-400 shrink-0" />
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-[10px] text-gray-400">
+                    Gradúa el volumen del timbre sonoro del sistema de la app.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleTestNotificationSound(formData.notificationSoundVolume ?? 80)}
+                    disabled={isTestingSound || formData.muteAllNotifications}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-900 hover:bg-ink-750 border border-gold-500/30 text-gold-300 hover:text-gold-200 font-medium text-[11px] transition-colors cursor-pointer shrink-0 disabled:opacity-40"
+                  >
+                    <IconBell size={13} />
+                    <span>{isTestingSound ? 'Sonando...' : 'Probar Sonido'}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Checkbox for Announcing New Web Appointments */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-ink-800 border border-line">
-              <input
-                type="checkbox"
-                id="voiceAnnounceNewAppointments"
-                checked={formData.voiceAnnounceNewAppointments ?? true}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    voiceAnnounceNewAppointments: e.target.checked,
-                  })
-                }
-                className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
-              />
-              <label htmlFor="voiceAnnounceNewAppointments" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar reservas de la web en tiempo real por voz</span> — Cada vez que una clienta reserve en <code className="text-amber-300/90 font-mono text-[11px]">goldblacklash.com</code>, la voz avisará automáticamente en voz alta diciendo su nombre, el servicio solicitado, su número de teléfono y su preferencia o comentario.
-              </label>
-            </div>
+            {/* Siri Voice Specific Announce Controls */}
+            <div
+              className={`space-y-3 transition-opacity ${
+                formData.muteAllNotifications ? 'opacity-50 pointer-events-none' : 'opacity-100'
+              }`}
+            >
+              <h5 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Avisos Hablados con Siri (macOS)
+              </h5>
 
-            {/* Checkbox for Announcing App Updates */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-ink-800 border border-line">
-              <input
-                type="checkbox"
-                id="voiceAnnounceUpdates"
-                checked={formData.voiceAnnounceUpdates ?? true}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    voiceAnnounceUpdates: e.target.checked,
-                  })
-                }
-                className="w-4 h-4 rounded border-line-strong text-amber-500 focus:ring-amber-400 accent-amber-500 cursor-pointer"
-              />
-              <label htmlFor="voiceAnnounceUpdates" className="text-xs text-gray-300 cursor-pointer flex-1">
-                <span className="font-semibold text-white">Anunciar actualizaciones del sistema con voz Siri</span> — Cuando haya una nueva versión disponible para instalar en la aplicación, te avisará con la voz de Siri de tu Mac para no consumir créditos de ElevenLabs diciendo <span className="text-amber-300 italic">&ldquo;Laura, tienes una nueva actualización disponible...&rdquo;</span>.
-              </label>
-            </div>
-
-            {/* Live Test Buttons */}
-            <div className="p-4 rounded-xl bg-ink-850 border border-line space-y-4">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Voz de ElevenLabs</span>
-                  <p className="text-[11px] text-gray-500">Reproduce una locución con la API Key y el ID de voz escritos arriba.</p>
+              {/* Toggle 1: Announce Received Messages / New Appointments */}
+              <div className="p-4 rounded-xl bg-ink-800 border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                      formData.voiceAnnounceNewAppointments !== false
+                        ? 'bg-gold-500/15 text-gold-400'
+                        : 'bg-ink-900 text-gray-500'
+                    }`}
+                  >
+                    {formData.voiceAnnounceNewAppointments !== false ? (
+                      <IconVolume2 size={16} />
+                    ) : (
+                      <IconVolumeX size={16} />
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="voiceAnnounceNewAppointments"
+                      className="text-xs font-semibold text-white block cursor-pointer"
+                    >
+                      Anunciar citas y mensajes recibidos de la web con voz Siri
+                    </label>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Siri leerá en voz alta el nombre de la clienta, el servicio solicitado, su número de teléfono y comentarios al recibir una reserva en{' '}
+                      <code className="text-gold-300/90 font-mono text-[10px]">goldblacklash.com</code>.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleTestElevenVoice}
-                  disabled={isTestingEleven}
-                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-semibold text-xs transition-colors cursor-pointer shrink-0"
-                >
-                  <IconSparkles size={14} />
-                  <span>{isTestingEleven ? 'Generando...' : '🔊 Probar Voz de ElevenLabs'}</span>
-                </button>
+
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={handleTestAnnouncement}
+                    disabled={
+                      isPlayingSampleAnnouncement ||
+                      formData.muteAllNotifications ||
+                      formData.voiceAnnounceNewAppointments === false
+                    }
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-900 hover:bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-[11px] transition-colors cursor-pointer disabled:opacity-40"
+                  >
+                    <IconVolume2 size={13} />
+                    <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : 'Probar Cita'}</span>
+                  </button>
+
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="voiceAnnounceNewAppointments"
+                      checked={formData.voiceAnnounceNewAppointments ?? true}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          voiceAnnounceNewAppointments: e.target.checked,
+                        })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-ink-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold-500 border border-line-strong"></div>
+                  </label>
+                </div>
               </div>
 
-              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Anuncio de Nueva Reserva Web</span>
-                  <p className="text-[11px] text-gray-500">Escucha cómo anunciará una reserva web entrante con nombre, servicio, teléfono y comentario.</p>
+              {/* Toggle 2: Announce Updates */}
+              <div className="p-4 rounded-xl bg-ink-800 border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                      formData.voiceAnnounceUpdates !== false
+                        ? 'bg-gold-500/15 text-gold-400'
+                        : 'bg-ink-900 text-gray-500'
+                    }`}
+                  >
+                    {formData.voiceAnnounceUpdates !== false ? (
+                      <IconVolume2 size={16} />
+                    ) : (
+                      <IconVolumeX size={16} />
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="voiceAnnounceUpdates"
+                      className="text-xs font-semibold text-white block cursor-pointer"
+                    >
+                      Anunciar actualizaciones del sistema con voz Siri
+                    </label>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">
+                      Siri te avisará con voz natural cuando haya una nueva actualización de la aplicación disponible para instalar:{' '}
+                      <span className="text-gold-300 italic">&ldquo;Laura, tienes una nueva actualización disponible...&rdquo;</span>.
+                    </p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleTestAnnouncement}
-                  disabled={isPlayingSampleAnnouncement}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-amber-500/30 text-amber-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
-                >
-                  <IconVolume2 size={14} />
-                  <span>{isPlayingSampleAnnouncement ? 'Reproduciendo...' : '🔊 Escuchar Anuncio de Reserva'}</span>
-                </button>
-              </div>
 
-              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Aviso de Actualización (Voz Siri • 0 Créditos)</span>
-                  <p className="text-[11px] text-gray-500">Escucha la locución cuando hay una nueva actualización disponible. Se reproduce gratis con Siri en tu Mac sin consumir créditos de ElevenLabs.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleTestUpdateVoice}
-                  disabled={isPlayingUpdateVoiceTest}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-amber-500/30 text-amber-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
-                >
-                  <IconVolume2 size={14} />
-                  <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : '🔊 Probar Aviso de Actualización (Siri)'}</span>
-                </button>
-              </div>
+                <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                  <button
+                    type="button"
+                    onClick={handleTestUpdateVoice}
+                    disabled={
+                      isPlayingUpdateVoiceTest ||
+                      formData.muteAllNotifications ||
+                      formData.voiceAnnounceUpdates === false
+                    }
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-ink-900 hover:bg-ink-750 border border-line text-gray-300 hover:text-white font-medium text-[11px] transition-colors cursor-pointer disabled:opacity-40"
+                  >
+                    <IconVolume2 size={13} />
+                    <span>{isPlayingUpdateVoiceTest ? 'Reproduciendo...' : 'Probar Actualización'}</span>
+                  </button>
 
-              <div className="pt-3 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-xs text-gray-300">
-                  <span className="font-semibold text-white">Probar Voz de Respaldo Siri (macOS)</span>
-                  <p className="text-[11px] text-gray-500">Comprueba la voz nativa de Siri de tu Mac que actúa de respaldo si ElevenLabs no tiene conexión.</p>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="voiceAnnounceUpdates"
+                      checked={formData.voiceAnnounceUpdates ?? true}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          voiceAnnounceUpdates: e.target.checked,
+                        })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-ink-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold-500 border border-line-strong"></div>
+                  </label>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleTestSiriVoice}
-                  disabled={isTestingSiri}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 border border-zinc-700 text-gray-300 font-medium text-xs transition-colors cursor-pointer shrink-0"
-                >
-                  <IconVolume2 size={14} />
-                  <span>{isTestingSiri ? 'Reproduciendo...' : '🔊 Probar Respaldo Siri'}</span>
-                </button>
               </div>
             </div>
           </div>

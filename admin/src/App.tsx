@@ -10,7 +10,7 @@ import { GalleryManager } from './components/GalleryManager'
 import { Billing } from './components/Billing'
 import { WebsitePreview } from './components/WebsitePreview'
 import { Settings } from './components/Settings'
-import { announceNewAppointmentVoice } from './services/voiceAssistant'
+import { announceNewAppointmentVoice, playNotificationChime } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
 
 import {
@@ -53,54 +53,6 @@ import {
   sendInvoiceEmail,
   syncStudioConfigWithVercel,
 } from './services/storage'
-
-/**
- * Synthesizes a luxury studio notification chime using the Web Audio API.
- * High clarity, zero latency, guaranteed to work across macOS, Windows, and browsers.
- */
-function playNotificationChime() {
-  try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
-    if (ctx.state === 'suspended') {
-      ctx.resume()
-    }
-
-    const now = ctx.currentTime
-
-    const playTone = (freq: number, start: number, duration: number, peakGain: number) => {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-
-      osc.type = 'sine'
-      osc.frequency.setValueAtTime(freq, start)
-
-      gain.gain.setValueAtTime(0.0001, start)
-      gain.gain.linearRampToValueAtTime(peakGain, start + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
-
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-
-      osc.start(start)
-      osc.stop(start + duration)
-    }
-
-    // High clarity 3-tone ascending chord: D5 (587Hz) -> A5 (880Hz) -> D6 (1174Hz)
-    playTone(587.33, now, 0.5, 0.28)
-    playTone(880.0, now + 0.12, 0.7, 0.32)
-    playTone(1174.66, now + 0.24, 0.95, 0.24)
-
-    setTimeout(() => {
-      try {
-        ctx.close()
-      } catch {}
-    }, 1500)
-  } catch (err) {
-    console.warn('[Audio Chime Error]', err)
-  }
-}
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')

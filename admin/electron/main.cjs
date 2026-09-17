@@ -322,8 +322,15 @@ ipcMain.on('notification:appointment', (_event, data) => {
 // ── Native macOS Siri Speech Synthesis (Alertas de Citas y Actualizaciones) ──
 let currentSayProcess = null
 
-ipcMain.handle('voice:speak-siri', async (_event, text) => {
-  if (process.platform !== 'darwin' || !text) return false
+ipcMain.handle('voice:speak-siri', async (_event, payload) => {
+  if (process.platform !== 'darwin' || !payload) return false
+
+  const text = typeof payload === 'object' && payload !== null ? payload.text : payload
+  const volume = typeof payload === 'object' && payload !== null && typeof payload.volume === 'number'
+    ? Math.max(0, Math.min(1, payload.volume / 100))
+    : 1
+
+  if (volume <= 0) return true
 
   return new Promise((resolve) => {
     try {
@@ -332,13 +339,15 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         currentSayProcess = null
       }
 
-      const cleanText = String(text).trim()
+      const cleanText = String(text || '').trim()
       if (!cleanText) {
         resolve(false)
         return
       }
 
-      const escaped = cleanText.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+      // Apple Speech Synthesis Manager supports [[volm <float>]] from 0.0 to 1.0
+      const textWithVol = volume < 1 ? `[[volm ${volume.toFixed(2)}]] ${cleanText}` : cleanText
+      const escaped = textWithVol.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
       const osaProc = spawn('/usr/bin/osascript', ['-e', `say "${escaped}"`])
       currentSayProcess = osaProc
 
@@ -354,14 +363,14 @@ ipcMain.handle('voice:speak-siri', async (_event, text) => {
         if (code === 0) {
           onFinishSpeech(true)
         } else {
-          const sayProc = spawn('/usr/bin/say', [cleanText])
+          const sayProc = spawn('/usr/bin/say', [textWithVol])
           currentSayProcess = sayProc
           sayProc.on('close', (c) => onFinishSpeech(c === 0))
           sayProc.on('error', () => onFinishSpeech(false))
         }
       })
       osaProc.on('error', () => {
-        const sayProc = spawn('/usr/bin/say', [cleanText])
+        const sayProc = spawn('/usr/bin/say', [textWithVol])
         currentSayProcess = sayProc
         sayProc.on('close', (c) => onFinishSpeech(c === 0))
         sayProc.on('error', () => onFinishSpeech(false))

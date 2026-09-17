@@ -1,53 +1,124 @@
 /**
- * GoldBlack Lash Studio — Sistema de Alertas por Voz con ElevenLabs AI y Siri
+ * GoldBlack Lash Studio — Sistema de Alertas por Voz (Siri) y Notificaciones del Sistema
  *
- * Emite alertas sonoras y anuncios hablados con ElevenLabs AI
- * (configurado desde la sección de Ajustes del panel de administración)
- * con fallback automático a Siri en macOS o síntesis del navegador.
+ * Emite alertas sonoras con Web Audio API y locuciones nativas con Siri en macOS
+ * (o síntesis natural del navegador) con control total de volumen y silenciado.
  */
 
-export function getElevenLabsApiKey(): string {
-  if (typeof window !== 'undefined') {
-    const custom = localStorage.getItem('goldblack_elevenlabs_api_key')
-    if (custom && custom.trim()) return custom.trim()
-  }
-  return ''
-}
+import { getStudioConfig } from './storage'
 
-export function setElevenLabsApiKey(key: string): void {
-  if (typeof window !== 'undefined') {
-    const trimmed = (key || '').trim()
-    if (!trimmed) {
-      localStorage.removeItem('goldblack_elevenlabs_api_key')
-    } else {
-      localStorage.setItem('goldblack_elevenlabs_api_key', trimmed)
+/**
+ * Sintetiza un sonido de notificación de alta gama (campana / chime) usando Web Audio API.
+ * Escala su volumen de acuerdo a la configuración del sistema (0 - 100%).
+ * Respeta el modo silencio maestro (muteAllNotifications).
+ */
+export function playNotificationChime(customVolume?: number): void {
+  try {
+    const config = getStudioConfig()
+    if (config.muteAllNotifications && customVolume === undefined) return
+
+    const volPct = customVolume !== undefined ? customVolume : (config.notificationSoundVolume ?? 80)
+    if (volPct <= 0) return
+    const scale = Math.max(0, Math.min(1, volPct / 100))
+
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') {
+      ctx.resume()
     }
-  }
-}
 
-export function getElevenLabsVoiceId(): string {
-  if (typeof window !== 'undefined') {
-    const custom = localStorage.getItem('goldblack_elevenlabs_voice_id')
-    if (custom && custom.trim()) return custom.trim()
-  }
-  return ''
-}
+    const now = ctx.currentTime
 
-export function setElevenLabsVoiceId(voiceId: string): void {
-  if (typeof window !== 'undefined') {
-    const trimmed = (voiceId || '').trim()
-    if (!trimmed) {
-      localStorage.removeItem('goldblack_elevenlabs_voice_id')
-    } else {
-      localStorage.setItem('goldblack_elevenlabs_voice_id', trimmed)
+    const playTone = (freq: number, start: number, duration: number, peakGain: number) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, start)
+
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.linearRampToValueAtTime(peakGain * scale, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(start)
+      osc.stop(start + duration)
     }
+
+    // Acorde ascendente claro de 3 tonos: D5 (587Hz) -> A5 (880Hz) -> D6 (1174Hz)
+    playTone(587.33, now, 0.5, 0.28)
+    playTone(880.0, now + 0.12, 0.7, 0.32)
+    playTone(1174.66, now + 0.24, 0.95, 0.24)
+
+    setTimeout(() => {
+      try {
+        ctx.close()
+      } catch {}
+    }, 1500)
+  } catch (err) {
+    console.warn('[Notification Chime Error]', err)
   }
 }
 
 /**
- * Referencia al elemento de audio actualmente en reproducción
+ * Sintetiza un sonido de celebración/actualización de 4 tonos usando Web Audio API.
+ * Escala su volumen de acuerdo a la configuración del sistema (0 - 100%).
+ * Respeta el modo silencio maestro (muteAllNotifications).
  */
-let currentAudio: HTMLAudioElement | null = null
+export function playUpdateChime(customVolume?: number): void {
+  try {
+    const config = getStudioConfig()
+    if (config.muteAllNotifications && customVolume === undefined) return
+
+    const volPct = customVolume !== undefined ? customVolume : (config.notificationSoundVolume ?? 80)
+    if (volPct <= 0) return
+    const scale = Math.max(0, Math.min(1, volPct / 100))
+
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+    if (!AudioCtx) return
+    const ctx = new AudioCtx()
+    if (ctx.state === 'suspended') {
+      ctx.resume()
+    }
+
+    const now = ctx.currentTime
+
+    const playTone = (freq: number, start: number, duration: number, peakGain: number) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(freq, start)
+
+      gain.gain.setValueAtTime(0.0001, start)
+      gain.gain.linearRampToValueAtTime(peakGain * scale, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.start(start)
+      osc.stop(start + duration)
+    }
+
+    // 4-Tone ascending chord: C5 -> E5 -> G5 -> C6
+    playTone(523.25, now, 0.45, 0.28)
+    playTone(659.25, now + 0.11, 0.55, 0.32)
+    playTone(783.99, now + 0.22, 0.70, 0.35)
+    playTone(1046.5, now + 0.33, 0.9, 0.25)
+
+    setTimeout(() => {
+      try {
+        ctx.close()
+      } catch {}
+    }, 1800)
+  } catch (err) {
+    console.warn('[Update Chime Error]', err)
+  }
+}
 
 /**
  * Formatea un número de teléfono para que se dicte de forma natural en grupos de 2-3 dígitos
@@ -76,16 +147,9 @@ export function formatPhoneForSpeech(phone?: string): string {
 }
 
 /**
- * Detiene cualquier síntesis de voz en curso (ElevenLabs, Siri o Web Speech)
+ * Detiene cualquier síntesis de voz en curso (Siri o Web Speech)
  */
 export async function stopSpeechSynthesis(): Promise<void> {
-  if (currentAudio) {
-    try {
-      currentAudio.pause()
-      currentAudio.currentTime = 0
-    } catch {}
-    currentAudio = null
-  }
   if (typeof window !== 'undefined' && (window as any).electronAPI?.stopSiri) {
     try {
       await (window as any).electronAPI.stopSiri()
@@ -99,215 +163,31 @@ export async function stopSpeechSynthesis(): Promise<void> {
 }
 
 /**
- * Detecta si el error devuelto por ElevenLabs se debe a créditos agotados,
- * límite de caracteres alcanzado o restricciones de plan.
+ * Síntesis de voz con Siri en macOS (o Web Speech en navegador).
+ * Respeta el volumen configurado (voiceVolume: 0 - 100%) y el modo silencio maestro (muteAllNotifications).
  */
-export function isElevenLabsQuotaExceededError(errorText: string, status?: number): boolean {
-  const lower = (errorText || '').toLowerCase()
-  return (
-    status === 402 ||
-    status === 429 ||
-    lower.includes('quota_exceeded') ||
-    lower.includes('insufficient_credits') ||
-    lower.includes('credit') ||
-    lower.includes('character_limit') ||
-    lower.includes('payment_required') ||
-    lower.includes('paid_plan_required') ||
-    lower.includes('upgrade your subscription') ||
-    lower.includes('free users cannot use') ||
-    lower.includes('too many requests')
-  )
-}
-
-let elevenLabsQuotaExhaustedTime: number | null = null
-const QUOTA_CACHE_TTL_MS = 15 * 60 * 1000 // 15 minutos de memoria para no reintentar en bucle si no hay créditos
-
-export function isElevenLabsQuotaExhausted(): boolean {
-  if (!elevenLabsQuotaExhaustedTime) return false
-  if (Date.now() - elevenLabsQuotaExhaustedTime > QUOTA_CACHE_TTL_MS) {
-    elevenLabsQuotaExhaustedTime = null
-    return false
-  }
-  return true
-}
-
-export function clearElevenLabsQuotaCache(): void {
-  elevenLabsQuotaExhaustedTime = null
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('goldblack:elevenlabs-status', { detail: { exhausted: false } })
-    )
-  }
-}
-
-export function setElevenLabsQuotaExhausted(reason?: string): void {
-  elevenLabsQuotaExhaustedTime = Date.now()
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('goldblack:elevenlabs-status', { detail: { exhausted: true, reason } })
-    )
-  }
-}
-
-/**
- * Realiza una petición POST a la API de ElevenLabs para generar audio en formato MP3
- */
-async function requestElevenLabsAudio(
+export async function speakWithSiriOrSystemVoice(
   text: string,
-  voiceId: string,
-  apiKey: string
-): Promise<Blob> {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`
-
-  // Timeout de seguridad de 4.5s para no retrasar nunca la locución si ElevenLabs va lento
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 4500)
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json',
-        Accept: 'audio/mpeg',
-      },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.8,
-        },
-      }),
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '')
-      let cleanMessage = errorText
-      try {
-        const parsed = JSON.parse(errorText)
-        if (parsed?.detail?.message) {
-          cleanMessage = parsed.detail.message
-        }
-      } catch {}
-
-      if (isElevenLabsQuotaExceededError(cleanMessage, response.status)) {
-        setElevenLabsQuotaExhausted(cleanMessage)
-      }
-
-      throw new Error(cleanMessage || `ElevenLabs HTTP ${response.status}`)
-    }
-
-    // Petición exitosa: si estaba marcado como agotado, limpiamos el estado
-    if (elevenLabsQuotaExhaustedTime) {
-      clearElevenLabsQuotaCache()
-    }
-
-    return await response.blob()
-  } catch (err: any) {
-    clearTimeout(timeoutId)
-    if (err.name === 'AbortError') {
-      throw new Error('Tiempo de espera agotado al conectar con ElevenLabs (más de 4.5s).')
-    }
-    throw err
-  }
-}
-
-/**
- * Reproduce un Blob de audio mediante el objeto HTMLAudioElement
- */
-function playAudioBlob(blob: Blob): Promise<void> {
-  return new Promise((resolve, reject) => {
-    try {
-      const audioUrl = URL.createObjectURL(blob)
-      const audio = new Audio(audioUrl)
-      currentAudio = audio
-
-      const cleanup = () => {
-        try {
-          URL.revokeObjectURL(audioUrl)
-        } catch {}
-        if (currentAudio === audio) {
-          currentAudio = null
-        }
-      }
-
-      audio.onended = () => {
-        cleanup()
-        resolve()
-      }
-
-      audio.onerror = (e) => {
-        cleanup()
-        reject(e)
-      }
-
-      audio.play().catch((err) => {
-        cleanup()
-        reject(err)
-      })
-    } catch (err) {
-      reject(err)
-    }
-  })
-}
-
-/**
- * Síntesis de voz con ElevenLabs utilizando la API Key y Voice ID configurados en Ajustes.
- */
-export async function speakWithElevenLabs(
-  text: string,
-  customVoiceId?: string,
-  customApiKey?: string
-): Promise<{ success: boolean; voiceUsed?: string; error?: string; isQuotaExceeded?: boolean }> {
-  if (typeof window === 'undefined') {
-    return { success: false, error: 'Entorno no soportado' }
-  }
-
-  const apiKey = (customApiKey || getElevenLabsApiKey()).trim()
-  const voiceId = (customVoiceId || getElevenLabsVoiceId()).trim()
-
-  if (!apiKey) {
-    return { success: false, error: 'No se ha configurado la clave API de ElevenLabs en Ajustes.' }
-  }
-  if (!voiceId) {
-    return { success: false, error: 'No se ha configurado el ID de voz de ElevenLabs en Ajustes.' }
-  }
-
-  await stopSpeechSynthesis()
-
-  try {
-    const blob = await requestElevenLabsAudio(text, voiceId, apiKey)
-    await playAudioBlob(blob)
-    return { success: true, voiceUsed: voiceId }
-  } catch (err: any) {
-    const errMsg = String(err?.message || 'Error desconocido en ElevenLabs')
-    const isQuota = isElevenLabsQuotaExceededError(errMsg)
-    if (isQuota) {
-      setElevenLabsQuotaExhausted(errMsg)
-    }
-    console.warn('[ElevenLabs TTS Error]:', errMsg, isQuota ? '(Cambio automático a Siri activado)' : '')
-    return { success: false, error: errMsg, isQuotaExceeded: isQuota }
-  }
-}
-
-/**
-/**
- * Síntesis de voz gratuita con Siri en macOS (o Web Speech en navegador).
- * NO consume créditos de ElevenLabs (ideal para avisos del sistema y actualizaciones).
- */
-export async function speakWithSiriOrSystemVoice(text: string): Promise<void> {
+  customVolume?: number
+): Promise<void> {
   if (!text || !text.trim()) return
 
+  const config = getStudioConfig()
+
+  // Comprobar si todas las notificaciones están silenciadas
+  if (config.muteAllNotifications && customVolume === undefined) {
+    return
+  }
+
+  const volumePct = customVolume !== undefined ? customVolume : (config.voiceVolume ?? 80)
+  if (volumePct <= 0) return
+
   await stopSpeechSynthesis()
 
-  // 1. En Electron (macOS), invocar directamente la voz nativa de Siri
+  // 1. En Electron (macOS), invocar directamente la voz nativa de Siri con control de volumen
   if (typeof window !== 'undefined' && (window as any).electronAPI?.speakWithSiri) {
     try {
-      const handled = await (window as any).electronAPI.speakWithSiri(text)
+      const handled = await (window as any).electronAPI.speakWithSiri(text, volumePct)
       if (handled) return
     } catch (e) {
       console.warn('[Siri Native TTS Fallback]:', e)
@@ -321,84 +201,61 @@ export async function speakWithSiriOrSystemVoice(text: string): Promise<void> {
       return
     }
 
-    const safetyTimeout = setTimeout(() => {
-      resolve()
-    }, 6000)
+    const safetyTimeout = setTimeout(() => resolve(), 12000)
 
     try {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume()
-      }
+      window.speechSynthesis.cancel()
 
-      const executeSpeak = () => {
-        try {
-          const utterance = new SpeechSynthesisUtterance(text)
-          utterance.lang = 'es-ES'
-          utterance.rate = 1.0
-          utterance.pitch = 1.05
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = 'es-ES'
+      utterance.rate = 1.02
+      utterance.pitch = 1.05
+      utterance.volume = Math.max(0, Math.min(1, volumePct / 100))
 
-          const voices = window.speechSynthesis.getVoices()
+      const selectBestSpanishVoice = () => {
+        const voices = window.speechSynthesis.getVoices()
+        if (!voices || voices.length === 0) return
 
-          // Prioridad: Siri o voces de alta calidad en español
-          const siriVoice = voices.find(
-            (v) =>
-              (v.lang.startsWith('es') || v.lang === '') &&
-              v.name.toLowerCase().includes('siri')
+        const candidates = voices.filter(
+          (v) =>
+            (v.lang.startsWith('es') || v.lang.startsWith('ES')) &&
+            !v.name.toLowerCase().includes('bad')
+        )
+
+        const preferred = candidates.find((v) => {
+          const n = v.name.toLowerCase()
+          return (
+            n.includes('monica') ||
+            n.includes('paulina') ||
+            n.includes('helena') ||
+            n.includes('lucia') ||
+            n.includes('laura') ||
+            n.includes('natural') ||
+            n.includes('female') ||
+            n.includes('siri')
           )
-          if (siriVoice) {
-            utterance.voice = siriVoice
-          } else {
-            const preferred = [
-              'monica',
-              'paulina',
-              'jorge',
-              'alba',
-              'natural',
-              'neural',
-              'enhanced',
-              'google español',
-            ]
-            const hqVoice = voices.find((v) => {
-              const name = v.name.toLowerCase()
-              const isSpanish = v.lang.startsWith('es') || v.lang === ''
-              return isSpanish && preferred.some((p) => name.includes(p))
-            })
-            if (hqVoice) {
-              utterance.voice = hqVoice
-            } else {
-              const defaultSpanish =
-                voices.find((v) => v.lang === 'es-ES') ||
-                voices.find((v) => v.lang.startsWith('es'))
-              if (defaultSpanish) utterance.voice = defaultSpanish
-            }
-          }
+        })
 
-          utterance.onend = () => {
-            clearTimeout(safetyTimeout)
-            resolve()
-          }
-          utterance.onerror = (err) => {
-            console.warn('[SpeechSynthesis Error]', err)
-            clearTimeout(safetyTimeout)
-            resolve()
-          }
-
-          window.speechSynthesis.resume()
-          window.speechSynthesis.speak(utterance)
-        } catch (err) {
-          console.warn('[SpeechSynthesis Execute Error]', err)
-          clearTimeout(safetyTimeout)
-          resolve()
+        if (preferred) {
+          utterance.voice = preferred
+        } else if (candidates.length > 0) {
+          utterance.voice = candidates[0]
         }
       }
 
-      if (window.speechSynthesis.getVoices().length > 0) {
-        executeSpeak()
-      } else {
-        window.speechSynthesis.onvoiceschanged = () => {
-          executeSpeak()
-        }
+      selectBestSpanishVoice()
+
+      utterance.onend = () => {
+        clearTimeout(safetyTimeout)
+        resolve()
       }
+
+      utterance.onerror = () => {
+        clearTimeout(safetyTimeout)
+        resolve()
+      }
+
+      window.speechSynthesis.speak(utterance)
     } catch (e) {
       console.warn('[TTS Error]', e)
       clearTimeout(safetyTimeout)
@@ -408,41 +265,14 @@ export async function speakWithSiriOrSystemVoice(text: string): Promise<void> {
 }
 
 /**
- * Síntesis de voz hablada para reservas de clientes:
- * 1. Prioridad 1: ElevenLabs AI Voice (con la clave e ID de voz configurados en Ajustes)
- * 2. Si se han agotado los créditos de ElevenLabs o hay error, cambia instantáneamente a Siri
- *    en macOS (o Web Speech en el navegador) garantizando que Laura siempre reciba la locución sin demoras.
+ * Alias de compatibilidad para locuciones con voz femenina natural
  */
-export async function speakWithFemaleVoice(text: string): Promise<void> {
-  if (!text || !text.trim()) return
-
-  // 1. Intentar ElevenLabs si está configurado y no sabemos que la cuota está agotada
-  const apiKey = getElevenLabsApiKey()
-  const voiceId = getElevenLabsVoiceId()
-
-  if (apiKey && voiceId && !isElevenLabsQuotaExhausted()) {
-    try {
-      const res = await speakWithElevenLabs(text, voiceId, apiKey)
-      if (res.success) return
-
-      if (res.isQuotaExceeded) {
-        console.warn(
-          '[ElevenLabs Créditos Agotados]: Cambiando automáticamente y sin demora a Siri de respaldo.'
-        )
-      }
-    } catch (e) {
-      console.warn('[ElevenLabs Fallback a Siri/WebSpeech]:', e)
-    }
-  } else if (isElevenLabsQuotaExhausted()) {
-    console.info(
-      '[ElevenLabs en pausa por créditos agotados]: Locutando directamente con Siri de respaldo.'
-    )
-  }
-
-  // 2. Fallback a voz de Siri o sistema (0 créditos, instantáneo)
-  await speakWithSiriOrSystemVoice(text)
+export async function speakWithFemaleVoice(
+  text: string,
+  customVolume?: number
+): Promise<void> {
+  await speakWithSiriOrSystemVoice(text, customVolume)
 }
-
 
 /**
  * Limpia y extrae el comentario o preferencia de horario para que la voz lo lea de forma natural
@@ -451,7 +281,6 @@ function extractCommentForSpeech(rawNotes?: string): string {
   if (!rawNotes || !rawNotes.trim()) return ''
   let cleaned = rawNotes.trim()
 
-  // Descartar mensajes genéricos automáticos si no contienen un comentario real de la clienta
   if (
     cleaned.toLowerCase() === 'solicitud de reserva online desde el sitio web' ||
     cleaned.toLowerCase() === 'solicitud web'
@@ -459,14 +288,13 @@ function extractCommentForSpeech(rawNotes?: string): string {
     return ''
   }
 
-  // Eliminar prefijos técnicos si venían de versiones anteriores
   cleaned = cleaned.replace(/^solicitud\s+web\s*:\s*/i, '').trim()
   return cleaned
 }
 
 /**
- * Anuncia automáticamente con voz la llegada de una nueva reserva desde goldblacklash.com
- * Incluye: Nombre completo, Teléfono, Tratamiento de interés y Preferencia de horario o comentario.
+ * Anuncia automáticamente con voz la llegada de una nueva reserva o mensaje desde goldblacklash.com
+ * Respeta si el usuario ha silenciado Siri para citas recibidas (voiceAnnounceNewAppointments = false).
  */
 export async function announceNewAppointmentVoice(
   apt: {
@@ -476,8 +304,15 @@ export async function announceNewAppointmentVoice(
     date?: string
     time?: string
     notes?: string
-  }
+  },
+  customVolume?: number
 ): Promise<void> {
+  const config = getStudioConfig()
+
+  // Comprobar si está silenciado el asistente para nuevas citas
+  if (config.muteAllNotifications && customVolume === undefined) return
+  if (config.voiceAnnounceNewAppointments === false && customVolume === undefined) return
+
   const service = apt.serviceName || 'Servicio de extensiones de pestañas'
   const formattedPhone = apt.clientPhone ? formatPhoneForSpeech(apt.clientPhone) : ''
   const comment = extractCommentForSpeech(apt.notes)
@@ -495,5 +330,23 @@ export async function announceNewAppointmentVoice(
     announcement = `Laura, tienes una nueva reserva desde la página web de la clienta ${apt.clientName} para el tratamiento de ${service}.${commentClause}`
   }
 
-  await speakWithFemaleVoice(announcement)
+  await speakWithSiriOrSystemVoice(announcement, customVolume)
+}
+
+/**
+ * Anuncia actualizaciones de software del sistema con Siri
+ * Respeta si el usuario ha silenciado Siri para actualizaciones (voiceAnnounceUpdates = false).
+ */
+export async function announceUpdateVoice(
+  version: string,
+  customVolume?: number
+): Promise<void> {
+  const config = getStudioConfig()
+
+  if (config.muteAllNotifications && customVolume === undefined) return
+  if (config.voiceAnnounceUpdates === false && customVolume === undefined) return
+
+  const versionClean = (version || '').replace(/^v/, '')
+  const text = `Laura, tienes una nueva actualización disponible de GoldBlack Lash, versión ${versionClean}.`
+  await speakWithSiriOrSystemVoice(text, customVolume)
 }

@@ -75,10 +75,11 @@ export interface StudioConfig {
   alertEmail?: string
   maintenanceMode?: boolean
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
+  muteAllNotifications?: boolean
   voiceAnnounceNewAppointments?: boolean
   voiceAnnounceUpdates?: boolean
-  elevenLabsApiKey?: string
-  elevenLabsVoiceId?: string
+  voiceVolume?: number
+  notificationSoundVolume?: number
   whatsappAlertsEnabled?: boolean
   whatsappAlertPhone?: string
   whatsappProvider?: 'callmebot' | 'webhook'
