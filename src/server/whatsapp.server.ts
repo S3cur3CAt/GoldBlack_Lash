@@ -88,6 +88,8 @@ export interface SendWhatsAppAlertOptions {
     whatsappCallMeBotApiKey?: string
     whatsappWebhookUrl?: string
     phoneDisplay?: string
+    phoneClean?: string
+    whatsapp?: string
   }
 }
 

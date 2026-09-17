@@ -969,7 +969,7 @@ export const Settings: React.FC<SettingsProps> = ({
           {/* Live Test Box for WhatsApp */}
           <div className="p-4 rounded-xl bg-ink-800/60 border border-line space-y-3">
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-gray-300 flex items-center gap-2">
+              <label className="flex items-center gap-2 text-xs font-semibold text-gray-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 Probar Recepción de Alerta en tu WhatsApp
               </label>

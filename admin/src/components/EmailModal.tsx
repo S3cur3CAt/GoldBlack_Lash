@@ -618,7 +618,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 items-end">
             {/* 1. Date Picker */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-gray-300 mb-1">
                 <IconCalendar size={12} className="text-gold-400" />
                 <span>Fecha</span>
               </label>
@@ -632,7 +632,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
             {/* 2. Time Selector / Picker */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-gray-300 mb-1">
                 <IconClock size={12} className="text-emerald-400" />
                 <span>Hora Acordada *</span>
               </label>
@@ -646,7 +646,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
             {/* 3. Service Dropdown */}
             <div className="sm:col-span-2 lg:col-span-2">
-              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-gray-300 mb-1">
                 <IconSparkles size={12} className="text-purple-400" />
                 <span>Servicio / Tratamiento</span>
               </label>
@@ -679,7 +679,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
             {/* 4. WhatsApp Phone */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-gray-300 mb-1">
                 <IconWhatsApp size={12} className="text-emerald-400" />
                 <span>Móvil WhatsApp</span>
               </label>
@@ -697,7 +697,7 @@ export const EmailModal: React.FC<EmailModalProps> = ({
 
             {/* 5. Client Email */}
             <div>
-              <label className="block text-[11px] font-semibold text-gray-300 mb-1 flex items-center gap-1">
+              <label className="flex items-center gap-1 text-[11px] font-semibold text-gray-300 mb-1">
                 <IconMail size={12} className="text-gold-400" />
                 <span>Correo Clienta</span>
               </label>
