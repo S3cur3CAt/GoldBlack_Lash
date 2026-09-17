@@ -20,6 +20,7 @@ import { Route as ApiEmailRouteImport } from './routes/api.email'
 import { Route as ApiGalleryRouteImport } from './routes/api.gallery'
 import { Route as ApiInvoicesRouteImport } from './routes/api.invoices'
 import { Route as ApiServicesRouteImport } from './routes/api.services'
+import { Route as ApiWhatsappRouteImport } from './routes/api.whatsapp'
 import { Route as ApiImagesKeyRouteImport } from './routes/api.images.$key'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const ApiServicesRoute = ApiServicesRouteImport.update({
   path: '/api/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappRoute = ApiWhatsappRouteImport.update({
+  id: '/api/whatsapp',
+  path: '/api/whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiImagesKeyRoute = ApiImagesKeyRouteImport.update({
   id: '/api/images/$key',
   path: '/api/images/$key',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
+  '/api/whatsapp': typeof ApiWhatsappRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
+  '/api/whatsapp': typeof ApiWhatsappRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
   '/api/services': typeof ApiServicesRoute
+  '/api/whatsapp': typeof ApiWhatsappRoute
   '/api/images/$key': typeof ApiImagesKeyRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/api/gallery'
     | '/api/invoices'
     | '/api/services'
+    | '/api/whatsapp'
     | '/api/images/$key'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/api/gallery'
     | '/api/invoices'
     | '/api/services'
+    | '/api/whatsapp'
     | '/api/images/$key'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/api/gallery'
     | '/api/invoices'
     | '/api/services'
+    | '/api/whatsapp'
     | '/api/images/$key'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   ApiGalleryRoute: typeof ApiGalleryRoute
   ApiInvoicesRoute: typeof ApiInvoicesRoute
   ApiServicesRoute: typeof ApiServicesRoute
+  ApiWhatsappRoute: typeof ApiWhatsappRoute
   ApiImagesKeyRoute: typeof ApiImagesKeyRoute
 }
 
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp': {
+      id: '/api/whatsapp'
+      path: '/api/whatsapp'
+      fullPath: '/api/whatsapp'
+      preLoaderRoute: typeof ApiWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/images/$key': {
       id: '/api/images/$key'
       path: '/api/images/$key'
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGalleryRoute: ApiGalleryRoute,
   ApiInvoicesRoute: ApiInvoicesRoute,
   ApiServicesRoute: ApiServicesRoute,
+  ApiWhatsappRoute: ApiWhatsappRoute,
   ApiImagesKeyRoute: ApiImagesKeyRoute,
 }
 export const routeTree = rootRouteImport

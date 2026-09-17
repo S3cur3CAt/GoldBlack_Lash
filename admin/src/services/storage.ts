@@ -34,6 +34,11 @@ export const DEFAULT_CONFIG: StudioConfig = {
   voiceAnnounceUpdates: true,
   elevenLabsApiKey: '',
   elevenLabsVoiceId: '',
+  whatsappAlertsEnabled: true,
+  whatsappAlertPhone: '+34 604 18 76 76',
+  whatsappProvider: 'callmebot',
+  whatsappCallMeBotApiKey: '',
+  whatsappWebhookUrl: '',
 }
 
 // Initial Services matching site.ts
@@ -1591,6 +1596,52 @@ export async function sendEmailViaResend(options: {
       }
     }
     return { ok: false, error: err?.message || 'Error al enviar correo' }
+  }
+}
+
+// WhatsApp Studio Alert Testing (Vercel Backend / Direct CallMeBot Gateway)
+export async function sendTestWhatsAppAlert(config: StudioConfig): Promise<{ ok: boolean; message?: string; error?: string }> {
+  const baseUrl = getApiBaseUrl()
+  try {
+    const res = await fetch(`${baseUrl}/api/whatsapp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        whatsappAlertPhone: config.whatsappAlertPhone,
+        whatsappProvider: config.whatsappProvider,
+        whatsappCallMeBotApiKey: config.whatsappCallMeBotApiKey,
+        whatsappWebhookUrl: config.whatsappWebhookUrl,
+        whatsappAlertsEnabled: config.whatsappAlertsEnabled !== false,
+        message: `✨ *Prueba de Alerta WhatsApp — ${config.name || 'GoldBlack Lash'}*\n\n¡Enhorabuena! La conexión con tu WhatsApp está funcionando correctamente. Recibirás un aviso instantáneo cada vez que una clienta reserve en tu web.`,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { ok: false, error: data?.error || `Error ${res.status} al enviar prueba de WhatsApp` }
+    }
+    return { ok: true, message: data.message || 'Mensaje de prueba enviado con éxito a tu WhatsApp' }
+  } catch (err: any) {
+    // Direct CallMeBot fallback if backend is offline
+    if (config.whatsappProvider === 'callmebot' && config.whatsappCallMeBotApiKey) {
+      try {
+        let phone = (config.whatsappAlertPhone || '+34 604 18 76 76').replace(/\D/g, '')
+        if (phone.length === 9 && /^[6789]/.test(phone)) phone = '34' + phone
+        const testText = encodeURIComponent(
+          `✨ *Prueba de Alerta WhatsApp — ${config.name || 'GoldBlack Lash'}*\n\n¡Enhorabuena! La conexión con tu WhatsApp está funcionando correctamente.`
+        )
+        const directRes = await fetch(
+          `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${testText}&apikey=${config.whatsappCallMeBotApiKey}`
+        )
+        const text = await directRes.text().catch(() => '')
+        if (directRes.ok && !text.toLowerCase().includes('error')) {
+          return { ok: true, message: 'Alerta de prueba enviada con éxito a tu WhatsApp' }
+        }
+        return { ok: false, error: text || 'Error al conectar con CallMeBot' }
+      } catch (e: any) {
+        return { ok: false, error: e?.message || 'Error de conexión con CallMeBot' }
+      }
+    }
+    return { ok: false, error: err?.message || 'Error de conexión con el servicio de alertas' }
   }
 }
 

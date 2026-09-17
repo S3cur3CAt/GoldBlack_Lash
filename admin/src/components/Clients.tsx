@@ -14,8 +14,10 @@ import {
   IconList,
   IconClock,
   IconCheck,
+  IconWhatsApp,
 } from './Icons'
 import { EmailModal, EmailModalMode } from './EmailModal'
+import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 
 export type ClientsViewMode = 'grid' | 'list' | 'compact'
 
@@ -89,6 +91,17 @@ export const Clients: React.FC<ClientsProps> = ({
     setSelectedEmailClient(client)
     setEmailModalMode(mode)
     setEmailModalOpen(true)
+  }
+
+  // WhatsApp Modal State
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
+  const [selectedWhatsappClient, setSelectedWhatsappClient] = useState<Client | null>(null)
+  const [whatsappModalMode, setWhatsappModalMode] = useState<WhatsAppModalMode>('retoque')
+
+  const handleOpenWhatsApp = (client: Client, mode: WhatsAppModalMode = 'retoque') => {
+    setSelectedWhatsappClient(client)
+    setWhatsappModalMode(mode)
+    setWhatsappModalOpen(true)
   }
 
   const [formData, setFormData] = useState<Partial<Client>>({
@@ -337,19 +350,30 @@ export const Clients: React.FC<ClientsProps> = ({
                   </div>
                 </div>
 
-                {/* Email Recall CTA */}
-                <div className="mt-5 pt-3 border-t border-line flex items-center justify-between">
-                  <span className="text-[11px] text-gray-500">
-                    Registrada el {client.createdAt}
+                {/* Email & WhatsApp Recall CTA */}
+                <div className="mt-5 pt-3 border-t border-line flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-gray-500 truncate">
+                    {client.createdAt ? `Alta: ${client.createdAt}` : 'Clienta'}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEmail(client, 'retoque')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gold-950/40 hover:bg-gold-900/60 text-gold-300 border border-gold-500/30 text-xs font-semibold transition-colors cursor-pointer"
-                  >
-                    <IconMail size={14} />
-                    <span>Invitar a Retoque (Correo)</span>
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWhatsApp(client, 'retoque')}
+                      title="Enviar mensaje por WhatsApp a la clienta"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      <IconWhatsApp size={14} className="text-emerald-400" />
+                      <span>WhatsApp</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEmail(client, 'retoque')}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gold-950/40 hover:bg-gold-900/60 text-gold-300 border border-gold-500/30 text-xs font-semibold transition-colors cursor-pointer"
+                      title="Enviar correo"
+                    >
+                      <IconMail size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -440,6 +464,14 @@ export const Clients: React.FC<ClientsProps> = ({
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
+                            onClick={() => handleOpenWhatsApp(client, 'retoque')}
+                            title="Enviar mensaje por WhatsApp a la clienta"
+                            className="p-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 cursor-pointer"
+                          >
+                            <IconWhatsApp size={13} />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenEmail(client, 'retoque')}
                             title="Enviar correo de recordatorio o retoque"
                             className="p-1.5 rounded-lg bg-gold-950/40 hover:bg-gold-900/60 text-gold-300 border border-gold-500/30 cursor-pointer"
@@ -508,6 +540,14 @@ export const Clients: React.FC<ClientsProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp(client, 'retoque')}
+                        className="p-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/30 cursor-pointer"
+                        title="Enviar WhatsApp"
+                      >
+                        <IconWhatsApp size={12} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleOpenEmail(client, 'retoque')}
@@ -696,6 +736,22 @@ export const Clients: React.FC<ClientsProps> = ({
           if (selectedEmailClient) {
             const updated = { ...selectedEmailClient, email }
             setSelectedEmailClient(updated)
+            onSaveClient(updated)
+          }
+        }}
+      />
+
+      {/* WhatsApp Modal for Direct Client Messaging */}
+      <WhatsAppModal
+        isOpen={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
+        client={selectedWhatsappClient}
+        config={config}
+        initialMode={whatsappModalMode}
+        onClientPhoneUpdated={(phone) => {
+          if (selectedWhatsappClient) {
+            const updated = { ...selectedWhatsappClient, phone }
+            setSelectedWhatsappClient(updated)
             onSaveClient(updated)
           }
         }}

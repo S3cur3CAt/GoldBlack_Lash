@@ -19,7 +19,9 @@ import {
   IconUsers,
   IconSparkles,
   IconSend,
+  IconWhatsApp,
 } from './Icons'
+import { WhatsAppModal } from './WhatsAppModal'
 import { LogoBizum, LogoCreditCards, LogoCash, LogoBankTransfer } from './PaymentLogos'
 
 interface BillingProps {
@@ -54,6 +56,7 @@ export const Billing: React.FC<BillingProps> = ({
   const [detailInvoice, setDetailInvoice] = useState<Invoice | null>(null)
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
   const [emailInvoice, setEmailInvoice] = useState<Invoice | null>(null)
+  const [whatsappInvoice, setWhatsappInvoice] = useState<Invoice | null>(null)
 
   // Email modal form state
   const [emailRecipient, setEmailRecipient] = useState('')
@@ -729,6 +732,16 @@ export const Billing: React.FC<BillingProps> = ({
                           <IconMail size={15} />
                         </button>
 
+                        {/* Enviar Ticket por WhatsApp */}
+                        <button
+                          type="button"
+                          onClick={() => setWhatsappInvoice(inv)}
+                          title="Enviar ticket y recibo por WhatsApp a esta clienta"
+                          className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
+                        >
+                          <IconWhatsApp size={15} />
+                        </button>
+
                         {/* 3. Editar Factura */}
                         <button
                           type="button"
@@ -1207,6 +1220,15 @@ export const Billing: React.FC<BillingProps> = ({
                     <IconMail size={14} />
                     <span>Enviar por Correo</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setWhatsappInvoice(detailInvoice)}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors cursor-pointer shadow-sm shadow-emerald-950/40"
+                  >
+                    <IconWhatsApp size={14} />
+                    <span>Enviar por WhatsApp</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1409,6 +1431,15 @@ export const Billing: React.FC<BillingProps> = ({
           </div>
         </div>
       )}
+
+      {/* WhatsApp Modal for Billing Ticket Dispatch */}
+      <WhatsAppModal
+        isOpen={Boolean(whatsappInvoice)}
+        onClose={() => setWhatsappInvoice(null)}
+        invoice={whatsappInvoice}
+        config={config}
+        initialMode="factura"
+      />
     </div>
   )
 }

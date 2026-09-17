@@ -12,8 +12,9 @@ import {
   IconAlertCircle,
   IconRefreshCw,
   IconVolume2,
+  IconWhatsApp,
 } from './Icons'
-import { exportBackupJSON, importBackupJSON, sendEmailViaResend } from '../services/storage'
+import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestWhatsAppAlert } from '../services/storage'
 import {
   announceNewAppointmentVoice,
   speakWithFemaleVoice,
@@ -107,10 +108,40 @@ export const Settings: React.FC<SettingsProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [importStatus, setImportStatus] = useState<string | null>(null)
 
-  // Resend Email Live Test State
-  const [testRecipient, setTestRecipient] = useState(config.email || '')
+  // Live Email test state
+  const [testRecipient, setTestRecipient] = useState('')
   const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  // Live WhatsApp alert test state
+  const [isSendingWhatsAppTest, setIsSendingWhatsAppTest] = useState(false)
+  const [whatsAppTestResult, setWhatsAppTestResult] = useState<{ success: boolean; message: string } | null>(null)
+
+  const handleTestWhatsApp = async () => {
+    setIsSendingWhatsAppTest(true)
+    setWhatsAppTestResult(null)
+    try {
+      const res = await sendTestWhatsAppAlert(formData)
+      if (res.ok) {
+        setWhatsAppTestResult({
+          success: true,
+          message: res.message || '✓ ¡Alerta de WhatsApp enviada con éxito a tu móvil!',
+        })
+      } else {
+        setWhatsAppTestResult({
+          success: false,
+          message: res.error || 'No se pudo enviar la alerta de prueba.',
+        })
+      }
+    } catch (err: any) {
+      setWhatsAppTestResult({
+        success: false,
+        message: err?.message || 'Error de conexión con el servicio de WhatsApp.',
+      })
+    } finally {
+      setIsSendingWhatsAppTest(false)
+    }
+  }
 
 
 
@@ -840,6 +871,190 @@ export const Settings: React.FC<SettingsProps> = ({
                   : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
               }`}>
                 <span>{testResult.message}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* WhatsApp Instant Booking Alerts Configuration (Studio / Laura) */}
+        <div className="p-6 rounded-2xl bg-ink-850 border border-emerald-500/30 space-y-5 shadow-lg shadow-emerald-950/20">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm shadow-emerald-950/40">
+                <IconWhatsApp size={22} />
+              </div>
+              <div>
+                <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2">
+                  <span>Alertas de Citas por WhatsApp (Móvil de Laura)</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Directo • Instantáneo
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Recibe en tu WhatsApp exactamente lo mismo que por Gmail cada vez que una clienta reserve en tu web, con enlace directo para chatear con ella.
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle switch for WhatsApp Alerts */}
+            <label className="relative inline-flex items-center cursor-pointer shrink-0">
+              <input
+                type="checkbox"
+                checked={formData.whatsappAlertsEnabled !== false}
+                onChange={(e) =>
+                  setFormData({ ...formData, whatsappAlertsEnabled: e.target.checked })
+                }
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-ink-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 border border-line"></div>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                Tu Número de WhatsApp para Recibir Alertas *
+              </label>
+              <input
+                type="tel"
+                placeholder="+34 604 18 76 76"
+                value={formData.whatsappAlertPhone || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, whatsappAlertPhone: e.target.value.trim() })
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                A este número te llegará el aviso con el nombre, teléfono y tratamiento reservado.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                Servicio Proveedor de Envío
+              </label>
+              <select
+                value={formData.whatsappProvider || 'callmebot'}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    whatsappProvider: e.target.value as 'callmebot' | 'webhook',
+                  })
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white focus:outline-none focus:border-emerald-400"
+              >
+                <option value="callmebot">CallMeBot (Recomendado • 100% Gratis y Directo)</option>
+                <option value="webhook">Webhook Personalizado (Make / Zapier / Twilio / n8n)</option>
+              </select>
+              <p className="text-[11px] text-gray-500 mt-1">
+                CallMeBot envía mensajes directos sin necesidad de pagar planes mensuales de WhatsApp Business.
+              </p>
+            </div>
+          </div>
+
+          {/* Conditional: CallMeBot API Key */}
+          {(!formData.whatsappProvider || formData.whatsappProvider === 'callmebot') && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  Clave API de CallMeBot
+                </label>
+                <input
+                  type="password"
+                  placeholder="Pega aquí tu clave API de CallMeBot (ej. 1234567)"
+                  value={formData.whatsappCallMeBotApiKey || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, whatsappCallMeBotApiKey: e.target.value.trim() })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
+                />
+              </div>
+
+              {/* CallMeBot 15-second setup instructions banner */}
+              <div className="p-4 rounded-xl bg-ink-800/80 border border-emerald-500/20 text-xs space-y-2 text-gray-300">
+                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <span>💡 ¿Cómo obtener tu clave gratuita en 15 segundos?</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[11.5px] text-gray-300">
+                  <li>
+                    Guarda en tus contactos el número de WhatsApp de CallMeBot:{' '}
+                    <strong className="text-white font-mono">+34 911 06 43 00</strong> (o pulsa{' '}
+                    <a
+                      href="https://wa.me/34911064300?text=I%20allow%20callmebot%20to%20send%20me%20messages"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-emerald-400 underline hover:text-emerald-300"
+                    >
+                      abrir chat directo
+                    </a>
+                    ).
+                  </li>
+                  <li>
+                    Envíale este mensaje exacto por WhatsApp:{' '}
+                    <span className="px-1.5 py-0.5 rounded bg-black font-mono text-emerald-300">
+                      I allow callmebot to send me messages
+                    </span>
+                  </li>
+                  <li>
+                    CallMeBot te responderá al instante con tu <strong>apikey</strong>. Pégala en la casilla de arriba y pulsa Guardar Ajustes.
+                  </li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Conditional: Webhook URL */}
+          {formData.whatsappProvider === 'webhook' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">
+                URL del Webhook de WhatsApp (HTTP POST)
+              </label>
+              <input
+                type="url"
+                placeholder="https://hook.eu1.make.com/... o Zapier / Twilio URL"
+                value={formData.whatsappWebhookUrl || ''}
+                onChange={(e) =>
+                  setFormData({ ...formData, whatsappWebhookUrl: e.target.value.trim() })
+                }
+                className="w-full px-3.5 py-2 rounded-xl bg-ink-800 border border-line-strong text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-emerald-400"
+              />
+              <p className="text-[11px] text-gray-500 mt-1">
+                Se enviará un payload JSON con {'{ phone, message, appointment }'} cada vez que una clienta reserve.
+              </p>
+            </div>
+          )}
+
+          {/* Live Test Box for WhatsApp */}
+          <div className="p-4 rounded-xl bg-ink-800/60 border border-line space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-300 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Probar Recepción de Alerta en tu WhatsApp
+              </label>
+              <span className="text-[11px] text-gray-500">Envía un mensaje de prueba a tu móvil</span>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={handleTestWhatsApp}
+                disabled={isSendingWhatsAppTest}
+                className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-50 text-ink-950 font-bold text-xs shadow-md shadow-emerald-950/50 transition-all cursor-pointer active:scale-95"
+              >
+                <IconWhatsApp size={16} />
+                <span>{isSendingWhatsAppTest ? 'Enviando WhatsApp...' : 'Enviar Alerta de Prueba a mi WhatsApp'}</span>
+              </button>
+            </div>
+
+            {whatsAppTestResult && (
+              <div
+                className={`p-3 rounded-lg text-xs flex items-center gap-2 ${
+                  whatsAppTestResult.success
+                    ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300'
+                    : 'bg-rose-950/40 border border-rose-500/30 text-rose-300'
+                }`}
+              >
+                <span>{whatsAppTestResult.message}</span>
               </div>
             )}
           </div>

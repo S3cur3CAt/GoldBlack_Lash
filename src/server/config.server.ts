@@ -18,6 +18,11 @@ export interface StudioConfigData {
   hours: Array<{ days: string; time: string }>
   maintenanceMode?: boolean
   seasonalEffect?: 'none' | 'auto' | 'snow' | 'sakura' | 'leaves' | 'rose_petals' | 'new_year' | 'halloween'
+  whatsappAlertsEnabled?: boolean
+  whatsappAlertPhone?: string
+  whatsappProvider?: 'callmebot' | 'webhook'
+  whatsappCallMeBotApiKey?: string
+  whatsappWebhookUrl?: string
 }
 
 let sqlPromise: Promise<any> | null = null

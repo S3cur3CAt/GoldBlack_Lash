@@ -18,8 +18,10 @@ import {
   IconAlertCircle,
   IconPlus,
   IconReceipt,
+  IconWhatsApp,
 } from './Icons'
 import { EmailModal, EmailModalMode } from './EmailModal'
+import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 import { FinalizeServiceModal } from './FinalizeServiceModal'
 
 interface DashboardProps {
@@ -64,6 +66,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [selectedEmailApt, setSelectedEmailApt] = useState<Appointment | null>(null)
   const [selectedEmailClient, setSelectedEmailClient] = useState<Client | null>(null)
   const [emailModalMode, setEmailModalMode] = useState<EmailModalMode>('recordar')
+
+  // WhatsApp Modal State
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
+  const [selectedWhatsappApt, setSelectedWhatsappApt] = useState<Appointment | null>(null)
+  const [selectedWhatsappClient, setSelectedWhatsappClient] = useState<Client | null>(null)
+  const [whatsappModalMode, setWhatsappModalMode] = useState<WhatsAppModalMode>('recordar')
+
+  const handleOpenWhatsApp = (
+    target: { apt?: Appointment; client?: Client },
+    mode: WhatsAppModalMode = 'recordar'
+  ) => {
+    setSelectedWhatsappApt(target.apt || null)
+    setSelectedWhatsappClient(target.client || null)
+    setWhatsappModalMode(mode)
+    setWhatsappModalOpen(true)
+  }
 
   // Filter today's appointments
   const todayAppointments = appointments.filter((a) => a.date === today)
@@ -314,6 +332,15 @@ function getTimeBasedGreeting(): string {
 
                       <button
                         type="button"
+                        onClick={() => handleOpenWhatsApp({ apt }, 'recordar')}
+                        title="Enviar recordatorio o confirmación por WhatsApp a la clienta"
+                        className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
+                      >
+                        <IconWhatsApp size={16} />
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => {
                           setSelectedEmailApt(apt)
                           setSelectedEmailClient(null)
@@ -401,20 +428,30 @@ function getTimeBasedGreeting(): string {
                           Última visita: {c.lastVisitDate || 'Sin registro'}
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEmailApt(null)
-                          setSelectedEmailClient(c)
-                          setEmailModalMode('retoque')
-                          setEmailModalOpen(true)
-                        }}
-                        title="Enviar invitación de retoque por correo corporativo"
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 text-gold-300 border border-gold-500/30 text-[11px] font-semibold transition-colors cursor-pointer"
-                      >
-                        <IconMail size={13} />
-                        <span>Avisar</span>
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWhatsApp({ client: c }, 'retoque')}
+                          title="Enviar invitación de retoque por WhatsApp"
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition-colors cursor-pointer"
+                        >
+                          <IconWhatsApp size={12} className="text-emerald-400" />
+                          <span>WhatsApp</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEmailApt(null)
+                            setSelectedEmailClient(c)
+                            setEmailModalMode('retoque')
+                            setEmailModalOpen(true)
+                          }}
+                          title="Enviar invitación de retoque por correo corporativo"
+                          className="p-1 rounded-lg bg-gold-500/15 hover:bg-gold-500/25 text-gold-300 border border-gold-500/30 text-[11px] transition-colors cursor-pointer"
+                        >
+                          <IconMail size={12} />
+                        </button>
+                      </div>
                     </div>
                   )
                 })
@@ -432,6 +469,16 @@ function getTimeBasedGreeting(): string {
         client={selectedEmailClient}
         config={config}
         initialMode={emailModalMode}
+      />
+
+      {/* WhatsApp Modal */}
+      <WhatsAppModal
+        isOpen={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
+        appointment={selectedWhatsappApt}
+        client={selectedWhatsappClient}
+        config={config}
+        initialMode={whatsappModalMode}
       />
 
       {/* Finalize Service & Invoice Modal */}

@@ -28,8 +28,10 @@ import {
   IconSparkles,
   IconMessageSquare,
   IconReceipt,
+  IconWhatsApp,
 } from './Icons'
 import { EmailModal, EmailModalMode } from './EmailModal'
+import { WhatsAppModal, WhatsAppModalMode } from './WhatsAppModal'
 import { FinalizeServiceModal } from './FinalizeServiceModal'
 
 interface AppointmentsProps {
@@ -169,6 +171,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
     setSelectedEmailApt(apt)
     setEmailModalMode(mode)
     setEmailModalOpen(true)
+  }
+
+  // WhatsApp Message Modal State
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState(false)
+  const [selectedWhatsappApt, setSelectedWhatsappApt] = useState<Appointment | null>(null)
+  const [whatsappModalMode, setWhatsappModalMode] = useState<WhatsAppModalMode>('confirmar')
+
+  const handleOpenWhatsApp = (apt: Appointment, mode: WhatsAppModalMode = 'confirmar') => {
+    setSelectedWhatsappApt(apt)
+    setWhatsappModalMode(mode)
+    setWhatsappModalOpen(true)
   }
 
   // Form State for Create/Edit Modal
@@ -1043,6 +1056,14 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
                       <button
                         type="button"
+                        onClick={() => handleOpenWhatsApp(matchedApt, 'confirmar')}
+                        title="Enviar mensaje por WhatsApp a la clienta"
+                        className="p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer"
+                      >
+                        <IconWhatsApp size={15} />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleOpenEmail(matchedApt, 'confirmar')}
                         title="Enviar confirmación de cita por correo"
                         className="p-2 rounded-xl bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border border-gold-500/30 transition-colors cursor-pointer"
@@ -1318,6 +1339,17 @@ export const Appointments: React.FC<AppointmentsProps> = ({
                       <span className="hidden sm:inline">Correo</span>
                     </button>
                   </div>
+
+                  {/* WhatsApp Action Button - Direct chat in wa.me */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenWhatsApp(apt, 'confirmar')}
+                    title="Enviar mensaje por WhatsApp a la clienta (Confirmar, Recordar, Cuidados...)"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/35 hover:border-emerald-400/60 text-xs font-semibold shadow-sm transition-all cursor-pointer active:scale-95"
+                  >
+                    <IconWhatsApp size={14} className="text-emerald-400 shrink-0" />
+                    <span>WhatsApp</span>
+                  </button>
 
                   {/* Status Change Selector */}
                   <select
@@ -1595,6 +1627,16 @@ export const Appointments: React.FC<AppointmentsProps> = ({
 
               {/* Buttons */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-line">
+                {editingAppointment && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenWhatsApp(editingAppointment, 'confirmar')}
+                    className="mr-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-400 border border-emerald-500/35 text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    <IconWhatsApp size={14} />
+                    <span>WhatsApp a Clienta</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
@@ -1625,6 +1667,22 @@ export const Appointments: React.FC<AppointmentsProps> = ({
           if (selectedEmailApt) {
             const updated = { ...selectedEmailApt, clientEmail: email }
             setSelectedEmailApt(updated)
+            onSaveAppointment(updated)
+          }
+        }}
+      />
+
+      {/* WhatsApp Customize & Send Modal */}
+      <WhatsAppModal
+        isOpen={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
+        appointment={selectedWhatsappApt}
+        config={config}
+        initialMode={whatsappModalMode}
+        onClientPhoneUpdated={(phone) => {
+          if (selectedWhatsappApt) {
+            const updated = { ...selectedWhatsappApt, clientPhone: phone }
+            setSelectedWhatsappApt(updated)
             onSaveAppointment(updated)
           }
         }}

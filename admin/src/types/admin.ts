@@ -79,6 +79,11 @@ export interface StudioConfig {
   voiceAnnounceUpdates?: boolean
   elevenLabsApiKey?: string
   elevenLabsVoiceId?: string
+  whatsappAlertsEnabled?: boolean
+  whatsappAlertPhone?: string
+  whatsappProvider?: 'callmebot' | 'webhook'
+  whatsappCallMeBotApiKey?: string
+  whatsappWebhookUrl?: string
 }
 
 export interface GalleryItem {

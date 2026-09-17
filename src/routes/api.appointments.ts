@@ -9,6 +9,7 @@ import {
   generateBookingEmailText,
 } from '../server/emails/bookingEmail'
 import { fetchConfigFromDb } from '../server/config.server'
+import { sendStudioWhatsAppAlert } from '../server/whatsapp.server'
 
 export const Route = createFileRoute('/api/appointments')({
   server: {
@@ -173,12 +174,29 @@ export const Route = createFileRoute('/api/appointments')({
             }
           }
 
+          // Send instant WhatsApp alert to studio owner (Laura)
+          let studioWhatsAppSent = false
+          try {
+            const liveConfig = await fetchConfigFromDb().catch(() => null)
+            const waResult = await sendStudioWhatsAppAlert({
+              appointment: aptRecord,
+              config: liveConfig || undefined,
+            })
+            studioWhatsAppSent = waResult.ok
+            if (!waResult.ok && waResult.error) {
+              console.info('[WhatsApp Alert Notice]', waResult.error)
+            }
+          } catch (waErr) {
+            console.warn('[WhatsApp Alert Error]', waErr)
+          }
+
           return Response.json(
             {
               ok: true,
               message: 'Cita registrada correctamente en el sistema de administración',
               appointment: aptRecord,
               emailSent: clientEmailSent,
+              whatsappAlertSent: studioWhatsAppSent,
             },
             {
               headers: {
