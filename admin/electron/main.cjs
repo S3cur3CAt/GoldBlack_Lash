@@ -118,11 +118,19 @@ function createWindow() {
     })
   }
 
-  // Open external links (like email mailto, Instagram, Maps) in user's default browser
+  // Open external links (like WhatsApp desktop app, mailto, tel, browser) safely
   if (mainWindow.webContents.setWindowOpenHandler) {
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-      if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
-        shell.openExternal(url)
+      if (
+        url.startsWith('https:') ||
+        url.startsWith('http:') ||
+        url.startsWith('mailto:') ||
+        url.startsWith('tel:') ||
+        url.startsWith('whatsapp:')
+      ) {
+        shell.openExternal(url).catch((err) => {
+          console.warn('[openExternal Warning]', err)
+        })
         return { action: 'deny' }
       }
       return { action: 'allow' }
@@ -130,9 +138,17 @@ function createWindow() {
   } else {
     // Electron < 12 fallback
     mainWindow.webContents.on('new-window', (event, url) => {
-      if (url.startsWith('https:') || url.startsWith('http:') || url.startsWith('mailto:')) {
+      if (
+        url.startsWith('https:') ||
+        url.startsWith('http:') ||
+        url.startsWith('mailto:') ||
+        url.startsWith('tel:') ||
+        url.startsWith('whatsapp:')
+      ) {
         event.preventDefault()
-        shell.openExternal(url)
+        shell.openExternal(url).catch((err) => {
+          console.warn('[openExternal Warning]', err)
+        })
       }
     })
   }
@@ -255,6 +271,22 @@ ipcMain.on('window:close', () => {
 
 ipcMain.handle('window:is-maximized', () => {
   return mainWindow ? mainWindow.isMaximized() : false
+})
+
+// Safe external application launcher for WhatsApp Desktop (macOS/Win), browsers, etc.
+ipcMain.handle('shell:open-external', async (_event, url) => {
+  try {
+    if (!url || typeof url !== 'string') {
+      return { ok: false, error: 'URL no válida' }
+    }
+    const trimmed = url.trim()
+    console.log('[shell:open-external] Opening URL:', trimmed.substring(0, 50))
+    await shell.openExternal(trimmed)
+    return { ok: true }
+  } catch (err) {
+    console.error('[shell:open-external Error]', err)
+    return { ok: false, error: err?.message || 'Error al abrir aplicación' }
+  }
 })
 
 // Visual and sound notification for new real-time appointment

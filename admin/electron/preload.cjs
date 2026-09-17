@@ -32,4 +32,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Native macOS Siri Speech Synthesis for website alerts
   speakWithSiri: (text) => ipcRenderer.invoke('voice:speak-siri', text),
   stopSiri: () => ipcRenderer.invoke('voice:stop-siri'),
+  // Launch native external apps (WhatsApp Desktop, Safari, mailto)
+  openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
 })

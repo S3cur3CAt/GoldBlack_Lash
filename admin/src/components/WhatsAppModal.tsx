@@ -129,31 +129,77 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
   const cleanPhone = formatWhatsAppPhone(recipientPhone)
   const isPhoneValid = cleanPhone.length >= 9
 
-  const generateWhatsAppUrl = () => {
+  // Genera las URLs para la app nativa de Mac y para WhatsApp Web
+  const getNativeAppUrl = () => {
+    return `whatsapp://send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`
+  }
+
+  const getWebUrl = () => {
+    return `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`
+  }
+
+  const getUniversalUrl = () => {
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`
   }
 
-  const handleOpenWhatsApp = () => {
+  // 1. Abrir directamente en la App nativa de WhatsApp (macOS Monterey / Desktop)
+  const handleOpenWhatsAppApp = async () => {
     if (!isPhoneValid) {
       setPhoneError('Ingresa un número de teléfono válido (al menos 9 dígitos)')
       return
     }
     setPhoneError(null)
 
-    // Si el usuario actualizó el teléfono, guardar en el padre
     if (recipientPhone && onClientPhoneUpdated) {
       onClientPhoneUpdated(recipientPhone)
     }
 
-    const waUrl = generateWhatsAppUrl()
+    const nativeUrl = getNativeAppUrl()
+    const universalUrl = getUniversalUrl()
 
-    // En Electron o navegador abre WhatsApp Desktop / Web en una pestaña externa
     if (typeof window !== 'undefined' && (window as any).electronAPI?.openExternal) {
-      ;(window as any).electronAPI.openExternal(waUrl)
+      try {
+        const res = await (window as any).electronAPI.openExternal(nativeUrl)
+        if (res && res.ok === false) {
+          console.warn('[WhatsApp] Protocolo whatsapp:// falló, abriendo enlace universal:', res.error)
+          await (window as any).electronAPI.openExternal(universalUrl)
+        }
+      } catch (err) {
+        console.warn('[WhatsApp] Error lanzando app nativa, abriendo enlace universal:', err)
+        await (window as any).electronAPI.openExternal(universalUrl)
+      }
     } else {
-      window.open(waUrl, '_blank', 'noopener,noreferrer')
+      // Navegador web estándar
+      window.location.href = nativeUrl
+      setTimeout(() => {
+        window.open(universalUrl, '_blank', 'noopener,noreferrer')
+      }, 1200)
     }
   }
+
+  // 2. Abrir en WhatsApp Web en el navegador
+  const handleOpenWhatsAppWeb = async () => {
+    if (!isPhoneValid) {
+      setPhoneError('Ingresa un número de teléfono válido (al menos 9 dígitos)')
+      return
+    }
+    setPhoneError(null)
+
+    if (recipientPhone && onClientPhoneUpdated) {
+      onClientPhoneUpdated(recipientPhone)
+    }
+
+    const webUrl = getWebUrl()
+
+    if (typeof window !== 'undefined' && (window as any).electronAPI?.openExternal) {
+      await (window as any).electronAPI.openExternal(webUrl)
+    } else {
+      window.open(webUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  // Alias para mantener compatibilidad con botón principal
+  const handleOpenWhatsApp = handleOpenWhatsAppApp
 
   const handleCopyMessage = async () => {
     try {
@@ -171,7 +217,7 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
       return
     }
     try {
-      await navigator.clipboard.writeText(generateWhatsAppUrl())
+      await navigator.clipboard.writeText(getUniversalUrl())
       setCopiedLink(true)
       setTimeout(() => setCopiedLink(false), 2500)
     } catch (e) {
@@ -204,11 +250,11 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
               <h3 className="font-sans text-lg font-bold text-white flex items-center gap-2">
                 <span>Mensajería Directa por WhatsApp</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  Directo • wa.me
+                  App de Mac (Monterey) • Directo
                 </span>
               </h3>
               <p className="text-xs text-gray-400">
-                Contacta a <strong className="text-white">{clientName}</strong> con plantillas de alta retención
+                Abre directamente el chat en tu aplicación de WhatsApp de Mac o en WhatsApp Web
               </p>
             </div>
           </div>
@@ -482,23 +528,34 @@ export const WhatsAppModal: React.FC<WhatsAppModalProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 text-gray-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
             >
               Cerrar
             </button>
 
             <button
               type="button"
-              onClick={handleOpenWhatsApp}
+              onClick={handleOpenWhatsAppWeb}
               disabled={!isPhoneValid}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-ink-950 font-bold text-xs shadow-lg shadow-emerald-950/60 transition-all cursor-pointer active:scale-95"
+              title="Abrir WhatsApp en el navegador (WhatsApp Web)"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-ink-800 hover:bg-ink-750 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all cursor-pointer hover:border-emerald-400/50"
+            >
+              <span>🌐 WhatsApp Web ↗</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenWhatsAppApp}
+              disabled={!isPhoneValid}
+              title="Abrir directamente en la aplicación de WhatsApp para Mac (Monterey)"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-ink-950 font-bold text-xs shadow-lg shadow-emerald-950/60 transition-all cursor-pointer active:scale-95"
             >
               <IconWhatsApp size={16} />
-              <span>Abrir y Enviar por WhatsApp ↗</span>
+              <span>Abrir en App de WhatsApp (Mac) ↗</span>
             </button>
           </div>
         </div>

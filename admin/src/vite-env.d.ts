@@ -17,5 +17,8 @@ interface Window {
     downloadUpdate?: (url: string, assetName: string) => Promise<{ success: boolean; filePath: string }>
     installUpdate?: (filePath?: string) => Promise<{ success: boolean }>
     onUpdateProgress?: (callback: (data: { percent: number; receivedBytes: number; totalBytes: number }) => void) => () => void
+    speakWithSiri?: (text: string) => Promise<boolean>
+    stopSiri?: () => Promise<void>
+    openExternal?: (url: string) => Promise<{ ok: boolean; error?: string }>
   }
 }
