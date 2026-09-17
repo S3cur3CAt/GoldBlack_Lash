@@ -68,23 +68,7 @@ export interface ClientSummary {
   appointmentsHistory: AppointmentItem[]
 }
 
-// Catálogo Base con la OFERTA ESPECIAL 23 € en 1ª posición
-const FALLBACK_STUDIO_SERVICES: ServiceOption[] = [
-  {
-    id: 'promo-extensiones-23',
-    categoryId: 'extensiones',
-    categoryName: 'Extensiones de pestañas',
-    name: 'Extensiones de Pestañas (Oferta Especial)',
-    priceNumber: 23,
-    priceFormatted: '23 €',
-    originalPriceFormatted: '27 €',
-    duration: '1 h 15 min',
-    badge: '🔥 AHORA SOLO 23 €',
-    description: 'Oferta especial por tiempo limitado para lucir una mirada definida, elegante y personalizada.',
-    includes: ['Diseño personalizado según tu ojo', 'Fibras ligeras de alta retención', 'Cepillado y sellado profesional'],
-    image: '/galeria/pieza-04.jpg',
-    isPromo: true,
-  },
+const DEFAULT_SERVICES_LIST: ServiceOption[] = [
   {
     id: 'volumen-3d6d',
     categoryId: 'extensiones',
@@ -119,7 +103,7 @@ const FALLBACK_STUDIO_SERVICES: ServiceOption[] = [
     priceNumber: 22,
     priceFormatted: '22 €',
     duration: '50 min',
-    description: 'Mantenimiento recomendado cada 2–3 semanas para reponer las extensiones caídas por el ciclo natural.',
+    description: 'Mantenimiento recomendado cada 2–3 semanas para reponer extensiones.',
     includes: ['Retirada de pestañas crecidas', 'Relleno de nuevas fibras', 'Cepillo de regalo'],
     image: '/galeria/pieza-03.jpg',
   },
@@ -131,7 +115,7 @@ const FALLBACK_STUDIO_SERVICES: ServiceOption[] = [
     priceNumber: 10,
     priceFormatted: '10 €',
     duration: '30 min',
-    description: 'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural.',
+    description: 'Retiramos tus extensiones con crema disolvente profesional sin tirones.',
     includes: ['Crema disolvente suave', 'Sin daño a la pestaña natural', 'Revisión incluida'],
     image: '/galeria/pieza-05.jpg',
   },
@@ -145,7 +129,7 @@ const FALLBACK_STUDIO_SERVICES: ServiceOption[] = [
     duration: '1 h',
     badge: 'Piel Radiante',
     description: 'Higiene dérmica con espátula ultrasónica, extracción de impurezas y mascarilla hidratante.',
-    includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda y luminosidad', 'Piel suave y descansada'],
+    includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda', 'Piel suave y descansada'],
     image: '/galeria/limpieza-facial.jpg',
   },
 ]
@@ -159,22 +143,31 @@ const GALLERY_PRESETS = [
   { label: 'Limpieza Facial', path: '/galeria/limpieza-facial.jpg' },
 ]
 
-const PROMO_WHATSAPP_TEXT = `✨👁️ *OFERTA ESPECIAL* 👁️✨
+const LASH_TYPE_PRESETS = [
+  'Curvatura D (Efecto Rizado Intenso)',
+  'Curvatura CC (Mirada Abierta & Elegante)',
+  'Curvatura C (Curva Natural & Suave)',
+  'Curvatura M / L (Efecto Foxy Eyes)',
+  'Efecto Cat Eye (Ojo de Gato Seductor)',
+  'Efecto Wet / Húmedo (Glossy & Moderno)',
+  'Efecto Wispy / Kim K (Espigado Texturizado)',
+  'Fibras Tecnológicas (Volumen Brasileño / Egipcio)',
+  'Pelo a Pelo Clásico 1D (Seda Natural)',
+  'Volumen Ruso 2D - 3D Seda',
+  'Mega Volumen 4D - 6D Negro Carbón',
+  'Lifting & Nutrición con Keratina',
+  'Todas las Curvaturas (A elegir por la clienta)',
+]
 
-💖 *EXTENSIONES DE PESTAÑAS* 💖
-
-~Precio habitual: 27 €~
-🔥 *AHORA SOLO 23 €* 🔥
-
-✨ Realza tu mirada
-✨ Pestañas bonitas y definidas
-✨ Acabado elegante y personalizado
-
-📅 *Oferta por tiempo limitado*
-
-📩 *Reserva tu cita ahora*
-💗 ¡Te encantará el resultado!
-🌐 https://www.goldblacklash.com/`
+const PROMO_PRICE_PRESETS = ['19', '20', '22', '23', '25', '27', '30', '35']
+const HABITUAL_PRICE_PRESETS = ['25', '27', '30', '35', '40', '45', '50']
+const PROMO_LIMIT_PRESETS = [
+  'Oferta por tiempo limitado',
+  'Válido hasta este viernes',
+  'Promoción este fin de semana',
+  'Solo para las primeras 5 reservas',
+  'Hasta completar agenda',
+]
 
 function getFormattedDate(offsetDays = 0): string {
   const d = new Date()
@@ -192,7 +185,7 @@ function cleanPhoneForWhatsApp(raw: string): string {
 }
 
 function formatServiceImageUrl(rawUrl?: string | null): string {
-  if (!rawUrl) return '/galeria/pieza-04.jpg'
+  if (!rawUrl) return '/galeria/pieza-01.jpg'
   if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:image/')) {
     return rawUrl
   }
@@ -200,7 +193,7 @@ function formatServiceImageUrl(rawUrl?: string | null): string {
   return `/galeria/${clean}`
 }
 
-type TabType = 'crear' | 'citas' | 'facturacion' | 'clientas' | 'servicios' | 'promo'
+type TabType = 'citas' | 'crear' | 'facturacion' | 'clientas' | 'servicios' | 'promo'
 
 function StudioMobileHubPage() {
   const config = useStudioConfig()
@@ -214,7 +207,7 @@ function StudioMobileHubPage() {
   const [lastSyncTime, setLastSyncTime] = useState<string>('')
 
   // Servicios dinámicos desde Supabase
-  const [services, setServices] = useState<ServiceOption[]>(FALLBACK_STUDIO_SERVICES)
+  const [services, setServices] = useState<ServiceOption[]>(DEFAULT_SERVICES_LIST)
   const [isLoadingServices, setIsLoadingServices] = useState(false)
 
   // Filtro de Citas
@@ -239,8 +232,20 @@ function StudioMobileHubPage() {
   const [isSavingService, setIsSavingService] = useState(false)
   const [serviceActionError, setServiceActionError] = useState<string | null>(null)
 
+  // =========================================================================
+  // ESTADO DE PROMOCIONES Y TARIFAS ESPECIALES (DIFUSIÓN WHATSAPP)
+  // =========================================================================
+  const [promoTitle, setPromoTitle] = useState('OFERTA ESPECIAL')
+  const [promoServiceName, setPromoServiceName] = useState('EXTENSIONES DE PESTAÑAS')
+  const [promoLashType, setPromoLashType] = useState('Curvatura D (Efecto Rizado Intenso)')
+  const [promoOldPrice, setPromoOldPrice] = useState('27')
+  const [promoNewPrice, setPromoNewPrice] = useState('23')
+  const [promoPoints, setPromoPoints] = useState('Realza tu mirada\nPestañas bonitas, ligeras y definidas\nAcabado elegante y 100% personalizado')
+  const [promoLimit, setPromoLimit] = useState('Oferta por tiempo limitado')
+  const [copiedPromo, setCopiedPromo] = useState(false)
+
   // Form State (Crear Cita)
-  const [selectedService, setSelectedService] = useState<ServiceOption>(FALLBACK_STUDIO_SERVICES[0])
+  const [selectedService, setSelectedService] = useState<ServiceOption>(DEFAULT_SERVICES_LIST[0])
   const [isCustomService, setIsCustomService] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
   const [customPrice, setCustomPrice] = useState('30')
@@ -255,9 +260,6 @@ function StudioMobileHubPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null)
   const [createdAppointment, setCreatedAppointment] = useState<any | null>(null)
-
-  // Feedback de copiado en promo
-  const [copiedPromo, setCopiedPromo] = useState(false)
 
   // Cargar citas desde Supabase
   const loadAppointments = async () => {
@@ -297,14 +299,7 @@ function StudioMobileHubPage() {
           description: s.description || undefined,
           includes: Array.isArray(s.includes) ? s.includes : [],
           image: s.image || null,
-          isPromo: s.id.includes('promo') || s.name.toLowerCase().includes('oferta'),
         }))
-
-        // Si la oferta especial no estuviera en Supabase, garantizarla siempre arriba
-        const hasPromo = mapped.some((m) => m.id === 'promo-extensiones-23' || m.name.includes('Oferta Especial'))
-        if (!hasPromo) {
-          mapped.unshift(FALLBACK_STUDIO_SERVICES[0])
-        }
         setServices(mapped)
       }
     } catch (err) {
@@ -363,14 +358,12 @@ function StudioMobileHubPage() {
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
-      // Cerrar modal y limpiar del formulario si coincide
       setSelectedClientModal(null)
       if (clientPhone === client.phone) {
         setClientName('')
         setClientPhone('')
         setNotes('')
       }
-      // Actualizar listado local y remoto
       setAppointments((prev) => prev.filter((a) => a.clientPhone !== client.phone && a.clientName !== client.name))
       loadAppointments()
     } catch (err: any) {
@@ -457,10 +450,13 @@ function StudioMobileHubPage() {
     }
   }
 
-  // Eliminar Servicio de Supabase
+  // Eliminar CUALQUIER Servicio de Supabase
   const handleDeleteService = async (service: ServiceOption) => {
-    if (!window.confirm(`¿Deseas eliminar el servicio "${service.name}" de la base de datos?`)) return
+    if (!window.confirm(`¿Estás segura de eliminar el servicio "${service.name}" de la base de datos?\nSe eliminará tanto de la web como del panel de administración.`)) return
     try {
+      // Optimistic update
+      setServices((prev) => prev.filter((s) => s.id !== service.id))
+
       const res = await fetch(`/api/services?id=${encodeURIComponent(service.id)}`, {
         method: 'DELETE',
       })
@@ -468,6 +464,67 @@ function StudioMobileHubPage() {
       loadServices()
     } catch (err: any) {
       alert(`Error al eliminar servicio: ${err?.message || 'Error de conexión'}`)
+      loadServices()
+    }
+  }
+
+  // Generador Dinámico de Texto Promocional para WhatsApp (Estilo Profesional)
+  const generatedPromoText = useMemo(() => {
+    const pointsFormatted = promoPoints
+      .split('\n')
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => `✨ ${p}`)
+      .join('\n')
+
+    const cleanOld = promoOldPrice.replace(/\D/g, '')
+    const cleanNew = promoNewPrice.replace(/\D/g, '')
+    const cleanLash = promoLashType.trim()
+
+    return [
+      `✨👁️ *${promoTitle.trim() || 'OFERTA ESPECIAL'}* 👁️✨`,
+      ``,
+      `💖 *${promoServiceName.trim() || 'EXTENSIONES DE PESTAÑAS'}* 💖`,
+      cleanLash ? `💎 *Estilo / Curvatura:* ${cleanLash}` : '',
+      ``,
+      cleanOld ? `~Precio habitual: ${cleanOld} €~` : '',
+      `🔥 *AHORA SOLO ${cleanNew || '23'} €* 🔥`,
+      ``,
+      pointsFormatted,
+      ``,
+      `📅 *${promoLimit.trim() || 'Oferta por tiempo limitado'}*`,
+      ``,
+      `📩 *Reserva tu cita ahora*`,
+      `💗 ¡Te encantará el resultado!`,
+      `🌐 https://www.goldblacklash.com/`,
+    ].filter(Boolean).join('\n')
+  }, [promoTitle, promoServiceName, promoLashType, promoOldPrice, promoNewPrice, promoPoints, promoLimit])
+
+  // Aplicar propuesta rápida de promoción
+  const applyPromoPreset = (preset: {
+    title: string
+    service: string
+    lashType?: string
+    oldPrice: string
+    newPrice: string
+    points: string
+    limit: string
+  }) => {
+    setPromoTitle(preset.title)
+    setPromoServiceName(preset.service)
+    if (preset.lashType) setPromoLashType(preset.lashType)
+    setPromoOldPrice(preset.oldPrice)
+    setPromoNewPrice(preset.newPrice)
+    setPromoPoints(preset.points)
+    setPromoLimit(preset.limit)
+  }
+
+  // Copiar anuncio promocional
+  const handleCopyPromo = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(generatedPromoText)
+      setCopiedPromo(true)
+      setTimeout(() => setCopiedPromo(false), 2500)
     }
   }
 
@@ -595,32 +652,27 @@ function StudioMobileHubPage() {
   const cleanPhone = cleanPhoneForWhatsApp(clientPhone)
   const isValidPhone = cleanPhone.length >= 9
 
-  // Generador de mensaje de confirmación de WhatsApp
-  const generateWhatsAppMessage = (data: {
+  // Generador de mensaje de confirmación de WhatsApp para cita
+  const generateWhatsAppBookingMessage = (data: {
     clientName: string
     date: string
     time: string
     serviceName: string
     price: number | string
-    isPromo?: boolean
   }): string => {
     const studio = config?.name || business.name || 'GoldBlack Lash'
     const address = config?.address || 'Calle Numa, Montequinto (Dos Hermanas)'
 
-    const promoBanner = data.isPromo
-      ? `\n🎉 *¡Promoción Especial Aplicada!* (23 € en vez de 27 €)\n`
-      : ''
-
     return [
       `✨ *Confirmación de Cita — ${studio}* ✨`,
       `🌐 https://www.goldblacklash.com/`,
-      promoBanner,
+      ``,
       `¡Hola *${data.clientName}*! Tu cita ha sido agendada con éxito en nuestro estudio:`,
       ``,
       `📅 *Fecha:* ${data.date}`,
       `⏰ *Hora:* ${data.time}`,
       `🌸 *Tratamiento:* ${data.serviceName}`,
-      `💶 *Precio:* ${data.price} €${data.isPromo ? ' (~Antes: 27 €~)' : ''}`,
+      `💶 *Precio:* ${data.price} €`,
       `📍 *Ubicación:* ${address}`,
       ``,
       `*Pautas para tu sesión:*`,
@@ -631,7 +683,7 @@ function StudioMobileHubPage() {
       ``,
       `¡Te esperamos con muchas ganas! 💕`,
       `${studio}`,
-    ].filter(Boolean).join('\n')
+    ].join('\n')
   }
 
   // Envío de Cita
@@ -684,13 +736,12 @@ function StudioMobileHubPage() {
         throw new Error(errData.error || `Error HTTP ${res.status}`)
       }
 
-      const whatsappMsg = generateWhatsAppMessage({
+      const whatsappMsg = generateWhatsAppBookingMessage({
         clientName: clientName.trim(),
         date,
         time,
         serviceName: finalServiceName,
         price: finalPrice,
-        isPromo: selectedService.isPromo,
       })
 
       const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(whatsappMsg)}`
@@ -706,15 +757,6 @@ function StudioMobileHubPage() {
       setSubmitErrorMsg(err?.message || 'Error al conectar con la base de datos')
     } finally {
       setIsSubmitting(false)
-    }
-  }
-
-  // Copiar anuncio promocional
-  const handleCopyPromo = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(PROMO_WHATSAPP_TEXT)
-      setCopiedPromo(true)
-      setTimeout(() => setCopiedPromo(false), 2500)
     }
   }
 
@@ -753,7 +795,7 @@ function StudioMobileHubPage() {
           </div>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS */}
+        {/* NAVEGACIÓN DE PESTAÑAS (Scrollable horizontal) */}
         <div className="max-w-md mx-auto mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={() => setCurrentTab('citas')}
@@ -823,11 +865,11 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('promo')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'promo'
-                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white font-semibold shadow-md'
+                ? 'bg-gradient-to-r from-amber-500 to-[#d4af37] text-black font-bold shadow-md shadow-[#d4af37]/20'
                 : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
             }`}
           >
-            <span>🔥 Oferta 23€</span>
+            <span>✨ Ofertas</span>
           </button>
         </div>
       </header>
@@ -964,7 +1006,7 @@ function StudioMobileHubPage() {
                         </p>
                       )}
 
-                      {/* Botones de Acción de Cita */}
+                      {/* Botones de Acción */}
                       <div className="pt-1 flex items-center gap-2 flex-wrap">
                         {aptPhoneClean && (
                           <a
@@ -1017,7 +1059,7 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 2: CREAR CITA (CON OFERTA ESPECIAL 23 €) */}
+        {/* PESTAÑA 2: CREAR CITA */}
         {/* ========================================================================= */}
         {currentTab === 'crear' && (
           <div className="space-y-4">
@@ -1097,9 +1139,7 @@ function StudioMobileHubPage() {
                           }}
                           className={`p-2.5 rounded-xl cursor-pointer transition-all border flex items-center gap-3 ${
                             isSelected
-                              ? s.isPromo
-                                ? 'bg-amber-500/15 border-amber-500/60 shadow-lg shadow-amber-500/10'
-                                : 'bg-[#d4af37]/15 border-[#d4af37] shadow-md shadow-[#d4af37]/10'
+                              ? 'bg-[#d4af37]/15 border-[#d4af37] shadow-md shadow-[#d4af37]/10'
                               : 'bg-black/30 border-white/5 hover:border-white/15'
                           }`}
                         >
@@ -1112,27 +1152,22 @@ function StudioMobileHubPage() {
 
                           <div className="space-y-0.5 flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-xs font-semibold truncate ${isSelected ? (s.isPromo ? 'text-amber-300 font-bold' : 'text-white') : 'text-zinc-300'}`}>
+                              <span className={`text-xs font-semibold truncate ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
                                 {s.name}
                               </span>
                               {s.badge && (
-                                <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
-                                  s.isPromo ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white animate-pulse' : 'bg-[#d4af37]/20 text-[#f3e5ab]'
-                                }`}>
+                                <span className="text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase bg-[#d4af37]/20 text-[#f3e5ab]">
                                   {s.badge}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-zinc-500 flex items-center gap-2">
-                              <span>⏱️ {s.duration}</span>
-                              {s.originalPriceFormatted && (
-                                <span className="line-through text-zinc-600">Habitual: {s.originalPriceFormatted}</span>
-                              )}
+                            <p className="text-[11px] text-zinc-500">
+                              ⏱️ {s.duration}
                             </p>
                           </div>
 
                           <div className="text-right shrink-0">
-                            <span className={`text-sm font-bold font-mono ${s.isPromo ? 'text-amber-400 text-base' : 'text-[#d4af37]'}`}>
+                            <span className="text-sm font-bold font-mono text-[#d4af37]">
                               {s.priceFormatted}
                             </span>
                           </div>
@@ -1414,7 +1449,7 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 4: DIRECTORIO DE CLIENTAS CON FICHA COMPLETA Y BORRADO */}
+        {/* PESTAÑA 4: DIRECTORIO DE CLIENTAS CON FICHA Y BORRADO */}
         {/* ========================================================================= */}
         {currentTab === 'clientas' && (
           <div className="space-y-3">
@@ -1482,7 +1517,7 @@ function StudioMobileHubPage() {
                         </p>
                       )}
 
-                      {/* Botones de Acción de Clienta */}
+                      {/* Botones de Acción */}
                       <div className="pt-1.5 flex items-center gap-1.5 flex-wrap">
                         {clientPhoneClean && (
                           <a
@@ -1523,7 +1558,7 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 5: SERVICIOS CON GESTIÓN COMPLETA (VER, CREAR, EDITAR, BORRAR, IMÁGENES) */}
+        {/* PESTAÑA 5: SERVICIOS CON GESTIÓN Y BORRADO DE CUALQUIER TRATAMIENTO */}
         {/* ========================================================================= */}
         {currentTab === 'servicios' && (
           <div className="space-y-4">
@@ -1608,7 +1643,7 @@ function StudioMobileHubPage() {
                         </div>
                       )}
 
-                      {/* Botones de Acción de Servicio */}
+                      {/* Botones de Acción de Servicio — ¡Eliminar habilitado para TODOS! */}
                       <div className="pt-1 flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -1628,15 +1663,15 @@ function StudioMobileHubPage() {
                           ✏️ Editar
                         </button>
 
-                        {!s.isPromo && (
-                          <button
-                            onClick={() => handleDeleteService(s)}
-                            className="py-1.5 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs active:scale-95 transition-all"
-                            title="Eliminar servicio"
-                          >
-                            🗑️
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteService(s)}
+                          className="py-1.5 px-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold active:scale-95 transition-all flex items-center gap-1 shrink-0"
+                          title="Eliminar servicio de la base de datos"
+                        >
+                          <span>🗑️</span>
+                          <span>Eliminar</span>
+                        </button>
                       </div>
                     </div>
                   )
@@ -1647,38 +1682,362 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 6: OFERTA ESPECIAL Y DIFUSIÓN EN WHATSAPP */}
+        {/* PESTAÑA 6: PROMOCIONES DEL ESTUDIO Y DIFUSIÓN WHATSAPP */}
         {/* ========================================================================= */}
         {currentTab === 'promo' && (
           <div className="space-y-4">
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-[#1c1208] via-[#121218] to-[#12081c] border border-amber-500/40 shadow-xl space-y-4">
-              <div className="text-center space-y-1">
-                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold uppercase tracking-wider">
-                  🔥 PROMOCIÓN ACTIVA
+            {/* Cabecera Seria y Profesional de Promociones */}
+            <div className="p-4 rounded-3xl bg-gradient-to-b from-[#181512] via-[#121216] to-[#0d0d10] border border-[#d4af37]/30 space-y-4 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div>
+                  <span className="text-[10px] text-[#d4af37] font-mono tracking-widest uppercase font-semibold block">
+                    GoldBlack Lash Studio
+                  </span>
+                  <h2 className="text-base font-bold text-white font-serif tracking-wide">
+                    Promociones del Estudio
+                  </h2>
+                </div>
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] font-medium">
+                  Campaña WhatsApp
                 </span>
-                <h2 className="text-lg font-bold text-white font-serif mt-1">
-                  Extensiones de Pestañas — Oferta 23 €
-                </h2>
-                <p className="text-xs text-amber-300">
-                  Difunde esta promoción directamente por WhatsApp o aplícala a nuevas citas
-                </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-black/60 border border-white/10 text-xs text-zinc-300 font-sans whitespace-pre-line leading-relaxed shadow-inner">
-                {PROMO_WHATSAPP_TEXT}
+              {/* Selector Rápido de Propuestas del Estudio */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold block">
+                  Propuestas Rápidas del Estudio:
+                </span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyPromoPreset({
+                        title: 'OFERTA ESPECIAL',
+                        service: 'EXTENSIONES DE PESTAÑAS',
+                        lashType: 'Curvatura D (Efecto Rizado Intenso)',
+                        oldPrice: '27',
+                        newPrice: '23',
+                        points: 'Realza tu mirada\nPestañas bonitas, ligeras y definidas\nAcabado elegante y 100% personalizado',
+                        limit: 'Oferta por tiempo limitado',
+                      })
+                    }
+                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
+                  >
+                    <span className="font-bold text-amber-300 block">✨ Pestañas Curva D</span>
+                    <span className="text-[9px] text-zinc-400">23 € (Habitual 27 €)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyPromoPreset({
+                        title: 'PROMOCIÓN EXCLUSIVA',
+                        service: 'VOLUMEN RUSO INTENSO',
+                        lashType: 'Curvatura CC (Mirada Abierta & Elegante)',
+                        oldPrice: '30',
+                        newPrice: '25',
+                        points: 'Negro carbón mate sin peso\nMáxima densidad pelo a pelo\nRetención premium +4 semanas',
+                        limit: 'Solo para las primeras 5 reservas',
+                      })
+                    }
+                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
+                  >
+                    <span className="font-bold text-amber-300 block">👑 Volumen Ruso 25€</span>
+                    <span className="text-[9px] text-zinc-400">25 € (Habitual 30 €)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyPromoPreset({
+                        title: 'TARIFA ESPECIAL',
+                        service: 'LIFTING DE PESTAÑAS + TINTE',
+                        lashType: 'Lifting & Nutrición con Keratina',
+                        oldPrice: '30',
+                        newPrice: '22',
+                        points: 'Curva espectacular desde la raíz\nColor negro brillante intenso\nBaño de keratina nutritivo',
+                        limit: 'Válido hasta este viernes',
+                      })
+                    }
+                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
+                  >
+                    <span className="font-bold text-amber-300 block">🌸 Lifting + Tinte 22€</span>
+                    <span className="text-[9px] text-zinc-400">22 € (Habitual 30 €)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      applyPromoPreset({
+                        title: 'CAMPAÑA MIRADA VIP',
+                        service: 'EFECTO FOXY / CAT EYE',
+                        lashType: 'Curvatura M / L (Efecto Foxy Eyes)',
+                        oldPrice: '32',
+                        newPrice: '25',
+                        points: 'Ojo rasgado efecto lifting\nFibras ultraligeras de visón sintético\nMirada felina sofisticada',
+                        limit: 'Promoción este fin de semana',
+                      })
+                    }
+                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
+                  >
+                    <span className="font-bold text-amber-300 block">💎 Efecto Foxy / Cat Eye</span>
+                    <span className="text-[9px] text-zinc-400">25 € (Habitual 32 €)</span>
+                  </button>
+                </div>
               </div>
 
+              {/* Formulario de Configuración de la Oferta */}
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                {/* 1. SELECCIÓN DE TIPO DE SERVICIO */}
+                <div className="space-y-1">
+                  <label className="text-[10px] text-zinc-400 uppercase font-semibold flex items-center justify-between">
+                    <span>Tipo de Servicio / Tratamiento</span>
+                    <span className="text-[#d4af37] text-[9px]">Catálogo o personalizado</span>
+                  </label>
+                  <select
+                    value={
+                      services.some((s) => s.name.toUpperCase() === promoServiceName.toUpperCase())
+                        ? promoServiceName
+                        : ''
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val) {
+                        setPromoServiceName(val.toUpperCase())
+                        const sFound = services.find((s) => s.name.toUpperCase() === val.toUpperCase())
+                        if (sFound) {
+                          setPromoOldPrice(sFound.priceNumber.toString())
+                          const suggested = Math.max(15, sFound.priceNumber - 4)
+                          setPromoNewPrice(suggested.toString())
+                        }
+                      }
+                    }}
+                    className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  >
+                    <option value="">-- Seleccionar servicio del catálogo --</option>
+                    {services.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.priceFormatted})
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={promoServiceName}
+                    onChange={(e) => setPromoServiceName(e.target.value)}
+                    placeholder="Nombre del servicio o tratamiento"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  />
+                </div>
+
+                {/* 2. SELECCIÓN DE TIPO DE PESTAÑA / CURVATURA / EFECTO */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-zinc-400 uppercase font-semibold flex items-center justify-between">
+                    <span>Tipo de Pestaña / Curvatura / Efecto</span>
+                    <span className="text-[#d4af37] text-[9px]">Técnica aplicada</span>
+                  </label>
+                  <select
+                    value={LASH_TYPE_PRESETS.includes(promoLashType) ? promoLashType : ''}
+                    onChange={(e) => {
+                      if (e.target.value) setPromoLashType(e.target.value)
+                    }}
+                    className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  >
+                    <option value="">-- Seleccionar curvatura / estilo --</option>
+                    {LASH_TYPE_PRESETS.map((lash) => (
+                      <option key={lash} value={lash}>
+                        {lash}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Chips rápidos de curvatura */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      'Curvatura D',
+                      'Curvatura CC',
+                      'Curvatura C',
+                      'Foxy Eyes',
+                      'Cat Eye',
+                      'Wet Look',
+                      'Fibras Tecnológicas',
+                      'Volumen Ruso',
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          const full = LASH_TYPE_PRESETS.find((l) => l.toLowerCase().includes(chip.toLowerCase())) || chip
+                          setPromoLashType(full)
+                        }}
+                        className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
+                          promoLashType.toLowerCase().includes(chip.toLowerCase())
+                            ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37] font-semibold'
+                            : 'bg-white/5 border-white/10 text-zinc-400 hover:text-zinc-200'
+                        }`}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={promoLashType}
+                    onChange={(e) => setPromoLashType(e.target.value)}
+                    placeholder="Detalles de la curvatura o técnica..."
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-[#d4af37]"
+                  />
+                </div>
+
+                {/* 3. SELECCIÓN DE PRECIOS */}
+                <div className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-zinc-300 uppercase font-semibold">
+                      Configuración de Precios
+                    </span>
+                    {Number(promoOldPrice) > Number(promoNewPrice) && Number(promoNewPrice) > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                        Ahorro clienta: {Number(promoOldPrice) - Number(promoNewPrice)} €
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Precio Promocional con Chips Rápidos */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-amber-400 uppercase font-bold block">
+                      Precio de la Oferta (€) *
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      {PROMO_PRICE_PRESETS.map((price) => (
+                        <button
+                          key={price}
+                          type="button"
+                          onClick={() => setPromoNewPrice(price)}
+                          className={`text-[11px] px-2.5 py-1 rounded-xl font-mono font-bold transition-all ${
+                            promoNewPrice === price
+                              ? 'bg-amber-500 text-black shadow-md shadow-amber-500/30 scale-105'
+                              : 'bg-white/5 border border-white/10 text-zinc-300 hover:border-amber-500/50'
+                          }`}
+                        >
+                          {price} €
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={promoNewPrice}
+                      onChange={(e) => setPromoNewPrice(e.target.value)}
+                      placeholder="Ej. 23"
+                      className="w-full bg-black/60 border border-amber-500/40 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  {/* Precio Habitual con Chips */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-zinc-400 uppercase block">
+                      Precio Habitual (€)
+                    </label>
+                    <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                      {HABITUAL_PRICE_PRESETS.map((price) => (
+                        <button
+                          key={price}
+                          type="button"
+                          onClick={() => setPromoOldPrice(price)}
+                          className={`text-[10px] px-2 py-0.5 rounded-lg font-mono transition-all ${
+                            promoOldPrice === price
+                              ? 'bg-[#d4af37]/30 border border-[#d4af37] text-white font-semibold'
+                              : 'bg-white/5 border border-white/10 text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          {price} €
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={promoOldPrice}
+                      onChange={(e) => setPromoOldPrice(e.target.value)}
+                      placeholder="Ej. 27"
+                      className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#d4af37]"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. CONDICIONES Y BENEFICIOS */}
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase block mb-1">
+                      Condición / Límite de la Promoción
+                    </label>
+                    <div className="flex items-center gap-1 flex-wrap mb-1">
+                      {PROMO_LIMIT_PRESETS.map((lim) => (
+                        <button
+                          key={lim}
+                          type="button"
+                          onClick={() => setPromoLimit(lim)}
+                          className={`text-[9px] px-2 py-0.5 rounded-lg border transition-all ${
+                            promoLimit === lim
+                              ? 'bg-[#d4af37]/20 border-[#d4af37] text-[#d4af37] font-semibold'
+                              : 'bg-white/5 border-white/10 text-zinc-400 hover:text-zinc-200'
+                          }`}
+                        >
+                          {lim}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={promoLimit}
+                      onChange={(e) => setPromoLimit(e.target.value)}
+                      placeholder="Ej. Oferta por tiempo limitado"
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-zinc-400 uppercase block mb-1">
+                      Puntos Clave / Beneficios (1 por línea)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={promoPoints}
+                      onChange={(e) => setPromoPoints(e.target.value)}
+                      placeholder="Realza tu mirada&#10;Pestañas bonitas y definidas"
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Vista Previa Seria para WhatsApp */}
+              <div className="space-y-1.5 pt-2 border-t border-white/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-400 uppercase font-semibold">
+                    Vista Previa del Anuncio (WhatsApp):
+                  </span>
+                  <span className="text-[10px] text-[#d4af37] font-mono">
+                    {promoNewPrice ? `${promoNewPrice} €` : ''}
+                  </span>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-black/75 border border-[#d4af37]/30 text-xs text-zinc-200 font-sans whitespace-pre-line leading-relaxed shadow-inner">
+                  {generatedPromoText}
+                </div>
+              </div>
+
+              {/* Acciones de Difusión y Creación */}
               <div className="space-y-2 pt-1">
                 <div className="grid grid-cols-2 gap-2">
                   <button
+                    type="button"
                     onClick={handleCopyPromo}
                     className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   >
-                    <span>{copiedPromo ? '✓ ¡Copiado!' : '📋 Copiar Texto'}</span>
+                    <span>{copiedPromo ? '✓ ¡Copiado!' : '📋 Copiar Anuncio'}</span>
                   </button>
 
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(PROMO_WHATSAPP_TEXT)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(generatedPromoText)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
@@ -1688,15 +2047,18 @@ function StudioMobileHubPage() {
                 </div>
 
                 <button
+                  type="button"
                   onClick={() => {
-                    const promoServ = services.find(s => s.isPromo) || FALLBACK_STUDIO_SERVICES[0]
-                    setSelectedService(promoServ)
-                    setIsCustomService(false)
+                    // Pasar la oferta personalizada a la pestaña de crear cita
+                    setIsCustomService(true)
+                    const extra = promoLashType.trim() ? ` · ${promoLashType.trim().split('(')[0].trim()}` : ''
+                    setCustomServiceName(`${promoServiceName}${extra} (${promoTitle})`)
+                    setCustomPrice(promoNewPrice.replace(/\D/g, '') || '23')
                     setCurrentTab('crear')
                   }}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-[#d4af37] text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 via-[#d4af37] to-amber-600 text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all active:scale-95"
                 >
-                  📅 Crear Cita con esta Oferta (23 €)
+                  📅 Crear Cita con esta Oferta ({promoNewPrice || '23'} €)
                 </button>
               </div>
             </div>
@@ -1731,7 +2093,6 @@ function StudioMobileHubPage() {
               </button>
             </div>
 
-            {/* Estadísticas de la Clienta */}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
                 <span className="text-[10px] text-zinc-400 uppercase">Citas Acumuladas</span>
@@ -1762,7 +2123,6 @@ function StudioMobileHubPage() {
               </div>
             )}
 
-            {/* Historial de Citas */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
                 Historial de Sesiones ({selectedClientModal.appointmentsHistory.length})
@@ -1783,7 +2143,6 @@ function StudioMobileHubPage() {
               </div>
             </div>
 
-            {/* Acciones de la Ficha */}
             <div className="space-y-2 pt-2 border-t border-white/10">
               <div className="grid grid-cols-2 gap-2">
                 <a
@@ -1809,7 +2168,6 @@ function StudioMobileHubPage() {
                 </button>
               </div>
 
-              {/* Botón de Borrado de la Base de Datos */}
               <button
                 onClick={() => handleDeleteClient(selectedClientModal)}
                 disabled={isDeletingClient}
@@ -1969,6 +2327,25 @@ function StudioMobileHubPage() {
                 </div>
               )}
 
+              {editingServiceId && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentServ = services.find((s) => s.id === editingServiceId)
+                      if (currentServ) {
+                        setServiceModalOpen(false)
+                        handleDeleteService(currentServ)
+                      }
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                  >
+                    <span>🗑️</span>
+                    <span>Eliminar este servicio de la base de datos</span>
+                  </button>
+                </div>
+              )}
+
               <div className="pt-2 flex items-center gap-2">
                 <button
                   type="button"
@@ -1990,17 +2367,17 @@ function StudioMobileHubPage() {
         </div>
       )}
 
-      {/* BARRA INFERIOR FLOTANTE (DOCK) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-t border-white/10 px-4 py-2">
-        <div className="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
+      {/* BARRA INFERIOR FLOTANTE (DOCK) — 6 Botones */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-t border-white/10 px-2 py-2">
+        <div className="max-w-md mx-auto grid grid-cols-6 gap-0.5 text-center">
           <button
             onClick={() => setCurrentTab('citas')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
               currentTab === 'citas' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">📅</span>
-            <span className="text-[10px]">Citas</span>
+            <span className="text-sm">📅</span>
+            <span className="text-[9px]">Citas</span>
           </button>
 
           <button
@@ -2009,8 +2386,8 @@ function StudioMobileHubPage() {
               currentTab === 'crear' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">➕</span>
-            <span className="text-[10px]">Crear</span>
+            <span className="text-sm">➕</span>
+            <span className="text-[9px]">Crear</span>
           </button>
 
           <button
@@ -2019,8 +2396,8 @@ function StudioMobileHubPage() {
               currentTab === 'facturacion' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">💶</span>
-            <span className="text-[10px]">Facturas</span>
+            <span className="text-sm">💶</span>
+            <span className="text-[9px]">Balance</span>
           </button>
 
           <button
@@ -2029,8 +2406,8 @@ function StudioMobileHubPage() {
               currentTab === 'clientas' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">👥</span>
-            <span className="text-[10px]">Clientas</span>
+            <span className="text-sm">👥</span>
+            <span className="text-[9px]">Clientas</span>
           </button>
 
           <button
@@ -2039,8 +2416,18 @@ function StudioMobileHubPage() {
               currentTab === 'servicios' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">🌸</span>
-            <span className="text-[10px]">Servicios</span>
+            <span className="text-sm">🌸</span>
+            <span className="text-[9px]">Servicios</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentTab('promo')}
+            className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
+              currentTab === 'promo' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <span className="text-sm">🔥</span>
+            <span className="text-[9px]">Ofertas</span>
           </button>
         </div>
       </nav>
