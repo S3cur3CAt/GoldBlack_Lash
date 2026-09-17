@@ -54,6 +54,7 @@ export interface AdminService {
   pinnedFirst?: boolean
   active: boolean
   includes: string[]
+  image?: string
 }
 
 export interface StudioConfig {

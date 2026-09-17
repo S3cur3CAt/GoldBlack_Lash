@@ -251,7 +251,7 @@ function ServiceCard({ service }: { service: Service }) {
         <div className="beauty-card-visual mt-0 mb-6">
           <StudioVisual
             src={service.image}
-            alt={`Máquina de ${service.name.toLowerCase()}`}
+            alt={`Tratamiento de ${service.name}`}
             label=""
           />
         </div>

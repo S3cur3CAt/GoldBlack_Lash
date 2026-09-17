@@ -46,6 +46,7 @@ await sql`
     active BOOLEAN NOT NULL DEFAULT true,
     includes JSONB NOT NULL DEFAULT '[]'::jsonb,
     sort_order INT NOT NULL DEFAULT 0,
+    image TEXT,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   )
 `
@@ -60,9 +61,9 @@ if (existing[0].c === 0) {
       const priceNum = parseInt(s.price.replace(/\D/g, ''), 10) || 0
       await sql`
         INSERT INTO studio_services (
-          id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
+          id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, image, updated_at
         ) VALUES (
-          ${s.id}, ${cat.id}, ${cat.name}, ${s.name}, ${s.badge || null}, ${s.description}, ${s.duration}, ${s.price}, ${priceNum}, ${!!s.featured}, true, ${sql.json(s.includes || [])}, ${order++}, now()
+          ${s.id}, ${cat.id}, ${cat.name}, ${s.name}, ${s.badge || null}, ${s.description}, ${s.duration}, ${s.price}, ${priceNum}, ${!!s.featured}, true, ${sql.json(s.includes || [])}, ${order++}, ${s.image || null}, now()
         )
       `
       console.log(`✓ Insertado servicio: ${s.name} (${s.price})`)

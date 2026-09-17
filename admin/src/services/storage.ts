@@ -56,6 +56,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     priceNumber: 27,
     featured: false,
     active: true,
+    image: './galeria/pieza-02.jpg',
     includes: [
       'Efecto natural pelo a pelo',
       'Diseño según la forma del ojo',
@@ -74,6 +75,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     priceNumber: 30,
     featured: true,
     active: true,
+    image: './galeria/pieza-01.jpg',
     includes: [
       'Abanicos hechos a mano',
       'Densidad media-alta',
@@ -92,6 +94,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     priceNumber: 10,
     featured: false,
     active: true,
+    image: './galeria/pieza-04.jpg',
     includes: [
       'Crema disolvente suave',
       'Sin daño a la pestaña natural',
@@ -110,6 +113,7 @@ export const DEFAULT_SERVICES: AdminService[] = [
     priceNumber: 30,
     featured: true,
     active: true,
+    image: './galeria/limpieza-facial.jpg',
     includes: [
       'Puntos negros e impurezas fuera',
       'Hidratación profunda y luminosidad',
@@ -415,6 +419,7 @@ export async function syncServiceWithVercel(service: AdminService): Promise<bool
       active: service.active !== false,
       sort_order: service.pinnedFirst ? 0 : 100,
       includes: Array.isArray(service.includes) ? service.includes : [],
+      image: service.image || null,
       updated_at: new Date().toISOString(),
     }
     const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_services`, {
@@ -717,6 +722,7 @@ export async function fetchLiveServicesFromVercel(): Promise<AdminService[] | nu
       featured: !!d.featured,
       pinnedFirst: d.sort_order === 0,
       active: d.active !== undefined ? !!d.active : true,
+      image: d.image || d.image_url || d.url || undefined,
       includes: Array.isArray(d.includes)
         ? d.includes
         : typeof d.includes === 'string'

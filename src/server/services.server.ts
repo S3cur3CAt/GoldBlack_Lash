@@ -15,6 +15,7 @@ export interface DbServiceRecord {
   active: boolean
   includes: string[]
   sort_order?: number
+  image?: string | null
   updated_at?: string
 }
 
@@ -63,7 +64,7 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
   try {
     const client = await getSql()
     const rows = await client`
-      SELECT id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
+      SELECT id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, image, updated_at
       FROM studio_services
       ORDER BY sort_order ASC, id ASC
     `
@@ -84,6 +85,7 @@ export async function fetchServicesFromDb(): Promise<DbServiceRecord[]> {
       pinnedFirst: r.sort_order === 0,
       active: r.active,
       includes: parseIncludes(r.includes),
+      image: r.image || null,
       updated_at: r.updated_at,
     }))
   } catch (err) {
@@ -128,6 +130,7 @@ export async function saveServiceToDb(service: {
   const cleanIncludes = parseIncludes(service.includes)
   const includesJson = JSON.stringify(cleanIncludes)
   const sortOrder = service.pinnedFirst ? 0 : 100
+  const image = service.image ? String(service.image) : null
 
   if (service.pinnedFirst) {
     try {
@@ -139,12 +142,12 @@ export async function saveServiceToDb(service: {
 
   await client`
     INSERT INTO studio_services (
-      id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, updated_at
+      id, category_id, category_name, name, badge, description, duration, price, price_number, featured, active, includes, sort_order, image, updated_at
     ) VALUES (
       ${id}, ${catId}, ${catName}, ${name},
       ${badge}, ${description}, ${duration},
       ${price}, ${priceNum}, ${featured}, ${active},
-      ${includesJson}::jsonb, ${sortOrder}, now()
+      ${includesJson}::jsonb, ${sortOrder}, ${image}, now()
     )
     ON CONFLICT (id) DO UPDATE SET
       category_id = EXCLUDED.category_id,
@@ -159,6 +162,7 @@ export async function saveServiceToDb(service: {
       active = EXCLUDED.active,
       includes = EXCLUDED.includes,
       sort_order = EXCLUDED.sort_order,
+      image = EXCLUDED.image,
       updated_at = now()
   `
   return true
@@ -185,6 +189,7 @@ function fallbackFlatServices(): DbServiceRecord[] {
         price: s.price,
         price_number: parseInt(s.price.replace(/\D/g, ''), 10) || 0,
         featured: !!s.featured,
+        image: s.image || null,
         active: true,
         includes: s.includes || [],
       })
@@ -219,6 +224,7 @@ export function groupServicesByCategory(services: DbServiceRecord[]): ServiceCat
       duration: s.duration,
       price: s.price,
       featured: s.featured,
+      image: s.image || undefined,
       includes: parseIncludes(s.includes),
     })
   }
