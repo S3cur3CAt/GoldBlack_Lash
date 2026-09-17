@@ -1,5 +1,5 @@
 import { spawnSync, execSync } from 'node:child_process'
-import { existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync, rmSync, readFileSync, copyFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -79,7 +79,10 @@ if (!makensisPath) {
   } catch (e) {}
 }
 
-const installerExeName = 'GoldBlack-Release-Publisher-Setup-1.0.0.exe'
+const pkg = JSON.parse(readFileSync(join(toolRoot, 'package.json'), 'utf8'))
+const toolVersion = pkg.version || '1.0.0'
+
+const installerExeName = `GoldBlack-Release-Publisher-Setup-${toolVersion}.exe`
 const finalInstallerPath = join(distInstallers, installerExeName)
 
 if (makensisPath) {
@@ -112,6 +115,10 @@ RequestExecutionLevel user
 !insertmacro MUI_LANGUAGE "Spanish"
 
 Section "Instalar Archivos" SecApp
+  ; Cerrar instancia previa si está en ejecución para evitar bloqueos
+  nsExec::Exec 'cmd /c taskkill /F /IM GoldBlack-Release-Publisher.exe >nul 2>&1'
+  Sleep 1000
+
   SetOutPath "$INSTDIR"
   File /r "${winAppDir.replace(/\\/g, '\\\\')}\\*.*"
   File "${iconPathWin}"
@@ -131,7 +138,7 @@ Section "Instalar Archivos" SecApp
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "DisplayName" "GoldBlack Release Publisher"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "UninstallString" "$INSTDIR\\Uninstall.exe"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "DisplayIcon" "$INSTDIR\\icon.ico,0"
-  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "DisplayVersion" "1.0.0"
+  WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "DisplayVersion" "${toolVersion}"
   WriteRegStr HKCU "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\GoldBlackReleasePublisher" "Publisher" "GoldBlack Lash Studio"
 SectionEnd
 
@@ -161,6 +168,11 @@ SectionEnd
 
   try {
     rmSync(nsiFilePath)
+  } catch (e) {}
+
+  try {
+    copyFileSync(finalInstallerPath, join(distInstallers, 'GoldBlack-Release-Publisher-Setup-1.0.0.exe'))
+    copyFileSync(finalInstallerPath, join(distInstallers, 'GoldBlack-Release-Publisher-Setup.exe'))
   } catch (e) {}
 
   console.log(`\n🎉 INSTALADOR DE WINDOWS CREADO CON ÉXITO:`)
