@@ -378,84 +378,195 @@ ipcMain.handle('publisher:build-installer', async (event, payload) => {
   return await buildAdminInstallers()
 })
 
-// Upload Single Asset Helper
-function uploadAssetToRelease(rawUploadUrlTemplate, filePath, token, onProgress) {
-  return new Promise((resolve, reject) => {
-    if (!fs.existsSync(filePath)) {
-      return reject(new Error(`Archivo no encontrado: ${filePath}`))
-    }
-
-    const fileName = path.basename(filePath)
-    const fileStat = fs.statSync(filePath)
-    const totalBytes = fileStat.size
-
-    const cleanBaseUrl = rawUploadUrlTemplate.replace(/\{[^{}]*\}$/, '')
-    const targetUploadUrl = `${cleanBaseUrl}?name=${encodeURIComponent(fileName)}`
-    const parsedUrl = new URL(targetUploadUrl)
-
-    const contentType = fileName.endsWith('.exe')
-      ? 'application/vnd.microsoft.portable-executable'
-      : fileName.endsWith('.zip')
-      ? 'application/zip'
-      : 'application/octet-stream'
-
-    let uploadedBytes = 0
-    let lastReport = 0
-
-    const uploadReq = https.request(
-      parsedUrl,
+// Helper to delete an asset by ID
+function deleteAsset(assetId, token) {
+  return new Promise((resolve) => {
+    const delReq = https.request(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/assets/${assetId}`,
       {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           'User-Agent': 'GoldBlack-Release-Publisher',
           Authorization: `token ${token.trim()}`,
           Accept: 'application/vnd.github.v3+json',
-          'Content-Type': contentType,
-          'Content-Length': totalBytes,
+        },
+      },
+      () => resolve(true)
+    )
+    delReq.on('error', () => resolve(false))
+    delReq.end()
+  })
+}
+
+// Helper to list all current assets of a release
+function getReleaseAssets(releaseId, token) {
+  return new Promise((resolve) => {
+    const req = https.request(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/${releaseId}/assets`,
+      {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'GoldBlack-Release-Publisher',
+          Authorization: `token ${token.trim()}`,
+          Accept: 'application/vnd.github.v3+json',
         },
       },
       (res) => {
-        let respBody = ''
-        res.on('data', (c) => (respBody += c))
+        let body = ''
+        res.on('data', (c) => (body += c))
         res.on('end', () => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            resolve({ fileName, size: totalBytes })
-          } else {
-            try {
-              const err = JSON.parse(respBody)
-              reject(new Error(err.message || `Error en subida de ${fileName}: HTTP ${res.statusCode}`))
-            } catch {
-              reject(new Error(`Error en subida de ${fileName}: HTTP ${res.statusCode}`))
-            }
+          try {
+            resolve(JSON.parse(body) || [])
+          } catch {
+            resolve([])
           }
         })
       }
     )
-
-    uploadReq.on('error', reject)
-
-    const fileStream = fs.createReadStream(filePath)
-    fileStream.on('data', (chunk) => {
-      uploadedBytes += chunk.length
-      const now = Date.now()
-      if (now - lastReport > 120 || uploadedBytes === totalBytes) {
-        lastReport = now
-        const percent = Math.round((uploadedBytes / totalBytes) * 100)
-        onProgress?.({ fileName, uploadedBytes, totalBytes, percent })
-      }
-    })
-
-    fileStream.on('error', reject)
-    fileStream.pipe(uploadReq)
+    req.on('error', () => resolve([]))
+    req.end()
   })
 }
 
-// Check for existing release or create a new release with retry on transient errors
+// Upload Single Asset Helper with Automatic Retry and Collision Protection
+async function uploadAssetToRelease(releaseId, rawUploadUrlTemplate, filePath, token, onProgress, onStatus) {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Archivo no encontrado: ${filePath}`)
+  }
+
+  const fileName = path.basename(filePath)
+  const fileStat = fs.statSync(filePath)
+  const totalBytes = fileStat.size
+
+  const cleanBaseUrl = rawUploadUrlTemplate.replace(/\{[^{}]*\}$/, '')
+  const targetUploadUrl = `${cleanBaseUrl}?name=${encodeURIComponent(fileName)}`
+  const parsedUrl = new URL(targetUploadUrl)
+
+  const contentType = fileName.endsWith('.exe')
+    ? 'application/vnd.microsoft.portable-executable'
+    : fileName.endsWith('.zip')
+    ? 'application/zip'
+    : 'application/octet-stream'
+
+  const MAX_ATTEMPTS = 3
+  let lastError = null
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // 1. Limpieza preventiva: eliminar cualquier asset previo con el mismo nombre (ej. fallido/incompleto)
+    try {
+      const currentAssets = await getReleaseAssets(releaseId, token)
+      const duplicate = currentAssets.find((a) => a.name === fileName)
+      if (duplicate) {
+        console.log(`[Publisher] Eliminando asset previo/incompleto "${fileName}" (ID: ${duplicate.id})...`)
+        await deleteAsset(duplicate.id, token)
+        await new Promise((r) => setTimeout(r, 1500))
+      }
+    } catch (e) {
+      console.warn('[Publisher] Aviso al revisar assets previos:', e.message)
+    }
+
+    if (attempt > 1) {
+      onStatus?.(`Reintentando subida de ${fileName} tras corte de conexión (intento ${attempt}/${MAX_ATTEMPTS})...`)
+    }
+
+    // 2. Subida del archivo
+    try {
+      await new Promise((resolve, reject) => {
+        let uploadedBytes = 0
+        let lastReport = 0
+
+        const uploadReq = https.request(
+          parsedUrl,
+          {
+            method: 'POST',
+            headers: {
+              'User-Agent': 'GoldBlack-Release-Publisher',
+              Authorization: `token ${token.trim()}`,
+              Accept: 'application/vnd.github.v3+json',
+              'Content-Type': contentType,
+              'Content-Length': totalBytes,
+            },
+            timeout: 600000, // 10 minutos
+          },
+          (res) => {
+            let respBody = ''
+            res.on('data', (c) => (respBody += c))
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                resolve({ fileName, size: totalBytes })
+              } else {
+                try {
+                  const err = JSON.parse(respBody)
+                  reject(new Error(err.message || `Error en subida de ${fileName}: HTTP ${res.statusCode}`))
+                } catch {
+                  reject(new Error(`Error en subida de ${fileName}: HTTP ${res.statusCode}`))
+                }
+              }
+            })
+          }
+        )
+
+        uploadReq.on('timeout', () => {
+          uploadReq.destroy(new Error('Timeout de red en la subida a GitHub.'))
+        })
+
+        uploadReq.on('error', (err) => {
+          reject(err)
+        })
+
+        const fileStream = fs.createReadStream(filePath)
+        fileStream.on('data', (chunk) => {
+          uploadedBytes += chunk.length
+          const now = Date.now()
+          if (now - lastReport > 120 || uploadedBytes === totalBytes) {
+            lastReport = now
+            const percent = Math.round((uploadedBytes / totalBytes) * 100)
+            onProgress?.({ fileName, uploadedBytes, totalBytes, percent })
+          }
+        })
+
+        fileStream.on('error', (err) => {
+          uploadReq.destroy()
+          reject(err)
+        })
+
+        fileStream.pipe(uploadReq)
+      })
+
+      return { fileName, size: totalBytes }
+    } catch (err) {
+      lastError = err
+      console.warn(`[Publisher] Subida de ${fileName} falló en intento ${attempt}:`, err.message)
+
+      // Comprobar si a pesar del error de socket/504 el asset quedó guardado completamente
+      try {
+        await new Promise((r) => setTimeout(r, 2000))
+        const checkAssets = await getReleaseAssets(releaseId, token)
+        const savedAsset = checkAssets.find(
+          (a) => a.name === fileName && a.size === totalBytes && a.state === 'uploaded'
+        )
+        if (savedAsset) {
+          console.log(`[Publisher] Asset ${fileName} verificado en GitHub exitosamente.`)
+          return { fileName, size: totalBytes }
+        }
+      } catch {}
+
+      if (attempt < MAX_ATTEMPTS) {
+        onStatus?.(`Conexión interrumpida al subir ${fileName}. Reintentando en 3s...`)
+        await new Promise((r) => setTimeout(r, 3000))
+      }
+    }
+  }
+
+  throw lastError || new Error(`No se pudo subir ${fileName} tras ${MAX_ATTEMPTS} intentos.`)
+}
+
+// Check for existing release (including drafts) or create a new release
 async function getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerelease) {
-  // 1. Check if a release for this tag already exists on GitHub
+  // 1. List recent releases to detect both published releases and drafts
   const existing = await new Promise((resolve) => {
     const req = https.request(
-      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/tags/${cleanTag}`,
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases?per_page=30`,
       {
         method: 'GET',
         headers: {
@@ -470,7 +581,9 @@ async function getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerele
         res.on('end', () => {
           if (res.statusCode === 200) {
             try {
-              resolve(JSON.parse(body))
+              const list = JSON.parse(body)
+              const match = list.find((r) => r.tag_name === cleanTag)
+              resolve(match || null)
             } catch {
               resolve(null)
             }
@@ -486,31 +599,16 @@ async function getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerele
 
   if (existing && existing.id) {
     console.log(`[Publisher] Release existente detectada para ${cleanTag} (ID: ${existing.id}). Actualizando assets...`)
-    // Delete any existing assets with the same names to allow fresh replacement
+    // Delete any existing assets to allow clean replacement
     if (Array.isArray(existing.assets)) {
       for (const asset of existing.assets) {
-        await new Promise((resDelete) => {
-          const delReq = https.request(
-            `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/assets/${asset.id}`,
-            {
-              method: 'DELETE',
-              headers: {
-                'User-Agent': 'GoldBlack-Release-Publisher',
-                Authorization: `token ${token.trim()}`,
-                Accept: 'application/vnd.github.v3+json',
-              },
-            },
-            () => resDelete(true)
-          )
-          delReq.on('error', () => resDelete(false))
-          delReq.end()
-        })
+        await deleteAsset(asset.id, token)
       }
     }
     return existing
   }
 
-  // 2. Not existing: create new release with retry (up to 3 attempts) for transient 500/502/503 errors
+  // 2. Not existing: create new release with retry (up to 3 attempts) for transient errors
   let lastError = null
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -523,7 +621,6 @@ async function getOrCreateGitHubRelease(token, cleanTag, title, notes, isPrerele
         draft: true,
         prerelease: !!isPrerelease,
       }
-      // On attempt 1, try with target_commitish. If 500 error occurred, omit it to avoid git ref sync delays
       if (attempt === 1) {
         payloadObj.target_commitish = 'main'
       }
@@ -664,20 +761,38 @@ ipcMain.handle('publisher:publish-release', async (event, payload) => {
       })
     }
 
-    await uploadAssetToRelease(releaseData.upload_url, asset.path, token, (prog) => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('publisher:upload-progress', {
-          step: 'uploading',
-          currentFile: i + 1,
-          totalFiles: assetsToUpload.length,
-          fileName: prog.fileName,
-          message: `Subiendo ${fileIndexStr} ${asset.label} (${prog.percent}%)...`,
-          percent: prog.percent,
-          uploadedBytes: prog.uploadedBytes,
-          totalBytes: prog.totalBytes,
-        })
+    await uploadAssetToRelease(
+      releaseData.id,
+      releaseData.upload_url,
+      asset.path,
+      token,
+      (prog) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('publisher:upload-progress', {
+            step: 'uploading',
+            currentFile: i + 1,
+            totalFiles: assetsToUpload.length,
+            fileName: prog.fileName,
+            message: `Subiendo ${fileIndexStr} ${asset.label} (${prog.percent}%)...`,
+            percent: prog.percent,
+            uploadedBytes: prog.uploadedBytes,
+            totalBytes: prog.totalBytes,
+          })
+        }
+      },
+      (statusMsg) => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('publisher:upload-progress', {
+            step: 'uploading',
+            currentFile: i + 1,
+            totalFiles: assetsToUpload.length,
+            fileName: path.basename(asset.path),
+            message: `${fileIndexStr} ${statusMsg}`,
+            percent: 0,
+          })
+        }
       }
-    })
+    )
   }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
