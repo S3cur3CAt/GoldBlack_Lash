@@ -4,6 +4,7 @@ import {
   saveAppointmentToDb,
   updateAppointmentStatusInDb,
   deleteAppointmentFromDb,
+  deleteClientAppointmentsFromDb,
 } from '../server/appointments.server'
 import {
   generateBookingEmailHtml,
@@ -263,9 +264,26 @@ export const Route = createFileRoute('/api/appointments')({
         try {
           const url = new URL(request.url)
           const id = url.searchParams.get('id')
+          const clientPhone = url.searchParams.get('clientPhone')
+          const clientName = url.searchParams.get('clientName')
+
+          if (clientPhone || clientName) {
+            await deleteClientAppointmentsFromDb(clientPhone || '', clientName || undefined)
+            return Response.json(
+              { ok: true, message: 'Clienta y sus citas eliminadas de la base de datos' },
+              {
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS, PUT, PATCH',
+                  'Access-Control-Allow-Headers': '*',
+                },
+              }
+            )
+          }
+
           if (!id) {
             return Response.json(
-              { error: 'Falta parámetro id' },
+              { error: 'Falta parámetro id o clientPhone' },
               {
                 status: 400,
                 headers: {

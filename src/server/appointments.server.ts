@@ -203,3 +203,24 @@ export async function deleteAppointmentFromDb(id: string): Promise<boolean> {
   return true
 }
 
+export async function deleteClientAppointmentsFromDb(
+  clientPhone: string,
+  clientName?: string
+): Promise<boolean> {
+  const client = await getSql()
+  const cleanPhone = (clientPhone || '').replace(/\D/g, '')
+  if (cleanPhone.length >= 7) {
+    await client`
+      DELETE FROM studio_appointments
+      WHERE REPLACE(REPLACE(REPLACE(client_phone, ' ', ''), '-', ''), '+', '') LIKE ${'%' + cleanPhone}
+    `
+  } else if (clientName && clientName.trim()) {
+    await client`
+      DELETE FROM studio_appointments
+      WHERE LOWER(TRIM(client_name)) = ${clientName.toLowerCase().trim()}
+    `
+  }
+  return true
+}
+
+

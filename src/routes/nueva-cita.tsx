@@ -19,18 +19,23 @@ export const Route = createFileRoute('/nueva-cita')({
 })
 
 // Tipos
-interface ServiceOption {
+export interface ServiceOption {
   id: string
+  categoryId?: string
+  categoryName?: string
   name: string
   priceNumber: number
   priceFormatted: string
   originalPriceFormatted?: string
   duration: string
   badge?: string
+  description?: string
+  includes?: string[]
+  image?: string | null
   isPromo?: boolean
 }
 
-interface AppointmentItem {
+export interface AppointmentItem {
   id: string
   clientName: string
   clientPhone: string
@@ -50,7 +55,7 @@ interface AppointmentItem {
   createdAt?: string
 }
 
-interface ClientSummary {
+export interface ClientSummary {
   name: string
   phone: string
   email?: string
@@ -60,50 +65,98 @@ interface ClientSummary {
   lastServiceName: string
   preferredCurl?: string
   notes?: string
+  appointmentsHistory: AppointmentItem[]
 }
 
-// Catálogo Oficial de Servicios (con la OFERTA ESPECIAL 23 € en 1ª posición)
-const STUDIO_SERVICES: ServiceOption[] = [
+// Catálogo Base con la OFERTA ESPECIAL 23 € en 1ª posición
+const FALLBACK_STUDIO_SERVICES: ServiceOption[] = [
   {
     id: 'promo-extensiones-23',
+    categoryId: 'extensiones',
+    categoryName: 'Extensiones de pestañas',
     name: 'Extensiones de Pestañas (Oferta Especial)',
     priceNumber: 23,
     priceFormatted: '23 €',
     originalPriceFormatted: '27 €',
     duration: '1 h 15 min',
     badge: '🔥 AHORA SOLO 23 €',
+    description: 'Oferta especial por tiempo limitado para lucir una mirada definida, elegante y personalizada.',
+    includes: ['Diseño personalizado según tu ojo', 'Fibras ligeras de alta retención', 'Cepillado y sellado profesional'],
+    image: '/galeria/pieza-04.jpg',
     isPromo: true,
   },
   {
     id: 'volumen-3d6d',
+    categoryId: 'extensiones',
+    categoryName: 'Extensiones de pestañas',
     name: 'Volumen (3D, 4D, 5D y 6D)',
     priceNumber: 27,
     priceFormatted: '27 €',
     duration: '1 h 15 min',
     badge: 'Más popular',
+    description: 'Varias extensiones por pestaña natural. El resultado más natural y discreto, ideal para el día a día.',
+    includes: ['Efecto natural pelo a pelo', 'Diseño según la forma del ojo', 'Sellado y baño de vitaminas'],
+    image: '/galeria/pieza-02.jpg',
   },
   {
     id: 'volumen-ruso',
+    categoryId: 'extensiones',
+    categoryName: 'Extensiones de pestañas',
     name: 'Volumen Ruso',
     priceNumber: 30,
     priceFormatted: '30 €',
     duration: '1 h',
     badge: 'Densidad alta',
+    description: 'Abanicos de 3 a 5 pestañas ultrafinas por pestaña natural. Densidad y negro intenso sin peso.',
+    includes: ['Abanicos hechos a mano', 'Densidad media-alta', 'Ideal para pestaña escasa'],
+    image: '/galeria/pieza-01.jpg',
   },
   {
     id: 'retoque-mantenimiento',
+    categoryId: 'extensiones',
+    categoryName: 'Extensiones de pestañas',
     name: 'Retoque / Mantenimiento',
     priceNumber: 22,
     priceFormatted: '22 €',
     duration: '50 min',
+    description: 'Mantenimiento recomendado cada 2–3 semanas para reponer las extensiones caídas por el ciclo natural.',
+    includes: ['Retirada de pestañas crecidas', 'Relleno de nuevas fibras', 'Cepillo de regalo'],
+    image: '/galeria/pieza-03.jpg',
   },
   {
     id: 'retirada',
+    categoryId: 'extras',
+    categoryName: 'Tratamientos y extras',
     name: 'Retirada de extensiones',
     priceNumber: 10,
     priceFormatted: '10 €',
     duration: '30 min',
+    description: 'Retiramos tus extensiones con crema disolvente profesional, sin tirones ni daño a tu pestaña natural.',
+    includes: ['Crema disolvente suave', 'Sin daño a la pestaña natural', 'Revisión incluida'],
+    image: '/galeria/pieza-05.jpg',
   },
+  {
+    id: 'limpieza-facial',
+    categoryId: 'extras',
+    categoryName: 'Tratamientos y extras',
+    name: 'Limpieza facial profunda',
+    priceNumber: 30,
+    priceFormatted: '30 €',
+    duration: '1 h',
+    badge: 'Piel Radiante',
+    description: 'Higiene dérmica con espátula ultrasónica, extracción de impurezas y mascarilla hidratante.',
+    includes: ['Puntos negros e impurezas fuera', 'Hidratación profunda y luminosidad', 'Piel suave y descansada'],
+    image: '/galeria/limpieza-facial.jpg',
+  },
+]
+
+const GALLERY_PRESETS = [
+  { label: 'Volumen Ruso (Pieza 01)', path: '/galeria/pieza-01.jpg' },
+  { label: 'Volumen 3D-5D (Pieza 02)', path: '/galeria/pieza-02.jpg' },
+  { label: 'Retoque / Natural (Pieza 03)', path: '/galeria/pieza-03.jpg' },
+  { label: 'Volumen Clásico (Pieza 04)', path: '/galeria/pieza-04.jpg' },
+  { label: 'Efecto Intenso (Pieza 05)', path: '/galeria/pieza-05.jpg' },
+  { label: 'Limpieza Facial', path: '/galeria/limpieza-facial.jpg' },
 ]
 
 const PROMO_WHATSAPP_TEXT = `✨👁️ *OFERTA ESPECIAL* 👁️✨
@@ -138,6 +191,15 @@ function cleanPhoneForWhatsApp(raw: string): string {
   return cleaned
 }
 
+function formatServiceImageUrl(rawUrl?: string | null): string {
+  if (!rawUrl) return '/galeria/pieza-04.jpg'
+  if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://') || rawUrl.startsWith('data:image/')) {
+    return rawUrl
+  }
+  const clean = rawUrl.replace(/^(\.\/|\/)?(galeria\/)?/, '')
+  return `/galeria/${clean}`
+}
+
 type TabType = 'crear' | 'citas' | 'facturacion' | 'clientas' | 'servicios' | 'promo'
 
 function StudioMobileHubPage() {
@@ -149,17 +211,36 @@ function StudioMobileHubPage() {
   // Estado de Datos en Vivo
   const [appointments, setAppointments] = useState<AppointmentItem[]>([])
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false)
-  const [appointmentsError, setAppointmentsError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<string>('')
+
+  // Servicios dinámicos desde Supabase
+  const [services, setServices] = useState<ServiceOption[]>(FALLBACK_STUDIO_SERVICES)
+  const [isLoadingServices, setIsLoadingServices] = useState(false)
 
   // Filtro de Citas
   const [agendaFilter, setAgendaFilter] = useState<'hoy' | 'proximas' | 'todas'>('hoy')
 
-  // Búsqueda en Clientas
+  // Búsqueda y Modal de Clienta Seleccionada
   const [clientSearch, setClientSearch] = useState('')
+  const [selectedClientModal, setSelectedClientModal] = useState<ClientSummary | null>(null)
+  const [isDeletingClient, setIsDeletingClient] = useState(false)
+
+  // Modal de Añadir / Editar Servicio
+  const [serviceModalOpen, setServiceModalOpen] = useState(false)
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
+  const [serviceFormName, setServiceFormName] = useState('')
+  const [serviceFormCategory, setServiceFormCategory] = useState('Extensiones de pestañas')
+  const [serviceFormPrice, setServiceFormPrice] = useState('27')
+  const [serviceFormDuration, setServiceFormDuration] = useState('1 h 15 min')
+  const [serviceFormBadge, setServiceFormBadge] = useState('')
+  const [serviceFormDescription, setServiceFormDescription] = useState('')
+  const [serviceFormIncludes, setServiceFormIncludes] = useState('')
+  const [serviceFormImage, setServiceFormImage] = useState('/galeria/pieza-01.jpg')
+  const [isSavingService, setIsSavingService] = useState(false)
+  const [serviceActionError, setServiceActionError] = useState<string | null>(null)
 
   // Form State (Crear Cita)
-  const [selectedService, setSelectedService] = useState<ServiceOption>(STUDIO_SERVICES[0])
+  const [selectedService, setSelectedService] = useState<ServiceOption>(FALLBACK_STUDIO_SERVICES[0])
   const [isCustomService, setIsCustomService] = useState(false)
   const [customServiceName, setCustomServiceName] = useState('')
   const [customPrice, setCustomPrice] = useState('30')
@@ -181,7 +262,6 @@ function StudioMobileHubPage() {
   // Cargar citas desde Supabase
   const loadAppointments = async () => {
     setIsLoadingAppointments(true)
-    setAppointmentsError(null)
     try {
       const res = await fetch(`/api/appointments?_t=${Date.now()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -190,14 +270,51 @@ function StudioMobileHubPage() {
         setAppointments(data)
         setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
       }
-    } catch (err: any) {
-      setAppointmentsError(err?.message || 'Error cargando citas')
+    } catch (err) {
+      console.warn('[Appointments Error]', err)
     } finally {
       setIsLoadingAppointments(false)
     }
   }
 
-  // Inicializar Telegram WebApp SDK y cargar citas al abrir
+  // Cargar servicios desde Supabase
+  const loadServices = async () => {
+    setIsLoadingServices(true)
+    try {
+      const res = await fetch(`/api/services?_t=${Date.now()}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped: ServiceOption[] = data.map((s: any) => ({
+          id: s.id,
+          categoryId: s.category_id || s.categoryId || 'extensiones',
+          categoryName: s.category_name || s.categoryName || 'Extensiones de pestañas',
+          name: s.name,
+          priceNumber: s.price_number ?? s.priceNumber ?? (parseInt(String(s.price || '').replace(/\D/g, ''), 10) || 0),
+          priceFormatted: s.price ? (String(s.price).includes('€') ? s.price : `${s.price} €`) : '0 €',
+          duration: s.duration || '1 h 15 min',
+          badge: s.badge || undefined,
+          description: s.description || undefined,
+          includes: Array.isArray(s.includes) ? s.includes : [],
+          image: s.image || null,
+          isPromo: s.id.includes('promo') || s.name.toLowerCase().includes('oferta'),
+        }))
+
+        // Si la oferta especial no estuviera en Supabase, garantizarla siempre arriba
+        const hasPromo = mapped.some((m) => m.id === 'promo-extensiones-23' || m.name.includes('Oferta Especial'))
+        if (!hasPromo) {
+          mapped.unshift(FALLBACK_STUDIO_SERVICES[0])
+        }
+        setServices(mapped)
+      }
+    } catch (err) {
+      console.warn('[Services Load Error]', err)
+    } finally {
+      setIsLoadingServices(false)
+    }
+  }
+
+  // Inicializar Telegram WebApp SDK y datos
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp
@@ -207,6 +324,7 @@ function StudioMobileHubPage() {
       if (tg.setBackgroundColor) tg.setBackgroundColor('#08080a')
     }
     loadAppointments()
+    loadServices()
   }, [])
 
   // Actualizar estado de una cita en Supabase
@@ -219,22 +337,137 @@ function StudioMobileHubPage() {
       const payload: any = { id, status: newStatus }
       if (newPayment) payload.paymentStatus = newPayment
 
-      // Optimistic update
       setAppointments((prev) =>
         prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus, ...(newPayment ? { paymentStatus: newPayment } : {}) } : apt))
       )
 
-      const res = await fetch('/api/appointments', {
+      await fetch('/api/appointments', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
-      if (!res.ok) {
-        // Recargar si falló
-        loadAppointments()
-      }
     } catch {
       loadAppointments()
+    }
+  }
+
+  // Eliminar clienta y todo su historial de citas de Supabase
+  const handleDeleteClient = async (client: ClientSummary) => {
+    const confirmMsg = `¿Estás segura de eliminar a ${client.name} y todas sus ${client.totalVisits} cita(s) de la base de datos?\nEsta acción no se puede deshacer.`
+    if (!window.confirm(confirmMsg)) return
+
+    setIsDeletingClient(true)
+    try {
+      const res = await fetch(`/api/appointments?clientPhone=${encodeURIComponent(client.phone)}&clientName=${encodeURIComponent(client.name)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      // Cerrar modal y limpiar del formulario si coincide
+      setSelectedClientModal(null)
+      if (clientPhone === client.phone) {
+        setClientName('')
+        setClientPhone('')
+        setNotes('')
+      }
+      // Actualizar listado local y remoto
+      setAppointments((prev) => prev.filter((a) => a.clientPhone !== client.phone && a.clientName !== client.name))
+      loadAppointments()
+    } catch (err: any) {
+      alert(`Error al eliminar clienta: ${err?.message || 'Error de conexión'}`)
+    } finally {
+      setIsDeletingClient(false)
+    }
+  }
+
+  // Abrir Modal de Servicio (Añadir o Editar)
+  const openServiceModal = (serviceToEdit?: ServiceOption) => {
+    setServiceActionError(null)
+    if (serviceToEdit) {
+      setEditingServiceId(serviceToEdit.id)
+      setServiceFormName(serviceToEdit.name)
+      setServiceFormCategory(serviceToEdit.categoryName || 'Extensiones de pestañas')
+      setServiceFormPrice(String(serviceToEdit.priceNumber || 27))
+      setServiceFormDuration(serviceToEdit.duration || '1 h 15 min')
+      setServiceFormBadge(serviceToEdit.badge || '')
+      setServiceFormDescription(serviceToEdit.description || '')
+      setServiceFormIncludes((serviceToEdit.includes || []).join('\n'))
+      setServiceFormImage(serviceToEdit.image || '/galeria/pieza-01.jpg')
+    } else {
+      setEditingServiceId(null)
+      setServiceFormName('')
+      setServiceFormCategory('Extensiones de pestañas')
+      setServiceFormPrice('27')
+      setServiceFormDuration('1 h 15 min')
+      setServiceFormBadge('')
+      setServiceFormDescription('')
+      setServiceFormIncludes('Diseño anatómico personalizado\nFibras de alta gama\nSellado profesional')
+      setServiceFormImage('/galeria/pieza-01.jpg')
+    }
+    setServiceModalOpen(true)
+  }
+
+  // Guardar Servicio (Crear o Actualizar) en Supabase
+  const handleSaveService = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!serviceFormName.trim()) {
+      setServiceActionError('Por favor escribe el nombre del servicio')
+      return
+    }
+
+    setIsSavingService(true)
+    setServiceActionError(null)
+
+    const numPrice = parseFloat(serviceFormPrice) || 0
+    const includesArray = serviceFormIncludes
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    const id = editingServiceId || `srv-${Date.now()}`
+    const payload = {
+      id,
+      name: serviceFormName.trim(),
+      categoryName: serviceFormCategory.trim() || 'Extensiones de pestañas',
+      categoryId: serviceFormCategory.toLowerCase().includes('extra') || serviceFormCategory.toLowerCase().includes('facial') ? 'extras' : 'extensiones',
+      price: `${numPrice} €`,
+      priceNumber: numPrice,
+      duration: serviceFormDuration.trim() || '1 h 15 min',
+      badge: serviceFormBadge.trim() || null,
+      description: serviceFormDescription.trim() || '',
+      includes: includesArray,
+      image: serviceFormImage,
+      active: true,
+    }
+
+    try {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+      setServiceModalOpen(false)
+      loadServices()
+    } catch (err: any) {
+      setServiceActionError(err?.message || 'Error al guardar el servicio en la base de datos')
+    } finally {
+      setIsSavingService(false)
+    }
+  }
+
+  // Eliminar Servicio de Supabase
+  const handleDeleteService = async (service: ServiceOption) => {
+    if (!window.confirm(`¿Deseas eliminar el servicio "${service.name}" de la base de datos?`)) return
+    try {
+      const res = await fetch(`/api/services?id=${encodeURIComponent(service.id)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      loadServices()
+    } catch (err: any) {
+      alert(`Error al eliminar servicio: ${err?.message || 'Error de conexión'}`)
     }
   }
 
@@ -253,12 +486,11 @@ function StudioMobileHubPage() {
   // Métricas Financieras (Facturación)
   const metrics = useMemo(() => {
     const today = todayStr
-    // Cálculo inicio de semana (lunes)
     const now = new Date()
     const day = now.getDay()
     const diff = now.getDate() - day + (day === 0 ? -6 : 1)
     const monday = new Date(now.setDate(diff)).toISOString().split('T')[0]
-    const currentMonth = today.substring(0, 7) // YYYY-MM
+    const currentMonth = today.substring(0, 7)
 
     let totalHoy = 0
     let totalSemana = 0
@@ -296,8 +528,8 @@ function StudioMobileHubPage() {
       }
     })
 
-    const monthCount = appointments.filter(a => a.date.startsWith(currentMonth)).length || 1
-    const ticketMedio = countTotal > 0 ? Math.round(totalMes / monthCount) : 0
+    const monthAppointments = appointments.filter((a) => a.date.startsWith(currentMonth))
+    const ticketMedio = monthAppointments.length > 0 ? Math.round(totalMes / monthAppointments.length) : 0
 
     return {
       totalHoy,
@@ -335,10 +567,12 @@ function StudioMobileHubPage() {
           lastServiceName: apt.serviceName,
           preferredCurl: apt.curl,
           notes: apt.notes,
+          appointmentsHistory: [apt],
         })
       } else {
         existing.totalVisits += 1
         existing.totalSpent += price
+        existing.appointmentsHistory.push(apt)
         if (apt.date > existing.lastVisitDate) {
           existing.lastVisitDate = apt.date
           existing.lastServiceName = apt.serviceName
@@ -467,7 +701,6 @@ function StudioMobileHubPage() {
         whatsappMsg,
       })
 
-      // Recargar citas en segundo plano
       loadAppointments()
     } catch (err: any) {
       setSubmitErrorMsg(err?.message || 'Error al conectar con la base de datos')
@@ -506,18 +739,21 @@ function StudioMobileHubPage() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={loadAppointments}
+              onClick={() => {
+                loadAppointments()
+                loadServices()
+              }}
               title="Actualizar datos"
-              disabled={isLoadingAppointments}
+              disabled={isLoadingAppointments || isLoadingServices}
               className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-[#d4af37]/40 text-[11px] text-zinc-300 flex items-center gap-1.5 transition-all active:scale-95"
             >
-              <span className={`w-2 h-2 rounded-full ${isLoadingAppointments ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-              <span>{isLoadingAppointments ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
+              <span className={`w-2 h-2 rounded-full ${isLoadingAppointments || isLoadingServices ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
+              <span>{isLoadingAppointments || isLoadingServices ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
             </button>
           </div>
         </div>
 
-        {/* NAVEGACIÓN DE PESTAÑAS (Scrollable horizontal) */}
+        {/* NAVEGACIÓN DE PESTAÑAS */}
         <div className="max-w-md mx-auto mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={() => setCurrentTab('citas')}
@@ -570,6 +806,20 @@ function StudioMobileHubPage() {
           </button>
 
           <button
+            onClick={() => setCurrentTab('servicios')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              currentTab === 'servicios'
+                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
+                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+            }`}
+          >
+            <span>🌸 Servicios</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+              {services.length}
+            </span>
+          </button>
+
+          <button
             onClick={() => setCurrentTab('promo')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'promo'
@@ -579,28 +829,16 @@ function StudioMobileHubPage() {
           >
             <span>🔥 Oferta 23€</span>
           </button>
-
-          <button
-            onClick={() => setCurrentTab('servicios')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              currentTab === 'servicios'
-                ? 'bg-[#d4af37] text-black font-semibold shadow-md shadow-[#d4af37]/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
-            }`}
-          >
-            <span>🌸 Servicios</span>
-          </button>
         </div>
       </header>
 
-      {/* CONTENIDO PRINCIPAL SEGÚN PESTAÑA */}
+      {/* CONTENIDO PRINCIPAL */}
       <main className="max-w-md w-full mx-auto p-4 flex-1">
         {/* ========================================================================= */}
         {/* PESTAÑA 1: AGENDA DE CITAS */}
         {/* ========================================================================= */}
         {currentTab === 'citas' && (
           <div className="space-y-4">
-            {/* Selector de Filtro */}
             <div className="flex items-center justify-between bg-[#121218] p-1.5 rounded-2xl border border-white/5">
               <button
                 onClick={() => setAgendaFilter('hoy')}
@@ -634,7 +872,6 @@ function StudioMobileHubPage() {
               </button>
             </div>
 
-            {/* Listado de Citas */}
             {isLoadingAppointments && appointments.length === 0 ? (
               <div className="text-center py-12 text-zinc-500 space-y-2">
                 <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto" />
@@ -844,12 +1081,13 @@ function StudioMobileHubPage() {
                     <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
                       <span className="text-[#d4af37]">1.</span> Tratamiento / Servicio
                     </label>
-                    <span className="text-[10px] text-[#d4af37]">Precios oficiales</span>
+                    <span className="text-[10px] text-[#d4af37]">{services.length} disponibles</span>
                   </div>
 
-                  <div className="space-y-2">
-                    {STUDIO_SERVICES.map((s) => {
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
+                    {services.map((s) => {
                       const isSelected = !isCustomService && selectedService.id === s.id
+                      const sImg = formatServiceImageUrl(s.image)
                       return (
                         <div
                           key={s.id}
@@ -857,7 +1095,7 @@ function StudioMobileHubPage() {
                             setSelectedService(s)
                             setIsCustomService(false)
                           }}
-                          className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between ${
+                          className={`p-2.5 rounded-xl cursor-pointer transition-all border flex items-center gap-3 ${
                             isSelected
                               ? s.isPromo
                                 ? 'bg-amber-500/15 border-amber-500/60 shadow-lg shadow-amber-500/10'
@@ -865,13 +1103,20 @@ function StudioMobileHubPage() {
                               : 'bg-black/30 border-white/5 hover:border-white/15'
                           }`}
                         >
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-xs font-semibold ${isSelected ? (s.isPromo ? 'text-amber-300 font-bold' : 'text-white') : 'text-zinc-300'}`}>
+                          <img
+                            src={sImg}
+                            alt={s.name}
+                            className="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0"
+                            loading="lazy"
+                          />
+
+                          <div className="space-y-0.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`text-xs font-semibold truncate ${isSelected ? (s.isPromo ? 'text-amber-300 font-bold' : 'text-white') : 'text-zinc-300'}`}>
                                 {s.name}
                               </span>
                               {s.badge && (
-                                <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
+                                <span className={`text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase ${
                                   s.isPromo ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white animate-pulse' : 'bg-[#d4af37]/20 text-[#f3e5ab]'
                                 }`}>
                                   {s.badge}
@@ -886,7 +1131,7 @@ function StudioMobileHubPage() {
                             </p>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-right shrink-0">
                             <span className={`text-sm font-bold font-mono ${s.isPromo ? 'text-amber-400 text-base' : 'text-[#d4af37]'}`}>
                               {s.priceFormatted}
                             </span>
@@ -939,7 +1184,6 @@ function StudioMobileHubPage() {
                     <span className="text-[#d4af37]">2.</span> Fecha y Hora
                   </label>
 
-                  {/* Chips rápidos de fecha */}
                   <div className="flex items-center gap-1.5">
                     {[
                       { label: 'Hoy', offset: 0 },
@@ -987,7 +1231,6 @@ function StudioMobileHubPage() {
                     </div>
                   </div>
 
-                  {/* Chips rápidos de horas habituales */}
                   <div className="pt-1 flex items-center gap-1.5 flex-wrap">
                     {['10:00', '11:30', '13:00', '16:00', '17:30', '19:00'].map((h) => (
                       <button
@@ -1040,6 +1283,20 @@ function StudioMobileHubPage() {
                     />
                   </div>
 
+                  {(clientName || clientPhone) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientName('')
+                        setClientPhone('')
+                        setNotes('')
+                      }}
+                      className="text-[10px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center gap-1"
+                    >
+                      ✕ Limpiar datos de clienta del formulario
+                    </button>
+                  )}
+
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <div>
                       <span className="text-[10px] text-zinc-400 block mb-1">Curvatura habitual</span>
@@ -1075,7 +1332,6 @@ function StudioMobileHubPage() {
                   </div>
                 )}
 
-                {/* Botón de Guardado */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
@@ -1093,7 +1349,6 @@ function StudioMobileHubPage() {
         {/* ========================================================================= */}
         {currentTab === 'facturacion' && (
           <div className="space-y-4">
-            {/* Tarjetas Principales */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-1">
                 <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Facturado Hoy</span>
@@ -1116,7 +1371,6 @@ function StudioMobileHubPage() {
               </div>
             </div>
 
-            {/* Desglose de Cobros */}
             <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
               <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
                 Balance de Cobros
@@ -1139,7 +1393,6 @@ function StudioMobileHubPage() {
               </div>
             </div>
 
-            {/* Desglose por Servicios */}
             <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
               <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
                 Ingresos por Tratamiento
@@ -1161,11 +1414,10 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 4: DIRECTORIO DE CLIENTAS */}
+        {/* PESTAÑA 4: DIRECTORIO DE CLIENTAS CON FICHA COMPLETA Y BORRADO */}
         {/* ========================================================================= */}
         {currentTab === 'clientas' && (
           <div className="space-y-3">
-            {/* Buscador de Clientas */}
             <div className="relative">
               <input
                 type="text"
@@ -1195,7 +1447,7 @@ function StudioMobileHubPage() {
                   return (
                     <div
                       key={client.phone || client.name}
-                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all space-y-2"
+                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all space-y-2 shadow-md"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -1218,42 +1470,50 @@ function StudioMobileHubPage() {
                       </div>
 
                       <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-white/5 pt-1.5">
-                        <span>Última vez: {client.lastVisitDate} ({client.lastServiceName})</span>
+                        <span>Última visita: {client.lastVisitDate}</span>
                         {client.preferredCurl && (
                           <span className="text-[#f3e5ab] font-bold">Curva {client.preferredCurl}</span>
                         )}
                       </div>
 
                       {client.notes && (
-                        <p className="text-[10px] text-zinc-500 italic">
+                        <p className="text-[10px] text-zinc-500 italic truncate">
                           📝 {client.notes}
                         </p>
                       )}
 
-                      {clientPhoneClean && (
-                        <div className="pt-1 flex items-center gap-2">
+                      {/* Botones de Acción de Clienta */}
+                      <div className="pt-1.5 flex items-center gap-1.5 flex-wrap">
+                        {clientPhoneClean && (
                           <a
                             href={`https://wa.me/${clientPhoneClean}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all"
+                            className="py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all"
                           >
-                            <span>💬 Escribir por WhatsApp</span>
+                            <span>💬 WhatsApp</span>
                           </a>
+                        )}
 
-                          <button
-                            onClick={() => {
-                              setClientName(client.name)
-                              setClientPhone(client.phone)
-                              if (client.preferredCurl) setCurl(client.preferredCurl)
-                              setCurrentTab('crear')
-                            }}
-                            className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
-                          >
-                            ➕ Agendar
-                          </button>
-                        </div>
-                      )}
+                        <button
+                          onClick={() => setSelectedClientModal(client)}
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-[#d4af37]/10 hover:bg-[#d4af37]/20 text-[#d4af37] border border-[#d4af37]/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all"
+                        >
+                          <span>👁️ Ficha Completa</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setClientName(client.name)
+                            setClientPhone(client.phone)
+                            if (client.preferredCurl) setCurl(client.preferredCurl)
+                            setCurrentTab('crear')
+                          }}
+                          className="py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
+                        >
+                          ➕ Cita
+                        </button>
+                      </div>
                     </div>
                   )
                 })}
@@ -1263,7 +1523,131 @@ function StudioMobileHubPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* PESTAÑA 5: OFERTA ESPECIAL Y DIFUSIÓN EN WHATSAPP */}
+        {/* PESTAÑA 5: SERVICIOS CON GESTIÓN COMPLETA (VER, CREAR, EDITAR, BORRAR, IMÁGENES) */}
+        {/* ========================================================================= */}
+        {currentTab === 'servicios' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-1">
+              <div>
+                <h2 className="text-sm font-bold text-white font-serif">
+                  Catálogo de Servicios
+                </h2>
+                <p className="text-[11px] text-zinc-400">
+                  {services.length} tratamientos en la base de datos
+                </p>
+              </div>
+
+              <button
+                onClick={() => openServiceModal()}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-[#aa8c2c] text-black font-bold text-xs shadow-md shadow-[#d4af37]/20 flex items-center gap-1 active:scale-95 transition-all"
+              >
+                <span>➕ Añadir Servicio</span>
+              </button>
+            </div>
+
+            {isLoadingServices && services.length === 0 ? (
+              <div className="text-center py-12 text-zinc-500 space-y-2">
+                <div className="w-8 h-8 border-2 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs">Cargando servicios de Supabase...</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {services.map((s) => {
+                  const sImg = formatServiceImageUrl(s.image)
+                  return (
+                    <div
+                      key={s.id}
+                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all space-y-3 shadow-md overflow-hidden"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-black/50">
+                          <img
+                            src={sImg}
+                            alt={s.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          {s.badge && (
+                            <span className="absolute bottom-1 left-1 right-1 text-center text-[7px] px-1 py-0.5 rounded bg-black/80 backdrop-blur-sm text-[#d4af37] font-bold uppercase truncate">
+                              {s.badge}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-start justify-between gap-1">
+                            <h4 className="text-xs font-bold text-white leading-tight">
+                              {s.name}
+                            </h4>
+                            <span className="text-sm font-bold text-[#d4af37] font-mono shrink-0">
+                              {s.priceFormatted}
+                            </span>
+                          </div>
+
+                          <div className="text-[10px] text-zinc-400 flex items-center gap-2">
+                            <span>⏱️ {s.duration}</span>
+                            <span className="text-zinc-600">•</span>
+                            <span className="text-zinc-400">{s.categoryName || 'General'}</span>
+                          </div>
+
+                          {s.description && (
+                            <p className="text-[11px] text-zinc-400 line-clamp-2 leading-tight">
+                              {s.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {s.includes && s.includes.length > 0 && (
+                        <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 flex-wrap">
+                          {s.includes.slice(0, 3).map((item, idx) => (
+                            <span key={idx} className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-zinc-300">
+                              ✓ {item}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Botones de Acción de Servicio */}
+                      <div className="pt-1 flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedService(s)
+                            setIsCustomService(false)
+                            setCurrentTab('crear')
+                          }}
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-[#d4af37] text-black font-bold text-xs hover:opacity-90 active:scale-95 transition-all shadow-md shadow-[#d4af37]/20"
+                        >
+                          📅 Agendar Cita
+                        </button>
+
+                        <button
+                          onClick={() => openServiceModal(s)}
+                          className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-medium active:scale-95 transition-all"
+                        >
+                          ✏️ Editar
+                        </button>
+
+                        {!s.isPromo && (
+                          <button
+                            onClick={() => handleDeleteService(s)}
+                            className="py-1.5 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs active:scale-95 transition-all"
+                            title="Eliminar servicio"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* PESTAÑA 6: OFERTA ESPECIAL Y DIFUSIÓN EN WHATSAPP */}
         {/* ========================================================================= */}
         {currentTab === 'promo' && (
           <div className="space-y-4">
@@ -1280,12 +1664,10 @@ function StudioMobileHubPage() {
                 </p>
               </div>
 
-              {/* Vista previa del mensaje */}
               <div className="p-4 rounded-2xl bg-black/60 border border-white/10 text-xs text-zinc-300 font-sans whitespace-pre-line leading-relaxed shadow-inner">
                 {PROMO_WHATSAPP_TEXT}
               </div>
 
-              {/* Acciones de Difusión */}
               <div className="space-y-2 pt-1">
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -1307,7 +1689,8 @@ function StudioMobileHubPage() {
 
                 <button
                   onClick={() => {
-                    setSelectedService(STUDIO_SERVICES[0])
+                    const promoServ = services.find(s => s.isPromo) || FALLBACK_STUDIO_SERVICES[0]
+                    setSelectedService(promoServ)
                     setIsCustomService(false)
                     setCurrentTab('crear')
                   }}
@@ -1319,66 +1702,295 @@ function StudioMobileHubPage() {
             </div>
           </div>
         )}
-
-        {/* ========================================================================= */}
-        {/* PESTAÑA 6: SERVICIOS Y PRECIOS OFICIALES */}
-        {/* ========================================================================= */}
-        {currentTab === 'servicios' && (
-          <div className="space-y-3">
-            <div className="text-center pb-1">
-              <h2 className="text-sm font-bold text-white font-serif">
-                Catálogo de Servicios y Precios
-              </h2>
-              <p className="text-[11px] text-zinc-400">
-                Pulsa en cualquier servicio para agendar una cita al instante
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {STUDIO_SERVICES.map((s) => (
-                <div
-                  key={s.id}
-                  className="p-4 rounded-2xl bg-[#121218] border border-white/5 hover:border-[#d4af37]/30 transition-all flex items-center justify-between gap-3"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-xs font-bold text-white">
-                        {s.name}
-                      </h4>
-                      {s.badge && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-[#d4af37]/20 text-[#f3e5ab] font-bold">
-                          {s.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-zinc-500">
-                      ⏱️ Duración: {s.duration}
-                    </p>
-                  </div>
-
-                  <div className="text-right flex flex-col items-end gap-1.5">
-                    <span className="text-sm font-bold text-[#d4af37] font-mono">
-                      {s.priceFormatted}
-                    </span>
-                    <button
-                      onClick={() => {
-                        setSelectedService(s)
-                        setIsCustomService(false)
-                        setCurrentTab('crear')
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-[#d4af37] text-black font-bold text-[10px] hover:opacity-90 active:scale-95 transition-all"
-                    >
-                      Agendar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* BARRA INFERIOR FLOTANTE (DOCK PARA MÓVIL) */}
+      {/* ========================================================================= */}
+      {/* MODAL FICHA COMPLETA DE CLIENTA */}
+      {/* ========================================================================= */}
+      {selectedClientModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-[#d4af37]/30 rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] text-[#d4af37] uppercase tracking-widest font-mono font-semibold">
+                  Ficha de la Clienta
+                </span>
+                <h3 className="text-xl font-bold text-white font-serif mt-0.5">
+                  {selectedClientModal.name}
+                </h3>
+                <p className="text-xs text-zinc-400 font-mono mt-0.5">
+                  📞 {selectedClientModal.phone}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedClientModal(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Estadísticas de la Clienta */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="p-3 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
+                <span className="text-[10px] text-zinc-400 uppercase">Citas Acumuladas</span>
+                <div className="text-lg font-bold text-white font-mono">
+                  {selectedClientModal.totalVisits}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-black/40 border border-[#d4af37]/20 space-y-0.5">
+                <span className="text-[10px] text-[#d4af37] uppercase">Gasto Total</span>
+                <div className="text-lg font-bold text-[#d4af37] font-mono">
+                  {selectedClientModal.totalSpent} €
+                </div>
+              </div>
+            </div>
+
+            {selectedClientModal.preferredCurl && (
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs flex justify-between">
+                <span className="text-zinc-400">Curvatura habitual:</span>
+                <span className="font-bold text-[#f3e5ab]">Curva {selectedClientModal.preferredCurl}</span>
+              </div>
+            )}
+
+            {selectedClientModal.notes && (
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1">
+                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Observaciones / Alergias</span>
+                <p className="text-zinc-300 italic">{selectedClientModal.notes}</p>
+              </div>
+            )}
+
+            {/* Historial de Citas */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                Historial de Sesiones ({selectedClientModal.appointmentsHistory.length})
+              </h4>
+              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar">
+                {selectedClientModal.appointmentsHistory.map((hApt) => (
+                  <div key={hApt.id} className="p-2 rounded-xl bg-black/30 border border-white/5 text-xs flex items-center justify-between">
+                    <div>
+                      <span className="text-zinc-200 font-medium block">{hApt.serviceName}</span>
+                      <span className="text-[10px] text-zinc-500">{hApt.date} · {hApt.time}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold text-[#d4af37] font-mono">{hApt.price} €</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-zinc-400">{hApt.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Acciones de la Ficha */}
+            <div className="space-y-2 pt-2 border-t border-white/10">
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href={`https://wa.me/${cleanPhoneForWhatsApp(selectedClientModal.phone)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-semibold flex items-center justify-center gap-1.5"
+                >
+                  <span>💬 WhatsApp</span>
+                </a>
+
+                <button
+                  onClick={() => {
+                    setClientName(selectedClientModal.name)
+                    setClientPhone(selectedClientModal.phone)
+                    if (selectedClientModal.preferredCurl) setCurl(selectedClientModal.preferredCurl)
+                    setSelectedClientModal(null)
+                    setCurrentTab('crear')
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-[#d4af37] text-black font-bold text-xs flex items-center justify-center gap-1.5"
+                >
+                  <span>➕ Agendar Cita</span>
+                </button>
+              </div>
+
+              {/* Botón de Borrado de la Base de Datos */}
+              <button
+                onClick={() => handleDeleteClient(selectedClientModal)}
+                disabled={isDeletingClient}
+                className="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+              >
+                <span>{isDeletingClient ? 'Eliminando...' : '🗑️ Eliminar Clienta de la Base de Datos'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL CREAR / EDITAR SERVICIO */}
+      {/* ========================================================================= */}
+      {serviceModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-[#d4af37]/30 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] text-[#d4af37] uppercase tracking-widest font-mono font-semibold">
+                  {editingServiceId ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}
+                </span>
+                <h3 className="text-lg font-bold text-white font-serif mt-0.5">
+                  {editingServiceId ? 'Modificar Datos del Servicio' : 'Añadir Servicio al Catálogo'}
+                </h3>
+              </div>
+
+              <button
+                onClick={() => setServiceModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveService} className="space-y-3">
+              <div>
+                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Nombre del Servicio *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. Efecto Sirena / Wet Look"
+                  value={serviceFormName}
+                  onChange={(e) => setServiceFormName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Precio (€) *</label>
+                  <input
+                    type="number"
+                    required
+                    value={serviceFormPrice}
+                    onChange={(e) => setServiceFormPrice(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#d4af37]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Duración estimada</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 1 h 15 min"
+                    value={serviceFormDuration}
+                    onChange={(e) => setServiceFormDuration(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Categoría</label>
+                  <select
+                    value={serviceFormCategory}
+                    onChange={(e) => setServiceFormCategory(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  >
+                    <option value="Extensiones de pestañas">Extensiones de pestañas</option>
+                    <option value="Tratamientos y extras">Tratamientos y extras</option>
+                    <option value="Cuidado Facial">Cuidado Facial</option>
+                    <option value="Lifting y Cejas">Lifting y Cejas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Badge / Etiqueta</label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Más popular, Novedad"
+                    value={serviceFormBadge}
+                    onChange={(e) => setServiceFormBadge(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#d4af37]"
+                  />
+                </div>
+              </div>
+
+              {/* Selector de Imagen del Servicio */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] text-zinc-400 uppercase block">Imagen del Servicio</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {GALLERY_PRESETS.map((preset) => {
+                    const isSelected = serviceFormImage === preset.path
+                    return (
+                      <div
+                        key={preset.path}
+                        onClick={() => setServiceFormImage(preset.path)}
+                        className={`p-1 rounded-xl cursor-pointer border relative overflow-hidden ${
+                          isSelected ? 'border-[#d4af37] ring-1 ring-[#d4af37]' : 'border-white/10 opacity-70 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={preset.path} alt={preset.label} className="w-full h-12 object-cover rounded-lg" />
+                        <span className="block text-[8px] text-center text-zinc-300 mt-1 truncate">
+                          {preset.label.split(' ')[0]}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <input
+                  type="text"
+                  placeholder="O introduce una URL de imagen personalizada"
+                  value={serviceFormImage}
+                  onChange={(e) => setServiceFormImage(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-zinc-300 placeholder-zinc-500 font-mono mt-1 focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Descripción</label>
+                <textarea
+                  rows={2}
+                  placeholder="Detalles sobre el acabado, grosor o estilo..."
+                  value={serviceFormDescription}
+                  onChange={(e) => setServiceFormDescription(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Qué incluye (1 punto por línea)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Diseño anatómico personalizado&#10;Fibras de seda ligeras&#10;Sellado profesional"
+                  value={serviceFormIncludes}
+                  onChange={(e) => setServiceFormIncludes(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#d4af37]"
+                />
+              </div>
+
+              {serviceActionError && (
+                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                  ⚠️ {serviceActionError}
+                </div>
+              )}
+
+              <div className="pt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setServiceModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingService}
+                  className="flex-1 py-2.5 rounded-xl bg-[#d4af37] text-black font-bold text-xs hover:opacity-90 active:scale-95 shadow-lg shadow-[#d4af37]/20 disabled:opacity-50"
+                >
+                  {isSavingService ? 'Guardando en la nube...' : 'Guardar Servicio'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BARRA INFERIOR FLOTANTE (DOCK) */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-t border-white/10 px-4 py-2">
         <div className="max-w-md mx-auto grid grid-cols-5 gap-1 text-center">
           <button
@@ -1422,13 +2034,13 @@ function StudioMobileHubPage() {
           </button>
 
           <button
-            onClick={() => setCurrentTab('promo')}
+            onClick={() => setCurrentTab('servicios')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'promo' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'servicios' ? 'text-[#d4af37] font-bold' : 'text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <span className="text-base">🔥</span>
-            <span className="text-[10px]">Oferta</span>
+            <span className="text-base">🌸</span>
+            <span className="text-[10px]">Servicios</span>
           </button>
         </div>
       </nav>
