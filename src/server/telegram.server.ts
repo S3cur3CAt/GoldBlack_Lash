@@ -142,13 +142,9 @@ export async function sendStudioTelegramAlert(
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
       `Hola ${options.appointment?.clientName || ''}, te escribo desde GoldBlack Lash sobre tu cita del ${options.appointment?.date || ''} a las ${options.appointment?.time || ''}.`
     )}`
-    
-    inlineKeyboard.push([
-      { text: '💬 Abrir WhatsApp de la Clienta', url: waUrl },
-    ])
 
     inlineKeyboard.push([
-      { text: '📞 Llamar a la Clienta', url: `tel:${cleanPhone}` },
+      { text: '💬 Abrir WhatsApp de la Clienta', url: waUrl },
     ])
   }
 

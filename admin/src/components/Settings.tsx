@@ -945,13 +945,10 @@ export const Settings: React.FC<SettingsProps> = ({
               <p className="text-[10.5px] text-gray-400 italic">
                 ⚡ Recibido al instante en 0 segundos. Pulsa el botón inferior para abrir WhatsApp con la clienta:
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                <div className="px-3 py-1.5 rounded-lg bg-[#242f3d] text-sky-400 text-center text-xs font-semibold border border-sky-500/20 shadow-sm flex items-center justify-center gap-1.5">
-                  <IconWhatsApp size={14} className="text-emerald-400" />
-                  <span>💬 Abrir WhatsApp</span>
-                </div>
-                <div className="px-3 py-1.5 rounded-lg bg-[#242f3d] text-gray-300 text-center text-xs font-semibold border border-line shadow-sm flex items-center justify-center gap-1.5">
-                  <span>📞 Llamar</span>
+              <div className="pt-1">
+                <div className="w-full px-4 py-2 rounded-lg bg-[#242f3d] text-sky-300 text-center text-xs font-semibold border border-sky-500/30 shadow-sm flex items-center justify-center gap-2">
+                  <IconWhatsApp size={16} className="text-emerald-400" />
+                  <span>💬 Abrir WhatsApp de la Clienta</span>
                 </div>
               </div>
             </div>
