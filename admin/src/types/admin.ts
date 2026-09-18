@@ -85,6 +85,18 @@ export interface StudioConfig {
   telegramAlertsEnabled?: boolean
   telegramBotToken?: string
   telegramChatId?: string
+  miniAppPin?: string
+  telegramAllowedCredentials?: AuthorizedTelegramUser[]
+}
+
+export interface AuthorizedTelegramUser {
+  id: string
+  name: string
+  telegramId: string
+  botToken?: string
+  pin: string
+  createdAt?: string
+  active?: boolean
 }
 
 export interface GalleryItem {

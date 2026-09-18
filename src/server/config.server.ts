@@ -1,5 +1,15 @@
 import { business as fallbackBusiness } from '../data/site'
 
+export interface AuthorizedTelegramUser {
+  id: string
+  name: string
+  telegramId: string
+  botToken?: string
+  pin: string
+  createdAt?: string
+  active?: boolean
+}
+
 export interface StudioConfigData {
   name: string
   tagline: string
@@ -24,6 +34,8 @@ export interface StudioConfigData {
   telegramAlertsEnabled?: boolean
   telegramBotToken?: string
   telegramChatId?: string
+  miniAppPin?: string
+  telegramAllowedCredentials?: AuthorizedTelegramUser[]
 }
 
 let sqlPromise: Promise<any> | null = null
@@ -75,6 +87,8 @@ export async function fetchConfigFromDb(): Promise<StudioConfigData> {
         maintenanceMode: typeof data.maintenanceMode === 'boolean' ? data.maintenanceMode : false,
         seasonalEffect: data.seasonalEffect || 'none',
         phoneClean: data.phoneClean || (data.phoneDisplay ? data.phoneDisplay.replace(/\D/g, '') : fallbackBusiness.phoneClean),
+        miniAppPin: data.miniAppPin ? String(data.miniAppPin).trim() : undefined,
+        telegramAllowedCredentials: Array.isArray(data.telegramAllowedCredentials) ? data.telegramAllowedCredentials : [],
       }
       cacheExpiresAt = now + CACHE_TTL_MS
       return cachedConfig!
@@ -98,6 +112,8 @@ export async function saveConfigToDb(config: Partial<StudioConfigData>): Promise
     maintenanceMode: typeof config.maintenanceMode === 'boolean' ? config.maintenanceMode : current.maintenanceMode || false,
     seasonalEffect: config.seasonalEffect || current.seasonalEffect || 'none',
     phoneClean: cleanPhone,
+    miniAppPin: config.miniAppPin !== undefined ? String(config.miniAppPin).trim() : current.miniAppPin,
+    telegramAllowedCredentials: config.telegramAllowedCredentials !== undefined ? config.telegramAllowedCredentials : current.telegramAllowedCredentials || [],
   }
 
   await client`

@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: StudioConfig = {
   telegramAlertsEnabled: true,
   telegramBotToken: '',
   telegramChatId: '',
+  telegramAllowedCredentials: [],
 }
 
 // Initial Services matching site.ts
@@ -1441,7 +1442,12 @@ export function saveStudioConfig(config: StudioConfig): void {
 export async function fetchLiveConfigFromVercel(): Promise<StudioConfig | null> {
   const baseUrl = getApiBaseUrl()
   try {
-    const res = await fetch(`${baseUrl}/api/config?_t=${Date.now()}`)
+    const res = await fetch(`${baseUrl}/api/config?_t=${Date.now()}`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        'x-admin-request': 'true',
+      },
+    })
     if (res.ok) {
       const parsed = await res.json()
       if (parsed && typeof parsed === 'object' && parsed.name) {
@@ -1463,7 +1469,11 @@ export async function syncStudioConfigWithVercel(config: StudioConfig): Promise<
   try {
     const res = await fetch(`${baseUrl}/api/config`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        'x-admin-request': 'true',
+      },
       body: JSON.stringify(config),
     })
     if (res.ok) {

@@ -281,6 +281,15 @@ function StudioMobileHubPage() {
   // Navegación de pestañas
   const [currentTab, setCurrentTab] = useState<TabType>('citas')
 
+  // Candado de Seguridad y Autenticación del Bot / Mini App
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+  const [isAuthChecking, setIsAuthChecking] = useState<boolean>(true)
+  const [pinInput, setPinInput] = useState<string>('')
+  const [pinError, setPinError] = useState<string | null>(null)
+  const [isVerifyingPin, setIsVerifyingPin] = useState<boolean>(false)
+  const [shakePin, setShakePin] = useState<boolean>(false)
+  const [detectedTelegramUser, setDetectedTelegramUser] = useState<{ id: string; name: string } | null>(null)
+
   // Estado de Datos en Vivo
   const [appointments, setAppointments] = useState<AppointmentItem[]>([])
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(false)
@@ -394,7 +403,7 @@ function StudioMobileHubPage() {
     }
   }
 
-  // Inicializar Telegram WebApp SDK y datos
+  // Inicializar Telegram WebApp SDK y comprobar credenciales de acceso
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const tg = (window as any).Telegram.WebApp
@@ -402,10 +411,135 @@ function StudioMobileHubPage() {
       tg.expand()
       if (tg.setHeaderColor) tg.setHeaderColor('#08080a')
       if (tg.setBackgroundColor) tg.setBackgroundColor('#08080a')
+      const tgUser = tg.initDataUnsafe?.user
+      if (tgUser?.id) {
+        setDetectedTelegramUser({
+          id: String(tgUser.id),
+          name: tgUser.first_name || tgUser.username || '',
+        })
+      }
     }
-    loadAppointments()
-    loadServices()
+
+    try {
+      const savedAuth =
+        typeof window !== 'undefined' &&
+        (localStorage.getItem('gb_mini_app_auth') === 'true' || sessionStorage.getItem('gb_mini_app_auth') === 'true')
+      if (savedAuth) {
+        setIsAuthenticated(true)
+        loadAppointments()
+        loadServices()
+      }
+    } catch {}
+    setIsAuthChecking(false)
   }, [])
+
+  // Verificación de PIN de Acceso con persistencia en dispositivo
+  const handleVerifyPin = async (candidatePin = pinInput) => {
+    const clean = candidatePin.trim()
+    if (!clean) {
+      setPinError('Por favor introduce el PIN de acceso')
+      return
+    }
+
+    setIsVerifyingPin(true)
+    setPinError(null)
+
+    const payload: any = { pin: clean }
+    if (detectedTelegramUser?.id) {
+      payload.telegramId = detectedTelegramUser.id
+    }
+
+    try {
+      let res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => null)
+
+      let data: any = null
+      if (res && res.ok) {
+        data = await res.json().catch(() => null)
+      } else {
+        const fallbackRes = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verify_pin', ...payload }),
+        }).catch(() => null)
+        if (fallbackRes && fallbackRes.ok) {
+          res = fallbackRes
+          data = await fallbackRes.json().catch(() => null)
+        }
+      }
+
+      if (res && res.ok) {
+        if (typeof window !== 'undefined') {
+          // Se recuerda siempre en este dispositivo para que no vuelva a pedirlo
+          localStorage.setItem('gb_mini_app_auth', 'true')
+          sessionStorage.setItem('gb_mini_app_auth', 'true')
+          if (data?.user) {
+            localStorage.setItem('gb_mini_app_user', JSON.stringify(data.user))
+          }
+        }
+        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+          ;(window as any).Telegram.WebApp.HapticFeedback.notificationOccurred('success')
+        }
+        setIsAuthenticated(true)
+        setPinInput('')
+        loadAppointments()
+        loadServices()
+      } else {
+        const errData = await res?.json().catch(() => null)
+        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+          ;(window as any).Telegram.WebApp.HapticFeedback.notificationOccurred('error')
+        }
+        setShakePin(true)
+        setTimeout(() => setShakePin(false), 600)
+        setPinError(errData?.error || 'PIN o ID incorrectos. Acceso exclusivo para el estudio.')
+        setPinInput('')
+      }
+    } catch {
+      setPinError('Error de conexión al verificar credenciales')
+    } finally {
+      setIsVerifyingPin(false)
+    }
+  }
+
+  // Cerrar sesión y bloquear panel
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('gb_mini_app_auth')
+      localStorage.removeItem('gb_mini_app_auth')
+    }
+    setIsAuthenticated(false)
+    setPinInput('')
+    setPinError(null)
+  }
+
+  // Soporte para teclado físico (PC/Mac) en pantalla de PIN
+  useEffect(() => {
+    if (isAuthenticated) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (/^[0-9]$/.test(e.key)) {
+        setPinInput((prev) => {
+          if (prev.length < 4) {
+            const next = prev + e.key
+            if (next.length === 4) {
+              handleVerifyPin(next)
+            }
+            return next
+          }
+          return prev
+        })
+      } else if (e.key === 'Backspace') {
+        setPinInput((prev) => prev.slice(0, -1))
+        setPinError(null)
+      } else if (e.key === 'Enter') {
+        if (pinInput.length > 0) handleVerifyPin(pinInput)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isAuthenticated, pinInput])
 
   // Actualizar estado de una cita en Supabase
   const handleUpdateStatus = async (
@@ -849,6 +983,183 @@ function StudioMobileHubPage() {
     }
   }
 
+  // PANTALLA DE BLOQUEO Y ACCESO POR PIN (Para el Bot / Mini App)
+  if (!isAuthenticated && !isAuthChecking) {
+    return (
+      <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-accent/30 selection:text-[#f3e5ab]">
+        {/* Luces y resplandor de fondo */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/5 rounded-full blur-2xl" />
+        </div>
+
+        <div className="w-full max-w-xs relative z-10 space-y-6">
+          {/* Cabecera & Logotipo oficial */}
+          <div className="text-center space-y-3">
+            <div className="inline-block relative">
+              <div className="h-16 w-16 mx-auto rounded-2xl p-px bg-linear-to-b from-accent/80 via-accent/30 to-white/10 border border-accent/40 shadow-[0_8px_32px_-4px_rgba(212,175,55,0.5)]">
+                <div className="h-full w-full rounded-[15px] overflow-hidden bg-[#050508] flex items-center justify-center">
+                  <img
+                    src="/api/images/logo"
+                    alt="GoldBlack Lash Studio"
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-[10px] text-accent uppercase font-mono tracking-wider mb-1">
+                <span>🔒 Acceso Protegido</span>
+              </div>
+              <h1 className="text-xl font-bold font-serif tracking-wide text-white">
+                GoldBlack <span className="italic text-accent">Lash</span>
+              </h1>
+              <p className="text-xs text-zinc-400 mt-1">
+                Introduce el PIN del estudio para desbloquear el panel
+              </p>
+            </div>
+          </div>
+
+          {/* Tarjeta de Seguridad y Teclado Numérico */}
+          <div className="bg-[#0f0f14]/90 border border-accent/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5">
+            {/* 4 Cajas visuales de PIN */}
+            <div className={`flex items-center justify-center gap-3 transition-transform ${shakePin ? 'animate-bounce' : ''}`}>
+              {[0, 1, 2, 3].map((idx) => {
+                const hasDigit = pinInput.length > idx
+                return (
+                  <div
+                    key={idx}
+                    className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
+                      hasDigit
+                        ? 'border-accent bg-accent/20 shadow-[0_0_16px_rgba(212,175,55,0.4)] text-accent scale-105'
+                        : 'border-white/10 bg-black/40 text-zinc-600'
+                    }`}
+                  >
+                    {hasDigit ? (
+                      <span className="w-3.5 h-3.5 rounded-full bg-accent block shadow-sm shadow-accent" />
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-white/15 block" />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Mensaje de Error */}
+            {pinError && (
+              <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-rose-300 text-[11px] text-center font-medium">
+                {pinError}
+              </div>
+            )}
+
+            {/* Teclado Táctil en Pantalla */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
+                <button
+                  key={digit}
+                  type="button"
+                  onClick={() => {
+                    if (pinInput.length < 4) {
+                      const next = pinInput + digit
+                      setPinInput(next)
+                      setPinError(null)
+                      if (next.length === 4) {
+                        handleVerifyPin(next)
+                      }
+                    }
+                  }}
+                  className="h-12 rounded-2xl bg-white/5 hover:bg-accent/20 active:bg-accent/30 border border-white/10 hover:border-accent/40 text-lg font-mono font-bold text-white transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                >
+                  {digit}
+                </button>
+              ))}
+
+              {/* Limpiar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPinInput('')
+                  setPinError(null)
+                }}
+                className="h-12 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 text-xs font-mono text-zinc-400 transition-all active:scale-95 flex items-center justify-center"
+              >
+                C
+              </button>
+
+              {/* 0 */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (pinInput.length < 4) {
+                    const next = pinInput + '0'
+                    setPinInput(next)
+                    setPinError(null)
+                    if (next.length === 4) {
+                      handleVerifyPin(next)
+                    }
+                  }
+                }}
+                className="h-12 rounded-2xl bg-white/5 hover:bg-accent/20 active:bg-accent/30 border border-white/10 hover:border-accent/40 text-lg font-mono font-bold text-white transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+              >
+                0
+              </button>
+
+              {/* Borrar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPinInput((prev) => prev.slice(0, -1))
+                  setPinError(null)
+                }}
+                className="h-12 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 text-base text-zinc-300 transition-all active:scale-95 flex items-center justify-center"
+              >
+                ⌫
+              </button>
+            </div>
+
+            {/* Usuario Telegram detectado */}
+            {detectedTelegramUser && (
+              <div className="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-[11px] text-sky-300 flex items-center justify-between">
+                <span className="font-mono">👤 {detectedTelegramUser.name || 'Telegram'} (ID: {detectedTelegramUser.id})</span>
+                <span className="text-[10px] text-emerald-400 font-bold">✓ Detectado</span>
+              </div>
+            )}
+
+            {/* Opciones y Botón */}
+            <div className="space-y-3 pt-2">
+              <button
+                type="button"
+                disabled={pinInput.length === 0 || isVerifyingPin}
+                onClick={() => handleVerifyPin(pinInput)}
+                className="w-full py-3 rounded-2xl bg-linear-to-r from-accent via-amber-400 to-accent hover:opacity-95 active:scale-98 disabled:opacity-40 text-black font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+              >
+                {isVerifyingPin ? (
+                  <>
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                    <span>Verificando...</span>
+                  </>
+                ) : (
+                  <span>Desbloquear Panel</span>
+                )}
+              </button>
+
+              <p className="text-[10px] text-center text-emerald-400/90 font-medium">
+                ✓ Este dispositivo recordará tu acceso para no volver a pedirlo
+              </p>
+            </div>
+          </div>
+
+          <p className="text-[10px] text-center text-zinc-500">
+            GoldBlack Lash Studio • Sistema de Seguridad Privado
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col font-sans pb-24 selection:bg-accent/30 selection:text-[#f3e5ab]">
       {/* HEADER SUPERIOR */}
@@ -891,6 +1202,14 @@ function StudioMobileHubPage() {
             >
               <span className={`w-2 h-2 rounded-full ${isLoadingAppointments || isLoadingServices ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
               <span>{isLoadingAppointments || isLoadingServices ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              title="Cerrar sesión y bloquear panel"
+              className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-rose-500/40 hover:text-rose-300 text-[11px] text-zinc-400 flex items-center gap-1 transition-all active:scale-95"
+            >
+              <span>🔒 Bloquear</span>
             </button>
           </div>
         </div>

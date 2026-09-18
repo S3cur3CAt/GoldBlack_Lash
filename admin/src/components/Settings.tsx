@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useDialog } from '../context/DialogContext'
-import { StudioConfig } from '../types/admin'
+import { StudioConfig, AuthorizedTelegramUser } from '../types/admin'
 import {
   IconSettings,
   IconDownload,
@@ -17,6 +17,11 @@ import {
   IconBellOff,
   IconWhatsApp,
   IconTelegram,
+  IconLock,
+  IconEye,
+  IconEyeOff,
+  IconTrash2,
+  IconPlus,
 } from './Icons'
 import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestTelegramAlert } from '../services/storage'
 import {
@@ -106,6 +111,75 @@ export const Settings: React.FC<SettingsProps> = ({
   const [formData, setFormData] = useState<StudioConfig>(config)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [importStatus, setImportStatus] = useState<string | null>(null)
+
+  // Authorized Telegram Users state
+  const [newUserName, setNewUserName] = useState('')
+  const [newUserTelegramId, setNewUserTelegramId] = useState('')
+  const [newUserBotToken, setNewUserBotToken] = useState('')
+  const [newUserPin, setNewUserPin] = useState('')
+  const [showNewUserPin, setShowNewUserPin] = useState(false)
+  const [visiblePinIds, setVisiblePinIds] = useState<Record<string, boolean>>({})
+  const [credFormError, setCredFormError] = useState<string | null>(null)
+
+  const handleAddCredential = () => {
+    setCredFormError(null)
+    const name = newUserName.trim()
+    const telegramId = newUserTelegramId.trim()
+    const pin = newUserPin.trim()
+    const botToken = newUserBotToken.trim() || formData.telegramBotToken || ''
+
+    if (!telegramId) {
+      setCredFormError('Por favor introduce el ID de Telegram (Chat ID / User ID de @userinfobot)')
+      return
+    }
+    if (!pin) {
+      setCredFormError('Por favor introduce un código PIN de acceso')
+      return
+    }
+
+    const newEntry: AuthorizedTelegramUser = {
+      id: `auth-${Date.now()}`,
+      name: name || `Usuario ${telegramId}`,
+      telegramId,
+      botToken: botToken || undefined,
+      pin,
+      createdAt: new Date().toISOString(),
+      active: true,
+    }
+
+    const currentList = Array.isArray(formData.telegramAllowedCredentials)
+      ? formData.telegramAllowedCredentials
+      : []
+
+    setFormData({
+      ...formData,
+      telegramAllowedCredentials: [
+        ...currentList.filter((u) => u.telegramId !== telegramId),
+        newEntry,
+      ],
+      telegramChatId: formData.telegramChatId || telegramId,
+      telegramBotToken: formData.telegramBotToken || botToken || undefined,
+    })
+
+    setNewUserName('')
+    setNewUserTelegramId('')
+    setNewUserBotToken('')
+    setNewUserPin('')
+  }
+
+  const handleRemoveCredential = (id: string) => {
+    const currentList = Array.isArray(formData.telegramAllowedCredentials)
+      ? formData.telegramAllowedCredentials
+      : []
+    setFormData({
+      ...formData,
+      telegramAllowedCredentials: currentList.filter((u) => u.id !== id),
+    })
+  }
+
+  const togglePinVisibility = (id: string) => {
+    setVisiblePinIds((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
 
   // Live Email test state
   const [testRecipient, setTestRecipient] = useState('')
@@ -987,6 +1061,202 @@ export const Settings: React.FC<SettingsProps> = ({
                 <span>{telegramTestResult.message}</span>
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Seguridad y Credenciales del Bot y Mini App (Exclusivo Mac) */}
+        <div className="p-6 rounded-2xl bg-ink-850 border border-line space-y-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm shadow-amber-950/40 shrink-0">
+                <IconLock size={22} />
+              </div>
+              <div>
+                <h4 className="font-sans text-base font-semibold tracking-tight text-white flex items-center gap-2 flex-wrap">
+                  <span>Usuarios y Credenciales Autorizadas (ID + Token + PIN)</span>
+                  <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                    🔒 Gestión Exclusiva Mac
+                  </span>
+                </h4>
+                <p className="text-xs text-gray-400">
+                  Control estricto de acceso al bot de Telegram y a la Mini App móvil. Cada usuario autorizado debe estar registrado aquí con su ID, Token y PIN.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-ink-800/80 border border-amber-500/25 text-xs space-y-2.5 text-gray-300">
+            <div className="flex items-center gap-2 text-amber-400 font-semibold text-xs">
+              <span>🛡️ Candado de Privacidad Estricto</span>
+            </div>
+            <p className="text-[11.5px] text-gray-300 leading-relaxed">
+              Cualquier persona que busque a tu bot en Telegram o abra la Mini App se topará con la pantalla de bloqueo. <strong>Solo quienes tengan su ID de Telegram registrado aquí con su respectivo PIN podrán acceder a las citas, clientas y facturación.</strong>
+            </p>
+            <p className="text-[11px] text-amber-300/90 font-medium">
+              ✨ La Mini App móvil no permite modificar ni consultar credenciales: la gestión es 100% exclusiva desde esta aplicación en Mac.
+            </p>
+          </div>
+
+          {/* LISTA DE USUARIOS AUTORIZADOS REGISTRADOS */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                Credenciales Registradas Activas ({Array.isArray(formData.telegramAllowedCredentials) ? formData.telegramAllowedCredentials.length : 0})
+              </span>
+              <span className="text-[11px] text-gray-500">
+                Recuerda pulsar "Guardar Cambios" al finalizar
+              </span>
+            </div>
+
+            {(!formData.telegramAllowedCredentials || formData.telegramAllowedCredentials.length === 0) ? (
+              <div className="p-4 rounded-xl bg-ink-800/50 border border-line border-dashed text-center text-xs text-gray-500">
+                <span>No hay usuarios registrados aún. Utiliza el formulario inferior para dar de alta el primer usuario con su ID de Telegram y PIN.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {formData.telegramAllowedCredentials.map((user) => {
+                  const isPinVisible = !!visiblePinIds[user.id]
+                  return (
+                    <div
+                      key={user.id}
+                      className="p-3.5 rounded-xl bg-ink-800 border border-line-strong flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
+                    >
+                      <div className="space-y-1 min-w-[140px]">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white">{user.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-mono">
+                            Autorizado
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 font-mono">
+                          ID Telegram: <strong className="text-sky-300">{user.telegramId}</strong>
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-4 flex-wrap">
+                        {user.botToken && (
+                          <div className="text-[11px] text-gray-400 font-mono hidden md:block">
+                            Token: <span className="text-gray-500">{user.botToken.slice(0, 10)}...</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-1.5 bg-ink-900/80 px-2.5 py-1 rounded-lg border border-line text-xs font-mono">
+                          <span className="text-gray-500 text-[10px]">PIN:</span>
+                          <span className="text-amber-300 font-bold tracking-widest">
+                            {isPinVisible ? user.pin : '••••'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => togglePinVisibility(user.id)}
+                            className="text-gray-400 hover:text-white p-0.5 ml-1 transition-colors"
+                            title={isPinVisible ? 'Ocultar PIN' : 'Ver PIN'}
+                          >
+                            {isPinVisible ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCredential(user.id)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all cursor-pointer"
+                          title="Eliminar usuario autorizado"
+                        >
+                          <IconTrash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* FORMULARIO PARA AÑADIR NUEVA CREDENCIAL */}
+          <div className="p-4 rounded-xl bg-ink-800/60 border border-line-strong space-y-4">
+            <span className="text-xs font-semibold text-amber-300 flex items-center gap-1.5">
+              <IconPlus size={14} />
+              <span>Registrar Nuevo Usuario Autorizado (ID + Token + PIN)</span>
+            </span>
+
+            {credFormError && (
+              <div className="p-2.5 rounded-lg bg-rose-950/50 border border-rose-500/30 text-rose-300 text-xs">
+                {credFormError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                  Nombre de la Persona / Rol *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Antonio (Propietario)"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-line-strong text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                  ID de Telegram (User ID / Chat ID) *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. 123456789 (obtenido de @userinfobot)"
+                  value={newUserTelegramId}
+                  onChange={(e) => setNewUserTelegramId(e.target.value.trim())}
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-line-strong text-xs text-sky-300 font-mono placeholder-gray-500 focus:outline-none focus:border-sky-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                  Token del Bot de Telegram (Opcional)
+                </label>
+                <input
+                  type="password"
+                  placeholder={formData.telegramBotToken ? 'Usa el token general del bot' : 'Token de @BotFather'}
+                  value={newUserBotToken}
+                  onChange={(e) => setNewUserBotToken(e.target.value.trim())}
+                  className="w-full px-3 py-2 rounded-xl bg-ink-900 border border-line-strong text-xs text-white font-mono placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-300 mb-1">
+                  PIN Personal de Acceso (4 a 8 caracteres) *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewUserPin ? 'text' : 'password'}
+                    maxLength={8}
+                    placeholder="Elige un PIN secreto"
+                    value={newUserPin}
+                    onChange={(e) => setNewUserPin(e.target.value.trim())}
+                    className="w-full pl-3 pr-10 py-2 rounded-xl bg-ink-900 border border-line-strong text-xs text-amber-300 font-mono tracking-widest placeholder-gray-500 focus:outline-none focus:border-amber-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewUserPin(!showNewUserPin)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
+                    title={showNewUserPin ? 'Ocultar' : 'Mostrar'}
+                  >
+                    {showNewUserPin ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddCredential}
+              className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+            >
+              <IconPlus size={14} />
+              <span>Añadir a la Lista de Usuarios Autorizados</span>
+            </button>
           </div>
         </div>
 
