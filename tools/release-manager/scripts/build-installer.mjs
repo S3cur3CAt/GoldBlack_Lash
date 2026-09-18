@@ -18,8 +18,11 @@ if (!existsSync(distInstallers)) {
   mkdirSync(distInstallers, { recursive: true })
 }
 
+const pkg = JSON.parse(readFileSync(join(toolRoot, 'package.json'), 'utf8'))
+const toolVersion = pkg.version || '0.7.34'
+
 // 1. Packager
-console.log('\n[1/3] Empaquetando runtime de escritorio Windows 11 (x64, Electron 11.5.0)...')
+console.log(`\n[1/3] Empaquetando runtime de escritorio Windows 11 (x64, Electron 11.5.0, v${toolVersion})...`)
 const require = createRequire(import.meta.url)
 const packager = require(join(adminRoot, 'node_modules', 'electron-packager'))
 
@@ -41,7 +44,7 @@ const appPaths = await packager({
     /^\/dist-packages/,
     /\.git/,
   ],
-  appVersion: '1.0.0',
+  appVersion: toolVersion,
   appCopyright: 'Copyright © 2026 GoldBlack Lash Studio',
   win32metadata: {
     CompanyName: 'GoldBlack Lash Studio',
@@ -49,6 +52,8 @@ const appPaths = await packager({
     OriginalFilename: 'GoldBlack-Release-Publisher.exe',
     ProductName: 'GoldBlack Release Publisher',
     InternalName: 'GoldBlackReleasePublisher',
+    ProductVersion: toolVersion,
+    FileVersion: toolVersion,
   },
 })
 
@@ -78,9 +83,6 @@ if (!makensisPath) {
     }
   } catch (e) {}
 }
-
-const pkg = JSON.parse(readFileSync(join(toolRoot, 'package.json'), 'utf8'))
-const toolVersion = pkg.version || '1.0.0'
 
 const installerExeName = `GoldBlack-Release-Publisher-Setup-${toolVersion}.exe`
 const finalInstallerPath = join(distInstallers, installerExeName)
