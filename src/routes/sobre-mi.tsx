@@ -62,7 +62,7 @@ function SobreMi() {
       <section className="section">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <Reveal className="relative mx-auto w-full max-w-md pb-10">
-            <div className="overflow-hidden rounded-[2rem] border border-[#d4af37]/30 shadow-panel">
+            <div className="overflow-hidden rounded-4xl border border-accent/30 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -71,7 +71,7 @@ function SobreMi() {
               />
             </div>
 
-            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0b0b12]/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
+            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-accent/30 bg-[#0b0b12]/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
               <p className="font-display text-2xl italic text-rose">
                 Belleza con calma,
                 <br />

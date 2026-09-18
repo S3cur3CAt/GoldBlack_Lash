@@ -82,7 +82,7 @@ export function Header() {
         >
           <div className="relative shrink-0">
             <div className="absolute -inset-1 rounded-2xl bg-[radial-gradient(closest-side,rgba(212,175,55,0.35),transparent)] opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
-            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-[#d4af37]/50">
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-px bg-linear-to-b from-accent/35 via-accent/15 to-white/5 border border-white/10 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.8)] transition-all duration-300 group-hover:border-accent/50">
               <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
                 <img
                   src="/api/images/logo"
@@ -96,7 +96,7 @@ export function Header() {
           </div>
 
           <div className="flex flex-col text-left">
-            <span className="font-display text-base sm:text-lg font-bold tracking-tight text-[#f5f5f7] group-hover:text-[#e5c158] transition-colors leading-none">
+            <span className="font-display text-base sm:text-lg font-bold tracking-tight text-ink group-hover:text-rose transition-colors leading-none">
               GoldBlack <span className="font-serif italic text-gold-gradient">Lash</span>
             </span>
           </div>
@@ -112,9 +112,9 @@ export function Header() {
               key={tab.to}
               to={tab.to}
               activeOptions={{ exact: tab.to === '/' }}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#9e9ea7] hover:text-[#f5f5f7] hover:bg-white/10 transition-all duration-200"
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-muted hover:text-ink hover:bg-white/10 transition-all duration-200"
               activeProps={{
-                className: 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70 outline-none',
+                className: 'bg-linear-to-r from-[#fcedc7] via-accent to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70 outline-none',
               }}
             >
               {tab.label}
@@ -127,7 +127,7 @@ export function Header() {
           <button
             type="button"
             onClick={() => openReservationModal()}
-            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_4px_14px_-2px_rgba(212,175,55,0.5),inset_0_1px_0_rgba(255,255,255,0.5)] hover:shadow-[0_6px_20px_-2px_rgba(212,175,55,0.7),0_0_18px_rgba(229,193,88,0.35)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
+            className="group relative hidden lg:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-linear-to-r from-[#fcedc7] via-accent to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-[0_4px_14px_-2px_rgba(212,175,55,0.5),inset_0_1px_0_rgba(255,255,255,0.5)] hover:shadow-[0_6px_20px_-2px_rgba(212,175,55,0.7),0_0_18px_rgba(229,193,88,0.35)] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer overflow-hidden border border-white/40"
           >
             <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             <span className="relative">Reserva tu momento</span>
@@ -142,10 +142,10 @@ export function Header() {
             aria-expanded={open}
             aria-label={open ? 'Cerrar menú' : 'Abrir menú'}
             onClick={() => setOpen((value) => !value)}
-            className="flex items-center gap-2 rounded-xl border border-[#d4af37]/30 bg-[#101018]/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-[#f5f5f7] shadow-sm lg:hidden hover:bg-[#1a1a28] transition-all cursor-pointer"
+            className="flex items-center gap-2 rounded-xl border border-accent/30 bg-[#101018]/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-ink shadow-sm lg:hidden hover:bg-[#1a1a28] transition-all cursor-pointer"
           >
             <span>{open ? 'Cerrar' : 'Menú'}</span>
-            <span aria-hidden="true" className="text-base text-[#e5c158] font-bold">
+            <span aria-hidden="true" className="text-base text-rose font-bold">
               {open ? '✕' : '☰'}
             </span>
           </button>
@@ -180,7 +180,7 @@ export function Header() {
         <nav
           id="mobile-menu"
           aria-label="Navegación móvil"
-          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-[#d4af37]/30 bg-[#0a0a10]/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          className="pointer-events-auto max-w-6xl mx-auto mt-2 overflow-hidden rounded-3xl border border-accent/30 bg-[#0a0a10]/95 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.95),0_0_30px_rgba(212,175,55,0.15)] p-4 lg:hidden animate-in fade-in slide-in-from-top-2 duration-200"
         >
           <div className="space-y-1">
             {tabs.map((tab) => (
@@ -189,11 +189,11 @@ export function Header() {
                 to={tab.to}
                 onClick={() => setOpen(false)}
                 activeOptions={{ exact: tab.to === '/' }}
-                className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-lg text-[#f5f5f7] hover:bg-white/10 transition-colors"
+                className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-lg text-ink hover:bg-white/10 transition-colors"
                 activeProps={{ className: 'bg-[#d4af37]/20 !text-[#e5c158] font-bold border border-[#d4af37]/40' }}
               >
                 {tab.label}
-                <span aria-hidden="true" className="font-body text-xs text-[#9e9ea7]">
+                <span aria-hidden="true" className="font-body text-xs text-muted">
                   ↗
                 </span>
               </Link>
@@ -205,7 +205,7 @@ export function Header() {
                 setOpen(false)
                 openReservationModal()
               }}
-              className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-md cursor-pointer"
+              className="mt-3 flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-linear-to-r from-[#fcedc7] via-accent to-[#aa820a] text-[#08080a] text-xs font-extrabold tracking-wide shadow-md cursor-pointer"
             >
               <span>Reserva tu momento</span>
               <span aria-hidden="true" className="text-[#08080a] font-black">↗</span>
@@ -227,18 +227,18 @@ export function Footer() {
     return null
   }
   return (
-    <footer className="relative z-10 overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-[#d4af37]/20 md:rounded-t-[5rem]">
+    <footer className="relative z-10 overflow-hidden rounded-t-[3rem] bg-[#040406] text-white border-t border-accent/20 md:rounded-t-[5rem]">
       {/* Halo aurora superior */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-32 left-1/2 h-64 w-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(212,175,55,0.16),transparent)] blur-2xl"
+        className="pointer-events-none absolute -top-32 left-1/2 h-64 w-184 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(212,175,55,0.16),transparent)] blur-2xl"
       />
 
       <div className="wrap relative pt-14 pb-7 md:pt-20">
         <div className="grid gap-10 pb-12 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.7fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl p-[1px] bg-gradient-to-b from-[#d4af37]/35 via-[#d4af37]/15 to-white/5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+              <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-xl p-px bg-linear-to-b from-accent/35 via-accent/15 to-white/5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
                 <div className="h-full w-full rounded-[11px] overflow-hidden bg-[#050508] flex items-center justify-center">
                   <img
                     src="/api/images/logo"

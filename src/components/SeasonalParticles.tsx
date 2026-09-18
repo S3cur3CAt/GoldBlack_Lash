@@ -299,6 +299,7 @@ export function SeasonalParticles({
       }
 
       // Default ambient gold stardust for new_year
+      const gc = goldColors[Math.floor(Math.random() * goldColors.length)]
       return {
         x: Math.random() * width,
         y: Math.random() * height,
@@ -315,7 +316,8 @@ export function SeasonalParticles({
         swingAmp: 0.8,
         swingSpeed: 0.02,
         phase: Math.random() * Math.PI * 2,
-        color: '#ffd700',
+        color: gc.fill,
+        colorAlt: gc.alt,
         shapeType: 0,
       }
     }

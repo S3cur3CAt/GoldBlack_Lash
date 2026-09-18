@@ -6,7 +6,7 @@ export function PageHero({
   eyebrow,
   title,
   lead,
-  crumbs,
+  crumbs: _crumbs,
   children,
 }: {
   eyebrow: string
