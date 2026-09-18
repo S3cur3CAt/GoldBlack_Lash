@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { business } from '#/data/site'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 
@@ -351,6 +351,11 @@ function StudioMobileHubPage() {
   const [contactPickerSearch, setContactPickerSearch] = useState('')
   const [nativeContactNotice, setNativeContactNotice] = useState<string | null>(null)
   const [contactSelectedToast, setContactSelectedToast] = useState<string | null>(null)
+  const vcfInputRef = useRef<HTMLInputElement>(null)
+  const isIOS = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  }, [])
 
   // UI state para crear cita
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -919,9 +924,176 @@ function StudioMobileHubPage() {
       .slice(0, 3)
   }, [allStudioClients, clientName, clientPhone])
 
+  // Procesar texto pegado desde portapapeles o compartido
+  const handleProcessPastedText = (rawText: string | null | undefined) => {
+    if (!rawText || !rawText.trim()) {
+      setNativeContactNotice('El portapapeles está vacío o no contiene texto. Copia primero un número o contacto.')
+      return
+    }
+    const text = rawText.trim()
+
+    // 1. Intentar detectar teléfonos con formato estándar
+    const phoneRegex = /(?:\+?\d{1,3}[\s-]?)?\(?\d{2,4}\)?[\s-]?\d{2,4}[\s-]?\d{2,4}/g
+    const matches = text.match(phoneRegex)
+    let foundPhone = ''
+    let foundName = ''
+
+    if (matches && matches.length > 0) {
+      for (const m of matches) {
+        const digitsOnly = m.replace(/\D/g, '')
+        if (digitsOnly.length >= 8) {
+          foundPhone = m.trim()
+          break
+        }
+      }
+    }
+
+    // 2. Si no se detectó con regex pero contiene al menos 8 dígitos numéricos
+    if (!foundPhone) {
+      const digitsOnly = text.replace(/\D/g, '')
+      if (digitsOnly.length >= 8) {
+        foundPhone = text.replace(/[^\d+]/g, '').trim()
+      }
+    }
+
+    if (foundPhone) {
+      // Intentar extraer el nombre del resto del texto
+      const remaining = text
+        .replace(foundPhone, '')
+        .replace(/[\n\r:;,|\(\)\-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+
+      if (remaining.length >= 2 && !/^\d+$/.test(remaining)) {
+        foundName = remaining
+      }
+
+      setClientPhone(foundPhone)
+      if (foundName && !clientName) {
+        setClientName(foundName)
+      }
+
+      // Comprobar coincidencia con clienta registrada
+      const clean = cleanPhoneForWhatsApp(foundPhone)
+      const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
+      if (matched) {
+        if (matched.preferredCurl) setCurl(matched.preferredCurl)
+        if (matched.notes) setNotes(matched.notes)
+      }
+
+      setContactPickerOpen(false)
+      setContactSelectedToast(`✓ Pegado con éxito: ${foundName ? `${foundName} (${foundPhone})` : foundPhone}`)
+      setTimeout(() => setContactSelectedToast(null), 4000)
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+        ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+      }
+    } else {
+      setClientPhone(text)
+      setContactPickerOpen(false)
+      setContactSelectedToast(`✓ Pegado en teléfono: ${text}`)
+      setTimeout(() => setContactSelectedToast(null), 4000)
+    }
+  }
+
+  // Fallback para leer portapapeles del navegador si Telegram WebApp falla
+  const fallbackBrowserClipboard = async () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+      try {
+        const text = await navigator.clipboard.readText()
+        if (text) {
+          handleProcessPastedText(text)
+          return
+        }
+      } catch {
+        // Bloqueado por permisos del navegador
+      }
+    }
+    setNativeContactNotice(
+      isIOS
+        ? 'En iPhone, mantén pulsado sobre el campo del teléfono y selecciona "Pegar", o toca el campo para autocompletar con tus contactos.'
+        : 'No se pudo leer el portapapeles automáticamente. Mantén pulsado sobre el campo y selecciona "Pegar".'
+    )
+  }
+
+  // Pegar contacto copiado (Telegram WebApp SDK o navegador)
+  const handlePasteClipboard = () => {
+    setNativeContactNotice(null)
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.readTextFromClipboard) {
+      try {
+        ;(window as any).Telegram.WebApp.readTextFromClipboard((text: string | null) => {
+          if (text) {
+            handleProcessPastedText(text)
+          } else {
+            fallbackBrowserClipboard()
+          }
+        })
+        return
+      } catch {
+        // Continuar a fallback
+      }
+    }
+    fallbackBrowserClipboard()
+  }
+
+  // Importar ficha de contacto en formato vCard (.vcf)
+  const handleVcfImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      if (!text) return
+      let name = ''
+      let phone = ''
+      const lines = text.split(/\r?\n/)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (trimmed.startsWith('FN:')) {
+          name = trimmed.replace('FN:', '').trim()
+        } else if (!name && trimmed.startsWith('N:')) {
+          const parts = trimmed.replace('N:', '').split(';').filter(Boolean)
+          name = parts.reverse().join(' ').trim()
+        } else if (!phone && (trimmed.startsWith('TEL') || trimmed.startsWith('item1.TEL'))) {
+          const colonIdx = trimmed.indexOf(':')
+          if (colonIdx !== -1) {
+            phone = trimmed.substring(colonIdx + 1).trim()
+          }
+        }
+      }
+      if (phone) {
+        setClientPhone(phone)
+        if (name) setClientName(name)
+        const clean = cleanPhoneForWhatsApp(phone)
+        const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
+        if (matched) {
+          if (matched.preferredCurl) setCurl(matched.preferredCurl)
+          if (matched.notes) setNotes(matched.notes)
+        }
+        setContactPickerOpen(false)
+        setContactSelectedToast(`✓ Ficha importada: ${name || phone}`)
+        setTimeout(() => setContactSelectedToast(null), 4000)
+        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+          ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+        }
+      } else {
+        setNativeContactNotice('No se detectó un número de teléfono en la tarjeta de contacto seleccionada.')
+      }
+    }
+    reader.readAsText(file)
+    if (vcfInputRef.current) vcfInputRef.current.value = ''
+  }
+
   // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS / Navegadores modernos)
   const handlePickNativeContact = async () => {
     setNativeContactNotice(null)
+
+    if (isIOS) {
+      setNativeContactNotice(
+        'Apple restringe la apertura directa de la agenda dentro de aplicaciones como Telegram por privacidad. Puedes usar el botón "📋 Pegar" arriba, autocompletar con tu teclado de iPhone o elegir una clienta de la lista.'
+      )
+      return
+    }
+
     if (typeof navigator !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
       try {
         const props = ['name', 'tel']
@@ -936,7 +1108,6 @@ function StudioMobileHubPage() {
             if (rawName) {
               setClientName(rawName)
             }
-            // Comprobar si coincide con alguna clienta guardada para autocompletar curvatura y notas
             const clean = cleanPhoneForWhatsApp(rawTel)
             const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
             if (matched) {
@@ -954,11 +1125,11 @@ function StudioMobileHubPage() {
         }
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
-          setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes seleccionar cualquier clienta de tu lista abajo.')
+          setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes usar el botón "Pegar número" o seleccionar una clienta.')
         }
       }
     } else {
-      setNativeContactNotice('Tu navegador o webview no soporta la apertura directa de la agenda del sistema. Selecciona cualquier clienta de tu lista abajo o introduce el número.')
+      setNativeContactNotice('Tu navegador no soporta apertura directa de la agenda. Usa el botón "Pegar número", autocompleta con tu teclado o selecciona una clienta abajo.')
     }
   }
 
@@ -1873,6 +2044,10 @@ function StudioMobileHubPage() {
 
                   <div className="space-y-2">
                     <input
+                      id="clientName"
+                      name="name"
+                      autoComplete="name"
+                      autoCapitalize="words"
                       type="text"
                       required
                       placeholder="Nombre de la clienta *"
@@ -1883,25 +2058,39 @@ function StudioMobileHubPage() {
 
                     <div className="relative">
                       <input
+                        id="clientPhone"
+                        name="tel"
+                        autoComplete="tel"
+                        inputMode="tel"
                         type="tel"
                         required
                         placeholder="Teléfono móvil (ej. 612 34 56 78) *"
                         value={clientPhone}
                         onChange={(e) => setClientPhone(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-3.5 pr-24 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-3.5 pr-36 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setContactPickerSearch('')
-                          setNativeContactNotice(null)
-                          setContactPickerOpen(true)
-                        }}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg bg-white/10 hover:bg-accent/20 hover:text-accent text-zinc-300 text-[10px] font-semibold flex items-center gap-1 border border-white/10 transition-colors cursor-pointer"
-                        title="Seleccionar desde tus contactos o clientas del estudio"
-                      >
-                        <span>📖 Contactos</span>
-                      </button>
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={handlePasteClipboard}
+                          className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-300 text-[10px] font-semibold flex items-center gap-1 border border-white/10 transition-colors cursor-pointer"
+                          title="Pegar número copiado del portapapeles"
+                        >
+                          📋 Pegar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setContactPickerSearch('')
+                            setNativeContactNotice(null)
+                            setContactPickerOpen(true)
+                          }}
+                          className="px-2 py-1 rounded-lg bg-accent/15 hover:bg-accent/25 hover:text-accent text-accent text-[10px] font-semibold flex items-center gap-1 border border-accent/30 transition-colors cursor-pointer"
+                          title="Seleccionar desde tus contactos o clientas del estudio"
+                        >
+                          📖 Agenda
+                        </button>
+                      </div>
                     </div>
 
                     {isValidPhone && (
@@ -2693,28 +2882,86 @@ function StudioMobileHubPage() {
               </button>
             </div>
 
-            {/* Opción 1: Abrir Agenda Nativa del Teléfono */}
+            {/* Input oculto para importar archivos .vcf (vCard) */}
+            <input
+              type="file"
+              ref={vcfInputRef}
+              onChange={handleVcfImport}
+              accept=".vcf,text/vcard,text/x-vcard"
+              className="hidden"
+            />
+
+            {/* Opciones Rápidas */}
             <div className="shrink-0 space-y-2">
+              {/* Opción 1: Pegar desde Portapapeles (Telegram WebApp / Clipboard) */}
               <button
                 type="button"
-                onClick={handlePickNativeContact}
-                className="w-full p-3.5 rounded-2xl bg-linear-to-r from-sky-500/20 via-sky-500/10 to-transparent border border-sky-500/40 hover:border-sky-400 text-white font-semibold text-xs flex items-center justify-between gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                onClick={handlePasteClipboard}
+                className="w-full p-3.5 rounded-2xl bg-linear-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 hover:border-amber-400 text-white font-semibold text-xs flex items-center justify-between gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
               >
                 <div className="flex items-center gap-3 text-left">
-                  <span className="w-9 h-9 rounded-xl bg-sky-500/25 border border-sky-500/40 flex items-center justify-center text-lg shrink-0">
-                    📱
+                  <span className="w-9 h-9 rounded-xl bg-amber-500/25 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">
+                    📋
                   </span>
                   <div>
-                    <span className="block font-bold text-xs text-sky-300">Abrir Contactos de mi Teléfono</span>
-                    <span className="block text-[10px] text-zinc-400">Seleccionar directamente de la agenda de tu móvil</span>
+                    <span className="block font-bold text-xs text-amber-300">Pegar Número Copiado</span>
+                    <span className="block text-[10px] text-zinc-400">Pega al instante el número copiado en WhatsApp o Contactos</span>
                   </div>
                 </div>
-                <span className="text-sky-300 font-bold text-base">↗</span>
+                <span className="text-amber-300 font-bold text-xs bg-amber-500/20 px-2 py-1 rounded-lg border border-amber-500/30">
+                  1 toque ⚡
+                </span>
               </button>
 
+              <div className="grid grid-cols-2 gap-2">
+                {/* Opción 2: Importar Tarjeta vCard .vcf */}
+                <button
+                  type="button"
+                  onClick={() => vcfInputRef.current?.click()}
+                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-accent/40 text-white font-semibold text-xs flex items-center gap-2.5 transition-all active:scale-[0.98] cursor-pointer text-left"
+                >
+                  <span className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-base shrink-0">
+                    📇
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block font-bold text-[11px] text-zinc-200 truncate">Ficha (.vcf)</span>
+                    <span className="block text-[9px] text-zinc-400">Importar archivo</span>
+                  </div>
+                </button>
+
+                {/* Opción 3: Agenda Móvil */}
+                <button
+                  type="button"
+                  onClick={handlePickNativeContact}
+                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-sky-400/40 text-white font-semibold text-xs flex items-center gap-2.5 transition-all active:scale-[0.98] cursor-pointer text-left"
+                >
+                  <span className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-base shrink-0">
+                    📱
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block font-bold text-[11px] text-sky-300 truncate">Agenda Móvil</span>
+                    <span className="block text-[9px] text-zinc-400">{isIOS ? 'Info iPhone' : 'Abrir contactos'}</span>
+                  </div>
+                </button>
+              </div>
+
               {nativeContactNotice && (
-                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed">
-                  ℹ️ {nativeContactNotice}
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed space-y-1">
+                  <div className="font-semibold flex items-center gap-1.5">
+                    <span>ℹ️</span>
+                    <span>Información de Acceso:</span>
+                  </div>
+                  <p className="text-zinc-300">{nativeContactNotice}</p>
+                </div>
+              )}
+
+              {/* Tip especial para iPhone */}
+              {isIOS && !nativeContactNotice && (
+                <div className="p-2.5 rounded-xl bg-sky-950/40 border border-sky-500/30 text-[11px] text-sky-300 flex items-start gap-2">
+                  <span className="text-base shrink-0">💡</span>
+                  <span className="leading-snug">
+                    <strong>Truco iPhone:</strong> Al tocar el campo de texto del teléfono, el teclado de tu iPhone te mostrará la sugerencia de tus contactos en la barra superior para rellenarlo en un toque.
+                  </span>
                 </div>
               )}
             </div>
