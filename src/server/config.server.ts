@@ -64,9 +64,9 @@ let cachedConfig: StudioConfigData | null = null
 let cacheExpiresAt = 0
 const CACHE_TTL_MS = 60 * 1000 // 1 minute
 
-export async function fetchConfigFromDb(): Promise<StudioConfigData> {
+export async function fetchConfigFromDb(forceFresh = false): Promise<StudioConfigData> {
   const now = Date.now()
-  if (cachedConfig && now < cacheExpiresAt) {
+  if (!forceFresh && cachedConfig && now < cacheExpiresAt) {
     return cachedConfig
   }
 

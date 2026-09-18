@@ -23,7 +23,7 @@ import {
   IconTrash2,
   IconPlus,
 } from './Icons'
-import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestTelegramAlert } from '../services/storage'
+import { exportBackupJSON, importBackupJSON, sendEmailViaResend, sendTestTelegramAlert, saveStudioConfig } from '../services/storage'
 import {
   announceNewAppointmentVoice,
   announceUpdateVoice,
@@ -112,6 +112,11 @@ export const Settings: React.FC<SettingsProps> = ({
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [importStatus, setImportStatus] = useState<string | null>(null)
 
+  // Keep formData in sync when remote config is fetched
+  useEffect(() => {
+    setFormData(config)
+  }, [config])
+
   // Authorized Telegram Users state
   const [newUserName, setNewUserName] = useState('')
   const [newUserTelegramId, setNewUserTelegramId] = useState('')
@@ -120,11 +125,14 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showNewUserPin, setShowNewUserPin] = useState(false)
   const [visiblePinIds, setVisiblePinIds] = useState<Record<string, boolean>>({})
   const [credFormError, setCredFormError] = useState<string | null>(null)
+  const [credSaveSuccess, setCredSaveSuccess] = useState<string | null>(null)
+  const [isSavingCred, setIsSavingCred] = useState(false)
 
-  const handleAddCredential = () => {
+  const handleAddCredential = async () => {
     setCredFormError(null)
+    setCredSaveSuccess(null)
     const name = newUserName.trim()
-    const telegramId = newUserTelegramId.trim()
+    const telegramId = newUserTelegramId.trim().replace(/^@/, '')
     const pin = newUserPin.trim()
     const botToken = newUserBotToken.trim() || formData.telegramBotToken || ''
 
@@ -134,6 +142,10 @@ export const Settings: React.FC<SettingsProps> = ({
     }
     if (!pin) {
       setCredFormError('Por favor introduce un código PIN de acceso')
+      return
+    }
+    if (pin.length < 4) {
+      setCredFormError('El PIN debe tener al menos 4 dígitos (se admiten de 4 a 8 dígitos, ej. 6 dígitos)')
       return
     }
 
@@ -151,30 +163,67 @@ export const Settings: React.FC<SettingsProps> = ({
       ? formData.telegramAllowedCredentials
       : []
 
-    setFormData({
+    const cleanNewId = telegramId.replace(/\D/g, '')
+    const updatedList = [
+      ...currentList.filter((u) => {
+        const cleanExisting = String(u.telegramId || '').replace(/\D/g, '')
+        return cleanNewId && cleanExisting ? cleanExisting !== cleanNewId : u.telegramId !== telegramId
+      }),
+      newEntry,
+    ]
+
+    const updatedConfig: StudioConfig = {
       ...formData,
-      telegramAllowedCredentials: [
-        ...currentList.filter((u) => u.telegramId !== telegramId),
-        newEntry,
-      ],
+      telegramAllowedCredentials: updatedList,
       telegramChatId: formData.telegramChatId || telegramId,
       telegramBotToken: formData.telegramBotToken || botToken || undefined,
-    })
+    }
 
+    setFormData(updatedConfig)
     setNewUserName('')
     setNewUserTelegramId('')
     setNewUserBotToken('')
     setNewUserPin('')
+
+    setIsSavingCred(true)
+    try {
+      saveStudioConfig(updatedConfig)
+      await onSaveConfig(updatedConfig)
+      setCredSaveSuccess(
+        `✓ ¡Usuario "${newEntry.name}" guardado y activado en tiempo real! (ID: ${newEntry.telegramId} • PIN: ${newEntry.pin.length} dígitos)`
+      )
+      setTimeout(() => setCredSaveSuccess(null), 8000)
+    } catch (err: any) {
+      setCredFormError(`Error al sincronizar con la nube: ${err?.message || 'Error de conexión'}`)
+    } finally {
+      setIsSavingCred(false)
+    }
   }
 
-  const handleRemoveCredential = (id: string) => {
+  const handleRemoveCredential = async (id: string) => {
+    setCredFormError(null)
+    setCredSaveSuccess(null)
     const currentList = Array.isArray(formData.telegramAllowedCredentials)
       ? formData.telegramAllowedCredentials
       : []
-    setFormData({
+    const updatedList = currentList.filter((u) => u.id !== id)
+    const updatedConfig: StudioConfig = {
       ...formData,
-      telegramAllowedCredentials: currentList.filter((u) => u.id !== id),
-    })
+      telegramAllowedCredentials: updatedList,
+    }
+    setFormData(updatedConfig)
+
+    setIsSavingCred(true)
+    try {
+      saveStudioConfig(updatedConfig)
+      await onSaveConfig(updatedConfig)
+      setCredSaveSuccess('✓ Usuario eliminado y credenciales sincronizadas en la nube en tiempo real.')
+      setTimeout(() => setCredSaveSuccess(null), 6000)
+    } catch (err: any) {
+      setCredFormError(`Error al sincronizar con la nube: ${err?.message || 'Error desconocido'}`)
+    } finally {
+      setIsSavingCred(false)
+    }
   }
 
   const togglePinVisibility = (id: string) => {
@@ -1103,10 +1152,17 @@ export const Settings: React.FC<SettingsProps> = ({
               <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
                 Credenciales Registradas Activas ({Array.isArray(formData.telegramAllowedCredentials) ? formData.telegramAllowedCredentials.length : 0})
               </span>
-              <span className="text-[11px] text-gray-500">
-                Recuerda pulsar "Guardar Cambios" al finalizar
+              <span className="text-[11px] text-emerald-400 font-medium">
+                ⚡ Guardado automático en tiempo real en la nube
               </span>
             </div>
+
+            {credSaveSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+                <IconCheck size={16} className="text-emerald-400 shrink-0" />
+                <span className="font-medium">{credSaveSuccess}</span>
+              </div>
+            )}
 
             {(!formData.telegramAllowedCredentials || formData.telegramAllowedCredentials.length === 0) ? (
               <div className="p-4 rounded-xl bg-ink-800/50 border border-line border-dashed text-center text-xs text-gray-500">
@@ -1143,7 +1199,7 @@ export const Settings: React.FC<SettingsProps> = ({
                         <div className="flex items-center gap-1.5 bg-ink-900/80 px-2.5 py-1 rounded-lg border border-line text-xs font-mono">
                           <span className="text-gray-500 text-[10px]">PIN:</span>
                           <span className="text-amber-300 font-bold tracking-widest">
-                            {isPinVisible ? user.pin : '••••'}
+                            {isPinVisible ? user.pin : '••••••'.slice(0, user.pin?.length || 6)}
                           </span>
                           <button
                             type="button"
@@ -1226,13 +1282,13 @@ export const Settings: React.FC<SettingsProps> = ({
 
               <div>
                 <label className="block text-[11px] font-semibold text-gray-300 mb-1">
-                  PIN Personal de Acceso (4 a 8 caracteres) *
+                  PIN Personal de Acceso (4 a 8 dígitos, ej. 6 dígitos) *
                 </label>
                 <div className="relative">
                   <input
                     type={showNewUserPin ? 'text' : 'password'}
                     maxLength={8}
-                    placeholder="Elige un PIN secreto"
+                    placeholder="Elige un PIN (ej. 6 dígitos: 123456)"
                     value={newUserPin}
                     onChange={(e) => setNewUserPin(e.target.value.trim())}
                     className="w-full pl-3 pr-10 py-2 rounded-xl bg-ink-900 border border-line-strong text-xs text-amber-300 font-mono tracking-widest placeholder-gray-500 focus:outline-none focus:border-amber-400"
@@ -1251,11 +1307,21 @@ export const Settings: React.FC<SettingsProps> = ({
 
             <button
               type="button"
+              disabled={isSavingCred}
               onClick={handleAddCredential}
-              className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 active:scale-95"
+              className="px-5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-2 active:scale-95 disabled:opacity-50"
             >
-              <IconPlus size={14} />
-              <span>Añadir a la Lista de Usuarios Autorizados</span>
+              {isSavingCred ? (
+                <>
+                  <IconRefreshCw size={14} className="animate-spin" />
+                  <span>Guardando en la Nube...</span>
+                </>
+              ) : (
+                <>
+                  <IconPlus size={14} />
+                  <span>Añadir y Activar en la Nube (Guardado Automático)</span>
+                </>
+              )}
             </button>
           </div>
         </div>

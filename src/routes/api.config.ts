@@ -54,7 +54,7 @@ export const Route = createFileRoute('/api/config')({
 
           // Action: verify PIN from client
           if (body.action === 'verify_pin') {
-            const currentCfg = await fetchConfigFromDb()
+            const currentCfg = await fetchConfigFromDb(true)
             const enteredPin = String(body.pin || '').trim()
             const enteredTelegramId = String(body.telegramId || '').trim()
             const allowed = Array.isArray(currentCfg.telegramAllowedCredentials)

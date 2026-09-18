@@ -51,6 +51,7 @@ import {
   syncInvoiceWithVercel,
   deleteInvoiceFromVercel,
   sendInvoiceEmail,
+  fetchLiveConfigFromVercel,
   syncStudioConfigWithVercel,
 } from './services/storage'
 
@@ -133,6 +134,11 @@ export const App: React.FC = () => {
     setClients(getClients())
     setServices(getServices())
     setConfig(getStudioConfig())
+    fetchLiveConfigFromVercel()
+      .then((liveCfg) => {
+        if (liveCfg) setConfig(liveCfg)
+      })
+      .catch(() => {})
     setGallery(getGalleryItems())
     setInvoices(getInvoices())
 

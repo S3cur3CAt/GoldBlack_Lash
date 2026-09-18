@@ -471,9 +471,11 @@ function StudioMobileHubPage() {
         }
       }
 
+      let errorMsg = 'PIN o ID incorrectos. Acceso exclusivo para el estudio.'
+
       if (res && res.ok) {
         if (typeof window !== 'undefined') {
-          // Se recuerda siempre en este dispositivo para que no vuelva a pedirlo
+          // Se recuerda siempre en este dispositivo para que no vuelva a pedirlo de por vida
           localStorage.setItem('gb_mini_app_auth', 'true')
           sessionStorage.setItem('gb_mini_app_auth', 'true')
           if (data?.user) {
@@ -488,17 +490,25 @@ function StudioMobileHubPage() {
         loadAppointments()
         loadServices()
       } else {
-        const errData = await res?.json().catch(() => null)
+        if (data?.error) {
+          errorMsg = data.error
+        } else if (res) {
+          try {
+            const parsed = await res.json()
+            if (parsed?.error) errorMsg = parsed.error
+          } catch {}
+        }
+
         if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
           ;(window as any).Telegram.WebApp.HapticFeedback.notificationOccurred('error')
         }
         setShakePin(true)
         setTimeout(() => setShakePin(false), 600)
-        setPinError(errData?.error || 'PIN o ID incorrectos. Acceso exclusivo para el estudio.')
+        setPinError(errorMsg)
         setPinInput('')
       }
     } catch {
-      setPinError('Error de conexión al verificar credenciales')
+      setPinError('Error de conexión al verificar credenciales. Comprueba tu conexión a internet.')
     } finally {
       setIsVerifyingPin(false)
     }
@@ -1018,21 +1028,21 @@ function StudioMobileHubPage() {
                 GoldBlack <span className="italic text-accent">Lash</span>
               </h1>
               <p className="text-xs text-zinc-400 mt-1">
-                Introduce el PIN del estudio para desbloquear el panel
+                Introduce tu PIN de acceso (6 dígitos) para desbloquear el panel
               </p>
             </div>
           </div>
 
           {/* Tarjeta de Seguridad y Teclado Numérico */}
           <div className="bg-[#0f0f14]/90 border border-accent/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5">
-            {/* 4 Cajas visuales de PIN */}
-            <div className={`flex items-center justify-center gap-3 transition-transform ${shakePin ? 'animate-bounce' : ''}`}>
-              {[0, 1, 2, 3].map((idx) => {
+            {/* Cajas visuales de PIN — 6 dígitos estándar (hasta 8 dinámicos) */}
+            <div className={`flex items-center justify-center gap-2 sm:gap-2.5 transition-transform ${shakePin ? 'animate-bounce' : ''}`}>
+              {Array.from({ length: Math.max(6, Math.min(8, pinInput.length)) }).map((_, idx) => {
                 const hasDigit = pinInput.length > idx
                 return (
                   <div
                     key={idx}
-                    className={`w-12 h-14 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
+                    className={`w-9 sm:w-11 h-13 sm:h-14 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
                       hasDigit
                         ? 'border-accent bg-accent/20 shadow-[0_0_16px_rgba(212,175,55,0.4)] text-accent scale-105'
                         : 'border-white/10 bg-black/40 text-zinc-600'
@@ -1062,11 +1072,11 @@ function StudioMobileHubPage() {
                   key={digit}
                   type="button"
                   onClick={() => {
-                    if (pinInput.length < 4) {
+                    if (pinInput.length < 8) {
                       const next = pinInput + digit
                       setPinInput(next)
                       setPinError(null)
-                      if (next.length === 4) {
+                      if (next.length === 6) {
                         handleVerifyPin(next)
                       }
                     }
@@ -1093,11 +1103,11 @@ function StudioMobileHubPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (pinInput.length < 4) {
+                  if (pinInput.length < 8) {
                     const next = pinInput + '0'
                     setPinInput(next)
                     setPinError(null)
-                    if (next.length === 4) {
+                    if (next.length === 6) {
                       handleVerifyPin(next)
                     }
                   }
@@ -1134,20 +1144,20 @@ function StudioMobileHubPage() {
                 type="button"
                 disabled={pinInput.length === 0 || isVerifyingPin}
                 onClick={() => handleVerifyPin(pinInput)}
-                className="w-full py-3 rounded-2xl bg-linear-to-r from-accent via-amber-400 to-accent hover:opacity-95 active:scale-98 disabled:opacity-40 text-black font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-linear-to-r from-accent via-amber-400 to-accent hover:opacity-95 active:scale-98 disabled:opacity-40 text-black font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent/20 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {isVerifyingPin ? (
                   <>
                     <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
-                    <span>Verificando...</span>
+                    <span>Verificando credenciales...</span>
                   </>
                 ) : (
-                  <span>Desbloquear Panel</span>
+                  <span>Desbloquear Panel {pinInput.length > 0 ? `(${pinInput.length} ${pinInput.length === 1 ? 'dígito' : 'dígitos'})` : ''}</span>
                 )}
               </button>
 
               <p className="text-[10px] text-center text-emerald-400/90 font-medium">
-                ✓ Este dispositivo recordará tu acceso para no volver a pedirlo
+                ✓ Acceso permanente: no tendrás que volver a introducir tu PIN en este teléfono
               </p>
             </div>
           </div>

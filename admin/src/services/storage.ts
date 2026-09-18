@@ -1440,6 +1440,27 @@ export function saveStudioConfig(config: StudioConfig): void {
 
 /** Fetch latest studio config from Vercel / Supabase API */
 export async function fetchLiveConfigFromVercel(): Promise<StudioConfig | null> {
+  // 1. Direct Supabase query (Primary: 100% reliable, no proxy issues)
+  try {
+    const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_config?id=eq.main`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    if (sbRes.ok) {
+      const rows = await sbRes.json()
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+        const remoteConfig = rows[0].data
+        saveStudioConfig(remoteConfig)
+        return remoteConfig
+      }
+    }
+  } catch (sbErr) {
+    console.warn('[Supabase Config fetch error, trying Vercel fallback]', sbErr)
+  }
+
+  // 2. Vercel fallback
   const baseUrl = getApiBaseUrl()
   try {
     const res = await fetch(`${baseUrl}/api/config?_t=${Date.now()}`, {
@@ -1463,28 +1484,9 @@ export async function fetchLiveConfigFromVercel(): Promise<StudioConfig | null> 
 
 /** Sync studio config with Vercel / Supabase API */
 export async function syncStudioConfigWithVercel(config: StudioConfig): Promise<boolean> {
-  const baseUrl = getApiBaseUrl()
-  notifySyncEvent('syncing', 'Sincronizando ajustes del estudio con la web...')
+  notifySyncEvent('syncing', 'Sincronizando ajustes del estudio en tiempo real...')
 
-  try {
-    const res = await fetch(`${baseUrl}/api/config`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: SUPABASE_ANON_KEY,
-        'x-admin-request': 'true',
-      },
-      body: JSON.stringify(config),
-    })
-    if (res.ok) {
-      notifySyncEvent('synced', '✓ Datos del estudio sincronizados con la web')
-      return true
-    }
-  } catch (err) {
-    console.warn('[Config sync with Vercel failed, trying direct Supabase]', err)
-  }
-
-  // Direct Supabase fallback
+  // 1. Direct Supabase sync (Primary: instant real-time in 0 seconds)
   try {
     const sbRes = await fetch(`${SUPABASE_REST_URL}/studio_config`, {
       method: 'POST',
@@ -1501,14 +1503,47 @@ export async function syncStudioConfigWithVercel(config: StudioConfig): Promise<
       }),
     })
     if (sbRes.ok) {
-      notifySyncEvent('synced', '✓ Datos del estudio sincronizados con la web')
+      notifySyncEvent('synced', '✓ Ajustes y credenciales sincronizados en la nube')
+      // Background ping to Vercel/website API
+      try {
+        const baseUrl = getApiBaseUrl()
+        fetch(`${baseUrl}/api/config`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: SUPABASE_ANON_KEY,
+            'x-admin-request': 'true',
+          },
+          body: JSON.stringify(config),
+        }).catch(() => {})
+      } catch {}
       return true
     }
   } catch (sbErr) {
-    console.warn('[Direct Supabase Config sync failed]', sbErr)
+    console.warn('[Direct Supabase Config sync failed, trying Vercel fallback]', sbErr)
   }
 
-  notifySyncEvent('error', '⚠️ No se pudo sincronizar la configuración con la web')
+  // 2. Vercel fallback
+  try {
+    const baseUrl = getApiBaseUrl()
+    const res = await fetch(`${baseUrl}/api/config`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        'x-admin-request': 'true',
+      },
+      body: JSON.stringify(config),
+    })
+    if (res.ok) {
+      notifySyncEvent('synced', '✓ Ajustes y credenciales sincronizados en la nube')
+      return true
+    }
+  } catch (err) {
+    console.warn('[Config sync with Vercel failed]', err)
+  }
+
+  notifySyncEvent('error', '⚠️ No se pudo sincronizar la configuración con la nube')
   return false
 }
 

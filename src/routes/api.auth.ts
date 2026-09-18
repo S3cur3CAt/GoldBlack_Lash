@@ -41,7 +41,7 @@ export const Route = createFileRoute('/api/auth')({
             )
           }
 
-          const config = await fetchConfigFromDb()
+          const config = await fetchConfigFromDb(true)
           const allowedCredentials = Array.isArray(config.telegramAllowedCredentials)
             ? config.telegramAllowedCredentials
             : []
@@ -63,7 +63,13 @@ export const Route = createFileRoute('/api/auth')({
             if (String(cred.pin || '').trim() !== enteredPin) return false
 
             if (enteredTelegramId && cred.telegramId) {
-              if (String(cred.telegramId).trim() !== enteredTelegramId) return false
+              const cleanEntered = enteredTelegramId.replace(/\D/g, '')
+              const cleanCred = String(cred.telegramId).replace(/\D/g, '')
+              if (cleanEntered && cleanCred) {
+                if (cleanEntered !== cleanCred) return false
+              } else if (String(cred.telegramId).trim().toLowerCase() !== enteredTelegramId.toLowerCase()) {
+                return false
+              }
             }
 
             if (enteredToken && cred.botToken) {
