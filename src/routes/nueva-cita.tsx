@@ -351,6 +351,7 @@ function StudioMobileHubPage() {
   const [contactPickerSearch, setContactPickerSearch] = useState('')
   const [nativeContactNotice, setNativeContactNotice] = useState<string | null>(null)
   const [contactSelectedToast, setContactSelectedToast] = useState<string | null>(null)
+  const [iosSettingsGuideOpen, setIosSettingsGuideOpen] = useState(false)
   const vcfInputRef = useRef<HTMLInputElement>(null)
   const isIOS = useMemo(() => {
     if (typeof navigator === 'undefined') return false
@@ -1083,18 +1084,11 @@ function StudioMobileHubPage() {
     if (vcfInputRef.current) vcfInputRef.current.value = ''
   }
 
-  // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS / Navegadores modernos)
+  // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS con Feature Flag / Navegadores modernos)
   const handlePickNativeContact = async () => {
     setNativeContactNotice(null)
 
-    if (isIOS) {
-      setNativeContactNotice(
-        'Apple restringe la apertura directa de la agenda dentro de aplicaciones como Telegram por privacidad. Puedes usar el botón "📋 Pegar" arriba, autocompletar con tu teclado de iPhone o elegir una clienta de la lista.'
-      )
-      return
-    }
-
-    if (typeof navigator !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
+    if (typeof navigator !== 'undefined' && 'contacts' in navigator && (navigator as any).contacts?.select) {
       try {
         const props = ['name', 'tel']
         const results = await (navigator as any).contacts.select(props, { multiple: false })
@@ -1125,11 +1119,21 @@ function StudioMobileHubPage() {
         }
       } catch (err: any) {
         if (err?.name !== 'AbortError') {
-          setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes usar el botón "Pegar número" o seleccionar una clienta.')
+          if (isIOS) {
+            setIosSettingsGuideOpen(true)
+            setNativeContactNotice('En iPhone la función de Contactos viene desactivada por defecto en iOS. Revisa la guía paso a paso para activarla en Ajustes.')
+          } else {
+            setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes usar el botón "Pegar número" o seleccionar una clienta.')
+          }
         }
       }
     } else {
-      setNativeContactNotice('Tu navegador no soporta apertura directa de la agenda. Usa el botón "Pegar número", autocompleta con tu teclado o selecciona una clienta abajo.')
+      if (isIOS) {
+        setIosSettingsGuideOpen(true)
+        setNativeContactNotice('En iPhone la función de Contactos viene desactivada por defecto en iOS. Sigue los 4 pasos abajo para activarla en Ajustes de tu iPhone.')
+      } else {
+        setNativeContactNotice('Tu navegador no soporta apertura directa de la agenda. Usa el botón "Pegar número", autocompleta con tu teclado o selecciona una clienta abajo.')
+      }
     }
   }
 
@@ -2947,21 +2951,87 @@ function StudioMobileHubPage() {
 
               {nativeContactNotice && (
                 <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed space-y-1">
-                  <div className="font-semibold flex items-center gap-1.5">
-                    <span>ℹ️</span>
-                    <span>Información de Acceso:</span>
+                  <div className="font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span>ℹ️</span>
+                      <span>Información de Acceso:</span>
+                    </span>
+                    {isIOS && (
+                      <button
+                        type="button"
+                        onClick={() => setIosSettingsGuideOpen((prev) => !prev)}
+                        className="text-[10px] text-sky-400 underline font-normal cursor-pointer"
+                      >
+                        {iosSettingsGuideOpen ? 'Ocultar guía' : 'Ver guía paso a paso'}
+                      </button>
+                    )}
                   </div>
                   <p className="text-zinc-300">{nativeContactNotice}</p>
                 </div>
               )}
 
-              {/* Tip especial para iPhone */}
-              {isIOS && !nativeContactNotice && (
-                <div className="p-2.5 rounded-xl bg-sky-950/40 border border-sky-500/30 text-[11px] text-sky-300 flex items-start gap-2">
-                  <span className="text-base shrink-0">💡</span>
-                  <span className="leading-snug">
-                    <strong>Truco iPhone:</strong> Al tocar el campo de texto del teléfono, el teclado de tu iPhone te mostrará la sugerencia de tus contactos en la barra superior para rellenarlo en un toque.
-                  </span>
+              {/* Guía interactiva paso a paso para activar en iPhone */}
+              {iosSettingsGuideOpen && (
+                <div className="p-3.5 rounded-2xl bg-sky-950/70 border border-sky-500/40 text-xs space-y-2.5 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white flex items-center gap-1.5 text-xs text-sky-200">
+                      📱 Activar Agenda de Contactos en iPhone:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIosSettingsGuideOpen(false)}
+                      className="text-zinc-400 hover:text-white text-[10px] px-2 py-0.5 rounded-lg bg-white/10 cursor-pointer"
+                    >
+                      Cerrar ✕
+                    </button>
+                  </div>
+                  <ol className="space-y-1.5 text-zinc-200 text-[11px]">
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-sky-500/30 text-sky-300 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">1</span>
+                      <span>Abre <strong>Ajustes</strong> ⚙️ en la pantalla de inicio de tu iPhone.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-sky-500/30 text-sky-300 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">2</span>
+                      <span>Entra en <strong>Safari</strong> ➔ ve hasta abajo del todo y toca en <strong>Avanzado</strong>.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-sky-500/30 text-sky-300 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">3</span>
+                      <span>Entra en <strong>Feature Flags</strong> (o Funciones experimentales) y activa <strong>Contact Picker API</strong>.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-4 h-4 rounded-full bg-sky-500/30 text-sky-300 flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">4</span>
+                      <span>En <strong>Ajustes ➔ Telegram</strong> (o Privacidad ➔ Contactos), comprueba que Telegram tenga permiso para <strong>Contactos</strong>.</span>
+                    </li>
+                  </ol>
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-sky-500/20">
+                    <button
+                      type="button"
+                      onClick={handlePickNativeContact}
+                      className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-black font-bold text-[11px] active:scale-95 transition-all cursor-pointer shadow-sm"
+                    >
+                      🔄 Probar de Nuevo
+                    </button>
+                    <span className="text-[10px] text-zinc-400">¿Más rápido? Toca "Pegar número" arriba.</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tip especial para iPhone si la guía no está abierta */}
+              {isIOS && !iosSettingsGuideOpen && !nativeContactNotice && (
+                <div className="p-2.5 rounded-xl bg-sky-950/40 border border-sky-500/30 text-[11px] text-sky-300 flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <span className="text-base shrink-0">💡</span>
+                    <span className="leading-snug">
+                      <strong>Truco iPhone:</strong> Al tocar la casilla del teléfono, el teclado de tu iPhone te mostrará la sugerencia de tus contactos en la barra superior.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIosSettingsGuideOpen(true)}
+                    className="shrink-0 text-[10px] text-sky-400 underline hover:text-sky-300 cursor-pointer pt-0.5"
+                  >
+                    Activar agenda
+                  </button>
                 </div>
               )}
             </div>
