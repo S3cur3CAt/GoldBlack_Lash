@@ -68,6 +68,90 @@ export interface ClientSummary {
   appointmentsHistory: AppointmentItem[]
 }
 
+export interface PhoneContactItem {
+  id?: string
+  name: string
+  phone: string
+  notes?: string
+  source?: string
+}
+
+export function parseVcardString(vcfText: string): Array<{ name: string; phone: string }> {
+  const contacts: Array<{ name: string; phone: string }> = []
+  const cards = vcfText.split(/BEGIN:VCARD/i)
+  for (const card of cards) {
+    if (!card.trim()) continue
+    let name = ''
+    let phone = ''
+    const lines = card.split(/\r?\n/)
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.toUpperCase().startsWith('FN:') || trimmed.toUpperCase().startsWith('FN;')) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) name = trimmed.substring(colonIdx + 1).trim()
+      } else if (!name && (trimmed.toUpperCase().startsWith('N:') || trimmed.toUpperCase().startsWith('N;'))) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) {
+          const parts = trimmed.substring(colonIdx + 1).split(';').filter(Boolean)
+          name = parts.reverse().join(' ').trim()
+        }
+      } else if (!phone && (trimmed.toUpperCase().startsWith('TEL') || trimmed.toUpperCase().includes('.TEL'))) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) {
+          phone = trimmed.substring(colonIdx + 1).trim()
+        }
+      }
+    }
+    if (phone) {
+      contacts.push({ name: name || 'Sin nombre', phone })
+    }
+  }
+  return contacts
+}
+
+export function parseContactsFromTextOrVcard(input: string): Array<{ name: string; phone: string }> {
+  if (/BEGIN:VCARD/i.test(input)) {
+    return parseVcardString(input)
+  }
+  const results: Array<{ name: string; phone: string }> = []
+  const lines = input.split(/\r?\n/)
+  const phoneRegex = /(?:\+?\d{1,3}[\s-]?)?(?:\(?\d{2,4}\)?[\s-]?)?\d{3,4}[\s-]?\d{3,4}/
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    const match = trimmed.match(phoneRegex)
+    if (match) {
+      const phone = match[0].trim()
+      const digitsOnly = phone.replace(/\D/g, '')
+      if (digitsOnly.length >= 8) {
+        let name = trimmed
+          .replace(phone, '')
+          .replace(/[•\-\:\;\|\,\(\)\*\_]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        name = name.replace(/^(nombre|tel[eé]fono|celular|whatsapp|wa|m[oó]vil|contacto)\s*:?/i, '').trim()
+        results.push({
+          name: name || 'Contacto WhatsApp',
+          phone: phone,
+        })
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    const digitsOnly = input.replace(/\D/g, '')
+    if (digitsOnly.length >= 8) {
+      results.push({
+        name: 'Contacto WhatsApp',
+        phone: input.trim(),
+      })
+    }
+  }
+
+  return results
+}
+
 const DEFAULT_SERVICES_LIST: ServiceOption[] = [
   {
     id: 'volumen-3d6d',
@@ -349,9 +433,17 @@ function StudioMobileHubPage() {
   // Selector de Contactos y Clientas
   const [contactPickerOpen, setContactPickerOpen] = useState(false)
   const [contactPickerSearch, setContactPickerSearch] = useState('')
+  const [pickerTab, setPickerTab] = useState<'telefono' | 'estudio'>('telefono')
+  const [phoneContacts, setPhoneContacts] = useState<PhoneContactItem[]>([])
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false)
   const [nativeContactNotice, setNativeContactNotice] = useState<string | null>(null)
   const [contactSelectedToast, setContactSelectedToast] = useState<string | null>(null)
   const [iosSettingsGuideOpen, setIosSettingsGuideOpen] = useState(false)
+  const [showAddContactForm, setShowAddContactForm] = useState(false)
+  const [addContactMode, setAddContactMode] = useState<'single' | 'bulk'>('single')
+  const [newContactName, setNewContactName] = useState('')
+  const [newContactPhone, setNewContactPhone] = useState('')
+  const [pasteListText, setPasteListText] = useState('')
   const vcfInputRef = useRef<HTMLInputElement>(null)
   const isIOS = useMemo(() => {
     if (typeof navigator === 'undefined') return false
@@ -415,6 +507,56 @@ function StudioMobileHubPage() {
     }
   }
 
+  // Cargar contactos telefónicos / WhatsApp de Supabase y localStorage
+  const loadPhoneContacts = async () => {
+    setIsLoadingContacts(true)
+    try {
+      if (typeof window !== 'undefined') {
+        const local = localStorage.getItem('goldblack_imported_contacts')
+        if (local) {
+          try {
+            const parsed = JSON.parse(local)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setPhoneContacts(parsed)
+            }
+          } catch {}
+        }
+      }
+      const res = await fetch('/api/contacts?_t=' + Date.now())
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) {
+          setPhoneContacts(data)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('goldblack_imported_contacts', JSON.stringify(data))
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[Contacts Load Error]', e)
+    } finally {
+      setIsLoadingContacts(false)
+    }
+  }
+
+  // Eliminar un contacto importado
+  const handleDeletePhoneContact = async (contact: PhoneContactItem, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    if (!window.confirm(`¿Eliminar a ${contact.name} de tus contactos importados?`)) return
+    const clean = contact.phone.replace(/\D/g, '')
+    const updated = phoneContacts.filter((c) => c.phone.replace(/\D/g, '') !== clean)
+    setPhoneContacts(updated)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goldblack_imported_contacts', JSON.stringify(updated))
+    }
+    try {
+      const id = contact.id || `cnt-${clean}`
+      await fetch(`/api/contacts?id=${encodeURIComponent(id)}`, { method: 'DELETE' })
+    } catch (err) {
+      console.warn('[Contact Delete Error]', err)
+    }
+  }
+
   // Inicializar Telegram WebApp SDK y comprobar credenciales de acceso
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
@@ -431,6 +573,19 @@ function StudioMobileHubPage() {
         })
       }
     }
+
+    // Leer parámetros de URL si viene de un enlace o botón de bot (ej. ?clientName=...&clientPhone=...)
+    try {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search)
+        const qName = params.get('clientName') || params.get('name')
+        const qPhone = params.get('clientPhone') || params.get('phone') || params.get('tel')
+        if (qName) setClientName(decodeURIComponent(qName))
+        if (qPhone) setClientPhone(decodeURIComponent(qPhone))
+      }
+    } catch {}
+
+    loadPhoneContacts()
 
     try {
       const savedAuth =
@@ -896,7 +1051,7 @@ function StudioMobileHubPage() {
     return allStudioClients.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
   }, [allStudioClients, clientSearch])
 
-  // Directorio filtrado para el modal selector de contactos
+  // Directorio filtrado para el modal selector de contactos (pestaña Estudio)
   const filteredClientsForPicker = useMemo<ClientSummary[]>(() => {
     if (!contactPickerSearch.trim()) return allStudioClients
     const q = contactPickerSearch.trim().toLowerCase()
@@ -908,6 +1063,18 @@ function StudioMobileHubPage() {
     })
   }, [allStudioClients, contactPickerSearch])
 
+  // Contactos del teléfono filtrados para el modal selector de contactos (pestaña Teléfono)
+  const filteredPhoneContacts = useMemo<PhoneContactItem[]>(() => {
+    if (!contactPickerSearch.trim()) return phoneContacts
+    const q = contactPickerSearch.trim().toLowerCase()
+    const qDigits = q.replace(/\D/g, '')
+    return phoneContacts.filter((c) => {
+      const matchName = c.name.toLowerCase().includes(q)
+      const matchPhone = qDigits.length > 0 && c.phone.replace(/\D/g, '').includes(qDigits)
+      return matchName || matchPhone
+    })
+  }, [phoneContacts, contactPickerSearch])
+
   // Sugerencias rápidas mientras el usuario escribe en el formulario de crear cita
   const contactSuggestions = useMemo(() => {
     const qName = clientName.trim().toLowerCase()
@@ -915,84 +1082,122 @@ function StudioMobileHubPage() {
 
     if (qName.length < 2 && qPhone.length < 3) return []
 
-    return allStudioClients
+    const studioMatches = allStudioClients.filter((c) => {
+      const matchName = qName.length >= 2 && c.name.toLowerCase().includes(qName)
+      const matchPhone = qPhone.length >= 3 && c.phone.replace(/\D/g, '').includes(qPhone)
+      const isExactMatch = c.name.toLowerCase() === qName && c.phone.replace(/\D/g, '') === qPhone
+      return (matchName || matchPhone) && !isExactMatch
+    })
+
+    const phoneMatches = phoneContacts
       .filter((c) => {
         const matchName = qName.length >= 2 && c.name.toLowerCase().includes(qName)
         const matchPhone = qPhone.length >= 3 && c.phone.replace(/\D/g, '').includes(qPhone)
         const isExactMatch = c.name.toLowerCase() === qName && c.phone.replace(/\D/g, '') === qPhone
-        return (matchName || matchPhone) && !isExactMatch
+        const alreadyInStudio = studioMatches.some((s) => cleanPhoneForWhatsApp(s.phone) === cleanPhoneForWhatsApp(c.phone))
+        return (matchName || matchPhone) && !isExactMatch && !alreadyInStudio
       })
-      .slice(0, 3)
-  }, [allStudioClients, clientName, clientPhone])
+      .map((c) => ({
+        name: c.name,
+        phone: c.phone,
+        totalVisits: 0,
+        totalSpent: 0,
+        lastVisitDate: '',
+        lastServiceName: 'Contacto del móvil',
+        appointmentsHistory: [],
+      } as ClientSummary))
 
-  // Procesar texto pegado desde portapapeles o compartido
+    return [...studioMatches, ...phoneMatches].slice(0, 4)
+  }, [allStudioClients, phoneContacts, clientName, clientPhone])
+
+  // Procesar texto pegado desde portapapeles o compartido (soporta formato WhatsApp y listas)
   const handleProcessPastedText = (rawText: string | null | undefined) => {
     if (!rawText || !rawText.trim()) {
       setNativeContactNotice('El portapapeles está vacío o no contiene texto. Copia primero un número o contacto.')
       return
     }
     const text = rawText.trim()
+    const parsed = parseContactsFromTextOrVcard(text)
 
-    // 1. Intentar detectar teléfonos con formato estándar
-    const phoneRegex = /(?:\+?\d{1,3}[\s-]?)?\(?\d{2,4}\)?[\s-]?\d{2,4}[\s-]?\d{2,4}/g
-    const matches = text.match(phoneRegex)
-    let foundPhone = ''
-    let foundName = ''
-
-    if (matches && matches.length > 0) {
-      for (const m of matches) {
-        const digitsOnly = m.replace(/\D/g, '')
-        if (digitsOnly.length >= 8) {
-          foundPhone = m.trim()
-          break
-        }
+    if (parsed.length > 1) {
+      const mergedMap = new Map<string, PhoneContactItem>()
+      phoneContacts.forEach((c) => mergedMap.set(c.phone.replace(/\D/g, ''), c))
+      parsed.forEach((c) => {
+        const clean = c.phone.replace(/\D/g, '')
+        mergedMap.set(clean, {
+          id: `cnt-${clean}`,
+          name: c.name,
+          phone: c.phone,
+          source: 'whatsapp',
+        })
+      })
+      const updatedList = Array.from(mergedMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      setPhoneContacts(updatedList)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('goldblack_imported_contacts', JSON.stringify(updatedList))
       }
+      setContactPickerOpen(false)
+      setContactSelectedToast(`✓ Se han importado ${parsed.length} contactos de WhatsApp`)
+      setTimeout(() => setContactSelectedToast(null), 5000)
+
+      fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      }).catch((e) => console.warn('[Contacts Sync Error]', e))
+      return
     }
 
-    // 2. Si no se detectó con regex pero contiene al menos 8 dígitos numéricos
-    if (!foundPhone) {
-      const digitsOnly = text.replace(/\D/g, '')
-      if (digitsOnly.length >= 8) {
-        foundPhone = text.replace(/[^\d+]/g, '').trim()
+    if (parsed.length === 1) {
+      const single = parsed[0]
+      setClientPhone(single.phone)
+      if (single.name && single.name !== 'Sin nombre' && single.name !== 'Contacto WhatsApp') {
+        setClientName(single.name)
       }
-    }
-
-    if (foundPhone) {
-      // Intentar extraer el nombre del resto del texto
-      const remaining = text
-        .replace(foundPhone, '')
-        .replace(/[\n\r:;,|\(\)\-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      if (remaining.length >= 2 && !/^\d+$/.test(remaining)) {
-        foundName = remaining
-      }
-
-      setClientPhone(foundPhone)
-      if (foundName && !clientName) {
-        setClientName(foundName)
-      }
-
-      // Comprobar coincidencia con clienta registrada
-      const clean = cleanPhoneForWhatsApp(foundPhone)
+      const clean = cleanPhoneForWhatsApp(single.phone)
       const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
       if (matched) {
         if (matched.preferredCurl) setCurl(matched.preferredCurl)
         if (matched.notes) setNotes(matched.notes)
       }
 
+      if (clean && !phoneContacts.some((c) => c.phone.replace(/\D/g, '') === clean)) {
+        const newContact: PhoneContactItem = {
+          id: `cnt-${clean}`,
+          name: single.name !== 'Contacto WhatsApp' ? single.name : (clientName || 'Contacto WhatsApp'),
+          phone: single.phone,
+          source: 'whatsapp',
+        }
+        const updated = [newContact, ...phoneContacts].sort((a, b) => a.name.localeCompare(b.name))
+        setPhoneContacts(updated)
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('goldblack_imported_contacts', JSON.stringify(updated))
+        }
+        fetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify([newContact]),
+        }).catch(() => {})
+      }
+
       setContactPickerOpen(false)
-      setContactSelectedToast(`✓ Pegado con éxito: ${foundName ? `${foundName} (${foundPhone})` : foundPhone}`)
+      setContactSelectedToast(`✓ Contacto seleccionado: ${single.name} (${single.phone})`)
       setTimeout(() => setContactSelectedToast(null), 4000)
       if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
         ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
       }
-    } else {
+      return
+    }
+
+    // Fallback: Si no tiene formato estándar pero hay dígitos
+    const digitsOnly = text.replace(/\D/g, '')
+    if (digitsOnly.length >= 8) {
       setClientPhone(text)
       setContactPickerOpen(false)
       setContactSelectedToast(`✓ Pegado en teléfono: ${text}`)
       setTimeout(() => setContactSelectedToast(null), 4000)
+    } else {
+      setNativeContactNotice('No se reconoció un número de teléfono válido en el texto pegado.')
     }
   }
 
@@ -1009,10 +1214,11 @@ function StudioMobileHubPage() {
         // Bloqueado por permisos del navegador
       }
     }
+    // Si no se puede leer el portapapeles automáticamente, abrir el formulario para pegar manualmente
+    setShowAddContactForm(true)
+    setAddContactMode('bulk')
     setNativeContactNotice(
-      isIOS
-        ? 'En iPhone, mantén pulsado sobre el campo del teléfono y selecciona "Pegar", o toca el campo para autocompletar con tus contactos.'
-        : 'No se pudo leer el portapapeles automáticamente. Mantén pulsado sobre el campo y selecciona "Pegar".'
+      'Para pegar de WhatsApp en iPhone: Mantén pulsado dentro del cuadro de texto de abajo y selecciona "Pegar".'
     )
   }
 
@@ -1036,52 +1242,174 @@ function StudioMobileHubPage() {
     fallbackBrowserClipboard()
   }
 
-  // Importar ficha de contacto en formato vCard (.vcf)
+  // Guardar un contacto manual en Mis Contactos y seleccionarlo
+  const handleAddManualContact = async () => {
+    const name = newContactName.trim()
+    const phone = newContactPhone.trim()
+    if (!phone) {
+      setNativeContactNotice('Por favor introduce al menos un número de teléfono.')
+      return
+    }
+    const clean = phone.replace(/\D/g, '')
+    if (clean.length < 8) {
+      setNativeContactNotice('El teléfono debe contener al menos 8 dígitos.')
+      return
+    }
+    const newContact: PhoneContactItem = {
+      id: `cnt-${clean}`,
+      name: name || 'Contacto',
+      phone: phone,
+      source: 'manual',
+    }
+    const merged = [newContact, ...phoneContacts.filter((c) => c.phone.replace(/\D/g, '') !== clean)].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
+    setPhoneContacts(merged)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goldblack_imported_contacts', JSON.stringify(merged))
+    }
+    handleSelectPhoneContact(newContact)
+    setShowAddContactForm(false)
+    setNewContactName('')
+    setNewContactPhone('')
+    setNativeContactNotice(null)
+
+    try {
+      await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([newContact]),
+      })
+    } catch (err) {
+      console.warn('[Contacts Save Error]', err)
+    }
+  }
+
+  // Importar bloque de texto o lista pegada de WhatsApp
+  const handleImportPastedList = async () => {
+    if (!pasteListText.trim()) return
+    const parsed = parseContactsFromTextOrVcard(pasteListText)
+    if (parsed.length === 0) {
+      setNativeContactNotice('No se encontraron teléfonos válidos en el texto pegado.')
+      return
+    }
+
+    const mergedMap = new Map<string, PhoneContactItem>()
+    phoneContacts.forEach((c) => mergedMap.set(c.phone.replace(/\D/g, ''), c))
+    parsed.forEach((c) => {
+      const clean = c.phone.replace(/\D/g, '')
+      mergedMap.set(clean, {
+        id: `cnt-${clean}`,
+        name: c.name,
+        phone: c.phone,
+        source: 'whatsapp',
+      })
+    })
+    const updatedList = Array.from(mergedMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+    setPhoneContacts(updatedList)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('goldblack_imported_contacts', JSON.stringify(updatedList))
+    }
+    setContactSelectedToast(`✓ Se han importado ${parsed.length} contactos a tu agenda`)
+    setTimeout(() => setContactSelectedToast(null), 5000)
+    setShowAddContactForm(false)
+    setPasteListText('')
+    setNativeContactNotice(null)
+
+    try {
+      await fetch('/api/contacts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed),
+      })
+    } catch (err) {
+      console.warn('[Contacts Sync Error]', err)
+    }
+  }
+
+  // Importar ficha o agenda completa de contactos en formato vCard (.vcf)
   const handleVcfImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const text = ev.target?.result as string
       if (!text) return
-      let name = ''
-      let phone = ''
-      const lines = text.split(/\r?\n/)
-      for (const line of lines) {
-        const trimmed = line.trim()
-        if (trimmed.startsWith('FN:')) {
-          name = trimmed.replace('FN:', '').trim()
-        } else if (!name && trimmed.startsWith('N:')) {
-          const parts = trimmed.replace('N:', '').split(';').filter(Boolean)
-          name = parts.reverse().join(' ').trim()
-        } else if (!phone && (trimmed.startsWith('TEL') || trimmed.startsWith('item1.TEL'))) {
-          const colonIdx = trimmed.indexOf(':')
-          if (colonIdx !== -1) {
-            phone = trimmed.substring(colonIdx + 1).trim()
-          }
-        }
+      const parsed = parseContactsFromTextOrVcard(text)
+      if (parsed.length === 0) {
+        setNativeContactNotice('No se detectaron contactos con número de teléfono en el archivo seleccionado.')
+        return
       }
-      if (phone) {
-        setClientPhone(phone)
-        if (name) setClientName(name)
-        const clean = cleanPhoneForWhatsApp(phone)
+
+      // Si es un solo contacto, lo seleccionamos directamente en el formulario
+      if (parsed.length === 1) {
+        const single = parsed[0]
+        setClientPhone(single.phone)
+        if (single.name && single.name !== 'Sin nombre') {
+          setClientName(single.name)
+        }
+        const clean = cleanPhoneForWhatsApp(single.phone)
         const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
         if (matched) {
           if (matched.preferredCurl) setCurl(matched.preferredCurl)
           if (matched.notes) setNotes(matched.notes)
         }
         setContactPickerOpen(false)
-        setContactSelectedToast(`✓ Ficha importada: ${name || phone}`)
+        setContactSelectedToast(`✓ Contacto seleccionado: ${single.name} (${single.phone})`)
         setTimeout(() => setContactSelectedToast(null), 4000)
-        if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-          ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
-        }
       } else {
-        setNativeContactNotice('No se detectó un número de teléfono en la tarjeta de contacto seleccionada.')
+        setContactSelectedToast(`✓ Se han importado ${parsed.length} contactos a tu agenda`)
+        setTimeout(() => setContactSelectedToast(null), 5000)
+      }
+
+      // Guardar en estado local y persistir en localStorage
+      const mergedMap = new Map<string, PhoneContactItem>()
+      phoneContacts.forEach((c) => mergedMap.set(c.phone.replace(/\D/g, ''), c))
+      parsed.forEach((c) => mergedMap.set(c.phone.replace(/\D/g, ''), c))
+      const updatedList = Array.from(mergedMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      setPhoneContacts(updatedList)
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('goldblack_imported_contacts', JSON.stringify(updatedList))
+      }
+
+      // Sincronizar en Supabase en segundo plano
+      try {
+        await fetch('/api/contacts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsed),
+        })
+      } catch (err) {
+        console.warn('[Contacts Sync Error]', err)
+      }
+
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+        ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
       }
     }
     reader.readAsText(file)
     if (vcfInputRef.current) vcfInputRef.current.value = ''
+  }
+
+  // Seleccionar un contacto de la agenda del teléfono
+  const handleSelectPhoneContact = (c: PhoneContactItem) => {
+    setClientName(c.name)
+    setClientPhone(c.phone)
+    const clean = cleanPhoneForWhatsApp(c.phone)
+    const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
+    if (matched) {
+      if (matched.preferredCurl) setCurl(matched.preferredCurl)
+      if (matched.notes) setNotes(matched.notes)
+    } else if (c.notes) {
+      setNotes(c.notes)
+    }
+    setContactPickerOpen(false)
+    setContactSelectedToast(`✓ Contacto seleccionado: ${c.name} (${c.phone})`)
+    setTimeout(() => setContactSelectedToast(null), 4000)
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+      ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('light')
+    }
   }
 
   // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS con Feature Flag / Navegadores modernos)
@@ -2893,156 +3221,335 @@ function StudioMobileHubPage() {
               className="hidden"
             />
 
-            {/* Opciones Rápidas */}
-            <div className="shrink-0 space-y-2">
-              {/* Opción 1: Pegar desde Portapapeles (Telegram WebApp / Clipboard) */}
+            {/* Pestañas del Modal */}
+            <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/60 border border-white/10 shrink-0">
               <button
                 type="button"
-                onClick={handlePasteClipboard}
-                className="w-full p-3.5 rounded-2xl bg-linear-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 hover:border-amber-400 text-white font-semibold text-xs flex items-center justify-between gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                onClick={() => {
+                  setPickerTab('telefono')
+                  setContactPickerSearch('')
+                }}
+                className={`py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  pickerTab === 'telefono'
+                    ? 'bg-accent/25 border border-accent/40 text-accent shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
               >
-                <div className="flex items-center gap-3 text-left">
-                  <span className="w-9 h-9 rounded-xl bg-amber-500/25 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">
-                    📋
-                  </span>
-                  <div>
-                    <span className="block font-bold text-xs text-amber-300">Pegar Número Copiado</span>
-                    <span className="block text-[10px] text-zinc-400">Pega al instante el número copiado en WhatsApp o Contactos</span>
-                  </div>
-                </div>
-                <span className="text-amber-300 font-bold text-xs bg-amber-500/20 px-2 py-1 rounded-lg border border-amber-500/30">
-                  1 toque ⚡
+                <span>📱 Mis Contactos</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 font-mono">
+                  {phoneContacts.length}
                 </span>
               </button>
 
-              <div className="grid grid-cols-2 gap-2">
-                {/* Opción 2: Importar Tarjeta vCard .vcf */}
-                <button
-                  type="button"
-                  onClick={() => vcfInputRef.current?.click()}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-accent/40 text-white font-semibold text-xs flex items-center gap-2.5 transition-all active:scale-[0.98] cursor-pointer text-left"
-                >
-                  <span className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-base shrink-0">
-                    📇
-                  </span>
-                  <div className="min-w-0">
-                    <span className="block font-bold text-[11px] text-zinc-200 truncate">Ficha (.vcf)</span>
-                    <span className="block text-[9px] text-zinc-400">Importar archivo</span>
-                  </div>
-                </button>
-
-                {/* Opción 3: Agenda Móvil */}
-                <button
-                  type="button"
-                  onClick={handlePickNativeContact}
-                  className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:border-sky-400/40 text-white font-semibold text-xs flex items-center gap-2.5 transition-all active:scale-[0.98] cursor-pointer text-left"
-                >
-                  <span className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-base shrink-0">
-                    📱
-                  </span>
-                  <div className="min-w-0">
-                    <span className="block font-bold text-[11px] text-sky-300 truncate">Agenda Móvil</span>
-                    <span className="block text-[9px] text-zinc-400">{isIOS ? 'Info iPhone' : 'Abrir contactos'}</span>
-                  </div>
-                </button>
-              </div>
-
-              {nativeContactNotice && (
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs leading-relaxed space-y-2">
-                  <div className="font-semibold text-amber-300 flex items-center gap-1.5">
-                    <span>ℹ️</span>
-                    <span>Acceso a Contactos en iPhone:</span>
-                  </div>
-                  <p className="text-zinc-300 text-[11px] leading-normal">
-                    {nativeContactNotice}
-                  </p>
-                  <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 space-y-1.5 text-[11px] text-zinc-300">
-                    <span className="font-bold text-white block">💡 Dos formas inmediatas para elegir el contacto:</span>
-                    <div className="flex items-start gap-1.5">
-                      <span>1️⃣</span>
-                      <span><strong>Toca la casilla del teléfono:</strong> Tu propio teclado de iPhone te mostrará la sugerencia de tus contactos en la barra superior.</span>
-                    </div>
-                    <div className="flex items-start gap-1.5">
-                      <span>2️⃣</span>
-                      <span><strong>Copia y pulsa "Pegar":</strong> Copia el número desde WhatsApp o tu app Contactos y toca el botón dorado <strong>📋 Pegar</strong> arriba.</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Tip permanente para iPhone */}
-              {isIOS && !nativeContactNotice && (
-                <div className="p-2.5 rounded-xl bg-sky-950/40 border border-sky-500/30 text-[11px] text-sky-300 flex items-start gap-2">
-                  <span className="text-base shrink-0">💡</span>
-                  <span className="leading-snug">
-                    <strong>Truco iPhone:</strong> Al pulsar en el campo del teléfono en el formulario, tu propio teclado de iOS te mostrará la opción de autocompletar desde tus contactos en un toque.
-                  </span>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setPickerTab('estudio')
+                  setContactPickerSearch('')
+                }}
+                className={`py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  pickerTab === 'estudio'
+                    ? 'bg-accent/25 border border-accent/40 text-accent shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                <span>💎 Clientas Estudio</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 font-mono">
+                  {allStudioClients.length}
+                </span>
+              </button>
             </div>
 
-            {/* Divisor */}
-            <div className="flex items-center gap-2 shrink-0">
-              <div className="h-px bg-white/10 flex-1" />
-              <span className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider">
-                O busca una clienta registrada ({allStudioClients.length})
-              </span>
-              <div className="h-px bg-white/10 flex-1" />
-            </div>
-
-            {/* Buscador de Clientas */}
-            <div className="shrink-0">
-              <input
-                type="text"
-                placeholder="🔍 Buscar por nombre o teléfono..."
-                value={contactPickerSearch}
-                onChange={(e) => setContactPickerSearch(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
-              />
-            </div>
-
-            {/* Lista con scroll de clientas */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
-              {filteredClientsForPicker.length === 0 ? (
-                <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
-                  <p>No se encontraron clientas para esta búsqueda.</p>
-                  <p className="text-[10px]">Usa el botón de abrir contactos del móvil o escribe el número a mano.</p>
-                </div>
-              ) : (
-                filteredClientsForPicker.map((client) => (
-                  <div
-                    key={client.phone || client.name}
-                    onClick={() => handleSelectStudioClient(client)}
-                    className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
-                        {client.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
-                          {client.name}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 font-mono block">
-                          📞 {client.phone}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold block mb-0.5">
-                        {client.totalVisits} {client.totalVisits === 1 ? 'cita' : 'citas'}
+            {/* CONTENIDO PESTAÑA 1: CONTACTOS DEL TELÉFONO / WHATSAPP */}
+            {pickerTab === 'telefono' && (
+              <>
+                {/* Botones de acción rápida de contactos */}
+                <div className="shrink-0 space-y-2">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {/* Botón 1: Importar Contactos .vcf */}
+                    <button
+                      type="button"
+                      onClick={() => vcfInputRef.current?.click()}
+                      className="p-2.5 rounded-2xl bg-linear-to-b from-amber-500/20 to-accent/10 border border-accent/40 hover:border-accent text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                    >
+                      <span className="text-lg">📥</span>
+                      <span className="block font-bold text-[11px] text-accent leading-tight">
+                        Importar .vcf
                       </span>
-                      {client.preferredCurl && (
-                        <span className="text-[9px] text-zinc-500 block">
-                          Curva {client.preferredCurl}
-                        </span>
+                      <span className="block text-[8px] text-zinc-400 leading-none">iPhone / WhatsApp</span>
+                    </button>
+
+                    {/* Botón 2: Pegar de WhatsApp */}
+                    <button
+                      type="button"
+                      onClick={handlePasteClipboard}
+                      className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/50 text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] cursor-pointer"
+                    >
+                      <span className="text-lg">📋</span>
+                      <span className="block font-bold text-[11px] text-emerald-400 leading-tight">
+                        Pegar WA
+                      </span>
+                      <span className="block text-[8px] text-zinc-400 leading-none">Portapapeles</span>
+                    </button>
+
+                    {/* Botón 3: Añadir manual / Lista */}
+                    <button
+                      type="button"
+                      onClick={() => setShowAddContactForm((prev) => !prev)}
+                      className={`p-2.5 rounded-2xl border text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] cursor-pointer ${
+                        showAddContactForm
+                          ? 'bg-accent/25 border-accent text-accent'
+                          : 'bg-white/5 border-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <span className="text-lg">{showAddContactForm ? '✕' : '➕'}</span>
+                      <span className="block font-bold text-[11px] text-zinc-200 leading-tight">
+                        {showAddContactForm ? 'Cerrar' : 'Añadir'}
+                      </span>
+                      <span className="block text-[8px] text-zinc-400 leading-none">Manual o lista</span>
+                    </button>
+                  </div>
+
+                  {/* Formulario desplegable para Añadir o Pegar Lista */}
+                  {showAddContactForm && (
+                    <div className="p-3 rounded-2xl bg-black/70 border border-accent/30 space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setAddContactMode('single')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                              addContactMode === 'single'
+                                ? 'bg-accent text-black'
+                                : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            ➕ Un Contacto
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAddContactMode('bulk')}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                              addContactMode === 'bulk'
+                                ? 'bg-accent text-black'
+                                : 'text-zinc-400 hover:text-white'
+                            }`}
+                          >
+                            📝 Pegar Lista WA
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddContactForm(false)}
+                          className="text-zinc-500 hover:text-white text-xs px-1 cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {addContactMode === 'single' ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Nombre de la clienta (ej. Marta WhatsApp)"
+                            value={newContactName}
+                            onChange={(e) => setNewContactName(e.target.value)}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                          />
+                          <input
+                            type="tel"
+                            placeholder="Teléfono móvil (ej. 612 34 56 78)"
+                            value={newContactPhone}
+                            onChange={(e) => setNewContactPhone(e.target.value)}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddManualContact}
+                            className="w-full py-2 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            💾 Guardar en Agenda y Seleccionar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-[10px] text-zinc-400 leading-snug">
+                            Pega aquí mensajes, notas o chats copiados de WhatsApp que contengan nombres y teléfonos:
+                          </p>
+                          <textarea
+                            rows={3}
+                            placeholder="Ejemplo:&#10;María López 612345678&#10;Lucía +34 654 987 321"
+                            value={pasteListText}
+                            onChange={(e) => setPasteListText(e.target.value)}
+                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono resize-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleImportPastedList}
+                            className="w-full py-2 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                          >
+                            ✨ Extraer e Importar Contactos
+                          </button>
+                        </div>
                       )}
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  )}
+
+                  {nativeContactNotice && (
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed">
+                      ℹ️ {nativeContactNotice}
+                    </div>
+                  )}
+                </div>
+
+                {/* Buscador de Contactos del Móvil */}
+                <div className="shrink-0">
+                  <input
+                    type="text"
+                    placeholder={`🔍 Buscar entre tus ${phoneContacts.length} contactos...`}
+                    value={contactPickerSearch}
+                    onChange={(e) => setContactPickerSearch(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                  />
+                </div>
+
+                {/* Lista de Contactos del Móvil con Scroll */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
+                  {phoneContacts.length === 0 ? (
+                    <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-2.5 text-center my-2">
+                      <div className="w-12 h-12 rounded-2xl bg-accent/15 border border-accent/30 text-accent flex items-center justify-center text-2xl mx-auto">
+                        📱
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-xs font-bold text-white">Ten todos tus contactos aquí en 10 segundos</h4>
+                        <p className="text-[11px] text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                          Importa tu agenda de iPhone o los contactos de WhatsApp una sola vez y estarán disponibles para seleccionar siempre:
+                        </p>
+                      </div>
+                      <div className="text-left p-3 rounded-xl bg-white/5 border border-white/5 space-y-1.5 text-[11px] text-zinc-300">
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-accent">1.</span>
+                          <span>En tu iPhone abre <strong>Contactos</strong> ➔ pulsa <strong>Listas</strong> (arriba a la izquierda).</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-accent">2.</span>
+                          <span>Mantén pulsado <strong>"Todos los contactos"</strong> ➔ toca <strong>Exportar</strong> ➔ Guardar en Archivos.</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-accent">3.</span>
+                          <span>O en <strong>WhatsApp</strong>: abre el chat de tu clienta ➔ toca su nombre ➔ <strong>Compartir contacto</strong> ➔ Guardar en Archivos.</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => vcfInputRef.current?.click()}
+                        className="w-full py-2.5 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                      >
+                        📥 Toca aquí para elegir el archivo (.vcf)
+                      </button>
+                    </div>
+                  ) : filteredPhoneContacts.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
+                      <p>No se encontraron contactos con "{contactPickerSearch}".</p>
+                    </div>
+                  ) : (
+                    filteredPhoneContacts.map((c) => (
+                      <div
+                        key={c.phone || c.name}
+                        onClick={() => handleSelectPhoneContact(c)}
+                        className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
+                            {c.name.charAt(0) || '👤'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
+                              {c.name}
+                            </span>
+                            <span className="text-[11px] text-zinc-400 font-mono block">
+                              📞 {c.phone}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
+                            Elegir ➔
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeletePhoneContact(c, e)}
+                            className="w-6 h-6 rounded-lg bg-white/5 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 text-xs flex items-center justify-center cursor-pointer transition-colors"
+                            title="Eliminar de contactos importados"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* CONTENIDO PESTAÑA 2: CLIENTAS DEL ESTUDIO */}
+            {pickerTab === 'estudio' && (
+              <>
+                {/* Buscador de Clientas */}
+                <div className="shrink-0">
+                  <input
+                    type="text"
+                    placeholder={`🔍 Buscar entre ${allStudioClients.length} clientas del estudio...`}
+                    value={contactPickerSearch}
+                    onChange={(e) => setContactPickerSearch(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                  />
+                </div>
+
+                {/* Lista con scroll de clientas */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
+                  {filteredClientsForPicker.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
+                      <p>No se encontraron clientas con "{contactPickerSearch}".</p>
+                    </div>
+                  ) : (
+                    filteredClientsForPicker.map((client) => (
+                      <div
+                        key={client.phone || client.name}
+                        onClick={() => handleSelectStudioClient(client)}
+                        className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
+                            {client.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
+                              {client.name}
+                            </span>
+                            <span className="text-[11px] text-zinc-400 font-mono block">
+                              📞 {client.phone}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold block mb-0.5">
+                            {client.totalVisits} {client.totalVisits === 1 ? 'cita' : 'citas'}
+                          </span>
+                          {client.preferredCurl && (
+                            <span className="text-[9px] text-zinc-500 block">
+                              Curva {client.preferredCurl}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Pie de modal */}
             <div className="shrink-0 pt-2 border-t border-white/10 flex justify-end">

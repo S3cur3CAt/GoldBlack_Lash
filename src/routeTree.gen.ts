@@ -18,6 +18,7 @@ import { Route as SobreMiRouteImport } from './routes/sobre-mi'
 import { Route as ApiAppointmentsRouteImport } from './routes/api.appointments'
 import { Route as ApiAuthRouteImport } from './routes/api.auth'
 import { Route as ApiConfigRouteImport } from './routes/api.config'
+import { Route as ApiContactsRouteImport } from './routes/api.contacts'
 import { Route as ApiEmailRouteImport } from './routes/api.email'
 import { Route as ApiGalleryRouteImport } from './routes/api.gallery'
 import { Route as ApiInvoicesRouteImport } from './routes/api.invoices'
@@ -71,6 +72,11 @@ const ApiConfigRoute = ApiConfigRouteImport.update({
   path: '/api/config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiContactsRoute = ApiContactsRouteImport.update({
+  id: '/api/contacts',
+  path: '/api/contacts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiEmailRoute = ApiEmailRouteImport.update({
   id: '/api/email',
   path: '/api/email',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/contacts': typeof ApiContactsRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/contacts': typeof ApiContactsRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
+  '/api/contacts': typeof ApiContactsRoute
   '/api/email': typeof ApiEmailRoute
   '/api/gallery': typeof ApiGalleryRoute
   '/api/invoices': typeof ApiInvoicesRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
+    | '/api/contacts'
     | '/api/email'
     | '/api/gallery'
     | '/api/invoices'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
+    | '/api/contacts'
     | '/api/email'
     | '/api/gallery'
     | '/api/invoices'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
+    | '/api/contacts'
     | '/api/email'
     | '/api/gallery'
     | '/api/invoices'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   ApiAppointmentsRoute: typeof ApiAppointmentsRoute
   ApiAuthRoute: typeof ApiAuthRoute
   ApiConfigRoute: typeof ApiConfigRoute
+  ApiContactsRoute: typeof ApiContactsRoute
   ApiEmailRoute: typeof ApiEmailRoute
   ApiGalleryRoute: typeof ApiGalleryRoute
   ApiInvoicesRoute: typeof ApiInvoicesRoute
@@ -303,6 +316,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/contacts': {
+      id: '/api/contacts'
+      path: '/api/contacts'
+      fullPath: '/api/contacts'
+      preLoaderRoute: typeof ApiContactsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/email': {
       id: '/api/email'
       path: '/api/email'
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAppointmentsRoute: ApiAppointmentsRoute,
   ApiAuthRoute: ApiAuthRoute,
   ApiConfigRoute: ApiConfigRoute,
+  ApiContactsRoute: ApiContactsRoute,
   ApiEmailRoute: ApiEmailRoute,
   ApiGalleryRoute: ApiGalleryRoute,
   ApiInvoicesRoute: ApiInvoicesRoute,

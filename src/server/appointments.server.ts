@@ -63,6 +63,17 @@ async function getSql() {
         await client`
           ALTER TABLE studio_appointments ADD COLUMN IF NOT EXISTS client_email TEXT
         `
+        await client`
+          CREATE TABLE IF NOT EXISTS studio_contacts (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            source TEXT DEFAULT 'phone',
+            notes TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+          )
+        `
       } catch (err) {
         console.warn('[Supabase DB] Table check notice:', err)
       }
@@ -223,4 +234,77 @@ export async function deleteClientAppointmentsFromDb(
   return true
 }
 
+export interface DbContactRecord {
+  id: string
+  name: string
+  phone: string
+  source?: string
+  notes?: string
+  createdAt?: string
+}
 
+export async function fetchContactsFromDb(): Promise<DbContactRecord[]> {
+  try {
+    const client = await getSql()
+    const rows = await client`
+      SELECT id, name, phone, source, notes, created_at
+      FROM studio_contacts
+      ORDER BY name ASC
+    `
+    return rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      phone: r.phone,
+      source: r.source || 'phone',
+      notes: r.notes || undefined,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+    }))
+  } catch (err) {
+    console.error('[Supabase DB] Error leyendo studio_contacts:', err)
+    return []
+  }
+}
+
+export async function saveContactsToDb(
+  contacts: Array<{ name: string; phone: string; notes?: string; source?: string }>
+): Promise<{ ok: boolean; count: number; error?: string }> {
+  try {
+    const client = await getSql()
+    let savedCount = 0
+    for (const c of contacts) {
+      const clean = (c.phone || '').replace(/\D/g, '')
+      if (!clean) continue
+      const id = `cnt-${clean}`
+      const name = (c.name || '').trim() || 'Sin nombre'
+      const phone = (c.phone || '').trim()
+      const notes = c.notes ? c.notes.trim() : null
+      const source = c.source || 'phone'
+
+      await client`
+        INSERT INTO studio_contacts (id, name, phone, notes, source, updated_at)
+        VALUES (${id}, ${name}, ${phone}, ${notes}, ${source}, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          phone = EXCLUDED.phone,
+          notes = COALESCE(EXCLUDED.notes, studio_contacts.notes),
+          updated_at = NOW()
+      `
+      savedCount++
+    }
+    return { ok: true, count: savedCount }
+  } catch (err: any) {
+    console.error('[Supabase DB] Error guardando studio_contacts:', err)
+    return { ok: false, count: 0, error: err?.message || String(err) }
+  }
+}
+
+export async function deleteContactFromDb(id: string): Promise<boolean> {
+  try {
+    const client = await getSql()
+    await client`DELETE FROM studio_contacts WHERE id = ${id}`
+    return true
+  } catch (err) {
+    console.error('[Supabase DB] Error eliminando contacto:', err)
+    return false
+  }
+}
