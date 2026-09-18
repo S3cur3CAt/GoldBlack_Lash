@@ -169,6 +169,57 @@ const PROMO_LIMIT_PRESETS = [
   'Hasta completar agenda',
 ]
 
+export const PROMO_STUDIO_PRESETS = [
+  {
+    id: 'curva-d',
+    label: '✨ Pestañas Curva D',
+    sublabel: '23 € (Habitual 27 €)',
+    title: 'OFERTA ESPECIAL',
+    service: 'EXTENSIONES DE PESTAÑAS',
+    lashType: 'Curvatura D (Efecto Rizado Intenso)',
+    oldPrice: '27',
+    newPrice: '23',
+    points: 'Realza tu mirada\nPestañas bonitas, ligeras y definidas\nAcabado elegante y 100% personalizado',
+    limit: 'Oferta por tiempo limitado',
+  },
+  {
+    id: 'volumen-ruso',
+    label: '👑 Volumen Ruso 25€',
+    sublabel: '25 € (Habitual 30 €)',
+    title: 'PROMOCIÓN EXCLUSIVA',
+    service: 'VOLUMEN RUSO INTENSO',
+    lashType: 'Curvatura CC (Mirada Abierta & Elegante)',
+    oldPrice: '30',
+    newPrice: '25',
+    points: 'Negro carbón mate sin peso\nMáxima densidad pelo a pelo\nRetención premium +4 semanas',
+    limit: 'Solo para las primeras 5 reservas',
+  },
+  {
+    id: 'lifting-tinte',
+    label: '🌸 Lifting + Tinte 22€',
+    sublabel: '22 € (Habitual 30 €)',
+    title: 'TARIFA ESPECIAL',
+    service: 'LIFTING DE PESTAÑAS + TINTE',
+    lashType: 'Lifting & Nutrición con Keratina',
+    oldPrice: '30',
+    newPrice: '22',
+    points: 'Curva espectacular desde la raíz\nColor negro brillante intenso\nBaño de keratina nutritivo',
+    limit: 'Válido hasta este viernes',
+  },
+  {
+    id: 'foxy-cat',
+    label: '💎 Efecto Foxy / Cat Eye',
+    sublabel: '25 € (Habitual 32 €)',
+    title: 'CAMPAÑA MIRADA VIP',
+    service: 'EFECTO FOXY / CAT EYE',
+    lashType: 'Curvatura M / L (Efecto Foxy Eyes)',
+    oldPrice: '32',
+    newPrice: '25',
+    points: 'Ojo rasgado efecto lifting\nFibras ultraligeras de visón sintético\nMirada felina sofisticada',
+    limit: 'Promoción este fin de semana',
+  },
+]
+
 function getFormattedDate(offsetDays = 0): string {
   const d = new Date()
   d.setDate(d.getDate() + offsetDays)
@@ -272,6 +323,7 @@ function StudioMobileHubPage() {
   const [promoPoints, setPromoPoints] = useState('Realza tu mirada\nPestañas bonitas, ligeras y definidas\nAcabado elegante y 100% personalizado')
   const [promoLimit, setPromoLimit] = useState('Oferta por tiempo limitado')
   const [copiedPromo, setCopiedPromo] = useState(false)
+  const [selectedPromoPresetId, setSelectedPromoPresetId] = useState<string | null>('curva-d')
 
   // Form State (Crear Cita)
   const [selectedService, setSelectedService] = useState<ServiceOption>(DEFAULT_SERVICES_LIST[0])
@@ -535,6 +587,7 @@ function StudioMobileHubPage() {
 
   // Aplicar propuesta rápida de promoción
   const applyPromoPreset = (preset: {
+    id?: string
     title: string
     service: string
     lashType?: string
@@ -543,6 +596,9 @@ function StudioMobileHubPage() {
     points: string
     limit: string
   }) => {
+    if (preset.id) {
+      setSelectedPromoPresetId(preset.id)
+    }
     setPromoTitle(preset.title)
     setPromoServiceName(preset.service)
     if (preset.lashType) setPromoLashType(preset.lashType)
@@ -1792,85 +1848,48 @@ function StudioMobileHubPage() {
 
               {/* Selector Rápido de Propuestas del Estudio */}
               <div className="space-y-1.5">
-                <span className="text-[10px] text-zinc-400 uppercase font-semibold block">
-                  Propuestas Rápidas del Estudio:
-                </span>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyPromoPreset({
-                        title: 'OFERTA ESPECIAL',
-                        service: 'EXTENSIONES DE PESTAÑAS',
-                        lashType: 'Curvatura D (Efecto Rizado Intenso)',
-                        oldPrice: '27',
-                        newPrice: '23',
-                        points: 'Realza tu mirada\nPestañas bonitas, ligeras y definidas\nAcabado elegante y 100% personalizado',
-                        limit: 'Oferta por tiempo limitado',
-                      })
-                    }
-                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
-                  >
-                    <span className="font-bold text-amber-300 block">✨ Pestañas Curva D</span>
-                    <span className="text-[9px] text-zinc-400">23 € (Habitual 27 €)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyPromoPreset({
-                        title: 'PROMOCIÓN EXCLUSIVA',
-                        service: 'VOLUMEN RUSO INTENSO',
-                        lashType: 'Curvatura CC (Mirada Abierta & Elegante)',
-                        oldPrice: '30',
-                        newPrice: '25',
-                        points: 'Negro carbón mate sin peso\nMáxima densidad pelo a pelo\nRetención premium +4 semanas',
-                        limit: 'Solo para las primeras 5 reservas',
-                      })
-                    }
-                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
-                  >
-                    <span className="font-bold text-amber-300 block">👑 Volumen Ruso 25€</span>
-                    <span className="text-[9px] text-zinc-400">25 € (Habitual 30 €)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyPromoPreset({
-                        title: 'TARIFA ESPECIAL',
-                        service: 'LIFTING DE PESTAÑAS + TINTE',
-                        lashType: 'Lifting & Nutrición con Keratina',
-                        oldPrice: '30',
-                        newPrice: '22',
-                        points: 'Curva espectacular desde la raíz\nColor negro brillante intenso\nBaño de keratina nutritivo',
-                        limit: 'Válido hasta este viernes',
-                      })
-                    }
-                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
-                  >
-                    <span className="font-bold text-amber-300 block">🌸 Lifting + Tinte 22€</span>
-                    <span className="text-[9px] text-zinc-400">22 € (Habitual 30 €)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      applyPromoPreset({
-                        title: 'CAMPAÑA MIRADA VIP',
-                        service: 'EFECTO FOXY / CAT EYE',
-                        lashType: 'Curvatura M / L (Efecto Foxy Eyes)',
-                        oldPrice: '32',
-                        newPrice: '25',
-                        points: 'Ojo rasgado efecto lifting\nFibras ultraligeras de visón sintético\nMirada felina sofisticada',
-                        limit: 'Promoción este fin de semana',
-                      })
-                    }
-                    className="p-2 rounded-xl bg-black/40 border border-amber-500/30 hover:border-amber-500 text-left text-[11px] transition-all"
-                  >
-                    <span className="font-bold text-amber-300 block">💎 Efecto Foxy / Cat Eye</span>
-                    <span className="text-[9px] text-zinc-400">25 € (Habitual 32 €)</span>
-                  </button>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-zinc-400 uppercase font-semibold block">
+                    Propuestas Rápidas del Estudio:
+                  </span>
+                  <span className="text-[9px] text-amber-400/80 font-medium">
+                    Toca para aplicar plantilla
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {PROMO_STUDIO_PRESETS.map((preset) => {
+                    const isSelected = selectedPromoPresetId === preset.id
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyPromoPreset(preset)}
+                        className={`relative p-2.5 rounded-xl text-left text-[11px] transition-all duration-200 border ${
+                          isSelected
+                            ? 'bg-amber-500/20 border-amber-400 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-white'
+                            : 'bg-black/40 border-amber-500/30 hover:border-amber-500/70 hover:bg-black/60 text-zinc-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`font-bold block ${isSelected ? 'text-amber-200' : 'text-amber-300'}`}>
+                            {preset.label}
+                          </span>
+                          {isSelected && (
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-black text-[9px] font-black shrink-0 shadow-sm">
+                              ✓
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className={`text-[9px] block mt-0.5 ${
+                            isSelected ? 'text-amber-200/80 font-medium' : 'text-zinc-400'
+                          }`}
+                        >
+                          {preset.sublabel}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
