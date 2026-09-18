@@ -346,6 +346,12 @@ function StudioMobileHubPage() {
   const [notes, setNotes] = useState<string>('')
   const [curl, setCurl] = useState<string>('D')
 
+  // Selector de Contactos y Clientas
+  const [contactPickerOpen, setContactPickerOpen] = useState(false)
+  const [contactPickerSearch, setContactPickerSearch] = useState('')
+  const [nativeContactNotice, setNativeContactNotice] = useState<string | null>(null)
+  const [contactSelectedToast, setContactSelectedToast] = useState<string | null>(null)
+
   // UI state para crear cita
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitErrorMsg, setSubmitErrorMsg] = useState<string | null>(null)
@@ -531,9 +537,9 @@ function StudioMobileHubPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (/^[0-9]$/.test(e.key)) {
         setPinInput((prev) => {
-          if (prev.length < 4) {
+          if (prev.length < 8) {
             const next = prev + e.key
-            if (next.length === 4) {
+            if (next.length === 6) {
               handleVerifyPin(next)
             }
             return next
@@ -834,8 +840,8 @@ function StudioMobileHubPage() {
     }
   }, [appointments, todayStr])
 
-  // Directorio de Clientas Deducido
-  const clientsList = useMemo<ClientSummary[]>(() => {
+  // Directorio Completo de Clientas Deducido desde Citas
+  const allStudioClients = useMemo<ClientSummary[]>(() => {
     const map = new Map<string, ClientSummary>()
 
     appointments.forEach((apt) => {
@@ -874,12 +880,101 @@ function StudioMobileHubPage() {
       }
     })
 
-    const list = Array.from(map.values()).sort((a, b) => b.totalVisits - a.totalVisits || b.totalSpent - a.totalSpent)
-    if (!clientSearch) return list
+    return Array.from(map.values()).sort((a, b) => b.totalVisits - a.totalVisits || b.totalSpent - a.totalSpent)
+  }, [appointments])
 
+  // Directorio filtrado para la pestaña de Clientas
+  const clientsList = useMemo<ClientSummary[]>(() => {
+    if (!clientSearch) return allStudioClients
     const q = clientSearch.toLowerCase()
-    return list.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
-  }, [appointments, clientSearch])
+    return allStudioClients.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
+  }, [allStudioClients, clientSearch])
+
+  // Directorio filtrado para el modal selector de contactos
+  const filteredClientsForPicker = useMemo<ClientSummary[]>(() => {
+    if (!contactPickerSearch.trim()) return allStudioClients
+    const q = contactPickerSearch.trim().toLowerCase()
+    const qDigits = q.replace(/\D/g, '')
+    return allStudioClients.filter((c) => {
+      const matchName = c.name.toLowerCase().includes(q)
+      const matchPhone = qDigits.length > 0 && c.phone.replace(/\D/g, '').includes(qDigits)
+      return matchName || matchPhone
+    })
+  }, [allStudioClients, contactPickerSearch])
+
+  // Sugerencias rápidas mientras el usuario escribe en el formulario de crear cita
+  const contactSuggestions = useMemo(() => {
+    const qName = clientName.trim().toLowerCase()
+    const qPhone = clientPhone.replace(/\D/g, '')
+
+    if (qName.length < 2 && qPhone.length < 3) return []
+
+    return allStudioClients
+      .filter((c) => {
+        const matchName = qName.length >= 2 && c.name.toLowerCase().includes(qName)
+        const matchPhone = qPhone.length >= 3 && c.phone.replace(/\D/g, '').includes(qPhone)
+        const isExactMatch = c.name.toLowerCase() === qName && c.phone.replace(/\D/g, '') === qPhone
+        return (matchName || matchPhone) && !isExactMatch
+      })
+      .slice(0, 3)
+  }, [allStudioClients, clientName, clientPhone])
+
+  // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS / Navegadores modernos)
+  const handlePickNativeContact = async () => {
+    setNativeContactNotice(null)
+    if (typeof navigator !== 'undefined' && 'contacts' in navigator && 'ContactsManager' in window) {
+      try {
+        const props = ['name', 'tel']
+        const results = await (navigator as any).contacts.select(props, { multiple: false })
+        if (results && results.length > 0) {
+          const c = results[0]
+          const rawTel = Array.isArray(c.tel) ? c.tel[0] : (c.tel || '')
+          const rawName = Array.isArray(c.name) ? c.name[0] : (c.name || '')
+
+          if (rawTel) {
+            setClientPhone(rawTel)
+            if (rawName) {
+              setClientName(rawName)
+            }
+            // Comprobar si coincide con alguna clienta guardada para autocompletar curvatura y notas
+            const clean = cleanPhoneForWhatsApp(rawTel)
+            const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
+            if (matched) {
+              if (matched.preferredCurl) setCurl(matched.preferredCurl)
+              if (matched.notes) setNotes(matched.notes)
+            }
+            setContactPickerOpen(false)
+            setContactSelectedToast(`✓ Contacto seleccionado: ${rawName || rawTel}`)
+            setTimeout(() => setContactSelectedToast(null), 4000)
+            if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+              ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+            }
+            return
+          }
+        }
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes seleccionar cualquier clienta de tu lista abajo.')
+        }
+      }
+    } else {
+      setNativeContactNotice('Tu navegador o webview no soporta la apertura directa de la agenda del sistema. Selecciona cualquier clienta de tu lista abajo o introduce el número.')
+    }
+  }
+
+  // Seleccionar una clienta del estudio
+  const handleSelectStudioClient = (client: ClientSummary) => {
+    setClientName(client.name)
+    setClientPhone(client.phone)
+    if (client.preferredCurl) setCurl(client.preferredCurl)
+    if (client.notes) setNotes(client.notes)
+    setContactPickerOpen(false)
+    setContactSelectedToast(`✓ Clienta seleccionada: ${client.name} (${client.phone})`)
+    setTimeout(() => setContactSelectedToast(null), 4000)
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+      ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('light')
+    }
+  }
 
   // Validación de teléfono para WhatsApp
   const cleanPhone = cleanPhoneForWhatsApp(clientPhone)
@@ -1750,17 +1845,31 @@ function StudioMobileHubPage() {
 
                 {/* 3. Datos de la Clienta y WhatsApp */}
                 <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
                       <span className="text-accent">3.</span> Clienta y Teléfono
                     </label>
-                    {isValidPhone && (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                        WhatsApp: +{cleanPhone}
-                      </span>
-                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setContactPickerSearch('')
+                        setNativeContactNotice(null)
+                        setContactPickerOpen(true)
+                      }}
+                      className="px-2.5 py-1 rounded-xl bg-accent/15 hover:bg-accent/25 border border-accent/40 text-accent font-semibold text-[11px] flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-accent/10 cursor-pointer"
+                    >
+                      <span>📖</span>
+                      <span>Seleccionar Contacto</span>
+                    </button>
                   </div>
+
+                  {contactSelectedToast && (
+                    <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
+                      <span className="text-emerald-400 font-bold">✓</span>
+                      <span>{contactSelectedToast}</span>
+                    </div>
+                  )}
 
                   <div className="space-y-2">
                     <input
@@ -1772,15 +1881,68 @@ function StudioMobileHubPage() {
                       className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
                     />
 
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Teléfono móvil (ej. 612 34 56 78) *"
-                      value={clientPhone}
-                      onChange={(e) => setClientPhone(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
-                    />
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        required
+                        placeholder="Teléfono móvil (ej. 612 34 56 78) *"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-3.5 pr-24 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContactPickerSearch('')
+                          setNativeContactNotice(null)
+                          setContactPickerOpen(true)
+                        }}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 rounded-lg bg-white/10 hover:bg-accent/20 hover:text-accent text-zinc-300 text-[10px] font-semibold flex items-center gap-1 border border-white/10 transition-colors cursor-pointer"
+                        title="Seleccionar desde tus contactos o clientas del estudio"
+                      >
+                        <span>📖 Contactos</span>
+                      </button>
+                    </div>
+
+                    {isValidPhone && (
+                      <div className="flex items-center justify-between text-[10px] text-emerald-400 px-1 font-semibold">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          WhatsApp preparado: +{cleanPhone}
+                        </span>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Sugerencias Rápidas al escribir nombre o teléfono */}
+                  {contactSuggestions.length > 0 && (
+                    <div className="p-2 rounded-xl bg-black/60 border border-accent/25 space-y-1.5 animate-in fade-in duration-150">
+                      <span className="text-[10px] text-accent font-semibold uppercase tracking-wider block px-1">
+                        ✨ Contactos coincidentes ({contactSuggestions.length}):
+                      </span>
+                      <div className="space-y-1">
+                        {contactSuggestions.map((sug) => (
+                          <div
+                            key={sug.phone || sug.name}
+                            onClick={() => handleSelectStudioClient(sug)}
+                            className="p-2 rounded-lg bg-white/5 hover:bg-accent/20 border border-white/5 cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-semibold text-zinc-200 group-hover:text-white block truncate">
+                                {sug.name}
+                              </span>
+                              <span className="text-[10px] text-zinc-400 font-mono">
+                                📞 {sug.phone}
+                              </span>
+                            </div>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold shrink-0">
+                              {sug.totalVisits} {sug.totalVisits === 1 ? 'cita' : 'citas'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {(clientName || clientPhone) && (
                     <button
@@ -1790,7 +1952,7 @@ function StudioMobileHubPage() {
                         setClientPhone('')
                         setNotes('')
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center gap-1"
+                      className="text-[10px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       ✕ Limpiar datos de clienta del formulario
                     </button>
@@ -2501,6 +2663,138 @@ function StudioMobileHubPage() {
           </div>
         )}
       </main>
+
+      {/* ========================================================================= */}
+      {/* MODAL SELECTOR DE CONTACTOS (MÓVIL & ESTUDIO) */}
+      {/* ========================================================================= */}
+      {contactPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-accent/30 rounded-t-3xl sm:rounded-3xl max-h-[88vh] overflow-hidden flex flex-col p-5 space-y-4 shadow-2xl">
+            {/* Cabecera del modal */}
+            <div className="flex items-start justify-between shrink-0">
+              <div>
+                <span className="text-[10px] text-accent uppercase tracking-widest font-mono font-semibold">
+                  📖 Agenda de Contactos
+                </span>
+                <h3 className="text-xl font-bold text-white font-serif mt-0.5">
+                  Seleccionar Contacto
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Elige desde los contactos de tu móvil o del directorio del estudio
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setContactPickerOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Opción 1: Abrir Agenda Nativa del Teléfono */}
+            <div className="shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={handlePickNativeContact}
+                className="w-full p-3.5 rounded-2xl bg-linear-to-r from-sky-500/20 via-sky-500/10 to-transparent border border-sky-500/40 hover:border-sky-400 text-white font-semibold text-xs flex items-center justify-between gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+              >
+                <div className="flex items-center gap-3 text-left">
+                  <span className="w-9 h-9 rounded-xl bg-sky-500/25 border border-sky-500/40 flex items-center justify-center text-lg shrink-0">
+                    📱
+                  </span>
+                  <div>
+                    <span className="block font-bold text-xs text-sky-300">Abrir Contactos de mi Teléfono</span>
+                    <span className="block text-[10px] text-zinc-400">Seleccionar directamente de la agenda de tu móvil</span>
+                  </div>
+                </div>
+                <span className="text-sky-300 font-bold text-base">↗</span>
+              </button>
+
+              {nativeContactNotice && (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed">
+                  ℹ️ {nativeContactNotice}
+                </div>
+              )}
+            </div>
+
+            {/* Divisor */}
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="h-px bg-white/10 flex-1" />
+              <span className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider">
+                O busca una clienta registrada ({allStudioClients.length})
+              </span>
+              <div className="h-px bg-white/10 flex-1" />
+            </div>
+
+            {/* Buscador de Clientas */}
+            <div className="shrink-0">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nombre o teléfono..."
+                value={contactPickerSearch}
+                onChange={(e) => setContactPickerSearch(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+              />
+            </div>
+
+            {/* Lista con scroll de clientas */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
+              {filteredClientsForPicker.length === 0 ? (
+                <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
+                  <p>No se encontraron clientas para esta búsqueda.</p>
+                  <p className="text-[10px]">Usa el botón de abrir contactos del móvil o escribe el número a mano.</p>
+                </div>
+              ) : (
+                filteredClientsForPicker.map((client) => (
+                  <div
+                    key={client.phone || client.name}
+                    onClick={() => handleSelectStudioClient(client)}
+                    className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
+                        {client.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
+                          {client.name}
+                        </span>
+                        <span className="text-[11px] text-zinc-400 font-mono block">
+                          📞 {client.phone}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold block mb-0.5">
+                        {client.totalVisits} {client.totalVisits === 1 ? 'cita' : 'citas'}
+                      </span>
+                      {client.preferredCurl && (
+                        <span className="text-[9px] text-zinc-500 block">
+                          Curva {client.preferredCurl}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Pie de modal */}
+            <div className="shrink-0 pt-2 border-t border-white/10 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setContactPickerOpen(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium cursor-pointer"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MODAL FICHA COMPLETA DE CLIENTA */}
