@@ -438,7 +438,6 @@ function StudioMobileHubPage() {
   const [isLoadingContacts, setIsLoadingContacts] = useState(false)
   const [nativeContactNotice, setNativeContactNotice] = useState<string | null>(null)
   const [contactSelectedToast, setContactSelectedToast] = useState<string | null>(null)
-  const [iosSettingsGuideOpen, setIosSettingsGuideOpen] = useState(false)
   const [showAddContactForm, setShowAddContactForm] = useState(false)
   const [addContactMode, setAddContactMode] = useState<'single' | 'bulk'>('single')
   const [newContactName, setNewContactName] = useState('')
@@ -1419,19 +1418,14 @@ function StudioMobileHubPage() {
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
       try {
         const { Contacts } = await import('@capacitor/contacts')
-        const result = await Contacts.pickContact({
-          projection: {
-            name: true,
-            phones: true,
-          },
-        })
-        if (result?.contact) {
-          const c = result.contact
+        const c = await Contacts.pickContact()
+        if (c) {
           const chosenName =
-            c.name?.display ||
-            [c.name?.given, c.name?.family].filter(Boolean).join(' ') ||
+            c.displayName ||
+            c.name?.formatted ||
+            [c.name?.givenName, c.name?.familyName].filter(Boolean).join(' ') ||
             'Clienta'
-          const chosenPhone = c.phones?.[0]?.number || ''
+          const chosenPhone = c.phoneNumbers?.[0]?.value || ''
 
           if (chosenPhone) {
             setClientPhone(chosenPhone)
@@ -1475,57 +1469,6 @@ function StudioMobileHubPage() {
     setContactPickerSearch('')
     setNativeContactNotice(null)
     setContactPickerOpen(true)
-  }
-
-  // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS con Feature Flag / Navegadores modernos)
-  const handlePickNativeContact = async () => {
-    setNativeContactNotice(null)
-
-    if (typeof navigator !== 'undefined' && 'contacts' in navigator && (navigator as any).contacts?.select) {
-      try {
-        const props = ['name', 'tel']
-        const results = await (navigator as any).contacts.select(props, { multiple: false })
-        if (results && results.length > 0) {
-          const c = results[0]
-          const rawTel = Array.isArray(c.tel) ? c.tel[0] : (c.tel || '')
-          const rawName = Array.isArray(c.name) ? c.name[0] : (c.name || '')
-
-          if (rawTel) {
-            setClientPhone(rawTel)
-            if (rawName) {
-              setClientName(rawName)
-            }
-            const clean = cleanPhoneForWhatsApp(rawTel)
-            const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
-            if (matched) {
-              if (matched.preferredCurl) setCurl(matched.preferredCurl)
-              if (matched.notes) setNotes(matched.notes)
-            }
-            setContactPickerOpen(false)
-            setContactSelectedToast(`✓ Contacto seleccionado: ${rawName || rawTel}`)
-            setTimeout(() => setContactSelectedToast(null), 4000)
-            if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
-              ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
-            }
-            return
-          }
-        }
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') {
-          if (isIOS) {
-            setNativeContactNotice('En iPhone, Apple bloquea el acceso directo a la agenda dentro de aplicaciones por privacidad. Utiliza el botón "📋 Pegar" arriba o toca el campo para autocompletar con el teclado de tu iPhone.')
-          } else {
-            setNativeContactNotice('No se pudo acceder a la agenda del móvil o se canceló el permiso. Puedes usar el botón "Pegar número" o seleccionar una clienta.')
-          }
-        }
-      }
-    } else {
-      if (isIOS) {
-        setNativeContactNotice('En iPhone, Apple bloquea el acceso directo a la agenda dentro de aplicaciones por privacidad. Utiliza el botón "📋 Pegar" arriba o toca el campo para autocompletar con el teclado de tu iPhone.')
-      } else {
-        setNativeContactNotice('Tu navegador no soporta apertura directa de la agenda. Usa el botón "Pegar número", autocompleta con tu teclado o selecciona una clienta abajo.')
-      }
-    }
   }
 
   // Seleccionar una clienta del estudio
