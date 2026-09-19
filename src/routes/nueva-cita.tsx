@@ -443,7 +443,6 @@ function StudioMobileHubPage() {
   const [newContactName, setNewContactName] = useState('')
   const [newContactPhone, setNewContactPhone] = useState('')
   const [pasteListText, setPasteListText] = useState('')
-  const [showAutoSyncGuide, setShowAutoSyncGuide] = useState(false)
   const vcfInputRef = useRef<HTMLInputElement>(null)
   const isIOS = useMemo(() => {
     if (typeof navigator === 'undefined') return false
@@ -3309,82 +3308,6 @@ function StudioMobileHubPage() {
                       <span className="block text-[8px] text-zinc-400 leading-none">Manual o lista</span>
                     </button>
                   </div>
-
-                  {/* Banner de Sincronización Automática */}
-                  <button
-                    type="button"
-                    onClick={() => setShowAutoSyncGuide((prev) => !prev)}
-                    className="w-full p-2.5 rounded-2xl bg-linear-to-r from-purple-500/15 via-accent/15 to-blue-500/15 border border-purple-400/30 hover:border-purple-400/60 text-white flex items-center justify-between gap-2 transition-all cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-7 h-7 rounded-xl bg-purple-500/20 border border-purple-400/40 text-purple-300 flex items-center justify-center text-sm shrink-0">
-                        ⚡
-                      </span>
-                      <div className="min-w-0">
-                        <span className="block text-[11px] font-bold text-purple-300 truncate">
-                          ¿Sincronizar contactos automáticamente?
-                        </span>
-                        <span className="block text-[9px] text-zinc-400 truncate">
-                          Toca aquí para ver los 2 métodos automáticos (WhatsApp y Atajos iPhone)
-                        </span>
-                      </div>
-                    </div>
-                    <span className="text-xs text-purple-400 shrink-0 font-bold px-1.5 py-0.5 rounded-lg bg-purple-500/10">
-                      {showAutoSyncGuide ? 'Ocultar' : 'Ver'}
-                    </span>
-                  </button>
-
-                  {/* Guía interactiva de auto-sincronización */}
-                  {showAutoSyncGuide && (
-                    <div className="p-3.5 rounded-2xl bg-[#14141e] border border-purple-400/30 space-y-3 animate-in fade-in duration-200 text-left">
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                        <h4 className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
-                          <span>⚡</span> 2 Formas sin añadir a mano
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setShowAutoSyncGuide(false)}
-                          className="text-zinc-500 hover:text-white text-xs px-1 cursor-pointer"
-                        >
-                          ✕
-                        </button>
-                      </div>
-
-                      {/* Método 1: Compartir a Telegram */}
-                      <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">📲</span>
-                          <span className="text-xs font-bold text-white">Método 1: Compartir a Telegram (2 clics)</span>
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-200 font-semibold ml-auto">Recomendado</span>
-                        </div>
-                        <p className="text-[10px] text-zinc-300 leading-relaxed">
-                          Cuando tengas un contacto nuevo en <strong>WhatsApp</strong> o en la app <strong>Contactos</strong> de tu iPhone:
-                        </p>
-                        <ol className="text-[10px] text-zinc-300 space-y-1 list-decimal list-inside pl-1">
-                          <li>Toca <strong>«Compartir contacto»</strong>.</li>
-                          <li>Elige <strong>Telegram</strong> ➔ tu bot <strong>GoldBlack Lash</strong>.</li>
-                          <li>¡El bot lo guarda en tu agenda y te manda el botón para crearle la cita con sus datos ya puestos!</li>
-                        </ol>
-                      </div>
-
-                      {/* Método 2: Atajos de iPhone */}
-                      <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">🔄</span>
-                          <span className="text-xs font-bold text-white">Método 2: Automatización iPhone (0 clics)</span>
-                        </div>
-                        <p className="text-[10px] text-zinc-300 leading-relaxed">
-                          En tu iPhone 14 puedes hacer que cada vez que cierres la app Contactos se envíe a la Mini App:
-                        </p>
-                        <ol className="text-[10px] text-zinc-300 space-y-1 list-decimal list-inside pl-1">
-                          <li>Abre la app <strong>Atajos</strong> en tu iPhone ➔ pestaña <strong>Automatización</strong>.</li>
-                          <li>Toca <strong>+ (Nueva automatización)</strong> ➔ elige <strong>«App»</strong>.</li>
-                          <li>Elige la app <strong>Contactos</strong>, marca <strong>«Se cierra»</strong> y «Ejecutar inmediatamente».</li>
-                          <li>Añade la acción <em>Obtener contenido de URL</em> hacia: <code className="text-accent font-mono">https://www.goldblacklash.com/api/contacts</code></li>
-                        </ol>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Formulario desplegable para Añadir o Pegar Lista */}
                   {showAddContactForm && (
