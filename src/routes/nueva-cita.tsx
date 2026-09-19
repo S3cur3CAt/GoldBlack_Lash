@@ -1413,6 +1413,70 @@ function StudioMobileHubPage() {
     }
   }
 
+  // Selector Universal de Contactos (Capacitor nativo iOS CNContactPickerViewController o Modal Web / Telegram)
+  const handleUniversalContactPickerOpen = async () => {
+    // 1. Si está en entorno nativo Capacitor (iOS / Android)
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
+      try {
+        const { Contacts } = await import('@capacitor/contacts')
+        const result = await Contacts.pickContact({
+          projection: {
+            name: true,
+            phones: true,
+          },
+        })
+        if (result?.contact) {
+          const c = result.contact
+          const chosenName =
+            c.name?.display ||
+            [c.name?.given, c.name?.family].filter(Boolean).join(' ') ||
+            'Clienta'
+          const chosenPhone = c.phones?.[0]?.number || ''
+
+          if (chosenPhone) {
+            setClientPhone(chosenPhone)
+            if (chosenName) setClientName(chosenName)
+
+            const clean = cleanPhoneForWhatsApp(chosenPhone)
+            const matched = allStudioClients.find((cli) => cleanPhoneForWhatsApp(cli.phone) === clean)
+            if (matched) {
+              if (matched.preferredCurl) setCurl(matched.preferredCurl)
+              if (matched.notes) setNotes(matched.notes)
+            }
+
+            // Sincronizar en Supabase con source: 'picker'
+            fetch('/api/contacts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify([
+                {
+                  name: chosenName,
+                  phone: chosenPhone,
+                  source: 'picker',
+                  notes: 'Seleccionado desde selector nativo iOS',
+                },
+              ]),
+            }).catch(() => {})
+
+            setContactSelectedToast(`✓ Contacto seleccionado: ${chosenName} (${chosenPhone})`)
+            setTimeout(() => setContactSelectedToast(null), 4000)
+            if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.HapticFeedback) {
+              ;(window as any).Telegram.WebApp.HapticFeedback.impactOccurred('medium')
+            }
+            return
+          }
+        }
+      } catch (err) {
+        console.warn('[Capacitor PickContact Error]', err)
+      }
+    }
+
+    // 2. Si no es nativo (Web / Telegram Mini App): abrir modal con Mis Contactos, Bot y Clientas
+    setContactPickerSearch('')
+    setNativeContactNotice(null)
+    setContactPickerOpen(true)
+  }
+
   // Abrir selector nativo de contactos del dispositivo móvil (Android / iOS con Feature Flag / Navegadores modernos)
   const handlePickNativeContact = async () => {
     setNativeContactNotice(null)
@@ -2354,11 +2418,7 @@ function StudioMobileHubPage() {
 
                     <button
                       type="button"
-                      onClick={() => {
-                        setContactPickerSearch('')
-                        setNativeContactNotice(null)
-                        setContactPickerOpen(true)
-                      }}
+                      onClick={handleUniversalContactPickerOpen}
                       className="px-2.5 py-1 rounded-xl bg-accent/15 hover:bg-accent/25 border border-accent/40 text-accent font-semibold text-[11px] flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-accent/10 cursor-pointer"
                     >
                       <span>📖</span>
@@ -2411,11 +2471,7 @@ function StudioMobileHubPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => {
-                            setContactPickerSearch('')
-                            setNativeContactNotice(null)
-                            setContactPickerOpen(true)
-                          }}
+                          onClick={handleUniversalContactPickerOpen}
                           className="px-2 py-1 rounded-lg bg-accent/15 hover:bg-accent/25 hover:text-accent text-accent text-[10px] font-semibold flex items-center gap-1 border border-accent/30 transition-colors cursor-pointer"
                           title="Seleccionar desde tus contactos o clientas del estudio"
                         >

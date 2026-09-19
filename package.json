@@ -19,6 +19,8 @@
     "publisher:package": "node tools/release-manager/scripts/build-installer.mjs"
   },
   "dependencies": {
+    "@capacitor/contacts": "^1.0.1",
+    "@capacitor/core": "^8.5.2",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "latest",
     "@tanstack/react-router": "latest",
