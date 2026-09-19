@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { StudioVisual } from '#/components/StudioVisual'
 import { openReservationModal } from '#/components/ReservationModal'
@@ -46,27 +46,80 @@ const heroVideos = [
 ]
 
 function Hero() {
-  const [activeVideo, setActiveVideo] = useState(0)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  // activeSlot indica cuál de los 2 reproductores (0 o 1) está visible en primer plano
+  const [activeSlot, setActiveSlot] = useState<0 | 1>(0)
+  // slotVideos mantiene el índice de vídeo actual para cada slot
+  const [slotVideos, setSlotVideos] = useState<[number, number]>([0, 1])
+
+  const videoRef0 = useRef<HTMLVideoElement>(null)
+  const videoRef1 = useRef<HTMLVideoElement>(null)
   const heroRef = useRef<HTMLElement>(null)
 
-  const handleEnded = () => {
-    setActiveVideo((prev) => (prev + 1) % heroVideos.length)
-  }
+  // Referencias para evitar desincronización y cierres obsoletos
+  const currentVidIndexRef = useRef(0)
+  const activeSlotRef = useRef<0 | 1>(0)
+  const isTransitioningRef = useRef(false)
 
-  // Pausar automáticamente el decodificador de vídeo cuando el hero no está visible
-  // Libera de forma masiva memoria y GPU en dispositivos móviles al hacer scroll
+  activeSlotRef.current = activeSlot
+
+  const startNextTransition = useCallback(() => {
+    if (isTransitioningRef.current) return
+    isTransitioningRef.current = true
+
+    const currentSlot = activeSlotRef.current
+    const nextSlot: 0 | 1 = currentSlot === 0 ? 1 : 0
+    const nextVideoEl = nextSlot === 0 ? videoRef0.current : videoRef1.current
+    const prevVideoEl = currentSlot === 0 ? videoRef0.current : videoRef1.current
+
+    if (nextVideoEl) {
+      try {
+        nextVideoEl.currentTime = 0
+      } catch {}
+      nextVideoEl.play().catch(() => {})
+    }
+
+    // Cambiar al slot siguiente para que comience el crossfade suave en CSS
+    setActiveSlot(nextSlot)
+
+    // Al culminar la transición suave (900ms), pausar el vídeo anterior y preparar el siguiente
+    setTimeout(() => {
+      if (prevVideoEl) {
+        prevVideoEl.pause()
+      }
+
+      currentVidIndexRef.current = (currentVidIndexRef.current + 1) % heroVideos.length
+      const nextUpcomingIndex = (currentVidIndexRef.current + 1) % heroVideos.length
+
+      setSlotVideos((prev) => {
+        const nextSlots: [number, number] = [...prev]
+        nextSlots[currentSlot] = nextUpcomingIndex
+        return nextSlots
+      })
+
+      isTransitioningRef.current = false
+    }, 900)
+  }, [])
+
+  // Iniciar la reproducción del primer vídeo al montar
+  useEffect(() => {
+    if (videoRef0.current) {
+      videoRef0.current.play().catch(() => {})
+    }
+  }, [])
+
+  // Pausar reproducción cuando la sección Hero sale del viewport para ahorrar recursos
   useEffect(() => {
     const heroEl = heroRef.current
-    const videoEl = videoRef.current
-    if (!heroEl || !videoEl) return
+    if (!heroEl) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        const activeEl = activeSlotRef.current === 0 ? videoRef0.current : videoRef1.current
         if (entry.isIntersecting) {
-          videoEl.play().catch(() => {})
+          activeEl?.play().catch(() => {})
         } else {
-          videoEl.pause()
+          videoRef0.current?.pause()
+          videoRef1.current?.pause()
         }
       },
       { threshold: 0.05 }
@@ -76,33 +129,77 @@ function Hero() {
     return () => observer.disconnect()
   }, [])
 
+  // Si el usuario regresa a la pestaña activa del navegador, reanudar
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.load()
-      videoRef.current.play().catch(() => {})
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const activeEl = activeSlotRef.current === 0 ? videoRef0.current : videoRef1.current
+        activeEl?.play().catch(() => {})
+      }
     }
-  }, [activeVideo])
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
 
-  const currentVid = heroVideos[activeVideo]
+  const handleTimeUpdate = (slotIndex: 0 | 1) => {
+    if (slotIndex !== activeSlotRef.current || isTransitioningRef.current) return
+    const currentEl = slotIndex === 0 ? videoRef0.current : videoRef1.current
+    if (!currentEl) return
+
+    // 0.7 segundos antes de que el vídeo termine, inicia la transición continua sin huecos negros
+    if (currentEl.duration > 0 && currentEl.currentTime >= currentEl.duration - 0.7) {
+      startNextTransition()
+    }
+  }
+
+  const handleEnded = (slotIndex: 0 | 1) => {
+    if (slotIndex === activeSlotRef.current && !isTransitioningRef.current) {
+      startNextTransition()
+    }
+  }
+
+  const handleError = (slotIndex: 0 | 1) => {
+    if (slotIndex === activeSlotRef.current) {
+      startNextTransition()
+    }
+  }
 
   return (
     <section ref={heroRef} className="beauty-hero rounded-b-[3rem] md:rounded-b-[5rem]">
-      {/* Video de fondo optimizado: solo 1 decoder activo para máximo rendimiento en móviles */}
+      {/* Sistema de doble decodificador sincronizado: reproducción continua y crossfade sin fotogramas negros */}
       <video
-        ref={videoRef}
-        key={currentVid.key}
+        ref={videoRef0}
+        key={`slot-0-${slotVideos[0]}`}
         autoPlay
         muted
         playsInline
         preload="auto"
         aria-hidden="true"
         tabIndex={-1}
-        onEnded={handleEnded}
-        onError={handleEnded}
-        className="hero-video-bg hero-video-active"
+        onTimeUpdate={() => handleTimeUpdate(0)}
+        onEnded={() => handleEnded(0)}
+        onError={() => handleError(0)}
+        className={`hero-video-bg ${activeSlot === 0 ? 'hero-video-active' : 'hero-video-inactive'}`}
       >
-        <source src={`/${currentVid.file}`} type="video/mp4" />
-        <source src={`/api/images/${currentVid.key}`} type="video/mp4" />
+        <source src={`/${heroVideos[slotVideos[0]].file}`} type="video/mp4" />
+        <source src={`/api/images/${heroVideos[slotVideos[0]].key}`} type="video/mp4" />
+      </video>
+
+      <video
+        ref={videoRef1}
+        key={`slot-1-${slotVideos[1]}`}
+        muted
+        playsInline
+        preload="auto"
+        aria-hidden="true"
+        tabIndex={-1}
+        onTimeUpdate={() => handleTimeUpdate(1)}
+        onEnded={() => handleEnded(1)}
+        onError={() => handleError(1)}
+        className={`hero-video-bg ${activeSlot === 1 ? 'hero-video-active' : 'hero-video-inactive'}`}
+      >
+        <source src={`/${heroVideos[slotVideos[1]].file}`} type="video/mp4" />
+        <source src={`/api/images/${heroVideos[slotVideos[1]].key}`} type="video/mp4" />
       </video>
 
       {/* Velo aurora para legibilidad y elegancia */}
