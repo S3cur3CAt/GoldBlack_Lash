@@ -41,6 +41,8 @@ const heroVideos = [
   { key: 'hero-video', file: 'hero-video.mp4' },
   { key: 'hero-video-2', file: 'hero-video-2.mp4' },
   { key: 'hero-video-3', file: 'hero-video-3.mp4' },
+  { key: 'hero-video-4', file: 'hero-video-4.mp4' },
+  { key: 'hero-video-5', file: 'hero-video-5.mp4' },
 ]
 
 function Hero() {
