@@ -3,6 +3,9 @@
  * Despacho en 0 segundos con soporte nativo de HTML enriquecido y botones interactivos (Inline Keyboards).
  */
 
+import { fetchConfigFromDb } from './config.server'
+import { saveContactsToDb } from './appointments.server'
+
 export interface TelegramAppointmentData {
   id?: string
   clientName?: string
@@ -238,9 +241,274 @@ export async function setupTelegramBotMenuButton(
       })
     } catch {}
 
+    // Configurar automáticamente el webhook para recepción instantánea de contactos
+    try {
+      await setTelegramBotWebhook(botToken)
+    } catch {}
+
     return { ok: true }
   } catch (e: any) {
     return { ok: false, error: e?.message || 'Error al configurar botón de menú en Telegram' }
+  }
+}
+
+/**
+ * Conecta el Webhook oficial del Bot de Telegram para recibir mensajes y contactos en tiempo real
+ */
+export async function setTelegramBotWebhook(
+  botToken: string,
+  webhookUrl = 'https://www.goldblacklash.com/api/telegram'
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: webhookUrl,
+        allowed_updates: ['message', 'edited_message'],
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.ok) {
+      return { ok: false, error: data.description || `HTTP ${res.status}` }
+    }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Error al conectar Webhook de Telegram' }
+  }
+}
+
+function parseVcardText(vcfText: string): Array<{ name: string; phone: string }> {
+  const contacts: Array<{ name: string; phone: string }> = []
+  const cards = vcfText.split(/BEGIN:VCARD/i)
+  for (const card of cards) {
+    if (!card.trim()) continue
+    let name = ''
+    let phone = ''
+    const lines = card.split(/\r?\n/)
+    for (const line of lines) {
+      const trimmed = line.trim()
+      if (trimmed.toUpperCase().startsWith('FN:') || trimmed.toUpperCase().startsWith('FN;')) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) name = trimmed.substring(colonIdx + 1).trim()
+      } else if (!name && (trimmed.toUpperCase().startsWith('N:') || trimmed.toUpperCase().startsWith('N;'))) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) {
+          const parts = trimmed.substring(colonIdx + 1).split(';').filter(Boolean)
+          name = parts.reverse().join(' ').trim()
+        }
+      } else if (!phone && (trimmed.toUpperCase().startsWith('TEL') || trimmed.toUpperCase().includes('.TEL'))) {
+        const colonIdx = trimmed.indexOf(':')
+        if (colonIdx !== -1) phone = trimmed.substring(colonIdx + 1).trim()
+      }
+    }
+    if (phone) {
+      contacts.push({ name: name || 'Sin nombre', phone })
+    }
+  }
+  return contacts
+}
+
+/**
+ * Procesa actualizaciones entrantes enviadas por Telegram Webhook
+ * Soporta: contactos compartidos desde WhatsApp/iPhone, archivos .vcf, comandos y texto
+ */
+export async function handleTelegramWebhookUpdate(
+  update: any,
+  botTokenOverride?: string
+): Promise<{ ok: boolean; replySent?: boolean; error?: string }> {
+  try {
+    const liveConfig = await fetchConfigFromDb().catch(() => ({} as any))
+    const botToken =
+      botTokenOverride?.trim() ||
+      liveConfig.telegramBotToken?.trim() ||
+      process.env.TELEGRAM_BOT_TOKEN ||
+      ''
+
+    if (!botToken) return { ok: false, error: 'Sin bot token configurado' }
+
+    const message = update.message || update.edited_message
+    if (!message || !message.chat?.id) return { ok: true }
+
+    const chatId = message.chat.id
+
+    // 1. Caso: El usuario comparte un contacto (desde WhatsApp o Contactos del iPhone)
+    if (message.contact) {
+      const c = message.contact
+      let phone = (c.phone_number || '').trim()
+      if (!phone.startsWith('+') && phone.length >= 9) {
+        phone = '+' + phone
+      }
+      const firstName = (c.first_name || '').trim()
+      const lastName = (c.last_name || '').trim()
+      const fullName = [firstName, lastName].filter(Boolean).join(' ') || 'Contacto'
+
+      await saveContactsToDb([
+        {
+          name: fullName,
+          phone: phone,
+          source: 'telegram_bot',
+          notes: 'Compartido desde WhatsApp o iPhone',
+        },
+      ])
+
+      const cleanPhone = phone.replace(/\D/g, '')
+      const webAppUrl = `https://www.goldblacklash.com/nueva-cita?clientName=${encodeURIComponent(fullName)}&clientPhone=${encodeURIComponent(phone)}`
+
+      const text = [
+        `✨ <b>¡Contacto sincronizado con éxito!</b>`,
+        ``,
+        `👤 <b>Clienta:</b> ${fullName}`,
+        `📱 <b>Teléfono:</b> <code>${phone}</code>`,
+        ``,
+        `💎 <i>Guardado en tu agenda de GoldBlack Lash Studio.</i>`,
+        `<i>Toca el botón de abajo para agendarle su cita al instante:</i>`,
+      ].join('\n')
+
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: `📅 Agendar Cita con ${firstName || 'Clienta'}`,
+                  web_app: { url: webAppUrl },
+                },
+              ],
+              [
+                {
+                  text: `💬 Abrir WhatsApp con ${firstName || 'Clienta'}`,
+                  url: `https://wa.me/${cleanPhone}`,
+                },
+              ],
+            ],
+          },
+        }),
+      })
+
+      return { ok: true, replySent: true }
+    }
+
+    // 2. Caso: Envío de archivo .vcf
+    if (message.document && (message.document.file_name?.endsWith('.vcf') || message.document.mime_type?.includes('vcard'))) {
+      const fileId = message.document.file_id
+      const getFileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`)
+      const fileData = await getFileRes.json().catch(() => ({}))
+      if (fileData.ok && fileData.result?.file_path) {
+        const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`
+        const vcfRes = await fetch(fileUrl)
+        const vcfText = await vcfRes.text()
+        const parsed = parseVcardText(vcfText)
+        if (parsed.length > 0) {
+          await saveContactsToDb(parsed)
+          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: `✅ <b>¡Agenda sincronizada!</b>\n\nSe han importado <b>${parsed.length} contactos</b> directamente a tu Mini App de GoldBlack Lash. Ya puedes seleccionarlos para tus citas.`,
+              parse_mode: 'HTML',
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: '💼 Abrir Mini App de Citas',
+                      web_app: { url: 'https://www.goldblacklash.com/nueva-cita' },
+                    },
+                  ],
+                ],
+              },
+            }),
+          })
+          return { ok: true, replySent: true }
+        }
+      }
+    }
+
+    // 3. Caso: Comandos /start o /panel
+    const text = (message.text || '').trim()
+    if (text === '/start' || text === '/panel' || text === '/menu') {
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: [
+            `✨ <b>Bienvenida al Bot Oficial de GoldBlack Lash Studio</b>`,
+            ``,
+            `📱 <b>Sincronización instantánea de contactos:</b>`,
+            `• Puedes <b>compartirme cualquier contacto</b> desde WhatsApp o tu iPhone y se guardará automáticamente en tu agenda.`,
+            `• O toca el botón abajo para entrar al panel de gestión y crear citas:`,
+          ].join('\n'),
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: '💼 Abrir Panel Móvil y Citas',
+                  web_app: { url: 'https://www.goldblacklash.com/nueva-cita' },
+                },
+              ],
+            ],
+          },
+        }),
+      })
+      return { ok: true, replySent: true }
+    }
+
+    // 4. Caso: El usuario escribe un texto con teléfono y nombre
+    const phoneMatches = text.match(/(?:\+?\d{1,3}[\s-]?)?\(?\d{2,4}\)?[\s-]?\d{3,4}[\s-]?\d{3,4}/)
+    if (phoneMatches) {
+      const phone = phoneMatches[0].trim()
+      const digitsOnly = phone.replace(/\D/g, '')
+      if (digitsOnly.length >= 8) {
+        let name = text.replace(phone, '').replace(/[•\-\:\;\|\,\(\)\*\_]/g, ' ').replace(/\s+/g, ' ').trim()
+        name = name.replace(/^(nombre|tel[eé]fono|celular|whatsapp|wa|m[oó]vil|contacto)\s*:?/i, '').trim()
+        const clientName = name || 'Contacto'
+
+        await saveContactsToDb([
+          {
+            name: clientName,
+            phone: phone,
+            source: 'telegram_text',
+            notes: 'Enviado por chat de Telegram',
+          },
+        ])
+
+        const webAppUrl = `https://www.goldblacklash.com/nueva-cita?clientName=${encodeURIComponent(clientName)}&clientPhone=${encodeURIComponent(phone)}`
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: `✨ <b>¡Contacto detectado y guardado!</b>\n\n👤 <b>Clienta:</b> ${clientName}\n📱 <b>Teléfono:</b> <code>${phone}</code>\n\n<i>Ya está guardado en tu agenda de GoldBlack Lash.</i>`,
+            parse_mode: 'HTML',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: `📅 Agendar Cita con ${clientName}`,
+                    web_app: { url: webAppUrl },
+                  },
+                ],
+              ],
+            },
+          }),
+        })
+        return { ok: true, replySent: true }
+      }
+    }
+
+    return { ok: true }
+  } catch (err: any) {
+    console.error('[Telegram Webhook Error]', err)
+    return { ok: false, error: err?.message || 'Error procesando webhook' }
   }
 }
 

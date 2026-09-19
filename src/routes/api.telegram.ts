@@ -1,5 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { sendStudioTelegramAlert, setupTelegramBotMenuButton } from '../server/telegram.server'
+import {
+  sendStudioTelegramAlert,
+  setupTelegramBotMenuButton,
+  setTelegramBotWebhook,
+  handleTelegramWebhookUpdate,
+} from '../server/telegram.server'
 import { fetchConfigFromDb } from '../server/config.server'
 
 const CORS_HEADERS = {
@@ -23,7 +28,7 @@ export const Route = createFileRoute('/api/telegram')({
           {
             service: 'GoldBlack Lash Telegram Alert API',
             status: 'online',
-            description: 'Envío de alertas instantáneas (0s) al estudio mediante Telegram Bot',
+            description: 'Envío de alertas instantáneas (0s) y sincronización de contactos al estudio',
           },
           { headers: CORS_HEADERS }
         )
@@ -35,6 +40,23 @@ export const Route = createFileRoute('/api/telegram')({
 
           const botToken = body.telegramBotToken || liveConfig.telegramBotToken
           const chatId = body.telegramChatId || liveConfig.telegramChatId
+
+          // 1. Detección de Actualizaciones Entrantes de Telegram Webhook (Contactos compartidos, mensajes, etc.)
+          if (body.update_id !== undefined || body.message || body.edited_message) {
+            const webhookResult = await handleTelegramWebhookUpdate(body, botToken)
+            return Response.json(webhookResult, { headers: CORS_HEADERS })
+          }
+
+          if (body.action === 'setup_webhook') {
+            if (!botToken) {
+              return Response.json(
+                { ok: false, error: 'Falta el Token del Bot de Telegram' },
+                { status: 400, headers: CORS_HEADERS }
+              )
+            }
+            const res = await setTelegramBotWebhook(botToken, body.webhookUrl)
+            return Response.json(res, { headers: CORS_HEADERS })
+          }
 
           if (body.action === 'setup_menu_button') {
             if (!botToken) {
