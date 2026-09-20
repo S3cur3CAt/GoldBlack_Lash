@@ -105,7 +105,7 @@ front_html = f'''<!DOCTYPE html>
     z-index: 10;
     width: 100%;
     height: 100%;
-    padding: 85px 115px;
+    padding: 68px 105px 68px 105px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -117,16 +117,16 @@ front_html = f'''<!DOCTYPE html>
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 52px;
-    padding: 20px 50px 20px 0;
+    justify-content: space-between;
+    padding: 0 45px 6px 0;
   }}
 
   /* Bloque Superior: Logo Oficial del Sitio Web + Título */
   .brand-top-block {{
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
+    margin-top: 0;
   }}
 
   .brand-header-row {{
@@ -137,8 +137,8 @@ front_html = f'''<!DOCTYPE html>
 
   /* Emblema oficial del sitio web */
   .brand-logo-img {{
-    width: 135px;
-    height: 106px;
+    width: 145px;
+    height: 114px;
     object-fit: contain;
     filter: drop-shadow(0 6px 16px rgba(236, 72, 153, 0.3));
     flex-shrink: 0;
@@ -152,7 +152,7 @@ front_html = f'''<!DOCTYPE html>
 
   .brand-title {{
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 72px;
+    font-size: 74px;
     font-weight: 700;
     letter-spacing: 0.1em;
     color: #46253A;
@@ -177,7 +177,7 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .brand-subtitle {{
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: 0.24em;
     text-transform: uppercase;
@@ -190,7 +190,7 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .brand-confidence {{
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -200,7 +200,7 @@ front_html = f'''<!DOCTYPE html>
   /* Divisor decorativo rosa y oro */
   .rose-divider {{
     width: 100%;
-    height: 2px;
+    height: 2.5px;
     background: linear-gradient(to right, #EC4899 0%, #F472B6 35%, #E9A81C 70%, transparent 100%);
     margin-top: 6px;
   }}
@@ -209,7 +209,8 @@ front_html = f'''<!DOCTYPE html>
   .contact-list {{
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 34px;
+    margin: 12px 0;
   }}
 
   .contact-item {{
@@ -219,8 +220,8 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .contact-icon-box {{
-    width: 72px;
-    height: 72px;
+    width: 76px;
+    height: 76px;
     border-radius: 50%;
     background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
     border: 2px solid #F472B6;
@@ -232,13 +233,13 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .contact-icon-box svg {{
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     color: #EC4899;
   }}
 
   .contact-sep {{
-    font-size: 32px;
+    font-size: 34px;
     color: #F472B6;
     font-weight: 300;
     opacity: 0.7;
@@ -259,11 +260,42 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .contact-value {{
-    font-size: 32px;
+    font-size: 34px;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: #381A2D;
     font-feature-settings: "tnum";
+  }}
+
+  /* Pastilla de distinción inferior */
+  .brand-bottom-badge {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }}
+
+  .bottom-badge-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 28px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
+    border: 1.5px solid rgba(244, 114, 182, 0.6);
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.12);
+  }}
+
+  .bottom-badge-pill span {{
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #9A7585;
+  }}
+
+  .bottom-badge-pill .pill-star {{
+    color: #EC4899;
+    font-size: 14px;
   }}
 
   /* Columna derecha: QR EXACTO DE INSTAGRAM DEL USUARIO */
@@ -396,7 +428,7 @@ front_html = f'''<!DOCTYPE html>
           <span class="contact-sep">|</span>
           <div class="contact-content">
             <span class="contact-label">Citas & Atención</span>
-            <span class="contact-value">+34 604 18 76 76</span>
+            <span class="contact-value">+34 662 02 34 35</span>
           </div>
         </div>
 
@@ -444,6 +476,15 @@ front_html = f'''<!DOCTYPE html>
             <span class="contact-label">Ubicación</span>
             <span class="contact-value">Montequinto · Dos Hermanas (Sevilla)</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Pastilla de Distinción Inferior -->
+      <div class="brand-bottom-badge">
+        <div class="bottom-badge-pill">
+          <span class="pill-star">✦</span>
+          <span>Belleza de autor · Citas personalizadas</span>
+          <span class="pill-star">✦</span>
         </div>
       </div>
     </div>

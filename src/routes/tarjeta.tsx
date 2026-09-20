@@ -145,8 +145,8 @@ function BusinessCardPage() {
                   }}
                 >
                   {/* Columna izquierda: Marca y Contacto */}
-                  <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 pr-3">
-                    {/* Encabezado con Logotipo Oficial del Sitio Web */}
+                  <div className="flex-1 h-full flex flex-col justify-between py-1 pr-3">
+                    {/* Encabezado con Logotipo Oficial del Sitio Web (En la parte superior) */}
                     <div className="space-y-1">
                       <div className="flex items-center gap-2.5">
                         <img
@@ -167,7 +167,7 @@ function BusinessCardPage() {
                     </div>
 
                     {/* Lista de Contacto */}
-                    <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-[11px]">
+                    <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-[11px] my-1">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
                           📞
@@ -215,6 +215,13 @@ function BusinessCardPage() {
                           </span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Pastilla inferior */}
+                    <div className="flex items-center">
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/90 border border-[#F472B6]/60 text-[7px] sm:text-[8px] font-bold text-[#9A7585] uppercase tracking-wider shadow-xs">
+                        ✦ Belleza de autor · Citas personalizadas ✦
+                      </span>
                     </div>
                   </div>
 
