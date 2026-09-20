@@ -56,14 +56,14 @@ function BusinessCardPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Cabecera */}
         <div className="text-center space-y-2 no-print">
-          <span className="inline-block text-[11px] font-bold tracking-widest uppercase text-accent px-3 py-1 rounded-full bg-accent/10 border border-accent/30">
-            Diseño Oficial de Imprenta
+          <span className="inline-block text-[11px] font-bold tracking-widest uppercase text-[#ec4899] px-3.5 py-1 rounded-full bg-[#ec4899]/10 border border-[#ec4899]/30">
+            Diseño Oficial Blanco y Rosa · Proyecto Web
           </span>
           <h1 className="text-2xl sm:text-4xl font-serif font-bold text-white tracking-tight">
             Tarjeta de Presentación — {business.name}
           </h1>
           <p className="text-sm text-zinc-400 max-w-xl mx-auto">
-            Diseño claro, minimalista y de lujo editorial acorde a la web. Dimensión europea estándar de <strong>85 x 55 mm</strong> (8,5 x 5,5 cm).
+            Edición exclusiva con la estética del sitio web (blanco, rosa y ciruela) y el logotipo oficial. Dimensión europea estándar de <strong>85 x 55 mm</strong> (8,5 x 5,5 cm).
           </p>
         </div>
 
@@ -75,7 +75,7 @@ function BusinessCardPage() {
               onClick={() => setActiveSide('front')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSide === 'front'
-                  ? 'bg-accent text-black shadow-md shadow-accent/20'
+                  ? 'bg-gradient-to-r from-[#ec4899] to-[#db2777] text-white shadow-md shadow-[#ec4899]/25'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
@@ -86,11 +86,11 @@ function BusinessCardPage() {
               onClick={() => setActiveSide('back')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSide === 'back'
-                  ? 'bg-accent text-black shadow-md shadow-accent/20'
+                  ? 'bg-gradient-to-r from-[#ec4899] to-[#db2777] text-white shadow-md shadow-[#ec4899]/25'
                   : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Reverso (Emblema + Lema)
+              Reverso (Logotipo Oficial + Lema)
             </button>
           </div>
 
@@ -123,7 +123,7 @@ function BusinessCardPage() {
         {/* Visor de la Tarjeta en proporción exacta 85x55 */}
         <div className="flex justify-center items-center py-4">
           <div
-            className="w-full max-w-[620px] aspect-[85/55] relative rounded-2xl overflow-hidden shadow-[0_20px_60px_-15px_rgba(212,175,55,0.25)] border border-accent/40 bg-[#fafaf8] print-area transition-all duration-300"
+            className="w-full max-w-[640px] aspect-[85/55] relative rounded-2xl overflow-hidden shadow-[0_20px_60px_-15px_rgba(236,72,153,0.35)] border border-[#f472b6]/40 bg-[#FFF8FA] print-area transition-all duration-300"
           >
             {viewMode === 'render' ? (
               /* Vista Render Master de Imprenta */
@@ -138,102 +138,140 @@ function BusinessCardPage() {
               /* Vista Maqueta Vectorial Interactiva */
               activeSide === 'front' ? (
                 /* ANVERSO VECTORIAL */
-                <div className="w-full h-full p-6 sm:p-8 flex flex-col justify-between text-[#2d2218] relative bg-[#fafaf8] border-8 border-transparent"
+                <div
+                  className="w-full h-full p-5 sm:p-7 flex justify-between items-center text-[#46253A] relative bg-gradient-to-br from-[#FFFFFF] via-[#FFF6F9] to-[#FCE5F0] border-4 sm:border-[6px] border-transparent"
                   style={{
-                    borderImage: 'linear-gradient(135deg, #d4af37, #f3e5ab, #aa8c2c) 1',
+                    borderImage: 'linear-gradient(135deg, #E9A81C 0%, #F472B6 28%, #EC4899 50%, #F472B6 72%, #E9A81C 100%) 1',
                   }}
                 >
-                  {/* Encabezado con Logo y Marca */}
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <svg width="28" height="20" viewBox="0 0 100 60" fill="none" className="text-[#b88e28]">
-                        <path
-                          d="M10 20 Q50 5 90 20 Q95 21 80 32 Q60 40 40 38 Q20 35 10 20 Z"
-                          fill="currentColor"
+                  {/* Columna izquierda: Marca y Contacto */}
+                  <div className="flex-1 flex flex-col justify-center gap-3 sm:gap-4 pr-3">
+                    {/* Encabezado con Logotipo Oficial del Sitio Web */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src="/goldblack_logo_transparent.png"
+                          alt="Logotipo Oficial GoldBlack Lash"
+                          className="w-10 h-8 sm:w-12 sm:h-9 object-contain drop-shadow-sm shrink-0"
                         />
-                        <path d="M25 25 Q30 50 35 55" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M38 27 Q45 52 50 58" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M52 28 Q60 50 67 56" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                        <path d="M66 26 Q75 46 82 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                      </svg>
-                      <div>
-                        <h2 className="text-lg sm:text-xl font-serif font-bold tracking-wider text-[#1a1410] uppercase">
-                          GoldBlack <span className="italic text-[#b88e28]">Lash</span>
-                        </h2>
+                        <div>
+                          <h2 className="text-base sm:text-lg font-serif font-bold tracking-wider text-[#46253A] uppercase leading-tight">
+                            GoldBlack <span className="italic bg-gradient-to-r from-[#EC4899] to-[#E9A81C] bg-clip-text text-transparent">Lash</span>
+                          </h2>
+                        </div>
+                      </div>
+                      <p className="text-[8px] sm:text-[9px] tracking-widest text-[#9A7585] uppercase font-bold pl-0.5">
+                        Estudio de Pestañas <span className="text-[#EC4899]">✦</span> Beauty & Confidence
+                      </p>
+                      <div className="w-full h-[1.5px] bg-gradient-to-r from-[#EC4899] via-[#F472B6] to-transparent" />
+                    </div>
+
+                    {/* Lista de Contacto */}
+                    <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-[11px]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
+                          📞
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Citas & Atención</span>
+                          <a href={`tel:${business.phoneClean}`} className="font-bold text-[#381A2D] hover:text-[#EC4899]">
+                            {business.phoneDisplay}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
+                          ✉️
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Correo Oficial</span>
+                          <a href={`mailto:${business.email}`} className="font-bold text-[#381A2D] hover:text-[#EC4899]">
+                            {business.email}
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
+                          🌐
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Página Web</span>
+                          <span className="font-bold text-[#381A2D]">
+                            www.goldblacklash.com
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
+                          📍
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Ubicación</span>
+                          <span className="font-bold text-[#381A2D]">
+                            Montequinto · Dos Hermanas
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-[9px] sm:text-[10px] tracking-widest text-[#7d6854] uppercase font-semibold pl-1">
-                      {business.tagline}
-                    </p>
                   </div>
 
-                  {/* Cuerpo: Datos a la izquierda y QR a la derecha */}
-                  <div className="flex items-end justify-between gap-4">
-                    <div className="space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#b88e28] text-sm">📞</span>
-                        <a href={`tel:${business.phoneClean}`} className="font-semibold text-[#2d2218] hover:text-[#b88e28]">
-                          {business.phoneDisplay}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#b88e28] text-sm">✉️</span>
-                        <a href={`mailto:${business.email}`} className="font-semibold text-[#2d2218] hover:text-[#b88e28]">
-                          {business.email}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#b88e28] text-sm">🌐</span>
-                        <span className="font-semibold text-[#2d2218]">
-                          www.goldblacklash.com
-                        </span>
-                      </div>
+                  {/* Columna derecha: QR EXACTO DE INSTAGRAM */}
+                  <div className="shrink-0 flex flex-col items-center justify-center gap-1.5 sm:gap-2">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 p-1 rounded-2xl sm:rounded-3xl bg-white border-2 border-[#F472B6] shadow-[0_10px_25px_-5px_rgba(236,72,153,0.3)] overflow-hidden">
+                      <img
+                        src="/qr-instagram.png"
+                        alt="QR Instagram Oficial GoldBlack Lash"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-
-                    {/* QR Code idéntico al solicitado */}
-                    <div className="shrink-0 text-center space-y-1">
-                      <div className="w-24 h-24 sm:w-28 sm:h-28 p-1 rounded-2xl bg-white border-2 border-[#d4af37] shadow-lg overflow-hidden">
-                        <img
-                          src="/qr-instagram.png"
-                          alt="QR Instagram GoldBlack Lash"
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <span className="block text-[8px] font-bold text-[#8a7250] uppercase tracking-wider">
+                    <div className="flex flex-col items-center">
+                      <span className="px-2 py-0.5 rounded-full bg-white/90 border border-[#F472B6] text-[7px] sm:text-[8px] font-extrabold text-[#DB2777] uppercase tracking-wider shadow-xs">
                         Síguenos en Instagram
+                      </span>
+                      <span className="text-[9px] sm:text-[10px] font-extrabold text-[#46253A] tracking-wider mt-0.5">
+                        @goldblack_lash
                       </span>
                     </div>
                   </div>
                 </div>
               ) : (
-                /* REVERSO VECTORIAL */
+                /* REVERSO VECTORIAL — Con el LOGOTIPO OFICIAL DEL SITIO WEB */
                 <div
-                  className="w-full h-full p-8 flex flex-col items-center justify-center text-center text-[#2d2218] relative bg-[#fafaf8] border-8 border-transparent"
+                  className="w-full h-full p-6 sm:p-8 flex flex-col items-center justify-center text-center text-[#46253A] relative bg-gradient-to-br from-[#FFFFFF] via-[#FFF5F9] to-[#FCE8F2] border-4 sm:border-[6px] border-transparent"
                   style={{
-                    borderImage: 'linear-gradient(135deg, #d4af37, #f3e5ab, #aa8c2c) 1',
+                    borderImage: 'linear-gradient(135deg, #E9A81C 0%, #F472B6 28%, #EC4899 50%, #F472B6 72%, #E9A81C 100%) 1',
                   }}
                 >
-                  <svg width="60" height="40" viewBox="0 0 100 60" fill="none" className="text-[#b88e28] mb-2">
-                    <path
-                      d="M10 20 Q50 5 90 20 Q95 21 80 32 Q60 40 40 38 Q20 35 10 20 Z"
-                      fill="currentColor"
+                  {/* Halo sutil y Logotipo Oficial Real */}
+                  <div className="relative flex items-center justify-center mb-1">
+                    <div className="absolute w-36 h-28 sm:w-48 sm:h-36 rounded-full bg-radial from-[#ec4899]/20 to-transparent blur-md pointer-events-none" />
+                    <img
+                      src="/goldblack_logo_transparent.png"
+                      alt="Logotipo Oficial Real GoldBlack Lash"
+                      className="relative w-36 h-24 sm:w-48 sm:h-32 object-contain drop-shadow-md"
                     />
-                    <path d="M25 25 Q30 50 35 55" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M38 27 Q45 52 50 58" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M52 28 Q60 50 67 56" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d="M66 26 Q75 46 82 50" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                  </svg>
-                  <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-wider text-[#1a1410] uppercase">
-                    GoldBlack <span className="italic text-[#b88e28]">Lash</span>
+                  </div>
+
+                  <h2 className="text-sm sm:text-base font-serif font-bold tracking-widest uppercase mt-0.5">
+                    <span className="italic bg-gradient-to-r from-[#EC4899] via-[#FB7185] to-[#E9A81C] bg-clip-text text-transparent">Lash Studio</span>
                   </h2>
-                  <p className="text-sm font-serif italic text-[#b88e28] mt-1">
-                    Enamórate de tu mirada
+
+                  <p className="text-xs sm:text-sm font-serif italic text-[#9A7585] mt-1 max-w-[85%]">
+                    “Un pequeño momento para ti · Una nueva forma de mirar”
                   </p>
 
-                  <div className="mt-6 pt-3 border-t border-[#d4af37]/30 text-xs text-[#6a5440] space-y-0.5">
-                    <p className="font-medium">{business.city}</p>
-                    <p className="font-bold text-[#b88e28]">{business.instagramHandle}</p>
-                  </div>
+                  <div className="w-40 sm:w-56 h-[1.5px] bg-gradient-to-r from-transparent via-[#EC4899] to-transparent my-2" />
+
+                  <span className="px-3 sm:px-4 py-1 rounded-full bg-white/90 border border-[#F472B6] text-[8px] sm:text-[9px] font-extrabold text-[#DB2777] uppercase tracking-widest shadow-xs">
+                    Estudio de Autora · Montequinto, Sevilla
+                  </span>
+
+                  <p className="text-[8px] sm:text-[9px] font-semibold text-[#9A7585] uppercase tracking-wider mt-1.5">
+                    Citas exclusivas bajo reserva · www.goldblacklash.com
+                  </p>
                 </div>
               )
             )}
@@ -246,16 +284,16 @@ function BusinessCardPage() {
             <a
               href="/tarjeta-anverso.png"
               download="GoldBlack_Lash_Tarjeta_Anverso_85x55mm_Master.png"
-              className="p-3.5 rounded-2xl bg-[#14141c] hover:bg-[#1a1a24] border border-accent/40 text-center transition-all flex flex-col items-center justify-center gap-1 group shadow-lg cursor-pointer"
+              className="p-3.5 rounded-2xl bg-[#14141c] hover:bg-[#1a1a24] border border-[#f472b6]/40 text-center transition-all flex flex-col items-center justify-center gap-1 group shadow-lg cursor-pointer"
             >
               <span className="text-xl group-hover:scale-110 transition-transform">📥</span>
               <span className="text-xs font-bold text-white">Descargar Anverso (PNG Máster)</span>
-              <span className="text-[10px] text-zinc-400">Cara con QR y Datos · Ultra-HD 600 DPI</span>
+              <span className="text-[10px] text-zinc-400">Blanco y Rosa con QR y Datos · 600 DPI</span>
             </a>
             <a
               href="/tarjeta-anverso.jpg"
               download="GoldBlack_Lash_Tarjeta_Anverso_85x55mm.jpg"
-              className="text-center text-[10px] text-zinc-400 hover:text-accent transition-colors py-1 cursor-pointer"
+              className="text-center text-[10px] text-zinc-400 hover:text-[#ec4899] transition-colors py-1 cursor-pointer"
             >
               Descargar versión JPG (98% calidad) →
             </a>
@@ -265,16 +303,16 @@ function BusinessCardPage() {
             <a
               href="/tarjeta-reverso.png"
               download="GoldBlack_Lash_Tarjeta_Reverso_85x55mm_Master.png"
-              className="p-3.5 rounded-2xl bg-[#14141c] hover:bg-[#1a1a24] border border-accent/40 text-center transition-all flex flex-col items-center justify-center gap-1 group shadow-lg cursor-pointer"
+              className="p-3.5 rounded-2xl bg-[#14141c] hover:bg-[#1a1a24] border border-[#f472b6]/40 text-center transition-all flex flex-col items-center justify-center gap-1 group shadow-lg cursor-pointer"
             >
               <span className="text-xl group-hover:scale-110 transition-transform">📥</span>
               <span className="text-xs font-bold text-white">Descargar Reverso (PNG Máster)</span>
-              <span className="text-[10px] text-zinc-400">Cara con Emblema y Lema · Ultra-HD 600 DPI</span>
+              <span className="text-[10px] text-zinc-400">Logotipo Oficial del Sitio Web · 600 DPI</span>
             </a>
             <a
               href="/tarjeta-reverso.jpg"
               download="GoldBlack_Lash_Tarjeta_Reverso_85x55mm.jpg"
-              className="text-center text-[10px] text-zinc-400 hover:text-accent transition-colors py-1 cursor-pointer"
+              className="text-center text-[10px] text-zinc-400 hover:text-[#ec4899] transition-colors py-1 cursor-pointer"
             >
               Descargar versión JPG (98% calidad) →
             </a>
@@ -284,19 +322,19 @@ function BusinessCardPage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="p-3.5 h-[84px] rounded-2xl bg-linear-to-r from-accent to-[#aa8c2c] text-black font-bold text-center transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-accent/20 active:scale-95 cursor-pointer"
+              className="p-3.5 h-[84px] rounded-2xl bg-gradient-to-r from-[#ec4899] via-[#fb7185] to-[#e9a81c] text-white font-bold text-center transition-all flex flex-col items-center justify-center gap-1 shadow-lg shadow-[#ec4899]/25 active:scale-95 cursor-pointer"
             >
               <span className="text-xl">🖨️</span>
               <span className="text-xs font-bold">Imprimir / Guardar PDF</span>
-              <span className="text-[10px] text-black/80 font-medium">Escala 100% (85 x 55 mm)</span>
+              <span className="text-[10px] text-white/90 font-medium">Escala 100% (85 x 55 mm)</span>
             </button>
           </div>
         </div>
 
         {/* Ficha Técnica para Imprenta */}
         <div className="p-5 rounded-3xl bg-[#121218] border border-white/10 space-y-3 text-left no-print">
-          <h3 className="text-sm font-bold text-accent font-serif flex items-center gap-2">
-            <span>📋</span> Especificaciones Técnicas para la Imprenta
+          <h3 className="text-sm font-bold text-[#ec4899] font-serif flex items-center gap-2">
+            <span>📋</span> Especificaciones Técnicas de Imprenta
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -314,14 +352,14 @@ function BusinessCardPage() {
 
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <span className="text-zinc-400 block text-[10px] uppercase">Papel Recomendado</span>
-              <span className="text-white font-bold">Algodón 350g – 400g</span>
-              <span className="text-zinc-500 block text-[9px]">Blanco Marfil / Mate Seda</span>
+              <span className="text-white font-bold">Seda Mate 350g – 400g</span>
+              <span className="text-zinc-500 block text-[9px]">Tacto sedoso premium</span>
             </div>
 
             <div className="p-3 rounded-xl bg-black/40 border border-white/5 space-y-1">
               <span className="text-zinc-400 block text-[10px] uppercase">Acabado Recomendado</span>
-              <span className="text-white font-bold text-accent">Hot Stamping Oro</span>
-              <span className="text-zinc-500 block text-[9px]">Relieve o foil dorado</span>
+              <span className="text-white font-bold text-[#ec4899]">Soft Touch + UVI Brillo</span>
+              <span className="text-zinc-500 block text-[9px]">Relieve en logo y QR</span>
             </div>
           </div>
         </div>

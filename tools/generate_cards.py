@@ -8,17 +8,22 @@ qr_path = r'public/qr-instagram.png'
 with open(qr_path, 'rb') as f:
     qr_b64 = base64.b64encode(f.read()).decode('utf-8')
 
+# Read the official transparent logo of the website
+logo_path = r'public/goldblack_logo_transparent.png'
+with open(logo_path, 'rb') as f:
+    logo_b64 = base64.b64encode(f.read()).decode('utf-8')
+
 # High-resolution 85x55 mm @ 600 DPI = 2008 x 1300 px
 WIDTH = 2008
 HEIGHT = 1300
 
-# HTML template for FRONT (Anverso)
+# HTML template for FRONT (Anverso) — Estilo Blanco y Rosa Oficial de la Web
 front_html = f'''<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500;1,600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Nunito:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
 
   * {{
     box-sizing: border-box;
@@ -30,9 +35,9 @@ front_html = f'''<!DOCTYPE html>
     width: {WIDTH}px;
     height: {HEIGHT}px;
     overflow: hidden;
-    background: #FAF8F4;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #1F1914;
+    background: #FFF8FA;
+    font-family: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #46253A;
     position: relative;
     display: flex;
     align-items: center;
@@ -40,56 +45,40 @@ front_html = f'''<!DOCTYPE html>
     -webkit-font-smoothing: antialiased;
   }}
 
-  /* Fondo de papel algodón de lujo puro con degradado sedoso */
+  /* Fondo Blanco y Rosa Aurora — Idéntico a la web www.goldblacklash.com */
   .card-bg {{
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 35% 30%, #FFFFFF 0%, #FAF8F4 50%, #F1ECE0 100%);
+    background:
+      radial-gradient(circle at 25% 20%, rgba(236, 72, 153, 0.18) 0%, transparent 55%),
+      radial-gradient(circle at 85% 80%, rgba(244, 114, 182, 0.2) 0%, transparent 55%),
+      radial-gradient(circle at 50% 115%, rgba(251, 146, 60, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 15%, rgba(192, 132, 252, 0.14) 0%, transparent 45%),
+      linear-gradient(145deg, #FFFFFF 0%, #FFF6F9 45%, #FDF0F6 75%, #FCE5F0 100%);
   }}
 
-  .ambient-glow {{
-    position: absolute;
-    top: -100px;
-    left: -100px;
-    width: 900px;
-    height: 900px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(230, 197, 110, 0.16) 0%, transparent 70%);
-    pointer-events: none;
-  }}
-
-  .ambient-glow-qr {{
-    position: absolute;
-    bottom: -80px;
-    right: -80px;
-    width: 850px;
-    height: 850px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(202, 158, 50, 0.14) 0%, transparent 70%);
-    pointer-events: none;
-  }}
-
-  /* Marco exterior de oro metálico con doble filete de alta joyería */
-  .gold-border-outer {{
+  /* Marco exterior con bisel en oro y rosa fucsia sutil */
+  .rose-border-outer {{
     position: absolute;
     inset: 42px;
     border: 3.5px solid transparent;
-    border-image: linear-gradient(135deg, #CA9E32 0%, #F7ECBF 25%, #A87D16 50%, #F5E8B8 75%, #8B650B 100%) 1;
+    border-image: linear-gradient(135deg, #E9A81C 0%, #F472B6 28%, #EC4899 50%, #F472B6 72%, #E9A81C 100%) 1;
     pointer-events: none;
   }}
 
-  .gold-border-inner {{
+  .rose-border-inner {{
     position: absolute;
     inset: 54px;
-    border: 1.2px solid rgba(197, 155, 39, 0.45);
+    border: 1.2px solid rgba(236, 72, 153, 0.3);
     pointer-events: none;
   }}
 
+  /* Adornos de esquina en oro rosa */
   .corner-accent {{
     position: absolute;
     width: 28px;
     height: 28px;
-    border: 2.5px solid #C59B27;
+    border: 2.5px solid #F472B6;
     pointer-events: none;
   }}
   .corner-tl {{ top: 50px; left: 50px; border-right: none; border-bottom: none; }}
@@ -101,7 +90,7 @@ front_html = f'''<!DOCTYPE html>
     position: absolute;
     width: 8px;
     height: 8px;
-    background: #C59B27;
+    background: #EC4899;
     transform: rotate(45deg);
     pointer-events: none;
   }}
@@ -116,135 +105,143 @@ front_html = f'''<!DOCTYPE html>
     z-index: 10;
     width: 100%;
     height: 100%;
-    padding: 85px 120px;
+    padding: 85px 115px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }}
 
-  /* Columna izquierda: Marca y Datos de Contacto */
+  /* Columna izquierda: Marca y Contacto */
   .left-col {{
     flex: 1.25;
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 52px;
     padding: 20px 50px 20px 0;
   }}
 
-  /* Marca Superior */
+  /* Bloque Superior: Logo Oficial del Sitio Web + Título */
   .brand-top-block {{
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }}
 
-  .brand-header {{
+  .brand-header-row {{
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }}
+
+  /* Emblema oficial del sitio web */
+  .brand-logo-img {{
+    width: 135px;
+    height: 106px;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 16px rgba(236, 72, 153, 0.3));
+    flex-shrink: 0;
+  }}
+
+  .brand-title-wrap {{
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 14px;
-  }}
-
-  .lash-emblem {{
-    width: 230px;
-    height: 165px;
-    filter: drop-shadow(0 8px 20px rgba(184, 142, 40, 0.45));
-    margin-left: 2px;
+    gap: 4px;
   }}
 
   .brand-title {{
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 92px;
+    font-size: 72px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    color: #16120D;
+    letter-spacing: 0.1em;
+    color: #46253A;
     text-transform: uppercase;
     line-height: 1;
   }}
 
-  .brand-title .gold-accent {{
-    background: linear-gradient(135deg, #B5881E 0%, #E8C872 45%, #946C0D 100%);
+  .brand-title .rose-accent {{
+    background: linear-gradient(135deg, #EC4899 0%, #FB7185 50%, #E9A81C 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-style: italic;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
   }}
 
   .brand-tagline-pills {{
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 14px;
     margin-top: 4px;
   }}
 
   .brand-subtitle {{
-    font-size: 23px;
+    font-size: 19px;
     font-weight: 700;
-    letter-spacing: 0.26em;
+    letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: #8C7254;
+    color: #9A7585;
   }}
 
   .brand-dots {{
-    color: #C59B27;
-    font-size: 18px;
+    color: #EC4899;
+    font-size: 16px;
   }}
 
   .brand-confidence {{
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 700;
-    letter-spacing: 0.22em;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #A27B1C;
+    color: #DB2777;
   }}
 
-  /* Divisor decorativo horizontal */
-  .gold-divider {{
+  /* Divisor decorativo rosa y oro */
+  .rose-divider {{
     width: 100%;
-    height: 2.5px;
-    background: linear-gradient(to right, #C59B27 0%, #F5E8BA 45%, rgba(197, 155, 39, 0.1) 100%);
-    margin: 6px 0 10px;
+    height: 2px;
+    background: linear-gradient(to right, #EC4899 0%, #F472B6 35%, #E9A81C 70%, transparent 100%);
+    margin-top: 6px;
   }}
 
-  /* Lista de contactos ampliada y elegante */
+  /* Lista de contactos en tono rosa y plum de la web */
   .contact-list {{
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 30px;
   }}
 
   .contact-item {{
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 24px;
   }}
 
   .contact-icon-box {{
-    width: 76px;
-    height: 76px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #FFFFFF 0%, #F7EECD 100%);
-    border: 2px solid #D4AF37;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
+    border: 2px solid #F472B6;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 6px 18px rgba(184, 142, 40, 0.22);
+    box-shadow: 0 6px 16px rgba(236, 72, 153, 0.2);
     flex-shrink: 0;
   }}
 
   .contact-icon-box svg {{
-    width: 38px;
-    height: 38px;
-    color: #926A0C;
+    width: 34px;
+    height: 34px;
+    color: #EC4899;
   }}
 
   .contact-sep {{
-    font-size: 36px;
-    color: #D4AF37;
+    font-size: 32px;
+    color: #F472B6;
     font-weight: 300;
-    opacity: 0.75;
+    opacity: 0.7;
   }}
 
   .contact-content {{
@@ -255,21 +252,21 @@ front_html = f'''<!DOCTYPE html>
 
   .contact-label {{
     font-size: 15px;
-    font-weight: 600;
-    color: #9A8068;
+    font-weight: 700;
+    color: #9A7585;
     text-transform: uppercase;
     letter-spacing: 0.16em;
   }}
 
   .contact-value {{
-    font-size: 34px;
-    font-weight: 600;
+    font-size: 32px;
+    font-weight: 700;
     letter-spacing: 0.02em;
-    color: #241B12;
+    color: #381A2D;
     font-feature-settings: "tnum";
   }}
 
-  /* Columna derecha: QR de Instagram Exacto del Usuario */
+  /* Columna derecha: QR EXACTO DE INSTAGRAM DEL USUARIO */
   .right-col {{
     flex: 0.92;
     height: 100%;
@@ -277,18 +274,17 @@ front_html = f'''<!DOCTYPE html>
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 30px;
+    gap: 26px;
   }}
 
-  /* El QR exacto con su propio marco dorado original */
   .qr-wrapper {{
     position: relative;
-    width: 610px;
-    height: 610px;
-    border-radius: 50px;
-    box-shadow: 0 28px 65px -10px rgba(148, 108, 13, 0.35), 0 0 0 1px rgba(212, 175, 55, 0.35);
+    width: 580px;
+    height: 580px;
+    border-radius: 48px;
+    box-shadow: 0 26px 65px -10px rgba(236, 72, 153, 0.32), 0 0 0 2px rgba(244, 114, 182, 0.4);
     overflow: hidden;
-    background: #FAF8F5;
+    background: #FFFDFE;
   }}
 
   .qr-image {{
@@ -298,68 +294,67 @@ front_html = f'''<!DOCTYPE html>
     object-fit: cover;
   }}
 
-  /* Pie del QR con estética de marca */
+  /* Pie del QR estilo blanco y rosa */
   .qr-footer {{
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
   }}
 
   .qr-banner-line {{
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 16px;
   }}
 
   .line-ornament {{
-    width: 60px;
+    width: 55px;
     height: 2px;
-    background: linear-gradient(to right, transparent, #C59B27);
+    background: linear-gradient(to right, transparent, #EC4899);
   }}
   .line-ornament.right {{
-    background: linear-gradient(to left, transparent, #C59B27);
+    background: linear-gradient(to left, transparent, #EC4899);
   }}
 
   .qr-badge-pill {{
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 34px;
+    gap: 12px;
+    padding: 12px 32px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(202, 158, 50, 0.15) 0%, rgba(247, 236, 191, 0.38) 100%);
-    border: 1.5px solid rgba(197, 155, 39, 0.55);
+    background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
+    border: 1.5px solid #F472B6;
+    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.18);
   }}
 
   .qr-badge-pill svg {{
-    width: 28px;
-    height: 28px;
-    color: #926A0C;
+    width: 24px;
+    height: 24px;
+    color: #EC4899;
   }}
 
   .qr-badge-pill span {{
-    font-size: 19px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: #7A5B0B;
+    color: #DB2777;
   }}
 
   .qr-handle-text {{
     font-family: 'Outfit', sans-serif;
-    font-size: 34px;
-    font-weight: 700;
-    color: #17120D;
+    font-size: 32px;
+    font-weight: 800;
+    color: #46253A;
     letter-spacing: 0.04em;
   }}
 </style>
 </head>
 <body>
   <div class="card-bg"></div>
-  <div class="ambient-glow"></div>
-  <div class="ambient-glow-qr"></div>
-  <div class="gold-border-outer"></div>
-  <div class="gold-border-inner"></div>
+  <div class="rose-border-outer"></div>
+  <div class="rose-border-inner"></div>
   
   <div class="corner-accent corner-tl"></div>
   <div class="corner-accent corner-tr"></div>
@@ -375,43 +370,18 @@ front_html = f'''<!DOCTYPE html>
     <!-- Columna Izquierda -->
     <div class="left-col">
       <div class="brand-top-block">
-        <div class="brand-header">
-          <svg class="lash-emblem" viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="goldGradLash" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stop-color="#C59B27"/>
-                <stop offset="35%" stop-color="#F7ECBF"/>
-                <stop offset="70%" stop-color="#AA8018"/>
-                <stop offset="100%" stop-color="#84600A"/>
-              </linearGradient>
-            </defs>
-            <path d="M65 133C106 182 152 207 200 207C248 207 294 182 335 133" stroke="url(#goldGradLash)" stroke-width="15" stroke-linecap="round"/>
-            <g stroke="url(#goldGradLash)" stroke-width="12" stroke-linecap="round">
-              <path d="M82 151C71 156 61 166 53 181" />
-              <path d="M105 171C95 181 87 194 83 208" />
-              <path d="M134 189C125 203 120 218 118 230" />
-              <path d="M166 202C161 217 159 233 160 246" />
-              <path d="M200 207V253" />
-              <path d="M234 202C239 217 241 233 240 246" />
-              <path d="M266 189C275 203 280 218 282 230" />
-              <path d="M295 171C305 181 313 194 317 208" />
-              <path d="M318 151C329 156 339 166 347 181" />
-            </g>
-            <path d="M102 111C130 94 163 85 200 85C237 85 270 94 298 111" stroke="url(#goldGradLash)" stroke-width="5" stroke-linecap="round" opacity="0.6" />
-            <path d="M311 60V88M297 74H325" stroke="url(#goldGradLash)" stroke-width="5.5" stroke-linecap="round"/>
-            <path d="M77 81V97M69 89H85" stroke="url(#goldGradLash)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-          </svg>
-
-          <h1 class="brand-title">GOLDBLACK <span class="gold-accent">LASH</span></h1>
-          
-          <div class="brand-tagline-pills">
-            <span class="brand-subtitle">Estudio de Pestañas</span>
-            <span class="brand-dots">✦</span>
-            <span class="brand-confidence">Beauty & Confidence</span>
+        <div class="brand-header-row">
+          <img class="brand-logo-img" src="data:image/png;base64,{logo_b64}" alt="Logotipo Oficial GoldBlack Lash" />
+          <div class="brand-title-wrap">
+            <h1 class="brand-title">GOLDBLACK <span class="rose-accent">LASH</span></h1>
+            <div class="brand-tagline-pills">
+              <span class="brand-subtitle">Estudio de Pestañas</span>
+              <span class="brand-dots">✦</span>
+              <span class="brand-confidence">Beauty & Confidence</span>
+            </div>
           </div>
         </div>
-
-        <div class="gold-divider"></div>
+        <div class="rose-divider"></div>
       </div>
 
       <!-- Lista de Contactos -->
@@ -507,13 +477,13 @@ front_html = f'''<!DOCTYPE html>
 with open('card_front.html', 'w', encoding='utf-8') as f:
     f.write(front_html)
 
-# HTML template for BACK (Reverso)
+# HTML template for BACK (Reverso) — Con el LOGOTIPO OFICIAL REAL DEL SITIO WEB
 back_html = f'''<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,500;1,600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Nunito:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
 
   * {{
     box-sizing: border-box;
@@ -525,9 +495,9 @@ back_html = f'''<!DOCTYPE html>
     width: {WIDTH}px;
     height: {HEIGHT}px;
     overflow: hidden;
-    background: #FAF8F4;
-    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: #1F1914;
+    background: #FFF8FA;
+    font-family: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #46253A;
     position: relative;
     display: flex;
     align-items: center;
@@ -535,36 +505,30 @@ back_html = f'''<!DOCTYPE html>
     -webkit-font-smoothing: antialiased;
   }}
 
+  /* Fondo Blanco y Rosa Aurora */
   .card-bg {{
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 50% 45%, #FFFFFF 0%, #FAF8F4 50%, #F1ECE0 100%);
+    background:
+      radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 246, 250, 0.7) 45%, rgba(253, 235, 243, 0.9) 100%),
+      radial-gradient(circle at 50% 30%, rgba(236, 72, 153, 0.16) 0%, transparent 60%),
+      radial-gradient(circle at 20% 80%, rgba(192, 132, 252, 0.14) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(251, 146, 60, 0.12) 0%, transparent 50%),
+      linear-gradient(135deg, #FFFFFF 0%, #FFF5F9 50%, #FCE8F2 100%);
   }}
 
-  .center-glow {{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 1300px;
-    height: 1300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(230, 197, 110, 0.18) 0%, transparent 65%);
-    pointer-events: none;
-  }}
-
-  .gold-border-outer {{
+  .rose-border-outer {{
     position: absolute;
     inset: 42px;
     border: 3.5px solid transparent;
-    border-image: linear-gradient(135deg, #CA9E32 0%, #F7ECBF 25%, #A87D16 50%, #F5E8B8 75%, #8B650B 100%) 1;
+    border-image: linear-gradient(135deg, #E9A81C 0%, #F472B6 28%, #EC4899 50%, #F472B6 72%, #E9A81C 100%) 1;
     pointer-events: none;
   }}
 
-  .gold-border-inner {{
+  .rose-border-inner {{
     position: absolute;
     inset: 54px;
-    border: 1.2px solid rgba(197, 155, 39, 0.45);
+    border: 1.2px solid rgba(236, 72, 153, 0.3);
     pointer-events: none;
   }}
 
@@ -572,7 +536,7 @@ back_html = f'''<!DOCTYPE html>
     position: absolute;
     width: 28px;
     height: 28px;
-    border: 2.5px solid #C59B27;
+    border: 2.5px solid #F472B6;
     pointer-events: none;
   }}
   .corner-tl {{ top: 50px; left: 50px; border-right: none; border-bottom: none; }}
@@ -584,7 +548,7 @@ back_html = f'''<!DOCTYPE html>
     position: absolute;
     width: 8px;
     height: 8px;
-    background: #C59B27;
+    background: #EC4899;
     transform: rotate(45deg);
     pointer-events: none;
   }}
@@ -600,72 +564,91 @@ back_html = f'''<!DOCTYPE html>
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 24px;
+    gap: 18px;
     max-width: 1600px;
     padding: 60px 40px;
   }}
 
-  .lash-emblem-large {{
-    width: 480px;
-    height: 380px;
-    filter: drop-shadow(0 14px 34px rgba(184, 142, 40, 0.42));
-    margin-bottom: 8px;
+  /* Contenedor joya para el logotipo oficial del sitio web */
+  .logo-official-box {{
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
   }}
 
-  .brand-title-large {{
+  .logo-official-halo {{
+    position: absolute;
+    width: 600px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(236, 72, 153, 0.22) 0%, rgba(233, 168, 28, 0.12) 45%, transparent 70%);
+    filter: blur(20px);
+    pointer-events: none;
+  }}
+
+  .logo-official-img {{
+    position: relative;
+    width: 580px;
+    height: 450px;
+    object-fit: contain;
+    filter: drop-shadow(0 16px 36px rgba(70, 37, 58, 0.28));
+  }}
+
+  .lash-subname {{
     font-family: 'Playfair Display', Georgia, serif;
-    font-size: 100px;
+    font-size: 58px;
     font-weight: 700;
-    letter-spacing: 0.16em;
-    color: #17120D;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    line-height: 1;
+    color: #46253A;
+    margin-top: -10px;
   }}
 
-  .brand-title-large .gold-accent {{
-    background: linear-gradient(135deg, #B5881E 0%, #E8C872 45%, #946C0D 100%);
+  .lash-subname .rose-italic {{
+    background: linear-gradient(135deg, #EC4899 0%, #FB7185 50%, #E9A81C 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-style: italic;
     font-weight: 600;
-    letter-spacing: 0.08em;
   }}
 
   .slogan {{
     font-family: 'Cormorant Garamond', Georgia, serif;
-    font-size: 54px;
+    font-size: 46px;
     font-style: italic;
     font-weight: 600;
     letter-spacing: 0.04em;
-    color: #926A0C;
-    margin-top: 4px;
+    color: #9A7585;
   }}
 
   .reverso-divider {{
-    width: 520px;
+    width: 480px;
     height: 2px;
-    background: linear-gradient(to right, transparent, #C59B27 25%, #F7ECBF 50%, #C59B27 75%, transparent);
-    margin: 14px 0 8px;
+    background: linear-gradient(to right, transparent, #EC4899 30%, #E9A81C 50%, #EC4899 70%, transparent);
+    margin: 6px 0;
   }}
 
   .badge-studio {{
     display: inline-block;
-    padding: 14px 50px;
+    padding: 12px 44px;
     border-radius: 999px;
-    background: linear-gradient(135deg, rgba(202, 158, 50, 0.14) 0%, rgba(247, 236, 191, 0.3) 100%);
-    border: 1.5px solid rgba(197, 155, 39, 0.5);
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: 0.28em;
+    background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
+    border: 1.5px solid #F472B6;
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.18);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
-    color: #7A5B0B;
+    color: #DB2777;
   }}
 
   .footer-reverso {{
-    margin-top: 14px;
-    font-size: 22px;
-    font-weight: 500;
-    color: #8C7256;
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #9A7585;
     letter-spacing: 0.16em;
     text-transform: uppercase;
   }}
@@ -673,9 +656,8 @@ back_html = f'''<!DOCTYPE html>
 </head>
 <body>
   <div class="card-bg"></div>
-  <div class="center-glow"></div>
-  <div class="gold-border-outer"></div>
-  <div class="gold-border-inner"></div>
+  <div class="rose-border-outer"></div>
+  <div class="rose-border-inner"></div>
 
   <div class="corner-accent corner-tl"></div>
   <div class="corner-accent corner-tr"></div>
@@ -688,34 +670,17 @@ back_html = f'''<!DOCTYPE html>
   <div class="corner-dot dot-br"></div>
 
   <div class="card-center">
-    <svg class="lash-emblem-large" viewBox="0 0 400 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="goldGradLashRev" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#C59B27"/>
-          <stop offset="35%" stop-color="#F7ECBF"/>
-          <stop offset="70%" stop-color="#AA8018"/>
-          <stop offset="100%" stop-color="#84600A"/>
-        </linearGradient>
-      </defs>
-      <path d="M65 133C106 182 152 207 200 207C248 207 294 182 335 133" stroke="url(#goldGradLashRev)" stroke-width="15" stroke-linecap="round"/>
-      <g stroke="url(#goldGradLashRev)" stroke-width="12" stroke-linecap="round">
-        <path d="M82 151C71 156 61 166 53 181" />
-        <path d="M105 171C95 181 87 194 83 208" />
-        <path d="M134 189C125 203 120 218 118 230" />
-        <path d="M166 202C161 217 159 233 160 246" />
-        <path d="M200 207V253" />
-        <path d="M234 202C239 217 241 233 240 246" />
-        <path d="M266 189C275 203 280 218 282 230" />
-        <path d="M295 171C305 181 313 194 317 208" />
-        <path d="M318 151C329 156 339 166 347 181" />
-      </g>
-      <path d="M102 111C130 94 163 85 200 85C237 85 270 94 298 111" stroke="url(#goldGradLashRev)" stroke-width="5" stroke-linecap="round" opacity="0.6" />
-      <path d="M311 60V88M297 74H325" stroke="url(#goldGradLashRev)" stroke-width="5.5" stroke-linecap="round"/>
-      <path d="M77 81V97M69 89H85" stroke="url(#goldGradLashRev)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-    </svg>
+    <!-- Logotipo Oficial Real del Sitio Web -->
+    <div class="logo-official-box">
+      <div class="logo-official-halo"></div>
+      <img class="logo-official-img" src="data:image/png;base64,{logo_b64}" alt="Logotipo Oficial GoldBlack Lash" />
+    </div>
 
-    <h2 class="brand-title-large">GOLDBLACK <span class="gold-accent">LASH</span></h2>
-    <p class="slogan">“El arte de realzar tu mirada”</p>
+    <div class="lash-subname">
+      <span class="rose-italic">Lash Studio</span>
+    </div>
+
+    <p class="slogan">“Un pequeño momento para ti · Una nueva forma de mirar”</p>
     
     <div class="reverso-divider"></div>
     
@@ -743,7 +708,7 @@ reverso_png = os.path.abspath('public/tarjeta-reverso.png')
 anverso_jpg = os.path.abspath('public/tarjeta-anverso.jpg')
 reverso_jpg = os.path.abspath('public/tarjeta-reverso.jpg')
 
-print('Rendering Anverso with Chrome headless...')
+print('Rendering Anverso with Chrome headless (Blanco y Rosa)...')
 subprocess.run([
     chrome_path,
     '--headless=new',
@@ -756,7 +721,7 @@ subprocess.run([
 ], check=True)
 print('Rendered Anverso PNG successfully')
 
-print('Rendering Reverso with Chrome headless...')
+print('Rendering Reverso with Chrome headless (Logotipo Oficial)...')
 subprocess.run([
     chrome_path,
     '--headless=new',
@@ -796,4 +761,4 @@ for tmp in ['card_front.html', 'card_back.html']:
     if os.path.exists(tmp):
         os.remove(tmp)
 
-print('Card generation finished successfully!')
+print('White & Pink Card generation finished successfully!')
