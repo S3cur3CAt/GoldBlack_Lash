@@ -228,8 +228,8 @@ function Galeria() {
                   onClick={() => handleTechniqueClick(technique)}
                   className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer outline-none focus:outline-none ${
                     isActive
-                      ? 'bg-linear-to-r from-[#fcedc7] via-accent to-[#aa820a] text-[#08080a]! font-bold shadow-sm border border-[#fcedc7]/70'
-                      : 'text-muted hover:text-ink hover:bg-white/10 border border-transparent'
+                      ? 'bg-linear-to-r from-[#f472b6] via-[#ec4899] to-[#fb923c] text-white! font-bold shadow-sm border border-white/60'
+                      : 'text-muted hover:text-ink hover:bg-white border border-transparent'
                   }`}
                 >
                   {technique}
@@ -276,13 +276,13 @@ function Galeria() {
                     id={slug}
                     className="scroll-mt-36 pt-2"
                   >
-                    <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                    <div className="mb-6 flex items-center justify-between gap-3 border-b border-[#ec4899]/15 pb-3">
                       <div className="flex items-center gap-3">
                         <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
                           {technique}
                         </h2>
                       </div>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted">
+                      <span className="rounded-full border border-[#ec4899]/20 bg-[#fdf2f8] px-3 py-1 text-xs font-semibold text-muted">
                         {techPieces.length} {techPieces.length === 1 ? 'diseño' : 'diseños'}
                       </span>
                     </div>
@@ -313,11 +313,11 @@ function Galeria() {
               if (!miscPieces.length) return null
               return (
                 <section id="tech-otros" className="scroll-mt-36 pt-2">
-                  <div className="mb-6 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div className="mb-6 flex items-center justify-between gap-3 border-b border-[#ec4899]/15 pb-3">
                     <h2 className="font-display text-2xl font-bold tracking-tight text-ink sm:text-3xl">
                       Otros diseños
                     </h2>
-                    <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-muted">
+                    <span className="rounded-full border border-[#ec4899]/20 bg-[#fdf2f8] px-3 py-1 text-xs font-semibold text-muted">
                       {miscPieces.length} diseños
                     </span>
                   </div>
@@ -428,7 +428,7 @@ function GalleryTile({
 
         <span
           aria-hidden="true"
-          className="absolute right-4 bottom-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-[#101018]/85 border border-accent/35 text-lg text-rose shadow-soft backdrop-blur-md transition-all duration-300 group-hover:bg-accent group-hover:text-[#08080a] group-hover:shadow-glow"
+          className="absolute right-4 bottom-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/90 border border-[#ec4899]/35 text-lg text-rose shadow-soft backdrop-blur-md transition-all duration-300 group-hover:bg-[#ec4899] group-hover:text-white group-hover:shadow-glow"
         >
           ↗
         </span>
@@ -454,9 +454,9 @@ function GalleryTile({
             {piece.elements.map((el, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 rounded-md bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-accent px-2.5 py-0.5 text-[0.65rem] font-bold text-[#08080a] border border-white/60 shadow-xs"
+                className="inline-flex items-center gap-1 rounded-md bg-linear-to-r from-[#fbcfe8] via-[#fed7aa] to-[#ddd6fe] px-2.5 py-0.5 text-[0.65rem] font-bold text-[#831843] border border-white/70 shadow-xs"
               >
-                <span className="text-[0.6rem] text-[#8a5a12]">✦</span>
+                <span className="text-[0.6rem] text-[#db2777]">✦</span>
                 <span>{el}</span>
               </span>
             ))}
@@ -533,10 +533,10 @@ function Lightbox({
           onPrevious()
         }
       }}
-      className="fixed inset-0 m-auto w-full max-w-4xl max-h-[90dvh] overflow-hidden rounded-4xl border border-line bg-paper p-0 text-ink shadow-panel"
+      className="fixed inset-0 m-auto w-full max-w-4xl max-h-[90dvh] overflow-hidden rounded-4xl border border-[#ec4899]/20 bg-white p-0 text-ink shadow-panel"
     >
       <div className="grid md:grid-cols-2 h-full max-h-[90dvh] overflow-hidden">
-        <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-6 bg-blush/20 overflow-hidden min-h-0 min-w-0 max-h-[35dvh] md:max-h-none md:h-full">
+        <div className="relative flex items-center justify-center p-3 sm:p-4 md:p-6 bg-gradient-to-br from-[#fdf2f8] via-[#fff7ed] to-[#faf5ff] overflow-hidden min-h-0 min-w-0 max-h-[35dvh] md:max-h-none md:h-full">
           <div className="relative w-full h-full max-w-[320px] md:max-w-md max-h-full aspect-4/5 overflow-hidden rounded-2xl md:rounded-3xl border border-line/60 bg-paper shadow-soft flex items-center justify-center">
             {piece.image ? (
               <img
@@ -572,7 +572,7 @@ function Lightbox({
               autoFocus
               onClick={onClose}
               aria-label="Cerrar visor"
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-accent/30 bg-[#161622] text-rose transition-all duration-200 hover:bg-[#202030] hover:text-white cursor-pointer"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#ec4899]/30 bg-[#fdf2f8] text-rose transition-all duration-200 hover:bg-[#ec4899] hover:text-white cursor-pointer"
             >
               <svg
                 aria-hidden="true"
@@ -617,9 +617,9 @@ function Lightbox({
                 {piece.elements.map((el, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-accent px-3 py-1 text-xs font-bold text-[#08080a] border border-white/70 shadow-sm"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fbcfe8] via-[#fed7aa] to-[#ddd6fe] px-3 py-1 text-xs font-bold text-[#831843] border border-white/70 shadow-sm"
                   >
-                    <span className="text-[#8a5a12]">✦</span>
+                    <span className="text-[#db2777]">✦</span>
                     <span>{el}</span>
                   </span>
                 ))}

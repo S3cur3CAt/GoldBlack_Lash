@@ -135,8 +135,8 @@ function Servicios() {
                 }
                 className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                   visible === category.id
-                    ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70'
-                    : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
+                    ? 'bg-linear-to-r from-[#f472b6] via-[#ec4899] to-[#fb923c] !text-white font-bold shadow-sm border border-white/60'
+                    : 'text-muted hover:text-ink hover:bg-white border border-transparent'
                 }`}
               >
                 {category.name}
@@ -152,8 +152,8 @@ function Servicios() {
               aria-current={visible === 'faq' ? 'location' : undefined}
               className={`px-3 sm:px-3.5 py-1 rounded-lg text-xs font-semibold transition-all duration-200 inline-block outline-none focus:outline-none ${
                 visible === 'faq'
-                  ? 'bg-linear-to-r from-[#fcedc7] via-[#d4af37] to-[#aa820a] !text-[#08080a] font-bold shadow-sm border border-[#fcedc7]/70'
-                  : 'text-muted hover:text-[#f5f5f7] hover:bg-white/10 border border-transparent'
+                  ? 'bg-linear-to-r from-[#f472b6] via-[#ec4899] to-[#fb923c] !text-white font-bold shadow-sm border border-white/60'
+                  : 'text-muted hover:text-ink hover:bg-white border border-transparent'
               }`}
             >
               Preguntas frecuentes
@@ -241,8 +241,8 @@ function ServiceCard({ service }: { service: Service }) {
       }`}
     >
       {service.featured ? (
-        <p className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-[#fcedc7]/70 bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-[#08080a] uppercase shadow-[0_2px_12px_rgba(229,193,88,0.45)]">
-          <span aria-hidden="true" className="text-[#8a5a12]">★</span>
+        <p className="mb-5 inline-flex items-center gap-1.5 rounded-lg border border-white/70 bg-linear-to-r from-[#f472b6] via-[#ec4899] to-[#fb923c] px-3.5 py-1 text-[0.65rem] font-black tracking-widest text-white uppercase shadow-[0_2px_12px_rgba(236,72,153,0.45)]">
+          <span aria-hidden="true" className="text-white">★</span>
           Favorito del estudio
         </p>
       ) : null}
@@ -264,8 +264,8 @@ function ServiceCard({ service }: { service: Service }) {
               {service.name}
             </h3>
             {service.badge ? (
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fff3d6] via-[#f3d997] to-[#d4af37] px-3.5 py-1 text-[0.72rem] font-extrabold tracking-wide text-[#08080a] border border-white/80 shadow-[0_2px_14px_rgba(229,193,88,0.5)]">
-                <span className="text-[0.65rem] text-[#8a5a12]">✦</span>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-linear-to-r from-[#fbcfe8] via-[#fdba74] to-[#ddd6fe] px-3.5 py-1 text-[0.72rem] font-extrabold tracking-wide text-[#831843] border border-white/80 shadow-[0_2px_14px_rgba(236,72,153,0.35)]">
+                <span className="text-[0.65rem] text-[#db2777]">✦</span>
                 {service.badge}
               </span>
             ) : null}
@@ -447,15 +447,15 @@ function BookingCta() {
     <section className="pb-16 md:pb-24">
       <div className="booking-panel px-6 py-12 text-center md:py-16">
         <div className="relative z-10 mx-auto max-w-xl">
-          <p className="text-[0.65rem] font-semibold tracking-[0.2em] text-accent uppercase">
+          <p className="text-[0.65rem] font-bold tracking-[0.2em] text-white/90 uppercase">
             No tienes que decidirlo todo ahora
           </p>
 
-          <h2 className="mt-5 font-display text-4xl leading-tight md:text-5xl">
+          <h2 className="mt-5 font-display text-4xl leading-tight md:text-5xl text-white">
             Encontramos tu efecto juntas.
           </h2>
 
-          <p className="mt-5 text-sm leading-8 text-white/75">
+          <p className="mt-5 text-sm leading-8 text-white/90">
             Cuéntame qué te gusta y te ayudo a elegir el servicio
             que mejor encaja con tu mirada.
           </p>
@@ -463,7 +463,7 @@ function BookingCta() {
           <button
             type="button"
             onClick={() => openReservationModal()}
-            className="button button-light mt-7 focus-visible:outline-accent cursor-pointer"
+            className="button mt-7 focus-visible:outline-white cursor-pointer !bg-white !text-[#db2777] !border-white"
           >
             Quiero reservar mi momento
             <span aria-hidden="true">↗</span>

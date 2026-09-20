@@ -78,7 +78,7 @@ function Contacto() {
                 </a>
               </div>
 
-              <div className="overflow-hidden rounded-[1.75rem] border border-[#d4af37]/25 bg-surface shadow-soft">
+              <div className="overflow-hidden rounded-[1.75rem] border border-[#ec4899]/25 bg-white shadow-soft">
                 <iframe
                   title={`Ubicación de ${business.name}`}
                   src={business.mapsEmbed}
@@ -343,7 +343,7 @@ function BookingForm() {
           Tu solicitud para <strong>{form.servicio}</strong> ha quedado registrada en nuestra agenda.
         </p>
 
-        <div className="mt-6 p-5 rounded-2xl bg-[#101019] border border-rose/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
+        <div className="mt-6 p-5 rounded-2xl bg-[#fdf2f8] border border-[#ec4899]/20 text-xs sm:text-sm text-muted max-w-md mx-auto space-y-2">
           <p>
             💬 Te enviaremos la confirmación por WhatsApp a tu móvil <strong className="text-ink font-mono">{form.telefono}</strong>.
           </p>
@@ -501,7 +501,7 @@ function BookingForm() {
       {error ? (
         <p
           role="alert"
-          className="mt-5 rounded-2xl border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.12)] p-4 text-sm text-[#fda4af]"
+          className="mt-5 rounded-2xl border border-[rgba(244,63,94,0.35)] bg-[rgba(244,63,94,0.08)] p-4 text-sm text-[#be123c]"
         >
           {error}
         </p>

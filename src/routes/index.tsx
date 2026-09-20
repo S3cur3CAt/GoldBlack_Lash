@@ -217,7 +217,7 @@ function Hero() {
             <em>tu mirada.</em>
           </h1>
 
-          <p className="body-copy mx-auto mt-6 max-w-lg text-[#f5f5f7] font-medium text-[1.05rem] leading-relaxed drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)]">
+          <p className="mx-auto mt-6 max-w-lg text-[#6b4a5a] font-medium text-[1.05rem] leading-relaxed drop-shadow-[0_2px_12px_rgba(255,255,255,0.9)]">
             Pestañas que realzan lo que te hace única. Un diseño a tu
             medida y un momento de cuidado solo para ti.
           </p>
@@ -315,31 +315,31 @@ function ServicesPreview() {
                 <div>
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-[#d4af37]/80 font-bold block mb-1">
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-[#db2777]/80 font-bold block mb-1">
                         {service.categoryName}
                       </span>
-                      <h3 className="font-display text-2xl text-white group-hover:text-[#e5c158] transition-colors">
+                      <h3 className="font-display text-2xl text-ink group-hover:text-[#db2777] transition-colors">
                         {service.name}
                       </h3>
                     </div>
-                    <span className="shrink-0 font-display text-2xl font-semibold bg-[#101019]/90 px-3.5 py-1 rounded-full border border-[#d4af37]/25">
+                    <span className="shrink-0 font-display text-2xl font-semibold bg-[#fdf2f8] px-3.5 py-1 rounded-full border border-[#ec4899]/25">
                       <span className="text-gold-gradient">{service.price}</span>
                     </span>
                   </div>
 
-                  <p className="text-sm text-[#9e9ea7] mt-3 leading-relaxed">
+                  <p className="text-sm text-muted mt-3 leading-relaxed">
                     {service.description}
                   </p>
 
-                  <div className="mt-4 flex items-center gap-2 text-xs text-[#9e9ea7]">
-                    <svg className="w-4 h-4 text-[#d4af37]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <div className="mt-4 flex items-center gap-2 text-xs text-muted">
+                    <svg className="w-4 h-4 text-[#ec4899]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>Duración estimada: {service.duration}</span>
                   </div>
 
-                  <ul className="mt-6 space-y-2 border-t border-[#d4af37]/15 pt-4">
+                  <ul className="mt-6 space-y-2 border-t border-[#ec4899]/15 pt-4">
                     {service.includes.map((inc) => (
-                      <li key={inc} className="flex items-center gap-2.5 text-xs text-zinc-300">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#d4af37]/60" />
+                      <li key={inc} className="flex items-center gap-2.5 text-xs text-[#6b4a5a]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-[#ec4899] to-[#fb923c]" />
                         <span>{inc}</span>
                       </li>
                     ))}
@@ -349,7 +349,7 @@ function ServicesPreview() {
                 <div className="mt-8">
                   <button
                     onClick={() => openReservationModal()}
-                    className="w-full button button-light py-2.5 text-xs font-bold group-hover:bg-[#d4af37]/10 transition-colors"
+                    className="w-full button button-light py-2.5 text-xs font-bold group-hover:bg-[#fce7f3] transition-colors"
                   >
                     Reservar este servicio
                   </button>
@@ -394,7 +394,7 @@ function Experience() {
       <div className="aurora-band rounded-[3rem] py-16 md:rounded-[4rem] md:py-20">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <Reveal className="relative mx-auto w-full max-w-md pb-9">
-            <div className="overflow-hidden rounded-[2rem] border border-[#d4af37]/30 shadow-panel">
+            <div className="overflow-hidden rounded-[2rem] border border-[#ec4899]/30 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -403,7 +403,7 @@ function Experience() {
               />
             </div>
 
-            <div className="absolute right-2 bottom-0 left-2 rounded-[1.8rem] border border-[#d4af37]/30 bg-[#0b0b12]/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-6 sm:left-6">
+            <div className="absolute right-2 bottom-0 left-2 rounded-[1.8rem] border border-[#ec4899]/25 bg-white/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-6 sm:left-6">
               <p className="font-display text-2xl italic text-rose">
                 “Más que pestañas,
                 <br />

@@ -152,6 +152,83 @@ export function parseContactsFromTextOrVcard(input: string): Array<{ name: strin
   return results
 }
 
+const DURATION_PRESETS = [
+  '30 min',
+  '45 min',
+  '1 h',
+  '1 h 15 min',
+  '1 h 30 min',
+  '1 h 45 min',
+  '2 h',
+  '2 h 15 min',
+  '2 h 30 min',
+  '3 h',
+]
+
+const BADGE_PRESETS = [
+  { value: '', label: '(Sin etiqueta)' },
+  { value: 'Más popular', label: '⭐ Más popular' },
+  { value: 'Novedad', label: '✨ Novedad' },
+  { value: 'Oferta', label: '🔥 Oferta' },
+  { value: 'Recomendado', label: '💖 Recomendado' },
+  { value: 'Top Ventas', label: '👑 Top Ventas' },
+  { value: 'Exclusivo', label: '💎 Exclusivo' },
+  { value: 'Promo', label: '🏷️ Promo' },
+]
+
+const PRICE_PRESETS = [
+  15, 20, 25, 27, 30, 35, 40, 45, 50, 55, 60, 70, 80, 90, 100
+]
+
+const compressImageFile = (
+  file: File,
+  maxWidth = 1200,
+  maxHeight = 1200,
+  quality = 0.85
+): Promise<string> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || typeof FileReader === 'undefined') {
+      resolve('')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const src = e.target?.result as string
+      if (!src) {
+        resolve('')
+        return
+      }
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          } else {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(src)
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.onerror = () => resolve(src)
+      img.src = src
+    }
+    reader.onerror = () => resolve('')
+    reader.readAsDataURL(file)
+  })
+}
+
 const DEFAULT_SERVICE_CATEGORIES: { id: string; name: string }[] = [
   { id: 'extensiones', name: 'Extensiones de pestañas' },
   { id: 'extras', name: 'Tratamientos y extras' },
@@ -440,11 +517,16 @@ function StudioMobileHubPage() {
   }, [services, selectedServiceCategoryFilter])
 
   const [serviceFormPrice, setServiceFormPrice] = useState('27')
+  const [isCustomPrice, setIsCustomPrice] = useState(false)
   const [serviceFormDuration, setServiceFormDuration] = useState('1 h 15 min')
+  const [isCustomDuration, setIsCustomDuration] = useState(false)
   const [serviceFormBadge, setServiceFormBadge] = useState('')
+  const [isCustomBadge, setIsCustomBadge] = useState(false)
   const [serviceFormDescription, setServiceFormDescription] = useState('')
   const [serviceFormIncludes, setServiceFormIncludes] = useState('')
   const [serviceFormImage, setServiceFormImage] = useState('/galeria/pieza-01.jpg')
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const deviceImageInputRef = useRef<HTMLInputElement>(null)
   const [isSavingService, setIsSavingService] = useState(false)
   const [serviceActionError, setServiceActionError] = useState<string | null>(null)
 
@@ -821,9 +903,19 @@ function StudioMobileHubPage() {
       setServiceFormName(serviceToEdit.name)
       setServiceFormCategoryId(serviceToEdit.categoryId || 'extensiones')
       setServiceFormCategory(serviceToEdit.categoryName || 'Extensiones de pestañas')
-      setServiceFormPrice(String(serviceToEdit.priceNumber || 27))
-      setServiceFormDuration(serviceToEdit.duration || '1 h 15 min')
-      setServiceFormBadge(serviceToEdit.badge || '')
+
+      const pNum = serviceToEdit.priceNumber || parseInt(String(serviceToEdit.priceFormatted || '27').replace(/\D/g, ''), 10) || 27
+      setServiceFormPrice(String(pNum))
+      setIsCustomPrice(!PRICE_PRESETS.includes(pNum))
+
+      const dur = serviceToEdit.duration || '1 h 15 min'
+      setServiceFormDuration(dur)
+      setIsCustomDuration(!DURATION_PRESETS.includes(dur))
+
+      const bdg = serviceToEdit.badge || ''
+      setServiceFormBadge(bdg)
+      setIsCustomBadge(!!bdg && !BADGE_PRESETS.some((b) => b.value === bdg))
+
       setServiceFormDescription(serviceToEdit.description || '')
       setServiceFormIncludes((serviceToEdit.includes || []).join('\n'))
       setServiceFormImage(serviceToEdit.image || getServiceImageFallback(serviceToEdit.name, serviceToEdit.id))
@@ -833,13 +925,34 @@ function StudioMobileHubPage() {
       setServiceFormCategoryId('extensiones')
       setServiceFormCategory('Extensiones de pestañas')
       setServiceFormPrice('27')
+      setIsCustomPrice(false)
       setServiceFormDuration('1 h 15 min')
+      setIsCustomDuration(false)
       setServiceFormBadge('')
+      setIsCustomBadge(false)
       setServiceFormDescription('')
       setServiceFormIncludes('Diseño anatómico personalizado\nFibras de alta gama\nSellado profesional')
       setServiceFormImage('/galeria/pieza-02.jpg')
     }
     setServiceModalOpen(true)
+  }
+
+  // Manejar selección de foto desde el dispositivo (Android, iPhone, PC)
+  const handleDeviceImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsProcessingImage(true)
+    try {
+      const compressed = await compressImageFile(file)
+      if (compressed) {
+        setServiceFormImage(compressed)
+      }
+    } catch (err) {
+      console.warn('Error al procesar imagen del dispositivo:', err)
+    } finally {
+      setIsProcessingImage(false)
+      if (e.target) e.target.value = ''
+    }
   }
 
   // Guardar Servicio (Crear o Actualizar) en Supabase
@@ -3833,26 +3946,101 @@ function StudioMobileHubPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
+                {/* Precio (€) con Selector Rápido o Custom */}
                 <div>
-                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Precio (€) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={serviceFormPrice}
-                    onChange={(e) => setServiceFormPrice(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                      Precio (€) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomPrice(!isCustomPrice)}
+                      className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                    >
+                      {isCustomPrice ? '← Rápido' : '✏️ Otro'}
+                    </button>
+                  </div>
+
+                  {isCustomPrice ? (
+                    <input
+                      type="number"
+                      required
+                      autoFocus
+                      placeholder="Ej. 28"
+                      value={serviceFormPrice}
+                      onChange={(e) => setServiceFormPrice(e.target.value)}
+                      className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                    />
+                  ) : (
+                    <select
+                      value={serviceFormPrice}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomPrice(true)
+                        } else {
+                          setServiceFormPrice(e.target.value)
+                        }
+                      }}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent cursor-pointer"
+                    >
+                      {PRICE_PRESETS.map((p) => (
+                        <option key={p} value={String(p)}>
+                          {p} €
+                        </option>
+                      ))}
+                      <option value="__custom__" className="text-accent font-semibold">
+                        ✏️ Otro precio (manual)...
+                      </option>
+                    </select>
+                  )}
                 </div>
 
+                {/* Duración estimada con Selector Rápido o Custom */}
                 <div>
-                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Duración estimada</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. 1 h 15 min"
-                    value={serviceFormDuration}
-                    onChange={(e) => setServiceFormDuration(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                      Duración *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDuration(!isCustomDuration)}
+                      className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                    >
+                      {isCustomDuration ? '← Rápida' : '✏️ Otra'}
+                    </button>
+                  </div>
+
+                  {isCustomDuration ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Ej. 1 h 20 min"
+                      value={serviceFormDuration}
+                      onChange={(e) => setServiceFormDuration(e.target.value)}
+                      className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    />
+                  ) : (
+                    <select
+                      value={serviceFormDuration}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setIsCustomDuration(true)
+                        } else {
+                          setServiceFormDuration(e.target.value)
+                        }
+                      }}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                    >
+                      {DURATION_PRESETS.map((dur) => (
+                        <option key={dur} value={dur}>
+                          {dur}
+                        </option>
+                      ))}
+                      <option value="__custom__" className="text-accent font-semibold">
+                        ✏️ Otra duración (manual)...
+                      </option>
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -3916,39 +4104,164 @@ function StudioMobileHubPage() {
                 )}
               </div>
 
+              {/* Badge / Etiqueta con Selector Rápido o Custom */}
               <div>
-                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Badge / Etiqueta</label>
-                <input
-                  type="text"
-                  placeholder="Ej. Más popular, Novedad"
-                  value={serviceFormBadge}
-                  onChange={(e) => setServiceFormBadge(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    Badge / Etiqueta
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomBadge(!isCustomBadge)}
+                    className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                  >
+                    {isCustomBadge ? '← Rápida' : '✏️ Personalizada'}
+                  </button>
+                </div>
+
+                {isCustomBadge ? (
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Ej. Edición Limitada, Verano..."
+                    value={serviceFormBadge}
+                    onChange={(e) => setServiceFormBadge(e.target.value)}
+                    className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                  />
+                ) : (
+                  <select
+                    value={serviceFormBadge}
+                    onChange={(e) => {
+                      if (e.target.value === '__custom__') {
+                        setIsCustomBadge(true)
+                      } else {
+                        setServiceFormBadge(e.target.value)
+                      }
+                    }}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                  >
+                    {BADGE_PRESETS.map((b) => (
+                      <option key={b.value} value={b.value}>
+                        {b.label}
+                      </option>
+                    ))}
+                    <option value="__custom__" className="text-accent font-semibold">
+                      ✏️ Escribir etiqueta personalizada...
+                    </option>
+                  </select>
+                )}
               </div>
 
-              {/* Selector de Imagen del Servicio */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-zinc-400 uppercase block">Imagen del Servicio</label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {GALLERY_PRESETS.map((preset) => {
-                    const isSelected = serviceFormImage === preset.path
-                    return (
-                      <div
-                        key={preset.path}
-                        onClick={() => setServiceFormImage(preset.path)}
-                        className={`p-1 rounded-xl cursor-pointer border relative overflow-hidden ${
-                          isSelected ? 'border-accent ring-1 ring-accent' : 'border-white/10 opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <img src={preset.path} alt={preset.label} className="w-full h-12 object-cover rounded-lg" />
-                        <span className="block text-[8px] text-center text-zinc-300 mt-1 truncate">
-                          {preset.label.split(' ')[0]}
+              {/* Selector de Imagen del Servicio — Subida desde Android/iPhone + Catálogo */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    Imagen del Servicio
+                  </label>
+                  {typeof serviceFormImage === 'string' && serviceFormImage.startsWith('data:image/') && (
+                    <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                      <span>✓</span> Foto del dispositivo activa
+                    </span>
+                  )}
+                </div>
+
+                {/* Input oculto para abrir la cámara o fototeca de Android o iPhone */}
+                <input
+                  ref={deviceImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleDeviceImageChange}
+                  className="hidden"
+                />
+
+                {/* Botón táctil para subir foto desde el móvil o PC */}
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-accent/15 via-black/60 to-purple-500/15 border border-accent/40 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="w-8 h-8 rounded-xl bg-accent/20 border border-accent/40 text-accent flex items-center justify-center text-base shrink-0">
+                        📱
+                      </span>
+                      <div className="min-w-0">
+                        <span className="block text-xs font-bold text-white truncate">
+                          Subir foto desde este dispositivo
+                        </span>
+                        <span className="block text-[10px] text-zinc-400 truncate">
+                          iPhone, Android o Galería (optimizado automático)
                         </span>
                       </div>
-                    )
-                  })}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isProcessingImage}
+                      onClick={() => deviceImageInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-black font-bold text-xs flex items-center gap-1 shrink-0 shadow-sm shadow-accent/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <span>{isProcessingImage ? '⏳' : '📷'}</span>
+                      <span>
+                        {typeof serviceFormImage === 'string' && serviceFormImage.startsWith('data:image/')
+                          ? 'Cambiar foto'
+                          : 'Elegir foto'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Previsualización si la imagen fue seleccionada desde el dispositivo */}
+                  {typeof serviceFormImage === 'string' && serviceFormImage.startsWith('data:image/') && (
+                    <div className="p-2 rounded-xl bg-black/70 border border-accent/50 flex items-center justify-between gap-2 animate-in fade-in">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={serviceFormImage}
+                          alt="Foto subida del dispositivo"
+                          className="w-12 h-12 object-cover rounded-lg border border-white/20 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <span className="block text-[11px] font-semibold text-accent truncate">
+                            Foto propia cargada
+                          </span>
+                          <span className="block text-[9px] text-zinc-400 truncate">
+                            Formato comprimido listo para guardar
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setServiceFormImage('/galeria/pieza-01.jpg')}
+                        className="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-[10px] font-semibold border border-rose-500/30 shrink-0 transition-colors cursor-pointer"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {/* Galería de presets predeterminados del salón */}
+                <div className="space-y-1 pt-1">
+                  <span className="text-[10px] text-zinc-500 block">O elige una foto del catálogo predeterminado:</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {GALLERY_PRESETS.map((preset) => {
+                      const isSelected = serviceFormImage === preset.path
+                      return (
+                        <div
+                          key={preset.path}
+                          onClick={() => setServiceFormImage(preset.path)}
+                          className={`p-1 rounded-xl cursor-pointer border relative overflow-hidden transition-all ${
+                            isSelected
+                              ? 'border-accent ring-1 ring-accent bg-accent/10'
+                              : 'border-white/10 opacity-70 hover:opacity-100 bg-black/30'
+                          }`}
+                        >
+                          <img src={preset.path} alt={preset.label} className="w-full h-12 object-cover rounded-lg" />
+                          <span className="block text-[8px] text-center text-zinc-300 mt-1 truncate">
+                            {preset.label.split(' ')[0]}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
                 <input
                   type="text"
                   placeholder="O introduce una URL de imagen personalizada"

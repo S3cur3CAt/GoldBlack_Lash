@@ -17,14 +17,18 @@ export function PageHero({
 }) {
   return (
     <section className="aurora-band relative overflow-hidden">
-      {/* Halo aurora decorativo */}
+      {/* Halos aurora decorativos multicolor */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-40 right-[12%] h-96 w-96 rounded-full bg-[radial-gradient(closest-side,rgba(212,175,55,0.14),transparent)] blur-2xl"
+        className="pointer-events-none absolute -top-40 right-[12%] h-96 w-96 rounded-full bg-[radial-gradient(closest-side,rgba(236,72,153,0.18),transparent)] blur-2xl"
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-48 left-[8%] h-96 w-96 rounded-full bg-[radial-gradient(closest-side,rgba(160,118,22,0.1),transparent)] blur-2xl"
+        className="pointer-events-none absolute -bottom-48 left-[8%] h-96 w-96 rounded-full bg-[radial-gradient(closest-side,rgba(192,132,252,0.18),transparent)] blur-2xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-10 left-[45%] h-72 w-72 rounded-full bg-[radial-gradient(closest-side,rgba(251,146,60,0.14),transparent)] blur-2xl"
       />
 
       <div className="wrap relative pt-8 pb-12 sm:pt-10 sm:pb-16 md:pb-20">
@@ -55,7 +59,7 @@ export function Diamond({ className = '' }: { className?: string }) {
       className={`flex items-center justify-center gap-5 ${className}`}
     >
       <span className="h-px w-20 bg-line" />
-      <span className="text-xl text-rose drop-shadow-[0_0_10px_rgba(229,193,88,0.6)]">✧</span>
+      <span className="text-xl text-rose drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]">✧</span>
       <span className="h-px w-20 bg-line" />
     </div>
   )

@@ -62,7 +62,7 @@ function SobreMi() {
       <section className="section">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <Reveal className="relative mx-auto w-full max-w-md pb-10">
-            <div className="overflow-hidden rounded-4xl border border-accent/30 shadow-panel">
+            <div className="overflow-hidden rounded-4xl border border-[#ec4899]/30 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -71,7 +71,7 @@ function SobreMi() {
               />
             </div>
 
-            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-accent/30 bg-[#0b0b12]/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
+            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#ec4899]/25 bg-white/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
               <p className="font-display text-2xl italic text-rose">
                 Belleza con calma,
                 <br />
@@ -238,7 +238,7 @@ function SobreMi() {
                 />
               </ul>
 
-              <p className="mt-7 rounded-2xl bg-paper px-5 py-4 text-xs leading-7 text-muted">
+              <p className="mt-7 rounded-2xl bg-[#fdf2f8] border border-[#ec4899]/15 px-5 py-4 text-xs leading-7 text-muted">
                 La valoración previa nos ayuda a decidir cómo proceder.
                 Tu comodidad y el cuidado de tu pestaña natural van primero.
               </p>
@@ -253,22 +253,22 @@ function SobreMi() {
             <div className="relative z-10 mx-auto max-w-2xl">
               <span
                 aria-hidden="true"
-                className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-white/25 text-3xl text-accent"
+                className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-white/50 bg-white/20 text-3xl text-white"
               >
                 ♡
               </span>
 
-              <p className="mt-6 text-[0.65rem] font-semibold tracking-[0.2em] text-accent uppercase">
+              <p className="mt-6 text-[0.65rem] font-bold tracking-[0.2em] text-white/90 uppercase">
                 Me encantará conocerte
               </p>
 
-              <h2 className="section-title mt-5">
+              <h2 className="section-title mt-5 !text-white">
                 Hagamos un poquito
                 <br />
                 de espacio para ti.
               </h2>
 
-              <p className="mx-auto mt-6 max-w-lg text-sm leading-8 text-white/75">
+              <p className="mx-auto mt-6 max-w-lg text-sm leading-8 text-white/90">
                 Escríbeme, cuéntame qué tienes en mente y buscamos
                 el momento para tu próxima visita.
               </p>
@@ -277,7 +277,7 @@ function SobreMi() {
                 <button
                   type="button"
                   onClick={() => openReservationModal()}
-                  className="button button-dark focus-visible:outline-accent cursor-pointer"
+                  className="button focus-visible:outline-white cursor-pointer !bg-white !text-[#db2777] !border-white"
                 >
                   Reservar mi cita
                   <span aria-hidden="true">→</span>
@@ -285,7 +285,7 @@ function SobreMi() {
 
                 <Link
                   to="/contacto"
-                  className="button border-white/30 text-white hover:bg-white/10 focus-visible:outline-accent"
+                  className="button border-white/50 !bg-white/15 !text-white hover:!bg-white/25 focus-visible:outline-white"
                 >
                   Contacto y ubicación
                 </Link>
