@@ -117,8 +117,8 @@ front_html = f'''<!DOCTYPE html>
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 0 45px 6px 0;
+    justify-content: flex-start;
+    padding: 0 45px 0 0;
   }}
 
   /* Bloque Superior: Logo Oficial del Sitio Web + Título */
@@ -205,23 +205,25 @@ front_html = f'''<!DOCTYPE html>
     margin-top: 6px;
   }}
 
-  /* Lista de contactos en tono rosa y plum de la web */
+  /* Lista de contactos en tono rosa y plum de la web (3 items) */
   .contact-list {{
+    flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 34px;
-    margin: 12px 0;
+    justify-content: center;
+    gap: 58px;
+    padding: 10px 0 20px 0;
   }}
 
   .contact-item {{
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 26px;
   }}
 
   .contact-icon-box {{
-    width: 76px;
-    height: 76px;
+    width: 82px;
+    height: 82px;
     border-radius: 50%;
     background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
     border: 2px solid #F472B6;
@@ -233,13 +235,13 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .contact-icon-box svg {{
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     color: #EC4899;
   }}
 
   .contact-sep {{
-    font-size: 34px;
+    font-size: 36px;
     color: #F472B6;
     font-weight: 300;
     opacity: 0.7;
@@ -248,11 +250,11 @@ front_html = f'''<!DOCTYPE html>
   .contact-content {{
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
   }}
 
   .contact-label {{
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     color: #9A7585;
     text-transform: uppercase;
@@ -260,42 +262,11 @@ front_html = f'''<!DOCTYPE html>
   }}
 
   .contact-value {{
-    font-size: 34px;
+    font-size: 36px;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: #381A2D;
     font-feature-settings: "tnum";
-  }}
-
-  /* Pastilla de distinción inferior */
-  .brand-bottom-badge {{
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }}
-
-  .bottom-badge-pill {{
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 28px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #FFFFFF 0%, #FDF2F8 60%, #FCE7F3 100%);
-    border: 1.5px solid rgba(244, 114, 182, 0.6);
-    box-shadow: 0 4px 14px rgba(236, 72, 153, 0.12);
-  }}
-
-  .bottom-badge-pill span {{
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: #9A7585;
-  }}
-
-  .bottom-badge-pill .pill-star {{
-    color: #EC4899;
-    font-size: 14px;
   }}
 
   /* Columna derecha: QR EXACTO DE INSTAGRAM DEL USUARIO */
@@ -447,22 +418,6 @@ front_html = f'''<!DOCTYPE html>
           </div>
         </div>
 
-        <!-- Sitio Web -->
-        <div class="contact-item">
-          <div class="contact-icon-box">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
-              <path d="M2 12h20"/>
-            </svg>
-          </div>
-          <span class="contact-sep">|</span>
-          <div class="contact-content">
-            <span class="contact-label">Página Web</span>
-            <span class="contact-value">www.goldblacklash.com</span>
-          </div>
-        </div>
-
         <!-- Ubicación -->
         <div class="contact-item">
           <div class="contact-icon-box">
@@ -476,15 +431,6 @@ front_html = f'''<!DOCTYPE html>
             <span class="contact-label">Ubicación</span>
             <span class="contact-value">Montequinto · Dos Hermanas (Sevilla)</span>
           </div>
-        </div>
-      </div>
-
-      <!-- Pastilla de Distinción Inferior -->
-      <div class="brand-bottom-badge">
-        <div class="bottom-badge-pill">
-          <span class="pill-star">✦</span>
-          <span>Belleza de autor · Citas personalizadas</span>
-          <span class="pill-star">✦</span>
         </div>
       </div>
     </div>
@@ -726,7 +672,7 @@ back_html = f'''<!DOCTYPE html>
     <div class="reverso-divider"></div>
     
     <div>
-      <span class="badge-studio">Estudio de Autora · Montequinto, Sevilla</span>
+      <span class="badge-studio">Dos Hermanas · Montequinto, Sevilla</span>
     </div>
 
     <p class="footer-reverso">Citas exclusivas bajo reserva · www.goldblacklash.com</p>

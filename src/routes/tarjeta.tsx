@@ -166,8 +166,8 @@ function BusinessCardPage() {
                       <div className="w-full h-[1.5px] bg-gradient-to-r from-[#EC4899] via-[#F472B6] to-transparent" />
                     </div>
 
-                    {/* Lista de Contacto */}
-                    <div className="space-y-1.5 sm:space-y-2 text-[10px] sm:text-[11px] my-1">
+                    {/* Lista de Contacto (3 ítems: Teléfono, Email, Ubicación) */}
+                    <div className="flex-1 flex flex-col justify-center space-y-2.5 sm:space-y-3.5 my-auto text-[10px] sm:text-[11px]">
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
                           📞
@@ -194,18 +194,6 @@ function BusinessCardPage() {
 
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
-                          🌐
-                        </div>
-                        <div className="flex flex-col leading-tight">
-                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Página Web</span>
-                          <span className="font-bold text-[#381A2D]">
-                            www.goldblacklash.com
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
                           📍
                         </div>
                         <div className="flex flex-col leading-tight">
@@ -215,13 +203,6 @@ function BusinessCardPage() {
                           </span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Pastilla inferior */}
-                    <div className="flex items-center">
-                      <span className="px-2.5 py-0.5 rounded-full bg-white/90 border border-[#F472B6]/60 text-[7px] sm:text-[8px] font-bold text-[#9A7585] uppercase tracking-wider shadow-xs">
-                        ✦ Belleza de autor · Citas personalizadas ✦
-                      </span>
                     </div>
                   </div>
 
@@ -273,7 +254,7 @@ function BusinessCardPage() {
                   <div className="w-40 sm:w-56 h-[1.5px] bg-gradient-to-r from-transparent via-[#EC4899] to-transparent my-2" />
 
                   <span className="px-3 sm:px-4 py-1 rounded-full bg-white/90 border border-[#F472B6] text-[8px] sm:text-[9px] font-extrabold text-[#DB2777] uppercase tracking-widest shadow-xs">
-                    Estudio de Autora · Montequinto, Sevilla
+                    Dos Hermanas · Montequinto, Sevilla
                   </span>
 
                   <p className="text-[8px] sm:text-[9px] font-semibold text-[#9A7585] uppercase tracking-wider mt-1.5">
