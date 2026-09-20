@@ -194,6 +194,18 @@ function BusinessCardPage() {
 
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
+                          🌐
+                        </div>
+                        <div className="flex flex-col leading-tight">
+                          <span className="text-[7px] uppercase font-bold text-[#9A7585] tracking-wider">Página Web</span>
+                          <span className="font-bold text-[#381A2D]">
+                            www.goldblacklash.com
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white border border-[#F472B6] flex items-center justify-center text-[#EC4899] text-[9px] sm:text-[10px] shadow-xs shrink-0">
                           📍
                         </div>
                         <div className="flex flex-col leading-tight">
@@ -258,7 +270,7 @@ function BusinessCardPage() {
                   </span>
 
                   <p className="text-[8px] sm:text-[9px] font-semibold text-[#9A7585] uppercase tracking-wider mt-1.5">
-                    Citas exclusivas bajo reserva
+                    Citas exclusivas bajo reserva · www.goldblacklash.com
                   </p>
                 </div>
               )
