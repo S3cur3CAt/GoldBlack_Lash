@@ -258,7 +258,7 @@ function BusinessCardPage() {
                   </span>
 
                   <p className="text-[8px] sm:text-[9px] font-semibold text-[#9A7585] uppercase tracking-wider mt-1.5">
-                    Citas exclusivas bajo reserva · www.goldblacklash.com
+                    Citas exclusivas bajo reserva
                   </p>
                 </div>
               )

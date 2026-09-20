@@ -675,7 +675,7 @@ back_html = f'''<!DOCTYPE html>
       <span class="badge-studio">Dos Hermanas · Montequinto, Sevilla</span>
     </div>
 
-    <p class="footer-reverso">Citas exclusivas bajo reserva · www.goldblacklash.com</p>
+    <p class="footer-reverso">Citas exclusivas bajo reserva</p>
   </div>
 </body>
 </html>'''
