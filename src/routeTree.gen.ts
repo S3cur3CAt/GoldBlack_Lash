@@ -15,6 +15,7 @@ import { Route as GaleriaRouteImport } from './routes/galeria'
 import { Route as NuevaCitaRouteImport } from './routes/nueva-cita'
 import { Route as ServiciosRouteImport } from './routes/servicios'
 import { Route as SobreMiRouteImport } from './routes/sobre-mi'
+import { Route as TarjetaRouteImport } from './routes/tarjeta'
 import { Route as ApiAppointmentsRouteImport } from './routes/api.appointments'
 import { Route as ApiAuthRouteImport } from './routes/api.auth'
 import { Route as ApiConfigRouteImport } from './routes/api.config'
@@ -55,6 +56,11 @@ const ServiciosRoute = ServiciosRouteImport.update({
 const SobreMiRoute = SobreMiRouteImport.update({
   id: '/sobre-mi',
   path: '/sobre-mi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TarjetaRoute = TarjetaRouteImport.update({
+  id: '/tarjeta',
+  path: '/tarjeta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAppointmentsRoute = ApiAppointmentsRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/nueva-cita': typeof NuevaCitaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tarjeta': typeof TarjetaRoute
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/nueva-cita': typeof NuevaCitaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tarjeta': typeof TarjetaRoute
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/nueva-cita': typeof NuevaCitaRoute
   '/servicios': typeof ServiciosRoute
   '/sobre-mi': typeof SobreMiRoute
+  '/tarjeta': typeof TarjetaRoute
   '/api/appointments': typeof ApiAppointmentsRoute
   '/api/auth': typeof ApiAuthRoute
   '/api/config': typeof ApiConfigRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/nueva-cita'
     | '/servicios'
     | '/sobre-mi'
+    | '/tarjeta'
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/nueva-cita'
     | '/servicios'
     | '/sobre-mi'
+    | '/tarjeta'
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/nueva-cita'
     | '/servicios'
     | '/sobre-mi'
+    | '/tarjeta'
     | '/api/appointments'
     | '/api/auth'
     | '/api/config'
@@ -238,6 +250,7 @@ export interface RootRouteChildren {
   NuevaCitaRoute: typeof NuevaCitaRoute
   ServiciosRoute: typeof ServiciosRoute
   SobreMiRoute: typeof SobreMiRoute
+  TarjetaRoute: typeof TarjetaRoute
   ApiAppointmentsRoute: typeof ApiAppointmentsRoute
   ApiAuthRoute: typeof ApiAuthRoute
   ApiConfigRoute: typeof ApiConfigRoute
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/sobre-mi'
       fullPath: '/sobre-mi'
       preLoaderRoute: typeof SobreMiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tarjeta': {
+      id: '/tarjeta'
+      path: '/tarjeta'
+      fullPath: '/tarjeta'
+      preLoaderRoute: typeof TarjetaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/appointments': {
@@ -382,6 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   NuevaCitaRoute: NuevaCitaRoute,
   ServiciosRoute: ServiciosRoute,
   SobreMiRoute: SobreMiRoute,
+  TarjetaRoute: TarjetaRoute,
   ApiAppointmentsRoute: ApiAppointmentsRoute,
   ApiAuthRoute: ApiAuthRoute,
   ApiConfigRoute: ApiConfigRoute,
