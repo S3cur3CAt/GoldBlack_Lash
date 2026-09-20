@@ -152,6 +152,13 @@ export function parseContactsFromTextOrVcard(input: string): Array<{ name: strin
   return results
 }
 
+const DEFAULT_SERVICE_CATEGORIES: { id: string; name: string }[] = [
+  { id: 'extensiones', name: 'Extensiones de pestañas' },
+  { id: 'extras', name: 'Tratamientos y extras' },
+  { id: 'facial', name: 'Cuidado Facial' },
+  { id: 'lifting', name: 'Lifting y Cejas' },
+]
+
 const DEFAULT_SERVICES_LIST: ServiceOption[] = [
   {
     id: 'volumen-3d6d',
@@ -396,6 +403,42 @@ function StudioMobileHubPage() {
   const [editingServiceId, setEditingServiceId] = useState<string | null>(null)
   const [serviceFormName, setServiceFormName] = useState('')
   const [serviceFormCategory, setServiceFormCategory] = useState('Extensiones de pestañas')
+  const [serviceFormCategoryId, setServiceFormCategoryId] = useState('extensiones')
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false)
+  const [customCatInput, setCustomCatInput] = useState('')
+  const [customCategories, setCustomCategories] = useState<{ id: string; name: string }[]>(() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const raw = localStorage.getItem('goldblack_admin_custom_categories')
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
+  const [selectedServiceCategoryFilter, setSelectedServiceCategoryFilter] = useState('all')
+
+  const allServiceCategories = useMemo(() => {
+    const map = new Map<string, string>()
+    DEFAULT_SERVICE_CATEGORIES.forEach((c) => map.set(c.id, c.name))
+    customCategories.forEach((c) => map.set(c.id, c.name))
+    services.forEach((s) => {
+      if (s.categoryId && s.categoryName) {
+        map.set(s.categoryId, s.categoryName)
+      }
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [services, customCategories])
+
+  const serviceFilterTabs = useMemo(
+    () => [{ id: 'all', name: 'Todos los servicios' }, ...allServiceCategories],
+    [allServiceCategories]
+  )
+
+  const filteredServices = useMemo(() => {
+    if (selectedServiceCategoryFilter === 'all') return services
+    return services.filter((s) => s.categoryId === selectedServiceCategoryFilter)
+  }, [services, selectedServiceCategoryFilter])
+
   const [serviceFormPrice, setServiceFormPrice] = useState('27')
   const [serviceFormDuration, setServiceFormDuration] = useState('1 h 15 min')
   const [serviceFormBadge, setServiceFormBadge] = useState('')
@@ -771,9 +814,12 @@ function StudioMobileHubPage() {
   // Abrir Modal de Servicio (Añadir o Editar)
   const openServiceModal = (serviceToEdit?: ServiceOption) => {
     setServiceActionError(null)
+    setIsCreatingCategory(false)
+    setCustomCatInput('')
     if (serviceToEdit) {
       setEditingServiceId(serviceToEdit.id)
       setServiceFormName(serviceToEdit.name)
+      setServiceFormCategoryId(serviceToEdit.categoryId || 'extensiones')
       setServiceFormCategory(serviceToEdit.categoryName || 'Extensiones de pestañas')
       setServiceFormPrice(String(serviceToEdit.priceNumber || 27))
       setServiceFormDuration(serviceToEdit.duration || '1 h 15 min')
@@ -784,6 +830,7 @@ function StudioMobileHubPage() {
     } else {
       setEditingServiceId(null)
       setServiceFormName('')
+      setServiceFormCategoryId('extensiones')
       setServiceFormCategory('Extensiones de pestañas')
       setServiceFormPrice('27')
       setServiceFormDuration('1 h 15 min')
@@ -803,6 +850,44 @@ function StudioMobileHubPage() {
       return
     }
 
+    let finalCatId = serviceFormCategoryId || 'extensiones'
+    let finalCatName = serviceFormCategory || 'Extensiones de pestañas'
+
+    if (isCreatingCategory) {
+      const trimmed = customCatInput.trim()
+      if (!trimmed) {
+        setServiceActionError('Por favor introduce el nombre de la nueva categoría')
+        return
+      }
+      finalCatName = trimmed
+      finalCatId =
+        trimmed
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '') || `cat-${Date.now()}`
+
+      const updated = [
+        ...customCategories.filter((c) => c.id !== finalCatId),
+        { id: finalCatId, name: finalCatName },
+      ]
+      setCustomCategories(updated)
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('goldblack_admin_custom_categories', JSON.stringify(updated))
+        }
+      } catch (err) {
+        console.warn('Error saving custom category:', err)
+      }
+    } else {
+      const found = allServiceCategories.find((c) => c.id === serviceFormCategoryId)
+      if (found) {
+        finalCatId = found.id
+        finalCatName = found.name
+      }
+    }
+
     setIsSavingService(true)
     setServiceActionError(null)
 
@@ -816,8 +901,8 @@ function StudioMobileHubPage() {
     const payload = {
       id,
       name: serviceFormName.trim(),
-      categoryName: serviceFormCategory.trim() || 'Extensiones de pestañas',
-      categoryId: serviceFormCategory.toLowerCase().includes('extra') || serviceFormCategory.toLowerCase().includes('facial') ? 'extras' : 'extensiones',
+      categoryName: finalCatName,
+      categoryId: finalCatId,
       price: `${numPrice} €`,
       priceNumber: numPrice,
       duration: serviceFormDuration.trim() || '1 h 15 min',
@@ -2718,10 +2803,31 @@ function StudioMobileHubPage() {
 
               <button
                 onClick={() => openServiceModal()}
-                className="px-3 py-1.5 rounded-xl bg-linear-to-r from-accent to-[#aa8c2c] text-black font-bold text-xs shadow-md shadow-accent/20 flex items-center gap-1 active:scale-95 transition-all"
+                className="px-3 py-1.5 rounded-xl bg-linear-to-r from-accent to-[#aa8c2c] text-black font-bold text-xs shadow-md shadow-accent/20 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
               >
                 <span>➕ Añadir Servicio</span>
               </button>
+            </div>
+
+            {/* Selector de filtro por categoría */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              {serviceFilterTabs.map((tab) => {
+                const isActive = selectedServiceCategoryFilter === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setSelectedServiceCategoryFilter(tab.id)}
+                    className={`px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-medium transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-accent text-black font-bold shadow-sm shadow-accent/30'
+                        : 'bg-white/5 text-zinc-400 hover:text-white border border-white/5'
+                    }`}
+                  >
+                    {tab.name}
+                  </button>
+                )
+              })}
             </div>
 
             {isLoadingServices && services.length === 0 ? (
@@ -2729,9 +2835,20 @@ function StudioMobileHubPage() {
                 <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs">Cargando servicios de Supabase...</p>
               </div>
+            ) : filteredServices.length === 0 ? (
+              <div className="text-center py-10 px-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                <p className="text-xs text-zinc-300">No hay servicios en esta categoría todavía.</p>
+                <button
+                  type="button"
+                  onClick={() => openServiceModal()}
+                  className="text-xs text-accent font-semibold hover:underline cursor-pointer"
+                >
+                  + Añadir servicio aquí
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {services.map((s) => {
+                {filteredServices.map((s) => {
                   const sImg = formatServiceImageUrl(s.image, s.name, s.id)
                   return (
                     <div
@@ -3739,31 +3856,75 @@ function StudioMobileHubPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Categoría</label>
-                  <select
-                    value={serviceFormCategory}
-                    onChange={(e) => setServiceFormCategory(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent"
+              {/* Categoría (con creación dinámica como en Mac) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    Categoría *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCreatingCategory(!isCreatingCategory)
+                      setCustomCatInput('')
+                    }}
+                    className="text-[11px] text-accent hover:underline font-semibold transition-colors cursor-pointer"
                   >
-                    <option value="Extensiones de pestañas">Extensiones de pestañas</option>
-                    <option value="Tratamientos y extras">Tratamientos y extras</option>
-                    <option value="Cuidado Facial">Cuidado Facial</option>
-                    <option value="Lifting y Cejas">Lifting y Cejas</option>
-                  </select>
+                    {isCreatingCategory ? '← Elegir existente' : '+ Crear nueva categoría'}
+                  </button>
                 </div>
 
-                <div>
-                  <label className="text-[10px] text-zinc-400 uppercase block mb-1">Badge / Etiqueta</label>
-                  <input
-                    type="text"
-                    placeholder="Ej. Más popular, Novedad"
-                    value={serviceFormBadge}
-                    onChange={(e) => setServiceFormBadge(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
-                  />
-                </div>
+                {isCreatingCategory ? (
+                  <div className="space-y-1 animate-in fade-in duration-200">
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      placeholder="Ej. Cejas & Microblading, Masajes..."
+                      value={customCatInput}
+                      onChange={(e) => setCustomCatInput(e.target.value)}
+                      className="w-full bg-black/50 border border-accent/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent placeholder-zinc-500 shadow-inner"
+                    />
+                    <p className="text-[10px] text-zinc-400 leading-snug">
+                      Se guardará como categoría independiente en los filtros y listas.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    value={serviceFormCategoryId}
+                    onChange={(e) => {
+                      if (e.target.value === '__new__') {
+                        setIsCreatingCategory(true)
+                        setCustomCatInput('')
+                      } else {
+                        const found = allServiceCategories.find((c) => c.id === e.target.value)
+                        setServiceFormCategoryId(e.target.value)
+                        setServiceFormCategory(found?.name || e.target.value)
+                      }
+                    }}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                  >
+                    {allServiceCategories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                    <option value="__new__" className="text-accent font-semibold">
+                      + Crear nueva categoría...
+                    </option>
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Badge / Etiqueta</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Más popular, Novedad"
+                  value={serviceFormBadge}
+                  onChange={(e) => setServiceFormBadge(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                />
               </div>
 
               {/* Selector de Imagen del Servicio */}
