@@ -111,6 +111,7 @@ export async function saveServiceToDb(service: {
   pinnedFirst?: boolean
   active?: boolean
   includes?: string[]
+  image?: string | null
 }): Promise<boolean> {
   const client = await getSql()
   const id = service.id || `srv-${Date.now()}`

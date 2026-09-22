@@ -62,7 +62,7 @@ function SobreMi() {
       <section className="section">
         <div className="wrap grid items-center gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:gap-20">
           <Reveal className="relative mx-auto w-full max-w-md pb-10">
-            <div className="overflow-hidden rounded-4xl border border-[#ec4899]/30 shadow-panel">
+            <div className="overflow-hidden rounded-4xl border border-rose/30 shadow-panel">
               <StudioVisual
                 src="/api/images/pieza-05"
                 alt="Detalle de volumen ruso"
@@ -71,7 +71,7 @@ function SobreMi() {
               />
             </div>
 
-            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-[#ec4899]/25 bg-white/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
+            <div className="absolute right-3 bottom-0 left-3 rounded-[1.8rem] border border-rose/25 bg-white/95 backdrop-blur-xl px-6 py-5 text-center shadow-soft sm:right-8 sm:left-8">
               <p className="font-display text-2xl italic text-rose">
                 Belleza con calma,
                 <br />
@@ -238,7 +238,7 @@ function SobreMi() {
                 />
               </ul>
 
-              <p className="mt-7 rounded-2xl bg-[#fdf2f8] border border-[#ec4899]/15 px-5 py-4 text-xs leading-7 text-muted">
+              <p className="mt-7 rounded-2xl bg-plum border border-rose/15 px-5 py-4 text-xs leading-7 text-muted">
                 La valoración previa nos ayuda a decidir cómo proceder.
                 Tu comodidad y el cuidado de tu pestaña natural van primero.
               </p>
@@ -262,7 +262,7 @@ function SobreMi() {
                 Me encantará conocerte
               </p>
 
-              <h2 className="section-title mt-5 !text-white">
+              <h2 className="section-title mt-5 text-white!">
                 Hagamos un poquito
                 <br />
                 de espacio para ti.
@@ -277,7 +277,7 @@ function SobreMi() {
                 <button
                   type="button"
                   onClick={() => openReservationModal()}
-                  className="button focus-visible:outline-white cursor-pointer !bg-white !text-[#db2777] !border-white"
+                  className="button focus-visible:outline-white cursor-pointer bg-white! text-[#db2777]! border-white!"
                 >
                   Reservar mi cita
                   <span aria-hidden="true">→</span>
@@ -285,7 +285,7 @@ function SobreMi() {
 
                 <Link
                   to="/contacto"
-                  className="button border-white/50 !bg-white/15 !text-white hover:!bg-white/25 focus-visible:outline-white"
+                  className="button border-white/50 bg-white/15! text-white! hover:bg-white/25! focus-visible:outline-white"
                 >
                   Contacto y ubicación
                 </Link>

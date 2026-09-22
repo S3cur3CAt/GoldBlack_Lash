@@ -14,22 +14,22 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
   const phoneTel = liveConfig.phoneClean ? `tel:${liveConfig.phoneClean}` : null
 
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-b from-[#fffaf4] via-[#fdf2f8] to-[#fff7ed] text-ink flex flex-col justify-between overflow-x-hidden selection:bg-[#f9a8d4]/40 selection:text-[#831843]">
+    <div className="relative min-h-screen w-full bg-linear-to-b from-[#fffaf4] via-plum to-[#fff7ed] text-ink flex flex-col justify-between overflow-x-hidden selection:bg-[#f9a8d4]/40 selection:text-[#831843]">
       {/* Ambient background glows */}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       >
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-128 w-200 rounded-full bg-radial from-[#ec4899]/15 via-[#fb923c]/08 to-transparent blur-3xl opacity-70" />
-        <div className="absolute -bottom-32 right-10 h-112 w-140 rounded-full bg-radial from-[#c084fc]/12 via-transparent to-transparent blur-3xl opacity-50" />
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-128 w-200 rounded-full bg-radial from-rose/15 via-[#fb923c]/08 to-transparent blur-3xl opacity-70" />
+        <div className="absolute -bottom-32 right-10 h-112 w-140 rounded-full bg-radial from-lilac-solid/12 via-transparent to-transparent blur-3xl opacity-50" />
       </div>
 
       {/* Header bar */}
       <header className="relative z-10 w-full pt-6 sm:pt-8 px-4 sm:px-8">
-        <div className="max-w-4xl mx-auto flex items-center justify-between py-3 px-5 sm:px-6 rounded-2xl bg-white/85 backdrop-blur-2xl border border-[#ec4899]/25 shadow-[0_12px_30px_-12px_rgba(236,72,153,0.35)]">
+        <div className="max-w-4xl mx-auto flex items-center justify-between py-3 px-5 sm:px-6 rounded-2xl bg-white/85 backdrop-blur-2xl border border-rose/25 shadow-[0_12px_30px_-12px_rgba(236,72,153,0.35)]">
           <div className="flex items-center gap-3">
-            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-px bg-linear-to-b from-[#f472b6] via-[#fb923c] to-[#c084fc] border border-white/60 shadow-[0_4px_16px_rgba(236,72,153,0.35)]">
-              <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#fdf2f8] flex items-center justify-center">
+            <div className="relative h-10 w-10 sm:h-11 sm:w-11 rounded-xl p-px bg-linear-to-b from-[#f472b6] via-peach to-lilac-solid border border-white/60 shadow-[0_4px_16px_rgba(236,72,153,0.35)]">
+              <div className="h-full w-full rounded-[10px] overflow-hidden bg-plum flex items-center justify-center">
                 <img
                   src="/api/images/logo"
                   alt="GoldBlack Lash Logo"
@@ -49,7 +49,7 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#fdf2f8] border border-[#ec4899]/40 px-3 py-1 text-[0.68rem] font-bold tracking-wider text-rose uppercase shadow-xs">
+          <span className="inline-flex items-center gap-1.5 rounded-lg bg-plum border border-rose/40 px-3 py-1 text-[0.68rem] font-bold tracking-wider text-rose uppercase shadow-xs">
             <span className="h-1.5 w-1.5 rounded-full bg-rose" />
             Mantenimiento
           </span>
@@ -60,7 +60,7 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 text-center max-w-4xl mx-auto w-full">
         {/* Featured Maintenance Illustration / Image */}
         <div className="w-full max-w-2xl mx-auto mb-8 sm:mb-10 group">
-          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-[#ec4899]/30 bg-white shadow-[0_20px_50px_-16px_rgba(236,72,153,0.35)]">
+          <div className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-rose/30 bg-white shadow-[0_20px_50px_-16px_rgba(236,72,153,0.35)]">
             <img
               src="/Mantenimiento.png"
               alt="Sitio web en mantenimiento — GoldBlack Lash"
@@ -73,7 +73,7 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
 
         {/* Text Details */}
         <div className="max-w-xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-1.5 rounded-lg border border-[#ec4899]/30 bg-white px-3.5 py-1 text-xs font-semibold text-rose shadow-xs">
+          <div className="inline-flex items-center gap-1.5 rounded-lg border border-rose/30 bg-white px-3.5 py-1 text-xs font-semibold text-rose shadow-xs">
             <span>✦</span>
             <span>Estamos preparando novedades para ti</span>
           </div>
@@ -124,7 +124,7 @@ export function MaintenanceScreen({ liveConfig }: MaintenanceScreenProps) {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full py-6 px-4 text-center border-t border-[#ec4899]/15 bg-white/70 backdrop-blur-md">
+      <footer className="relative z-10 w-full py-6 px-4 text-center border-t border-rose/15 bg-white/70 backdrop-blur-md">
         <p className="text-xs text-muted">
           © {new Date().getFullYear()} {liveConfig.name || 'GoldBlack Lash'} · {liveConfig.city || 'Dos Hermanas, Sevilla'}. Todos los derechos reservados.
         </p>

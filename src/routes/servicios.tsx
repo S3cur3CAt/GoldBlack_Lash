@@ -7,7 +7,6 @@ import { StudioVisual } from '#/components/StudioVisual'
 import { Reveal } from '#/components/Reveal'
 import { openReservationModal } from '#/components/ReservationModal'
 import { HeaderSubBarPortal } from '#/context/HeaderContext'
-import { useStudioConfig } from '#/context/StudioConfigContext'
 import {
   business,
   faqs,
@@ -186,10 +185,9 @@ function Servicios() {
 
 function CategoryBlock({
   category,
-  index,
 }: {
   category: ServiceCategory
-  index: number
+  index?: number
 }) {
   return (
     <section
@@ -231,7 +229,6 @@ function CategoryBlock({
 }
 
 function ServiceCard({ service }: { service: Service }) {
-  const config = useStudioConfig()
   return (
     <article
       className={`relative rounded-[1.75rem] p-6 sm:p-8 ${
