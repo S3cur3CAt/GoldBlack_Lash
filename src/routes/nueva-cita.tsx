@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { business } from '#/data/site'
 import { useStudioConfig } from '#/context/StudioConfigContext'
 
@@ -569,6 +569,11 @@ function StudioMobileHubPage() {
   const [newContactPhone, setNewContactPhone] = useState('')
   const [pasteListText, setPasteListText] = useState('')
   const vcfInputRef = useRef<HTMLInputElement>(null)
+  const isFilePickerOpenRef = useRef(false)
+  const openFileInput = (inputEl: HTMLInputElement | null) => {
+    isFilePickerOpenRef.current = true
+    inputEl?.click()
+  }
   const isIOS = useMemo(() => {
     if (typeof navigator === 'undefined') return false
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
@@ -712,9 +717,11 @@ function StudioMobileHubPage() {
     loadPhoneContacts()
 
     try {
+      localStorage.removeItem('gb_mini_app_auth')
       const savedAuth =
         typeof window !== 'undefined' &&
-        (localStorage.getItem('gb_mini_app_auth') === 'true' || sessionStorage.getItem('gb_mini_app_auth') === 'true')
+        sessionStorage.getItem('gb_mini_app_auth') === 'true' &&
+        document.visibilityState !== 'hidden'
       if (savedAuth) {
         setIsAuthenticated(true)
         loadAppointments()
@@ -766,9 +773,9 @@ function StudioMobileHubPage() {
 
       if (res && res.ok) {
         if (typeof window !== 'undefined') {
-          // Se recuerda siempre en este dispositivo para que no vuelva a pedirlo de por vida
-          localStorage.setItem('gb_mini_app_auth', 'true')
+          // Sesión activa mientras Telegram esté en primer plano; se auto-bloquea al pasar a segundo plano
           sessionStorage.setItem('gb_mini_app_auth', 'true')
+          localStorage.removeItem('gb_mini_app_auth')
           if (data?.user) {
             localStorage.setItem('gb_mini_app_user', JSON.stringify(data.user))
           }
@@ -806,7 +813,7 @@ function StudioMobileHubPage() {
   }
 
   // Cerrar sesión y bloquear panel
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('gb_mini_app_auth')
       localStorage.removeItem('gb_mini_app_auth')
@@ -814,7 +821,49 @@ function StudioMobileHubPage() {
     setIsAuthenticated(false)
     setPinInput('')
     setPinError(null)
-  }
+  }, [])
+
+  // Auto-bloqueo de seguridad cuando Telegram pasa a segundo plano o se minimiza
+  useEffect(() => {
+    const handleAutoLock = () => {
+      // Si el usuario abrió el selector de fotos o archivos evitamos bloquear en falso
+      if (isFilePickerOpenRef.current) return
+
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        handleLogout()
+      }
+    }
+
+    const handlePageHide = () => {
+      if (isFilePickerOpenRef.current) return
+      handleLogout()
+    }
+
+    const handleWindowFocus = () => {
+      // Regreso de diálogo nativo o selector
+      setTimeout(() => {
+        isFilePickerOpenRef.current = false
+      }, 800)
+    }
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleAutoLock)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', handlePageHide)
+      window.addEventListener('focus', handleWindowFocus)
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleAutoLock)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pagehide', handlePageHide)
+        window.removeEventListener('focus', handleWindowFocus)
+      }
+    }
+  }, [handleLogout])
 
   // Soporte para teclado físico (PC/Mac) en pantalla de PIN
   useEffect(() => {
@@ -939,6 +988,7 @@ function StudioMobileHubPage() {
 
   // Manejar selección de foto desde el dispositivo (Android, iPhone, PC)
   const handleDeviceImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    isFilePickerOpenRef.current = false
     const file = e.target.files?.[0]
     if (!file) return
     setIsProcessingImage(true)
@@ -1526,6 +1576,7 @@ function StudioMobileHubPage() {
 
   // Importar ficha o agenda completa de contactos en formato vCard (.vcf)
   const handleVcfImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    isFilePickerOpenRef.current = false
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
@@ -2013,14 +2064,6 @@ function StudioMobileHubPage() {
             >
               <span className={`w-2 h-2 rounded-full ${isLoadingAppointments || isLoadingServices ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
               <span>{isLoadingAppointments || isLoadingServices ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión y bloquear panel"
-              className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-rose-500/40 hover:text-rose-300 text-[11px] text-zinc-400 flex items-center gap-1 transition-all active:scale-95"
-            >
-              <span>🔒 Bloquear</span>
             </button>
           </div>
         </div>
@@ -3446,6 +3489,7 @@ function StudioMobileHubPage() {
               type="file"
               ref={vcfInputRef}
               onChange={handleVcfImport}
+              onCancel={() => { isFilePickerOpenRef.current = false }}
               accept=".vcf,text/vcard,text/x-vcard"
               className="hidden"
             />
@@ -3498,7 +3542,7 @@ function StudioMobileHubPage() {
                     {/* Botón 1: Importar Contactos .vcf */}
                     <button
                       type="button"
-                      onClick={() => vcfInputRef.current?.click()}
+                      onClick={() => openFileInput(vcfInputRef.current)}
                       className="p-2.5 rounded-2xl bg-linear-to-b from-amber-500/20 to-accent/10 border border-accent/40 hover:border-accent text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
                     >
                       <span className="text-lg">📥</span>
@@ -3671,7 +3715,7 @@ function StudioMobileHubPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() => vcfInputRef.current?.click()}
+                        onClick={() => openFileInput(vcfInputRef.current)}
                         className="w-full py-2.5 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                       >
                         📥 Toca aquí para elegir el archivo (.vcf)
@@ -4171,6 +4215,7 @@ function StudioMobileHubPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleDeviceImageChange}
+                  onCancel={() => { isFilePickerOpenRef.current = false }}
                   className="hidden"
                 />
 
@@ -4194,7 +4239,7 @@ function StudioMobileHubPage() {
                     <button
                       type="button"
                       disabled={isProcessingImage}
-                      onClick={() => deviceImageInputRef.current?.click()}
+                      onClick={() => openFileInput(deviceImageInputRef.current)}
                       className="px-3 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-black font-bold text-xs flex items-center gap-1 shrink-0 shadow-sm shadow-accent/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <span>{isProcessingImage ? '⏳' : '📷'}</span>
