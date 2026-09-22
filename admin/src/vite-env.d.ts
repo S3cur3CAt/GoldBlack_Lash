@@ -20,5 +20,6 @@ interface Window {
     speakWithSiri?: (text: string | { text: string; volume?: number }, volume?: number) => Promise<boolean>
     stopSiri?: () => Promise<void>
     openExternal?: (url: string) => Promise<{ ok: boolean; error?: string }>
+    onAppLock?: (callback: () => void) => () => void
   }
 }

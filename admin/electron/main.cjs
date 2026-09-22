@@ -104,6 +104,14 @@ function createWindow() {
     }
   })
 
+  // Auto-bloqueo al minimizar o esconder la ventana (Windows y macOS)
+  mainWindow.on('minimize', () => {
+    mainWindow?.webContents?.send('app:lock')
+  })
+  mainWindow.on('hide', () => {
+    mainWindow?.webContents?.send('app:lock')
+  })
+
   // Initialize auto-updater IPC
   setupUpdaterIPC(mainWindow)
 

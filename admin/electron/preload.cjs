@@ -34,4 +34,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopSiri: () => ipcRenderer.invoke('voice:stop-siri'),
   // Launch native external apps (WhatsApp Desktop, Safari, mailto)
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  // Auto-lock when window is minimized in Windows or macOS
+  onAppLock: (callback) => {
+    const handler = () => callback()
+    ipcRenderer.on('app:lock', handler)
+    return () => ipcRenderer.removeListener('app:lock', handler)
+  },
 })

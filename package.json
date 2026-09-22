@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
-    "build": "vite build",
+    "build": "pnpm admin:build && node -e \"const fs = require('fs'); fs.cpSync('admin/dist', 'public/admin', { recursive: true });\" && vite build",
     "preview": "vite preview",
     "admin:dev": "pnpm --filter goldblack-lash-admin dev",
     "admin:build": "pnpm --filter goldblack-lash-admin build",

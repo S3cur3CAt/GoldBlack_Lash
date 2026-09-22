@@ -9,7 +9,7 @@ export const Route = createFileRoute('/nueva-cita')({
     meta: [
       { title: `Panel Studio — ${business.name} (Telegram Assistant)` },
       { name: 'description', content: `Panel de control móvil y asistente de gestión para ${business.name}` },
-      { name: 'theme-color', content: '#08080a' },
+      { name: 'theme-color', content: '#fffaf4' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' },
     ],
     scripts: [
@@ -692,8 +692,8 @@ function StudioMobileHubPage() {
       const tg = (window as any).Telegram.WebApp
       tg.ready()
       tg.expand()
-      if (tg.setHeaderColor) tg.setHeaderColor('#08080a')
-      if (tg.setBackgroundColor) tg.setBackgroundColor('#08080a')
+      if (tg.setHeaderColor) tg.setHeaderColor('#fffaf4')
+      if (tg.setBackgroundColor) tg.setBackgroundColor('#fffaf4')
       const tgUser = tg.initDataUnsafe?.user
       if (tgUser?.id) {
         setDetectedTelegramUser({
@@ -1848,19 +1848,20 @@ function StudioMobileHubPage() {
   // PANTALLA DE BLOQUEO Y ACCESO POR PIN (Para el Bot / Mini App)
   if (!isAuthenticated && !isAuthChecking) {
     return (
-      <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-accent/30 selection:text-[#f3e5ab]">
-        {/* Luces y resplandor de fondo */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-64 h-64 bg-amber-500/5 rounded-full blur-2xl" />
+      <div className="min-h-screen bg-gradient-to-b from-[#fffaf4] via-[#fff3ea] to-[#fdeef5] text-[#46253a] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-rose-500/20 selection:text-rose-900">
+        {/* Auroras luminosas vivas (idénticas a la web) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -top-20 -right-20 w-[420px] h-[420px] bg-gradient-to-br from-rose-400/25 via-pink-400/15 to-transparent rounded-full blur-3xl animate-pulse" />
+          <div className="absolute top-1/2 -left-28 w-[380px] h-[380px] bg-gradient-to-tr from-purple-400/20 via-pink-300/15 to-transparent rounded-full blur-3xl" />
+          <div className="absolute -bottom-20 right-1/4 w-[400px] h-[400px] bg-gradient-to-t from-amber-400/25 via-rose-300/15 to-transparent rounded-full blur-3xl" />
         </div>
 
-        <div className="w-full max-w-xs relative z-10 space-y-6">
+        <div className="w-full max-w-xs relative z-10 space-y-5">
           {/* Cabecera & Logotipo oficial */}
-          <div className="text-center space-y-3">
+          <div className="text-center space-y-2.5">
             <div className="inline-block relative">
-              <div className="h-16 w-16 mx-auto rounded-2xl p-px bg-linear-to-b from-accent/80 via-accent/30 to-white/10 border border-accent/40 shadow-[0_8px_32px_-4px_rgba(212,175,55,0.5)]">
-                <div className="h-full w-full rounded-[15px] overflow-hidden bg-[#050508] flex items-center justify-center">
+              <div className="h-16 w-16 mx-auto rounded-2xl p-0.5 bg-gradient-to-br from-rose-400 via-amber-400 to-rose-500 border border-rose-300 shadow-xl shadow-rose-500/20">
+                <div className="h-full w-full rounded-[14px] overflow-hidden bg-white flex items-center justify-center">
                   <img
                     src="/api/images/logo"
                     alt="GoldBlack Lash Studio"
@@ -1873,20 +1874,20 @@ function StudioMobileHubPage() {
             </div>
 
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-accent/10 border border-accent/30 text-[10px] text-accent uppercase font-mono tracking-wider mb-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-1 shadow-xs">
                 <span>🔒 Acceso Protegido</span>
               </div>
-              <h1 className="text-xl font-bold font-serif tracking-wide text-white">
-                GoldBlack <span className="italic text-accent">Lash</span>
+              <h1 className="text-2xl font-bold font-serif tracking-wide text-[#46253a]">
+                GoldBlack <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500">Lash</span>
               </h1>
-              <p className="text-xs text-zinc-400 mt-1">
-                Introduce tu PIN de acceso (6 dígitos) para desbloquear el panel
+              <p className="text-xs text-[#7a3b5a] mt-0.5">
+                Introduce tu PIN de acceso del estudio
               </p>
             </div>
           </div>
 
           {/* Tarjeta de Seguridad y Teclado Numérico */}
-          <div className="bg-[#0f0f14]/90 border border-accent/30 rounded-3xl p-6 shadow-2xl backdrop-blur-xl space-y-5">
+          <div className="bg-white/90 border border-rose-200/80 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-rose-500/10 backdrop-blur-xl space-y-4">
             {/* Cajas visuales de PIN — 6 dígitos estándar (hasta 8 dinámicos) */}
             <div className={`flex items-center justify-center gap-2 sm:gap-2.5 transition-transform ${shakePin ? 'animate-bounce' : ''}`}>
               {Array.from({ length: Math.max(6, Math.min(8, pinInput.length)) }).map((_, idx) => {
@@ -1894,16 +1895,16 @@ function StudioMobileHubPage() {
                 return (
                   <div
                     key={idx}
-                    className={`w-9 sm:w-11 h-13 sm:h-14 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
+                    className={`w-9 sm:w-10 h-12 sm:h-13 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
                       hasDigit
-                        ? 'border-accent bg-accent/20 shadow-[0_0_16px_rgba(212,175,55,0.4)] text-accent scale-105'
-                        : 'border-white/10 bg-black/40 text-zinc-600'
+                        ? 'border-rose-400 bg-rose-50/80 shadow-md shadow-rose-400/30 scale-105'
+                        : 'border-rose-200/60 bg-white/70'
                     }`}
                   >
                     {hasDigit ? (
-                      <span className="w-3.5 h-3.5 rounded-full bg-accent block shadow-sm shadow-accent" />
+                      <span className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-rose-500 via-pink-500 to-amber-400 block shadow-xs" />
                     ) : (
-                      <span className="w-2 h-2 rounded-full bg-white/15 block" />
+                      <span className="w-2 h-2 rounded-full bg-rose-200/70 block" />
                     )}
                   </div>
                 )
@@ -1912,7 +1913,7 @@ function StudioMobileHubPage() {
 
             {/* Mensaje de Error */}
             {pinError && (
-              <div className="p-2.5 rounded-xl bg-rose-950/50 border border-rose-500/30 text-rose-300 text-[11px] text-center font-medium">
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-300 text-rose-600 text-[11px] text-center font-medium shadow-xs">
                 {pinError}
               </div>
             )}
@@ -1933,7 +1934,7 @@ function StudioMobileHubPage() {
                       }
                     }
                   }}
-                  className="h-12 rounded-2xl bg-white/5 hover:bg-accent/20 active:bg-accent/30 border border-white/10 hover:border-accent/40 text-lg font-mono font-bold text-white transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                  className="h-12 rounded-2xl bg-white hover:bg-rose-50 active:bg-rose-100 border border-rose-200/70 text-lg font-mono font-bold text-[#46253a] transition-all active:scale-95 flex items-center justify-center cursor-pointer shadow-xs"
                 >
                   {digit}
                 </button>
@@ -1946,7 +1947,7 @@ function StudioMobileHubPage() {
                   setPinInput('')
                   setPinError(null)
                 }}
-                className="h-12 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 text-xs font-mono text-zinc-400 transition-all active:scale-95 flex items-center justify-center"
+                className="h-12 rounded-2xl bg-rose-50/50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200/60 text-xs font-mono font-bold text-[#7a3b5a] transition-all active:scale-95 flex items-center justify-center cursor-pointer"
               >
                 C
               </button>
@@ -1964,7 +1965,7 @@ function StudioMobileHubPage() {
                     }
                   }
                 }}
-                className="h-12 rounded-2xl bg-white/5 hover:bg-accent/20 active:bg-accent/30 border border-white/10 hover:border-accent/40 text-lg font-mono font-bold text-white transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                className="h-12 rounded-2xl bg-white hover:bg-rose-50 active:bg-rose-100 border border-rose-200/70 text-lg font-mono font-bold text-[#46253a] transition-all active:scale-95 flex items-center justify-center cursor-pointer shadow-xs"
               >
                 0
               </button>
@@ -1976,7 +1977,7 @@ function StudioMobileHubPage() {
                   setPinInput((prev) => prev.slice(0, -1))
                   setPinError(null)
                 }}
-                className="h-12 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 text-base text-zinc-300 transition-all active:scale-95 flex items-center justify-center"
+                className="h-12 rounded-2xl bg-rose-50/50 hover:bg-rose-100 active:bg-rose-200 border border-rose-200/60 text-base text-[#7a3b5a] transition-all active:scale-95 flex items-center justify-center cursor-pointer"
               >
                 ⌫
               </button>
@@ -1984,23 +1985,23 @@ function StudioMobileHubPage() {
 
             {/* Usuario Telegram detectado */}
             {detectedTelegramUser && (
-              <div className="p-2.5 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-[11px] text-sky-300 flex items-center justify-between">
+              <div className="p-2.5 rounded-2xl bg-rose-50/80 border border-rose-200/70 text-[11px] text-[#46253a] flex items-center justify-between">
                 <span className="font-mono">👤 {detectedTelegramUser.name || 'Telegram'} (ID: {detectedTelegramUser.id})</span>
-                <span className="text-[10px] text-emerald-400 font-bold">✓ Detectado</span>
+                <span className="text-[10px] text-emerald-600 font-bold">✓ Detectado</span>
               </div>
             )}
 
             {/* Opciones y Botón */}
-            <div className="space-y-3 pt-2">
+            <div className="space-y-2.5 pt-1">
               <button
                 type="button"
                 disabled={pinInput.length === 0 || isVerifyingPin}
                 onClick={() => handleVerifyPin(pinInput)}
-                className="w-full py-3.5 rounded-2xl bg-linear-to-r from-accent via-amber-400 to-accent hover:opacity-95 active:scale-98 disabled:opacity-40 text-black font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:opacity-95 active:scale-98 disabled:opacity-40 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-rose-500/25 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 {isVerifyingPin ? (
                   <>
-                    <span className="w-3.5 h-3.5 rounded-full border-2 border-black border-t-transparent animate-spin" />
+                    <span className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
                     <span>Verificando credenciales...</span>
                   </>
                 ) : (
@@ -2008,13 +2009,14 @@ function StudioMobileHubPage() {
                 )}
               </button>
 
-              <p className="text-[10px] text-center text-emerald-400/90 font-medium">
-                ✓ Acceso permanente: no tendrás que volver a introducir tu PIN en este teléfono
+              <p className="text-[10px] text-center text-[#7a3b5a] font-medium flex items-center justify-center gap-1">
+                <span>🛡️</span>
+                <span>Se auto-bloquea al salir de Telegram para máxima privacidad</span>
               </p>
             </div>
           </div>
 
-          <p className="text-[10px] text-center text-zinc-500">
+          <p className="text-[10px] text-center text-[#9a7585]">
             GoldBlack Lash Studio • Sistema de Seguridad Privado
           </p>
         </div>
@@ -2023,14 +2025,21 @@ function StudioMobileHubPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#08080a] text-zinc-100 flex flex-col font-sans pb-24 selection:bg-accent/30 selection:text-[#f3e5ab]">
+    <div className="min-h-screen bg-gradient-to-b from-[#fffaf4] via-[#fff3ea] to-[#fdeef5] text-[#46253a] flex flex-col font-sans pb-24 selection:bg-rose-500/20 selection:text-rose-900 relative">
+      {/* Auroras de fondo Candy Aurora (idénticas a la web) */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div className="absolute -top-32 -right-20 w-[450px] h-[450px] bg-gradient-to-br from-rose-400/20 via-pink-400/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -left-28 w-[400px] h-[400px] bg-gradient-to-tr from-purple-400/15 via-pink-300/10 to-transparent rounded-full blur-3xl" />
+        <div className="absolute bottom-10 right-0 w-[450px] h-[450px] bg-gradient-to-t from-amber-400/15 via-rose-300/10 to-transparent rounded-full blur-3xl" />
+      </div>
+
       {/* HEADER SUPERIOR */}
-      <header className="sticky top-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-b border-accent/20 px-4 py-3 shadow-lg">
+      <header className="sticky top-0 z-40 bg-[#fffaf4]/90 backdrop-blur-xl border-b border-rose-200/60 px-4 py-3 shadow-xs">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
-              <div className="h-10 w-10 rounded-xl p-px bg-linear-to-b from-accent/60 via-accent/20 to-white/10 border border-accent/40 shadow-[0_4px_16px_-4px_rgba(212,175,55,0.4)]">
-                <div className="h-full w-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-xl p-0.5 bg-gradient-to-br from-rose-400 via-amber-400 to-rose-500 border border-rose-300 shadow-md shadow-rose-500/20">
+                <div className="h-full w-full rounded-[10px] overflow-hidden bg-white flex items-center justify-center">
                   <img
                     src="/api/images/logo"
                     alt="GoldBlack Lash — logotipo oficial"
@@ -2042,11 +2051,11 @@ function StudioMobileHubPage() {
               </div>
             </div>
             <div>
-              <h1 className="text-sm font-semibold tracking-wide text-white leading-tight font-serif flex items-center gap-1.5">
+              <h1 className="text-sm font-semibold tracking-wide text-[#46253a] leading-tight font-serif flex items-center gap-1.5">
                 <span>GoldBlack</span>
-                <span className="italic text-accent">Lash</span>
+                <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-amber-500 font-bold">Lash</span>
               </h1>
-              <p className="text-[10px] text-accent tracking-widest uppercase font-mono">
+              <p className="text-[10px] text-rose-500 font-bold tracking-widest uppercase font-mono">
                 Panel Studio Móvil
               </p>
             </div>
@@ -2060,9 +2069,9 @@ function StudioMobileHubPage() {
               }}
               title="Actualizar datos"
               disabled={isLoadingAppointments || isLoadingServices}
-              className="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 hover:border-accent/40 text-[11px] text-zinc-300 flex items-center gap-1.5 transition-all active:scale-95"
+              className="px-2.5 py-1 rounded-full bg-white/80 border border-rose-200/80 hover:border-rose-400/80 text-[11px] text-[#46253a] font-medium flex items-center gap-1.5 transition-all active:scale-95 shadow-xs"
             >
-              <span className={`w-2 h-2 rounded-full ${isLoadingAppointments || isLoadingServices ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${isLoadingAppointments || isLoadingServices ? 'bg-amber-500 animate-ping' : 'bg-emerald-500'}`} />
               <span>{isLoadingAppointments || isLoadingServices ? 'Sincronizando...' : lastSyncTime || 'Conectado'}</span>
             </button>
           </div>
@@ -2074,12 +2083,12 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('citas')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'citas'
-                ? 'bg-accent text-black font-semibold shadow-md shadow-accent/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
             }`}
           >
             <span>📅 Citas</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${currentTab === 'citas' ? 'bg-white/25 text-white' : 'bg-rose-100 text-rose-700'}`}>
               {appointments.filter(a => a.date === todayStr).length}
             </span>
           </button>
@@ -2088,8 +2097,8 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('crear')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'crear'
-                ? 'bg-accent text-black font-semibold shadow-md shadow-accent/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
             }`}
           >
             <span>➕ Crear Cita</span>
@@ -2099,8 +2108,8 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('facturacion')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'facturacion'
-                ? 'bg-accent text-black font-semibold shadow-md shadow-accent/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
             }`}
           >
             <span>💶 Facturación</span>
@@ -2110,12 +2119,12 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('clientas')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'clientas'
-                ? 'bg-accent text-black font-semibold shadow-md shadow-accent/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
             }`}
           >
             <span>👥 Clientas</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${currentTab === 'clientas' ? 'bg-white/25 text-white' : 'bg-rose-100 text-rose-700'}`}>
               {clientsList.length}
             </span>
           </button>
@@ -2124,12 +2133,12 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('servicios')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'servicios'
-                ? 'bg-accent text-black font-semibold shadow-md shadow-accent/20'
-                : 'bg-white/5 text-zinc-300 hover:bg-white/10'
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
             }`}
           >
             <span>🌸 Servicios</span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/20 text-inherit font-bold">
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${currentTab === 'servicios' ? 'bg-white/25 text-white' : 'bg-rose-100 text-rose-700'}`}>
               {services.length}
             </span>
           </button>
@@ -2138,8 +2147,8 @@ function StudioMobileHubPage() {
             onClick={() => setCurrentTab('promo')}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
               currentTab === 'promo'
-                ? 'bg-linear-to-r from-amber-500 to-accent text-black font-bold shadow-md shadow-accent/20'
-                : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold shadow-md shadow-rose-500/20'
+                : 'bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100/60 shadow-xs'
             }`}
           >
             <span>✨ Ofertas</span>
@@ -2154,13 +2163,13 @@ function StudioMobileHubPage() {
         {/* ========================================================================= */}
         {currentTab === 'citas' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between bg-[#121218] p-1.5 rounded-2xl border border-white/5">
+            <div className="flex items-center justify-between bg-white/80 backdrop-blur-md p-1.5 rounded-2xl border border-rose-200/60 shadow-xs">
               <button
                 onClick={() => setAgendaFilter('hoy')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   agendaFilter === 'hoy'
-                    ? 'bg-accent text-black font-semibold'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-xs'
+                    : 'text-[#7a3b5a] hover:text-[#46253a]'
                 }`}
               >
                 Hoy ({appointments.filter(a => a.date === todayStr).length})
@@ -2169,8 +2178,8 @@ function StudioMobileHubPage() {
                 onClick={() => setAgendaFilter('proximas')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   agendaFilter === 'proximas'
-                    ? 'bg-accent text-black font-semibold'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-xs'
+                    : 'text-[#7a3b5a] hover:text-[#46253a]'
                 }`}
               >
                 Próximas
@@ -2179,8 +2188,8 @@ function StudioMobileHubPage() {
                 onClick={() => setAgendaFilter('todas')}
                 className={`flex-1 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   agendaFilter === 'todas'
-                    ? 'bg-accent text-black font-semibold'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-xs'
+                    : 'text-[#7a3b5a] hover:text-[#46253a]'
                 }`}
               >
                 Todas ({appointments.length})
@@ -2188,24 +2197,24 @@ function StudioMobileHubPage() {
             </div>
 
             {isLoadingAppointments && appointments.length === 0 ? (
-              <div className="text-center py-12 text-zinc-500 space-y-2">
-                <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-center py-12 text-[#9a7585] space-y-2">
+                <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs">Consultando citas en la nube...</p>
               </div>
             ) : filteredAppointments.length === 0 ? (
-              <div className="text-center py-12 px-4 rounded-3xl bg-[#121218] border border-white/5 space-y-3">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto text-2xl">
+              <div className="text-center py-12 px-4 rounded-3xl bg-white/90 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
+                <div className="w-12 h-12 rounded-full bg-rose-100/60 flex items-center justify-center mx-auto text-2xl">
                   📅
                 </div>
-                <h3 className="text-sm font-medium text-white">
+                <h3 className="text-sm font-semibold text-[#46253a]">
                   {agendaFilter === 'hoy' ? 'No hay citas programadas para hoy' : 'No se encontraron citas'}
                 </h3>
-                <p className="text-xs text-zinc-400 max-w-xs mx-auto">
+                <p className="text-xs text-[#7a3b5a] max-w-xs mx-auto">
                   Puedes agendar una nueva cita en cualquier momento y enviarle la confirmación a la clienta por WhatsApp.
                 </p>
                 <button
                   onClick={() => setCurrentTab('crear')}
-                  className="mt-2 px-4 py-2 rounded-xl bg-accent text-black font-semibold text-xs transition-all active:scale-95 shadow-md shadow-accent/20"
+                  className="mt-2 px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs transition-all active:scale-95 shadow-md shadow-rose-500/20"
                 >
                   ➕ Crear Nueva Cita
                 </button>
@@ -2215,21 +2224,21 @@ function StudioMobileHubPage() {
                 {filteredAppointments.map((apt) => {
                   const aptPhoneClean = cleanPhoneForWhatsApp(apt.clientPhone)
                   const statusColors = {
-                    confirmada: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
-                    pendiente: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
-                    completada: 'bg-accent/10 text-accent border-accent/30',
-                    cancelada: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+                    confirmada: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                    pendiente: 'bg-amber-100 text-amber-800 border-amber-300',
+                    completada: 'bg-rose-100 text-rose-800 border-rose-300',
+                    cancelada: 'bg-red-100 text-red-700 border-red-300',
                   }
 
                   return (
                     <div
                       key={apt.id}
-                      className="p-4 rounded-2xl bg-[#121218] border border-white/5 hover:border-accent/30 transition-all space-y-3 shadow-md"
+                      className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 hover:border-rose-300 transition-all space-y-3 shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-base font-bold text-white font-serif tracking-tight">
+                            <span className="text-base font-bold text-[#46253a] font-serif tracking-tight">
                               {apt.clientName}
                             </span>
                             <span
@@ -2240,20 +2249,20 @@ function StudioMobileHubPage() {
                               {apt.status}
                             </span>
                           </div>
-                          <p className="text-xs text-zinc-400 mt-0.5">
+                          <p className="text-xs text-[#7a3b5a] mt-0.5">
                             📞 {apt.clientPhone}
                           </p>
                         </div>
 
                         <div className="text-right">
-                          <div className="text-sm font-bold text-accent font-mono">
+                          <div className="text-sm font-bold text-rose-600 font-mono">
                             {apt.price} €
                           </div>
                           <span
-                            className={`text-[9px] px-1.5 py-0.5 rounded ${
+                            className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
                               apt.paymentStatus === 'pagado'
-                                ? 'bg-emerald-950 text-emerald-300'
-                                : 'bg-zinc-800 text-zinc-400'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-rose-100 text-rose-700'
                             }`}
                           >
                             {apt.paymentStatus === 'pagado' ? 'Pagado' : 'Cobro Pendiente'}
@@ -2261,20 +2270,20 @@ function StudioMobileHubPage() {
                         </div>
                       </div>
 
-                      <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                      <div className="p-2.5 rounded-xl bg-rose-50/60 border border-rose-100 flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="text-accent">🕒</span>
-                          <span className="font-medium text-zinc-200">
+                          <span className="text-rose-500">🕒</span>
+                          <span className="font-medium text-[#46253a]">
                             {apt.date} · {apt.time}
                           </span>
                         </div>
-                        <div className="text-zinc-400 truncate max-w-37.5">
+                        <div className="text-[#7a3b5a] truncate max-w-37.5">
                           🌸 {apt.serviceName}
                         </div>
                       </div>
 
                       {apt.notes && (
-                        <p className="text-[11px] text-zinc-400 bg-white/5 p-2 rounded-lg italic">
+                        <p className="text-[11px] text-[#7a3b5a] bg-rose-50/40 p-2 rounded-lg italic border border-rose-100/50">
                           📝 {apt.notes}
                         </p>
                       )}
@@ -2286,7 +2295,7 @@ function StudioMobileHubPage() {
                             href={`https://wa.me/${aptPhoneClean}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                            className="flex-1 py-1.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-xs"
                           >
                             <span>💬 WhatsApp</span>
                           </a>
@@ -2295,7 +2304,7 @@ function StudioMobileHubPage() {
                         {apt.status !== 'completada' && (
                           <button
                             onClick={() => handleUpdateStatus(apt.id, 'completada', 'pagado')}
-                            className="py-1.5 px-3 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-95"
+                            className="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center justify-center gap-1 transition-all active:scale-95 shadow-xs"
                           >
                             <span>⭐ Completar</span>
                           </button>
@@ -2304,7 +2313,7 @@ function StudioMobileHubPage() {
                         {apt.status === 'pendiente' && (
                           <button
                             onClick={() => handleUpdateStatus(apt.id, 'confirmada')}
-                            className="py-1.5 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-semibold transition-all active:scale-95"
+                            className="py-1.5 px-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition-all active:scale-95 shadow-xs"
                           >
                             <span>✓ Confirmar</span>
                           </button>
@@ -2317,7 +2326,7 @@ function StudioMobileHubPage() {
                                 handleUpdateStatus(apt.id, 'cancelada')
                               }
                             }}
-                            className="py-1.5 px-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-all active:scale-95"
+                            className="py-1.5 px-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs transition-all active:scale-95 shadow-xs"
                           >
                             <span>✕</span>
                           </button>
@@ -2337,40 +2346,40 @@ function StudioMobileHubPage() {
         {currentTab === 'crear' && (
           <div className="space-y-4">
             {createdAppointment ? (
-              <div className="p-5 rounded-3xl bg-[#121218] border border-emerald-500/30 shadow-2xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
+              <div className="p-5 rounded-3xl bg-white/95 backdrop-blur-md border border-emerald-300 shadow-xl text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
                 <div className="relative w-16 h-16 mx-auto">
-                  <div className="w-16 h-16 rounded-2xl p-[1.5px] bg-linear-to-b from-accent via-accent/40 to-transparent shadow-lg shadow-accent/20 overflow-hidden">
+                  <div className="w-16 h-16 rounded-2xl p-[1.5px] bg-gradient-to-tr from-rose-500 via-pink-400 to-amber-400 shadow-lg shadow-rose-500/20 overflow-hidden">
                     <img
                       src="/api/images/logo"
                       alt="GoldBlack Lash"
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-black font-bold flex items-center justify-center text-xs shadow-md">
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shadow-md">
                     ✓
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-mono font-semibold">
+                  <span className="text-[10px] uppercase tracking-widest text-emerald-700 font-mono font-semibold">
                     Cita Registrada 24/7 en la Nube
                   </span>
-                  <h2 className="text-xl font-bold text-white font-serif mt-1">
+                  <h2 className="text-xl font-bold text-[#46253a] font-serif mt-1">
                     {createdAppointment.clientName}
                   </h2>
-                  <p className="text-xs text-zinc-400 mt-1">
+                  <p className="text-xs text-[#7a3b5a] mt-1">
                     {createdAppointment.date} a las {createdAppointment.time} · {createdAppointment.serviceName}
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-black/50 border border-accent/20 text-left space-y-1.5">
+                <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 text-left space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Teléfono:</span>
-                    <span className="font-mono text-zinc-200">{createdAppointment.clientPhone}</span>
+                    <span className="text-[#7a3b5a]">Teléfono:</span>
+                    <span className="font-mono text-[#46253a] font-medium">{createdAppointment.clientPhone}</span>
                   </div>
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Total a cobrar:</span>
-                    <span className="font-mono font-bold text-accent">{createdAppointment.price} €</span>
+                    <span className="text-[#7a3b5a]">Total a cobrar:</span>
+                    <span className="font-mono font-bold text-rose-600">{createdAppointment.price} €</span>
                   </div>
                 </div>
 
@@ -2379,7 +2388,7 @@ function StudioMobileHubPage() {
                     href={createdAppointment.whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full py-3.5 px-4 rounded-2xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98]"
+                    className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98]"
                   >
                     <span>💬 Enviar WhatsApp a la Clienta ↗</span>
                   </a>
@@ -2391,7 +2400,7 @@ function StudioMobileHubPage() {
                       setClientPhone('')
                       setNotes('')
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
+                    className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 text-xs font-medium transition-all shadow-xs"
                   >
                     Agendar otra cita
                   </button>
@@ -2400,10 +2409,10 @@ function StudioMobileHubPage() {
             ) : (
               <form onSubmit={handleSubmitAppointment} className="space-y-4">
                 {/* Cabecera con Logotipo Oficial del Sitio Web */}
-                <div className="p-3.5 rounded-2xl bg-linear-to-r from-[#181410] via-[#121218] to-[#1a1410] border border-accent/30 shadow-xl flex items-center gap-3">
+                <div className="p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/80 shadow-sm flex items-center gap-3">
                   <div className="relative shrink-0">
-                    <div className="w-12 h-12 rounded-xl p-[1.5px] bg-linear-to-b from-accent via-accent/40 to-transparent shadow-md shadow-accent/20">
-                      <div className="w-full h-full rounded-[10px] overflow-hidden bg-[#050508] flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl p-[1.5px] bg-gradient-to-tr from-rose-400 via-pink-400 to-amber-400 shadow-md shadow-rose-500/15">
+                      <div className="w-full h-full rounded-[10px] overflow-hidden bg-white flex items-center justify-center">
                         <img
                           src="/api/images/logo"
                           alt="GoldBlack Lash Studio"
@@ -2413,25 +2422,25 @@ function StudioMobileHubPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] text-accent font-mono tracking-widest uppercase font-semibold block">
+                    <span className="text-[10px] text-rose-600 font-mono tracking-widest uppercase font-semibold block">
                       GoldBlack Lash Studio
                     </span>
-                    <h2 className="text-sm font-bold text-white font-serif tracking-wide truncate">
+                    <h2 className="text-sm font-bold text-[#46253a] font-serif tracking-wide truncate">
                       Nueva Cita en la Agenda
                     </h2>
-                    <p className="text-[11px] text-zinc-400 truncate">
+                    <p className="text-[11px] text-[#7a3b5a] truncate">
                       Sincronización en tiempo real y confirmación por WhatsApp
                     </p>
                   </div>
                 </div>
 
                 {/* 1. Selección de Servicio */}
-                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+                <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="text-accent">1.</span> Tratamiento / Servicio
+                    <label className="text-xs font-semibold text-[#46253a] uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="text-rose-600">1.</span> Tratamiento / Servicio
                     </label>
-                    <span className="text-[10px] text-accent">{services.length} disponibles</span>
+                    <span className="text-[10px] text-rose-600 font-medium">{services.length} disponibles</span>
                   </div>
 
                   <div className="space-y-2 max-h-72 overflow-y-auto pr-1 no-scrollbar">
@@ -2447,35 +2456,35 @@ function StudioMobileHubPage() {
                           }}
                           className={`p-2.5 rounded-xl cursor-pointer transition-all border flex items-center gap-3 ${
                             isSelected
-                              ? 'bg-accent/15 border-accent shadow-md shadow-accent/10'
-                              : 'bg-black/30 border-white/5 hover:border-white/15'
+                              ? 'bg-rose-50/90 border-rose-400 shadow-sm ring-1 ring-rose-400/40'
+                              : 'bg-white/80 border-rose-100 hover:border-rose-300 hover:bg-rose-50/40'
                           }`}
                         >
                           <img
                             src={sImg}
                             alt={s.name}
-                            className="w-11 h-11 rounded-lg object-cover border border-white/10 shrink-0"
+                            className="w-11 h-11 rounded-lg object-cover border border-rose-200 shrink-0"
                             loading="lazy"
                           />
 
                           <div className="space-y-0.5 flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-xs font-semibold truncate ${isSelected ? 'text-white' : 'text-zinc-300'}`}>
+                              <span className={`text-xs font-semibold truncate ${isSelected ? 'text-[#46253a]' : 'text-[#7a3b5a]'}`}>
                                 {s.name}
                               </span>
                               {s.badge && (
-                                <span className="text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase bg-accent/20 text-[#f3e5ab]">
+                                <span className="text-[8px] px-1.5 py-0.2 rounded-full font-bold uppercase bg-amber-100 text-amber-800 border border-amber-200">
                                   {s.badge}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-zinc-500">
+                            <p className="text-[11px] text-[#9a7585]">
                               ⏱️ {s.duration}
                             </p>
                           </div>
 
                           <div className="text-right shrink-0">
-                            <span className="text-sm font-bold font-mono text-accent">
+                            <span className="text-sm font-bold font-mono text-rose-600">
                               {s.priceFormatted}
                             </span>
                           </div>
@@ -2488,32 +2497,32 @@ function StudioMobileHubPage() {
                       onClick={() => setIsCustomService(true)}
                       className={`p-3 rounded-xl cursor-pointer transition-all border flex items-center justify-between ${
                         isCustomService
-                          ? 'bg-accent/15 border-accent'
-                          : 'bg-black/30 border-white/5 hover:border-white/15'
+                          ? 'bg-rose-50 border-rose-400 ring-1 ring-rose-400/40'
+                          : 'bg-white/80 border-rose-100 hover:border-rose-300'
                       }`}
                     >
-                      <span className="text-xs font-semibold text-zinc-300">
+                      <span className="text-xs font-semibold text-[#7a3b5a]">
                         + Otro servicio personalizado
                       </span>
-                      <span className="text-xs text-zinc-500 font-mono">Editar</span>
+                      <span className="text-xs text-[#9a7585] font-mono">Editar</span>
                     </div>
 
                     {isCustomService && (
-                      <div className="p-3 rounded-xl bg-black/40 border border-accent/30 space-y-2">
+                      <div className="p-3 rounded-xl bg-rose-50/60 border border-rose-200 space-y-2">
                         <input
                           type="text"
                           placeholder="Nombre del servicio (ej. Lifting + Tinte)"
                           value={customServiceName}
                           onChange={(e) => setCustomServiceName(e.target.value)}
-                          className="w-full bg-[#121218] border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                          className="w-full bg-white border border-rose-200 rounded-lg px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                         />
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-zinc-400">Precio (€):</span>
+                          <span className="text-xs text-[#7a3b5a]">Precio (€):</span>
                           <input
                             type="number"
                             value={customPrice}
                             onChange={(e) => setCustomPrice(e.target.value)}
-                            className="w-24 bg-[#121218] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                            className="w-24 bg-white border border-rose-200 rounded-lg px-3 py-1.5 text-xs text-[#46253a] font-mono focus:outline-none focus:border-rose-400 shadow-xs"
                           />
                         </div>
                       </div>
@@ -2522,9 +2531,9 @@ function StudioMobileHubPage() {
                 </div>
 
                 {/* 2. Fecha y Hora */}
-                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
-                  <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="text-accent">2.</span> Fecha y Hora
+                <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
+                  <label className="text-xs font-semibold text-[#46253a] uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="text-rose-600">2.</span> Fecha y Hora
                   </label>
 
                   <div className="flex items-center gap-1.5">
@@ -2542,8 +2551,8 @@ function StudioMobileHubPage() {
                           onClick={() => setDate(dStr)}
                           className={`flex-1 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                             isSel
-                              ? 'bg-accent text-black border-accent font-semibold'
-                              : 'bg-black/30 border-white/10 text-zinc-400 hover:text-white'
+                              ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white border-transparent font-semibold shadow-xs'
+                              : 'bg-white border-rose-200/80 text-[#7a3b5a] hover:bg-rose-50'
                           }`}
                         >
                           {d.label}
@@ -2554,22 +2563,22 @@ function StudioMobileHubPage() {
 
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[10px] text-zinc-400 block mb-1">Día de la cita</span>
+                      <span className="text-[10px] text-[#7a3b5a] block mb-1">Día de la cita</span>
                       <input
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                        className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 shadow-xs"
                       />
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-zinc-400 block mb-1">Hora de inicio</span>
+                      <span className="text-[10px] text-[#7a3b5a] block mb-1">Hora de inicio</span>
                       <input
                         type="time"
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                        className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 shadow-xs"
                       />
                     </div>
                   </div>
@@ -2582,8 +2591,8 @@ function StudioMobileHubPage() {
                         onClick={() => setTime(h)}
                         className={`px-2 py-1 rounded-md text-[11px] font-mono border transition-all ${
                           time === h
-                            ? 'bg-accent/20 border-accent text-[#f3e5ab]'
-                            : 'bg-black/30 border-white/5 text-zinc-400 hover:text-white'
+                            ? 'bg-rose-100 border-rose-300 text-rose-800 font-bold'
+                            : 'bg-white border-rose-200/80 text-[#7a3b5a] hover:bg-rose-50'
                         }`}
                       >
                         {h}
@@ -2593,16 +2602,16 @@ function StudioMobileHubPage() {
                 </div>
 
                 {/* 3. Datos de la Clienta y WhatsApp */}
-                <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
+                <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <label className="text-xs font-semibold text-zinc-200 uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="text-accent">3.</span> Clienta y Teléfono
+                    <label className="text-xs font-semibold text-[#46253a] uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="text-rose-600">3.</span> Clienta y Teléfono
                     </label>
 
                     <button
                       type="button"
                       onClick={handleUniversalContactPickerOpen}
-                      className="px-2.5 py-1 rounded-xl bg-accent/15 hover:bg-accent/25 border border-accent/40 text-accent font-semibold text-[11px] flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-accent/10 cursor-pointer"
+                      className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-semibold text-[11px] flex items-center gap-1.5 transition-all active:scale-95 shadow-xs cursor-pointer"
                     >
                       <span>📖</span>
                       <span>Seleccionar Contacto</span>
@@ -2610,8 +2619,8 @@ function StudioMobileHubPage() {
                   </div>
 
                   {contactSelectedToast && (
-                    <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-xs flex items-center gap-2">
-                      <span className="text-emerald-400 font-bold">✓</span>
+                    <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2">
+                      <span className="text-emerald-600 font-bold">✓</span>
                       <span>{contactSelectedToast}</span>
                     </div>
                   )}
@@ -2627,7 +2636,7 @@ function StudioMobileHubPage() {
                       placeholder="Nombre de la clienta *"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 shadow-xs"
                     />
 
                     <div className="relative">
@@ -2641,13 +2650,13 @@ function StudioMobileHubPage() {
                         placeholder="Teléfono móvil (ej. 612 34 56 78) *"
                         value={clientPhone}
                         onChange={(e) => setClientPhone(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl pl-3.5 pr-36 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
+                        className="w-full bg-white border border-rose-200 rounded-xl pl-3.5 pr-36 py-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 font-mono shadow-xs"
                       />
                       <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
                         <button
                           type="button"
                           onClick={handlePasteClipboard}
-                          className="px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-zinc-300 text-[10px] font-semibold flex items-center gap-1 border border-white/10 transition-colors cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#7a3b5a] text-[10px] font-semibold flex items-center gap-1 border border-rose-200 transition-colors cursor-pointer"
                           title="Pegar número copiado del portapapeles"
                         >
                           📋 Pegar
@@ -2655,7 +2664,7 @@ function StudioMobileHubPage() {
                         <button
                           type="button"
                           onClick={handleUniversalContactPickerOpen}
-                          className="px-2 py-1 rounded-lg bg-accent/15 hover:bg-accent/25 hover:text-accent text-accent text-[10px] font-semibold flex items-center gap-1 border border-accent/30 transition-colors cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 text-[10px] font-semibold flex items-center gap-1 border border-rose-300 transition-colors cursor-pointer"
                           title="Seleccionar desde tus contactos o clientas del estudio"
                         >
                           📖 Agenda
@@ -2664,9 +2673,9 @@ function StudioMobileHubPage() {
                     </div>
 
                     {isValidPhone && (
-                      <div className="flex items-center justify-between text-[10px] text-emerald-400 px-1 font-semibold">
+                      <div className="flex items-center justify-between text-[10px] text-emerald-700 px-1 font-semibold">
                         <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           WhatsApp preparado: +{cleanPhone}
                         </span>
                       </div>
@@ -2675,8 +2684,8 @@ function StudioMobileHubPage() {
 
                   {/* Sugerencias Rápidas al escribir nombre o teléfono */}
                   {contactSuggestions.length > 0 && (
-                    <div className="p-2 rounded-xl bg-black/60 border border-accent/25 space-y-1.5 animate-in fade-in duration-150">
-                      <span className="text-[10px] text-accent font-semibold uppercase tracking-wider block px-1">
+                    <div className="p-2 rounded-xl bg-white border border-rose-200 shadow-md space-y-1.5 animate-in fade-in duration-150">
+                      <span className="text-[10px] text-rose-600 font-semibold uppercase tracking-wider block px-1">
                         ✨ Contactos coincidentes ({contactSuggestions.length}):
                       </span>
                       <div className="space-y-1">
@@ -2684,17 +2693,17 @@ function StudioMobileHubPage() {
                           <div
                             key={sug.phone || sug.name}
                             onClick={() => handleSelectStudioClient(sug)}
-                            className="p-2 rounded-lg bg-white/5 hover:bg-accent/20 border border-white/5 cursor-pointer flex items-center justify-between gap-2 transition-colors group"
+                            className="p-2 rounded-lg bg-rose-50/50 hover:bg-rose-100/70 border border-rose-100 cursor-pointer flex items-center justify-between gap-2 transition-colors group"
                           >
                             <div className="min-w-0 flex-1">
-                              <span className="text-xs font-semibold text-zinc-200 group-hover:text-white block truncate">
+                              <span className="text-xs font-semibold text-[#46253a] block truncate">
                                 {sug.name}
                               </span>
-                              <span className="text-[10px] text-zinc-400 font-mono">
+                              <span className="text-[10px] text-[#7a3b5a] font-mono">
                                 📞 {sug.phone}
                               </span>
                             </div>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-bold shrink-0">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 font-bold shrink-0">
                               {sug.totalVisits} {sug.totalVisits === 1 ? 'cita' : 'citas'}
                             </span>
                           </div>
@@ -2711,7 +2720,7 @@ function StudioMobileHubPage() {
                         setClientPhone('')
                         setNotes('')
                       }}
-                      className="text-[10px] text-zinc-400 hover:text-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-[#9a7585] hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       ✕ Limpiar datos de clienta del formulario
                     </button>
@@ -2719,11 +2728,11 @@ function StudioMobileHubPage() {
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <div>
-                      <span className="text-[10px] text-zinc-400 block mb-1">Curvatura habitual</span>
+                      <span className="text-[10px] text-[#7a3b5a] block mb-1">Curvatura habitual</span>
                       <select
                         value={curl}
                         onChange={(e) => setCurl(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                        className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 shadow-xs"
                       >
                         <option value="D">Curva D (Marcada)</option>
                         <option value="CC">Curva CC (Media)</option>
@@ -2734,20 +2743,20 @@ function StudioMobileHubPage() {
                     </div>
 
                     <div>
-                      <span className="text-[10px] text-zinc-400 block mb-1">Notas / Preferencias</span>
+                      <span className="text-[10px] text-[#7a3b5a] block mb-1">Notas / Preferencias</span>
                       <input
                         type="text"
                         placeholder="Ej. Ojo sensible, efecto ardilla"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                        className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                       />
                     </div>
                   </div>
                 </div>
 
                 {submitErrorMsg && (
-                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
                     ⚠️ {submitErrorMsg}
                   </div>
                 )}
@@ -2755,7 +2764,7 @@ function StudioMobileHubPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 rounded-2xl bg-linear-to-r from-accent via-[#f3e5ab] to-[#aa8c2c] hover:opacity-95 text-black font-bold text-sm tracking-wide shadow-xl shadow-accent/25 transition-all active:scale-[0.98] disabled:opacity-50"
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 hover:opacity-95 text-white font-bold text-sm tracking-wide shadow-lg shadow-rose-500/25 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                   {isSubmitting ? 'Guardando en la nube...' : '✨ GUARDAR CITA Y GENERAR ENLACE WHATSAPP'}
                 </button>
@@ -2770,62 +2779,62 @@ function StudioMobileHubPage() {
         {currentTab === 'facturacion' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2.5">
-              <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-1">
-                <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Facturado Hoy</span>
-                <div className="text-2xl font-bold text-white font-mono">
+              <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-1">
+                <span className="text-[10px] text-[#7a3b5a] uppercase tracking-widest font-semibold">Facturado Hoy</span>
+                <div className="text-2xl font-bold text-[#46253a] font-mono">
                   {metrics.totalHoy} €
                 </div>
-                <p className="text-[10px] text-emerald-400">
+                <p className="text-[10px] text-emerald-700 font-semibold">
                   {appointments.filter(a => a.date === todayStr && a.status !== 'cancelada').length} citas programadas
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#121218] border border-accent/30 space-y-1 bg-linear-to-br from-[#121218] to-[#1a170d]">
-                <span className="text-[10px] text-accent uppercase tracking-widest font-semibold">Este Mes</span>
-                <div className="text-2xl font-bold text-accent font-mono">
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 to-amber-50/80 border border-rose-200/80 shadow-sm space-y-1">
+                <span className="text-[10px] text-rose-600 uppercase tracking-widest font-semibold">Este Mes</span>
+                <div className="text-2xl font-bold text-rose-600 font-mono">
                   {metrics.totalMes} €
                 </div>
-                <p className="text-[10px] text-zinc-400">
-                  Semana: {metrics.totalSemana} €
+                <p className="text-[10px] text-[#7a3b5a]">
+                  Semana: <span className="font-semibold text-[#46253a]">{metrics.totalSemana} €</span>
                 </p>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
-              <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+            <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
+              <h3 className="text-xs font-semibold text-[#46253a] uppercase tracking-wider">
                 Balance de Cobros
               </h3>
 
               <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/20">
-                  <span className="text-[10px] text-emerald-300 block">Total Pagado</span>
-                  <span className="text-lg font-bold text-emerald-400 font-mono">{metrics.totalCobrado} €</span>
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <span className="text-[10px] text-emerald-800 block">Total Pagado</span>
+                  <span className="text-lg font-bold text-emerald-700 font-mono">{metrics.totalCobrado} €</span>
                 </div>
-                <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-500/20">
-                  <span className="text-[10px] text-amber-300 block">Pendiente de Cobro</span>
-                  <span className="text-lg font-bold text-amber-400 font-mono">{metrics.totalPendienteCobro} €</span>
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200">
+                  <span className="text-[10px] text-amber-800 block">Pendiente de Cobro</span>
+                  <span className="text-lg font-bold text-amber-700 font-mono">{metrics.totalPendienteCobro} €</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5 text-zinc-400">
-                <span>Citas completadas: <strong className="text-white">{metrics.countCompletadas}</strong></span>
-                <span>Ticket medio estimado: <strong className="text-accent font-mono">{metrics.ticketMedio} €</strong></span>
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-rose-100 text-[#7a3b5a]">
+                <span>Citas completadas: <strong className="text-[#46253a]">{metrics.countCompletadas}</strong></span>
+                <span>Ticket medio estimado: <strong className="text-rose-600 font-mono">{metrics.ticketMedio} €</strong></span>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#121218] border border-white/5 space-y-3">
-              <h3 className="text-xs font-semibold text-zinc-200 uppercase tracking-wider">
+            <div className="p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 shadow-sm space-y-3">
+              <h3 className="text-xs font-semibold text-[#46253a] uppercase tracking-wider">
                 Ingresos por Tratamiento
               </h3>
 
               <div className="space-y-2">
                 {metrics.serviceCounts.map(([serviceName, data]) => (
-                  <div key={serviceName} className="p-2.5 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between text-xs">
+                  <div key={serviceName} className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-medium text-zinc-200 block">{serviceName}</span>
-                      <span className="text-[10px] text-zinc-500">{data.count} cita{data.count !== 1 ? 's' : ''}</span>
+                      <span className="font-medium text-[#46253a] block">{serviceName}</span>
+                      <span className="text-[10px] text-[#9a7585]">{data.count} cita{data.count !== 1 ? 's' : ''}</span>
                     </div>
-                    <span className="font-bold text-accent font-mono">{data.total} €</span>
+                    <span className="font-bold text-rose-600 font-mono">{data.total} €</span>
                   </div>
                 ))}
               </div>
@@ -2844,12 +2853,12 @@ function StudioMobileHubPage() {
                 placeholder="Buscar clienta por nombre o teléfono..."
                 value={clientSearch}
                 onChange={(e) => setClientSearch(e.target.value)}
-                className="w-full bg-[#121218] border border-white/10 rounded-xl pl-3.5 pr-8 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                className="w-full bg-white border border-rose-200 rounded-xl pl-3.5 pr-8 py-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-300 shadow-xs"
               />
               {clientSearch && (
                 <button
                   onClick={() => setClientSearch('')}
-                  className="absolute right-3 top-2.5 text-zinc-400 text-xs"
+                  className="absolute right-3 top-2.5 text-[#9a7585] text-xs hover:text-rose-600"
                 >
                   ✕
                 </button>
@@ -2857,7 +2866,7 @@ function StudioMobileHubPage() {
             </div>
 
             {clientsList.length === 0 ? (
-              <div className="text-center py-12 text-zinc-500 text-xs">
+              <div className="text-center py-12 text-[#9a7585] text-xs">
                 No se encontraron clientas en la base de datos.
               </div>
             ) : (
@@ -2867,37 +2876,37 @@ function StudioMobileHubPage() {
                   return (
                     <div
                       key={client.phone || client.name}
-                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-accent/30 transition-all space-y-2 shadow-md"
+                      className="p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 hover:border-rose-300 transition-all space-y-2 shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="text-sm font-bold text-white font-serif tracking-tight">
+                          <h4 className="text-sm font-bold text-[#46253a] font-serif tracking-tight">
                             {client.name}
                           </h4>
-                          <p className="text-xs text-zinc-400 font-mono">
+                          <p className="text-xs text-[#7a3b5a] font-mono">
                             📞 {client.phone}
                           </p>
                         </div>
 
                         <div className="text-right">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/10 text-accent font-bold">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-bold">
                             {client.totalVisits} visita{client.totalVisits !== 1 ? 's' : ''}
                           </span>
-                          <span className="block text-xs font-mono font-bold text-zinc-300 mt-1">
+                          <span className="block text-xs font-mono font-bold text-rose-600 mt-1">
                             {client.totalSpent} € total
                           </span>
                         </div>
                       </div>
 
-                      <div className="text-[11px] text-zinc-400 flex items-center justify-between border-t border-white/5 pt-1.5">
+                      <div className="text-[11px] text-[#7a3b5a] flex items-center justify-between border-t border-rose-100 pt-1.5">
                         <span>Última visita: {client.lastVisitDate}</span>
                         {client.preferredCurl && (
-                          <span className="text-[#f3e5ab] font-bold">Curva {client.preferredCurl}</span>
+                          <span className="bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold text-[10px]">Curva {client.preferredCurl}</span>
                         )}
                       </div>
 
                       {client.notes && (
-                        <p className="text-[10px] text-zinc-500 italic truncate">
+                        <p className="text-[10px] text-[#7a3b5a] bg-rose-50/50 p-1.5 rounded italic border border-rose-100/60 truncate">
                           📝 {client.notes}
                         </p>
                       )}
@@ -2909,7 +2918,7 @@ function StudioMobileHubPage() {
                             href={`https://wa.me/${clientPhoneClean}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="py-1.5 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all"
+                            className="py-1.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-semibold flex items-center justify-center gap-1 transition-all shadow-xs"
                           >
                             <span>💬 WhatsApp</span>
                           </a>
@@ -2917,7 +2926,7 @@ function StudioMobileHubPage() {
 
                         <button
                           onClick={() => setSelectedClientModal(client)}
-                          className="flex-1 py-1.5 px-3 rounded-xl bg-accent/10 hover:bg-accent/20 text-accent border border-accent/30 text-xs font-semibold flex items-center justify-center gap-1 transition-all"
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center justify-center gap-1 transition-all shadow-xs"
                         >
                           <span>👁️ Ficha Completa</span>
                         </button>
@@ -2929,7 +2938,7 @@ function StudioMobileHubPage() {
                             if (client.preferredCurl) setCurl(client.preferredCurl)
                             setCurrentTab('crear')
                           }}
-                          className="py-1.5 px-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium transition-all"
+                          className="py-1.5 px-2.5 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 text-xs font-medium transition-all shadow-xs"
                         >
                           ➕ Cita
                         </button>
@@ -2949,17 +2958,17 @@ function StudioMobileHubPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-1">
               <div>
-                <h2 className="text-sm font-bold text-white font-serif">
+                <h2 className="text-sm font-bold text-[#46253a] font-serif">
                   Catálogo de Servicios
                 </h2>
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-[#7a3b5a]">
                   {services.length} tratamientos en la base de datos
                 </p>
               </div>
 
               <button
                 onClick={() => openServiceModal()}
-                className="px-3 py-1.5 rounded-xl bg-linear-to-r from-accent to-[#aa8c2c] text-black font-bold text-xs shadow-md shadow-accent/20 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
               >
                 <span>➕ Añadir Servicio</span>
               </button>
@@ -2976,8 +2985,8 @@ function StudioMobileHubPage() {
                     onClick={() => setSelectedServiceCategoryFilter(tab.id)}
                     className={`px-3 py-1 rounded-xl whitespace-nowrap text-[11px] font-medium transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-accent text-black font-bold shadow-sm shadow-accent/30'
-                        : 'bg-white/5 text-zinc-400 hover:text-white border border-white/5'
+                        ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-xs'
+                        : 'bg-white/80 text-[#7a3b5a] border border-rose-200/60 hover:bg-white shadow-xs'
                     }`}
                   >
                     {tab.name}
@@ -2987,17 +2996,17 @@ function StudioMobileHubPage() {
             </div>
 
             {isLoadingServices && services.length === 0 ? (
-              <div className="text-center py-12 text-zinc-500 space-y-2">
-                <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto" />
+              <div className="text-center py-12 text-[#9a7585] space-y-2">
+                <div className="w-8 h-8 border-2 border-rose-400 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs">Cargando servicios de Supabase...</p>
               </div>
             ) : filteredServices.length === 0 ? (
-              <div className="text-center py-10 px-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                <p className="text-xs text-zinc-300">No hay servicios en esta categoría todavía.</p>
+              <div className="text-center py-10 px-4 rounded-2xl bg-white/90 border border-rose-200/70 space-y-2">
+                <p className="text-xs text-[#7a3b5a]">No hay servicios en esta categoría todavía.</p>
                 <button
                   type="button"
                   onClick={() => openServiceModal()}
-                  className="text-xs text-accent font-semibold hover:underline cursor-pointer"
+                  className="text-xs text-rose-600 font-semibold hover:underline cursor-pointer"
                 >
                   + Añadir servicio aquí
                 </button>
@@ -3009,10 +3018,10 @@ function StudioMobileHubPage() {
                   return (
                     <div
                       key={s.id}
-                      className="p-3.5 rounded-2xl bg-[#121218] border border-white/5 hover:border-accent/30 transition-all space-y-3 shadow-md overflow-hidden"
+                      className="p-3.5 rounded-2xl bg-white/95 backdrop-blur-md border border-rose-200/70 hover:border-rose-300 transition-all space-y-3 shadow-sm hover:shadow-md overflow-hidden"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-white/10 shrink-0 bg-black/50">
+                        <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-rose-200 shrink-0 bg-rose-50">
                           <img
                             src={sImg}
                             alt={s.name}
@@ -3020,7 +3029,7 @@ function StudioMobileHubPage() {
                             loading="lazy"
                           />
                           {s.badge && (
-                            <span className="absolute bottom-1 left-1 right-1 text-center text-[7px] px-1 py-0.5 rounded bg-black/80 backdrop-blur-sm text-accent font-bold uppercase truncate">
+                            <span className="absolute bottom-1 left-1 right-1 text-center text-[7px] px-1 py-0.5 rounded bg-amber-100/90 backdrop-blur-sm text-amber-800 border border-amber-300 font-bold uppercase truncate">
                               {s.badge}
                             </span>
                           )}
@@ -3028,22 +3037,22 @@ function StudioMobileHubPage() {
 
                         <div className="flex-1 min-w-0 space-y-1">
                           <div className="flex items-start justify-between gap-1">
-                            <h4 className="text-xs font-bold text-white leading-tight">
+                            <h4 className="text-xs font-bold text-[#46253a] leading-tight">
                               {s.name}
                             </h4>
-                            <span className="text-sm font-bold text-accent font-mono shrink-0">
+                            <span className="text-sm font-bold text-rose-600 font-mono shrink-0">
                               {s.priceFormatted}
                             </span>
                           </div>
 
-                          <div className="text-[10px] text-zinc-400 flex items-center gap-2">
+                          <div className="text-[10px] text-[#7a3b5a] flex items-center gap-2">
                             <span>⏱️ {s.duration}</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-zinc-400">{s.categoryName || 'General'}</span>
+                            <span className="text-rose-200">•</span>
+                            <span>{s.categoryName || 'General'}</span>
                           </div>
 
                           {s.description && (
-                            <p className="text-[11px] text-zinc-400 line-clamp-2 leading-tight">
+                            <p className="text-[11px] text-[#7a3b5a] line-clamp-2 leading-tight">
                               {s.description}
                             </p>
                           )}
@@ -3051,16 +3060,16 @@ function StudioMobileHubPage() {
                       </div>
 
                       {s.includes && s.includes.length > 0 && (
-                        <div className="pt-2 border-t border-white/5 flex items-center gap-1.5 flex-wrap">
+                        <div className="pt-2 border-t border-rose-100 flex items-center gap-1.5 flex-wrap">
                           {s.includes.slice(0, 3).map((item, idx) => (
-                            <span key={idx} className="text-[9px] px-2 py-0.5 rounded-full bg-white/5 text-zinc-300">
+                            <span key={idx} className="text-[9px] px-2 py-0.5 rounded-full bg-rose-50 border border-rose-100 text-[#7a3b5a]">
                               ✓ {item}
                             </span>
                           ))}
                         </div>
                       )}
 
-                      {/* Botones de Acción de Servicio — ¡Eliminar habilitado para TODOS! */}
+                      {/* Botones de Acción de Servicio */}
                       <div className="pt-1 flex items-center gap-2">
                         <button
                           onClick={() => {
@@ -3068,14 +3077,14 @@ function StudioMobileHubPage() {
                             setIsCustomService(false)
                             setCurrentTab('crear')
                           }}
-                          className="flex-1 py-1.5 px-3 rounded-xl bg-accent text-black font-bold text-xs hover:opacity-90 active:scale-95 transition-all shadow-md shadow-accent/20"
+                          className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs hover:opacity-95 active:scale-95 transition-all shadow-md shadow-rose-500/20"
                         >
                           📅 Agendar Cita
                         </button>
 
                         <button
                           onClick={() => openServiceModal(s)}
-                          className="py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10 text-xs font-medium active:scale-95 transition-all"
+                          className="py-1.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 text-xs font-medium active:scale-95 transition-all shadow-xs"
                         >
                           ✏️ Editar
                         </button>
@@ -3083,7 +3092,7 @@ function StudioMobileHubPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteService(s)}
-                          className="py-1.5 px-2.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold active:scale-95 transition-all flex items-center gap-1 shrink-0"
+                          className="py-1.5 px-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold active:scale-95 transition-all flex items-center gap-1 shrink-0 shadow-xs"
                           title="Eliminar servicio de la base de datos"
                         >
                           <span>🗑️</span>
@@ -3104,10 +3113,10 @@ function StudioMobileHubPage() {
         {currentTab === 'promo' && (
           <div className="space-y-4">
             {/* Cabecera Seria y Profesional de Promociones */}
-            <div className="p-4 rounded-3xl bg-linear-to-b from-[#181512] via-[#121216] to-[#0d0d10] border border-accent/30 space-y-4 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="p-4 rounded-3xl bg-white/95 backdrop-blur-md border border-rose-200/80 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-rose-100 pb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl p-px bg-linear-to-b from-accent/60 to-transparent border border-accent/40 overflow-hidden shrink-0">
+                  <div className="w-9 h-9 rounded-xl p-px bg-gradient-to-tr from-rose-400 to-amber-300 border border-rose-300 overflow-hidden shrink-0">
                     <img
                       src="/api/images/logo"
                       alt="GoldBlack Lash"
@@ -3115,15 +3124,15 @@ function StudioMobileHubPage() {
                     />
                   </div>
                   <div>
-                    <span className="text-[10px] text-accent font-mono tracking-widest uppercase font-semibold block">
+                    <span className="text-[10px] text-rose-600 font-mono tracking-widest uppercase font-semibold block">
                       GoldBlack Lash Studio
                     </span>
-                    <h2 className="text-base font-bold text-white font-serif tracking-wide">
+                    <h2 className="text-base font-bold text-[#46253a] font-serif tracking-wide">
                       Promociones del Estudio
                     </h2>
                   </div>
                 </div>
-                <span className="text-[10px] px-2.5 py-1 rounded-full bg-accent/10 border border-accent/30 text-accent font-medium">
+                <span className="text-[10px] px-2.5 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-700 font-medium">
                   Campaña WhatsApp
                 </span>
               </div>
@@ -3131,10 +3140,10 @@ function StudioMobileHubPage() {
               {/* Selector Rápido de Propuestas del Estudio */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-zinc-400 uppercase font-semibold block">
+                  <span className="text-[10px] text-[#7a3b5a] uppercase font-semibold block">
                     Propuestas Rápidas del Estudio:
                   </span>
-                  <span className="text-[9px] text-amber-400/80 font-medium">
+                  <span className="text-[9px] text-rose-600 font-medium">
                     Toca para aplicar plantilla
                   </span>
                 </div>
@@ -3148,23 +3157,23 @@ function StudioMobileHubPage() {
                         onClick={() => applyPromoPreset(preset)}
                         className={`relative p-2.5 rounded-xl text-left text-[11px] transition-all duration-200 border ${
                           isSelected
-                            ? 'bg-amber-500/20 border-amber-400 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.25)] text-white'
-                            : 'bg-black/40 border-amber-500/30 hover:border-amber-500/70 hover:bg-black/60 text-zinc-300'
+                            ? 'bg-gradient-to-r from-rose-50 to-amber-50/80 border-rose-400 ring-1 ring-rose-400/50 text-[#46253a] shadow-xs'
+                            : 'bg-white/80 border-rose-200/70 hover:border-rose-300 hover:bg-rose-50/40 text-[#7a3b5a]'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className={`font-bold block ${isSelected ? 'text-amber-200' : 'text-amber-300'}`}>
+                          <span className={`font-bold block ${isSelected ? 'text-[#46253a]' : 'text-[#7a3b5a]'}`}>
                             {preset.label}
                           </span>
                           {isSelected && (
-                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-black text-[9px] font-black shrink-0 shadow-sm">
+                            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black shrink-0 shadow-xs">
                               ✓
                             </span>
                           )}
                         </div>
                         <span
                           className={`text-[9px] block mt-0.5 ${
-                            isSelected ? 'text-amber-200/80 font-medium' : 'text-zinc-400'
+                            isSelected ? 'text-rose-600 font-medium' : 'text-[#9a7585]'
                           }`}
                         >
                           {preset.sublabel}
@@ -3176,12 +3185,12 @@ function StudioMobileHubPage() {
               </div>
 
               {/* Formulario de Configuración de la Oferta */}
-              <div className="space-y-3 pt-2 border-t border-white/10">
+              <div className="space-y-3 pt-2 border-t border-rose-100">
                 {/* 1. SELECCIÓN DE TIPO DE SERVICIO */}
                 <div className="space-y-1">
-                  <label className="text-[10px] text-zinc-400 uppercase font-semibold flex items-center justify-between">
+                  <label className="text-[10px] text-[#7a3b5a] uppercase font-semibold flex items-center justify-between">
                     <span>Tipo de Servicio / Tratamiento</span>
-                    <span className="text-accent text-[9px]">Catálogo o personalizado</span>
+                    <span className="text-rose-600 text-[9px]">Catálogo o personalizado</span>
                   </label>
                   <select
                     value={
@@ -3201,7 +3210,7 @@ function StudioMobileHubPage() {
                         }
                       }
                     }}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 shadow-xs cursor-pointer"
                   >
                     <option value="">-- Seleccionar servicio del catálogo --</option>
                     {services.map((s) => (
@@ -3215,22 +3224,22 @@ function StudioMobileHubPage() {
                     value={promoServiceName}
                     onChange={(e) => setPromoServiceName(e.target.value)}
                     placeholder="Nombre del servicio o tratamiento"
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                   />
                 </div>
 
                 {/* 2. SELECCIÓN DE TIPO DE PESTAÑA / CURVATURA / EFECTO */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-zinc-400 uppercase font-semibold flex items-center justify-between">
+                  <label className="text-[10px] text-[#7a3b5a] uppercase font-semibold flex items-center justify-between">
                     <span>Tipo de Pestaña / Curvatura / Efecto</span>
-                    <span className="text-accent text-[9px]">Técnica aplicada</span>
+                    <span className="text-rose-600 text-[9px]">Técnica aplicada</span>
                   </label>
                   <select
                     value={LASH_TYPE_PRESETS.includes(promoLashType) ? promoLashType : ''}
                     onChange={(e) => {
                       if (e.target.value) setPromoLashType(e.target.value)
                     }}
-                    className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 shadow-xs cursor-pointer"
                   >
                     <option value="">-- Seleccionar curvatura / estilo --</option>
                     {LASH_TYPE_PRESETS.map((lash) => (
@@ -3261,8 +3270,8 @@ function StudioMobileHubPage() {
                         }}
                         className={`text-[10px] px-2 py-0.5 rounded-lg border transition-all ${
                           promoLashType.toLowerCase().includes(chip.toLowerCase())
-                            ? 'bg-accent/20 border-accent text-accent font-semibold'
-                            : 'bg-white/5 border-white/10 text-zinc-400 hover:text-zinc-200'
+                            ? 'bg-rose-100 border-rose-300 text-rose-800 font-semibold'
+                            : 'bg-white border-rose-200/80 text-[#7a3b5a] hover:bg-rose-50'
                         }`}
                       >
                         {chip}
@@ -3275,18 +3284,18 @@ function StudioMobileHubPage() {
                     value={promoLashType}
                     onChange={(e) => setPromoLashType(e.target.value)}
                     placeholder="Detalles de la curvatura o técnica..."
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                   />
                 </div>
 
                 {/* 3. SELECCIÓN DE PRECIOS */}
-                <div className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2.5">
+                <div className="p-3 rounded-2xl bg-rose-50/50 border border-rose-200/70 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-zinc-300 uppercase font-semibold">
+                    <span className="text-[10px] text-[#46253a] uppercase font-semibold">
                       Configuración de Precios
                     </span>
                     {Number(promoOldPrice) > Number(promoNewPrice) && Number(promoNewPrice) > 0 && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold">
                         Ahorro clienta: {Number(promoOldPrice) - Number(promoNewPrice)} €
                       </span>
                     )}
@@ -3294,7 +3303,7 @@ function StudioMobileHubPage() {
 
                   {/* Precio Promocional con Chips Rápidos */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-amber-400 uppercase font-bold block">
+                    <label className="text-[10px] text-rose-600 uppercase font-bold block">
                       Precio de la Oferta (€) *
                     </label>
                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
@@ -3305,8 +3314,8 @@ function StudioMobileHubPage() {
                           onClick={() => setPromoNewPrice(price)}
                           className={`text-[11px] px-2.5 py-1 rounded-xl font-mono font-bold transition-all ${
                             promoNewPrice === price
-                              ? 'bg-amber-500 text-black shadow-md shadow-amber-500/30 scale-105'
-                              : 'bg-white/5 border border-white/10 text-zinc-300 hover:border-amber-500/50'
+                              ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white shadow-xs scale-105'
+                              : 'bg-white border border-rose-200 text-[#7a3b5a] hover:border-rose-300'
                           }`}
                         >
                           {price} €
@@ -3318,13 +3327,13 @@ function StudioMobileHubPage() {
                       value={promoNewPrice}
                       onChange={(e) => setPromoNewPrice(e.target.value)}
                       placeholder="Ej. 23"
-                      className="w-full bg-black/60 border border-amber-500/40 rounded-xl px-3 py-1.5 text-xs text-amber-300 font-mono font-bold focus:outline-none focus:border-amber-400"
+                      className="w-full bg-white border border-rose-300 rounded-xl px-3 py-1.5 text-xs text-rose-600 font-mono font-bold focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   </div>
 
                   {/* Precio Habitual con Chips */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-zinc-400 uppercase block">
+                    <label className="text-[10px] text-[#7a3b5a] uppercase block">
                       Precio Habitual (€)
                     </label>
                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
@@ -3335,8 +3344,8 @@ function StudioMobileHubPage() {
                           onClick={() => setPromoOldPrice(price)}
                           className={`text-[10px] px-2 py-0.5 rounded-lg font-mono transition-all ${
                             promoOldPrice === price
-                              ? 'bg-accent/30 border border-accent text-white font-semibold'
-                              : 'bg-white/5 border border-white/10 text-zinc-400 hover:text-zinc-200'
+                              ? 'bg-rose-100 border border-rose-300 text-rose-800 font-semibold'
+                              : 'bg-white border border-rose-200/80 text-[#7a3b5a] hover:bg-rose-50'
                           }`}
                         >
                           {price} €
@@ -3348,7 +3357,7 @@ function StudioMobileHubPage() {
                       value={promoOldPrice}
                       onChange={(e) => setPromoOldPrice(e.target.value)}
                       placeholder="Ej. 27"
-                      className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] font-mono focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   </div>
                 </div>
@@ -3356,7 +3365,7 @@ function StudioMobileHubPage() {
                 {/* 4. CONDICIONES Y BENEFICIOS */}
                 <div className="space-y-2">
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase block mb-1">
+                    <label className="text-[10px] text-[#7a3b5a] uppercase block mb-1">
                       Condición / Límite de la Promoción
                     </label>
                     <div className="flex items-center gap-1 flex-wrap mb-1">
@@ -3367,8 +3376,8 @@ function StudioMobileHubPage() {
                           onClick={() => setPromoLimit(lim)}
                           className={`text-[9px] px-2 py-0.5 rounded-lg border transition-all ${
                             promoLimit === lim
-                              ? 'bg-accent/20 border-accent text-accent font-semibold'
-                              : 'bg-white/5 border-white/10 text-zinc-400 hover:text-zinc-200'
+                              ? 'bg-rose-100 border-rose-300 text-rose-800 font-semibold'
+                              : 'bg-white border-rose-200/80 text-[#7a3b5a] hover:bg-rose-50'
                           }`}
                         >
                           {lim}
@@ -3380,12 +3389,12 @@ function StudioMobileHubPage() {
                       value={promoLimit}
                       onChange={(e) => setPromoLimit(e.target.value)}
                       placeholder="Ej. Oferta por tiempo limitado"
-                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] text-zinc-400 uppercase block mb-1">
+                    <label className="text-[10px] text-[#7a3b5a] uppercase block mb-1">
                       Puntos Clave / Beneficios (1 por línea)
                     </label>
                     <textarea
@@ -3393,23 +3402,23 @@ function StudioMobileHubPage() {
                       value={promoPoints}
                       onChange={(e) => setPromoPoints(e.target.value)}
                       placeholder="Realza tu mirada&#10;Pestañas bonitas y definidas"
-                      className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Vista Previa Seria para WhatsApp */}
-              <div className="space-y-1.5 pt-2 border-t border-white/10">
+              <div className="space-y-1.5 pt-2 border-t border-rose-100">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-zinc-400 uppercase font-semibold">
+                  <span className="text-[10px] text-[#7a3b5a] uppercase font-semibold">
                     Vista Previa del Anuncio (WhatsApp):
                   </span>
-                  <span className="text-[10px] text-accent font-mono">
+                  <span className="text-[10px] text-rose-600 font-mono font-bold">
                     {promoNewPrice ? `${promoNewPrice} €` : ''}
                   </span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-black/75 border border-accent/30 text-xs text-zinc-200 font-sans whitespace-pre-line leading-relaxed shadow-inner">
+                <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 text-xs text-[#46253a] font-sans whitespace-pre-line leading-relaxed shadow-inner">
                   {generatedPromoText}
                 </div>
               </div>
@@ -3420,7 +3429,7 @@ function StudioMobileHubPage() {
                   <button
                     type="button"
                     onClick={handleCopyPromo}
-                    className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                    className="py-2.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <span>{copiedPromo ? '✓ ¡Copiado!' : '📋 Copiar Anuncio'}</span>
                   </button>
@@ -3429,7 +3438,7 @@ function StudioMobileHubPage() {
                     href={`https://wa.me/?text=${encodeURIComponent(generatedPromoText)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                    className="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-semibold text-xs transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <span>💬 Enviar por WhatsApp</span>
                   </a>
@@ -3438,14 +3447,13 @@ function StudioMobileHubPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    // Pasar la oferta personalizada a la pestaña de crear cita
                     setIsCustomService(true)
                     const extra = promoLashType.trim() ? ` · ${promoLashType.trim().split('(')[0].trim()}` : ''
                     setCustomServiceName(`${promoServiceName}${extra} (${promoTitle})`)
                     setCustomPrice(promoNewPrice.replace(/\D/g, '') || '23')
                     setCurrentTab('crear')
                   }}
-                  className="w-full py-3 rounded-xl bg-linear-to-r from-amber-500 via-accent to-amber-600 text-black font-bold text-xs shadow-lg shadow-amber-500/20 transition-all active:scale-95"
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all active:scale-95"
                 >
                   📅 Crear Cita con esta Oferta ({promoNewPrice || '23'} €)
                 </button>
@@ -3459,18 +3467,18 @@ function StudioMobileHubPage() {
       {/* MODAL SELECTOR DE CONTACTOS (MÓVIL & ESTUDIO) */}
       {/* ========================================================================= */}
       {contactPickerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-accent/30 rounded-t-3xl sm:rounded-3xl max-h-[88vh] overflow-hidden flex flex-col p-5 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#fffaf4] border-t sm:border border-rose-200/80 rounded-t-3xl sm:rounded-3xl max-h-[88vh] overflow-hidden flex flex-col p-5 space-y-4 shadow-2xl">
             {/* Cabecera del modal */}
             <div className="flex items-start justify-between shrink-0">
               <div>
-                <span className="text-[10px] text-accent uppercase tracking-widest font-mono font-semibold">
+                <span className="text-[10px] text-rose-600 uppercase tracking-widest font-mono font-semibold">
                   📖 Agenda de Contactos
                 </span>
-                <h3 className="text-xl font-bold text-white font-serif mt-0.5">
+                <h3 className="text-xl font-bold text-[#46253a] font-serif mt-0.5">
                   Seleccionar Contacto
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-[#7a3b5a] mt-0.5">
                   Elige desde los contactos de tu móvil o del directorio del estudio
                 </p>
               </div>
@@ -3478,7 +3486,7 @@ function StudioMobileHubPage() {
               <button
                 type="button"
                 onClick={() => setContactPickerOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm cursor-pointer"
+                className="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 text-[#7a3b5a] flex items-center justify-center text-sm cursor-pointer transition-colors"
               >
                 ✕
               </button>
@@ -3495,7 +3503,7 @@ function StudioMobileHubPage() {
             />
 
             {/* Pestañas del Modal */}
-            <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/60 border border-white/10 shrink-0">
+            <div className="grid grid-cols-2 p-1 rounded-2xl bg-white border border-rose-200/80 shadow-xs shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -3504,12 +3512,12 @@ function StudioMobileHubPage() {
                 }}
                 className={`py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   pickerTab === 'telefono'
-                    ? 'bg-accent/25 border border-accent/40 text-accent shadow-sm'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white shadow-xs'
+                    : 'text-[#7a3b5a] hover:text-[#46253a]'
                 }`}
               >
                 <span>📱 Mis Contactos</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 font-mono">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${pickerTab === 'telefono' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'}`}>
                   {phoneContacts.length}
                 </span>
               </button>
@@ -3522,12 +3530,12 @@ function StudioMobileHubPage() {
                 }}
                 className={`py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                   pickerTab === 'estudio'
-                    ? 'bg-accent/25 border border-accent/40 text-accent shadow-sm'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white shadow-xs'
+                    : 'text-[#7a3b5a] hover:text-[#46253a]'
                 }`}
               >
                 <span>💎 Clientas Estudio</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 font-mono">
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${pickerTab === 'estudio' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'}`}>
                   {allStudioClients.length}
                 </span>
               </button>
@@ -3543,58 +3551,58 @@ function StudioMobileHubPage() {
                     <button
                       type="button"
                       onClick={() => openFileInput(vcfInputRef.current)}
-                      className="p-2.5 rounded-2xl bg-linear-to-b from-amber-500/20 to-accent/10 border border-accent/40 hover:border-accent text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-sm cursor-pointer"
+                      className="p-2.5 rounded-2xl bg-rose-50/80 border border-rose-200 hover:border-rose-300 text-[#46253a] font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
                     >
                       <span className="text-lg">📥</span>
-                      <span className="block font-bold text-[11px] text-accent leading-tight">
+                      <span className="block font-bold text-[11px] text-rose-600 leading-tight">
                         Importar .vcf
                       </span>
-                      <span className="block text-[8px] text-zinc-400 leading-none">iPhone / WhatsApp</span>
+                      <span className="block text-[8px] text-[#7a3b5a] leading-none">iPhone / WhatsApp</span>
                     </button>
 
                     {/* Botón 2: Pegar de WhatsApp */}
                     <button
                       type="button"
                       onClick={handlePasteClipboard}
-                      className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500/50 text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] cursor-pointer"
+                      className="p-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 hover:border-emerald-300 text-emerald-800 font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-xs cursor-pointer"
                     >
                       <span className="text-lg">📋</span>
-                      <span className="block font-bold text-[11px] text-emerald-400 leading-tight">
+                      <span className="block font-bold text-[11px] text-emerald-700 leading-tight">
                         Pegar WA
                       </span>
-                      <span className="block text-[8px] text-zinc-400 leading-none">Portapapeles</span>
+                      <span className="block text-[8px] text-[#7a3b5a] leading-none">Portapapeles</span>
                     </button>
 
                     {/* Botón 3: Añadir manual / Lista */}
                     <button
                       type="button"
                       onClick={() => setShowAddContactForm((prev) => !prev)}
-                      className={`p-2.5 rounded-2xl border text-white font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] cursor-pointer ${
+                      className={`p-2.5 rounded-2xl border text-[#46253a] font-semibold text-xs flex flex-col items-center justify-center text-center gap-1 transition-all active:scale-[0.98] shadow-xs cursor-pointer ${
                         showAddContactForm
-                          ? 'bg-accent/25 border-accent text-accent'
-                          : 'bg-white/5 border-white/10 hover:border-white/20'
+                          ? 'bg-rose-100 border-rose-300 text-rose-800'
+                          : 'bg-white border-rose-200 hover:bg-rose-50'
                       }`}
                     >
                       <span className="text-lg">{showAddContactForm ? '✕' : '➕'}</span>
-                      <span className="block font-bold text-[11px] text-zinc-200 leading-tight">
+                      <span className="block font-bold text-[11px] leading-tight">
                         {showAddContactForm ? 'Cerrar' : 'Añadir'}
                       </span>
-                      <span className="block text-[8px] text-zinc-400 leading-none">Manual o lista</span>
+                      <span className="block text-[8px] text-[#7a3b5a] leading-none">Manual o lista</span>
                     </button>
                   </div>
 
                   {/* Formulario desplegable para Añadir o Pegar Lista */}
                   {showAddContactForm && (
-                    <div className="p-3 rounded-2xl bg-black/70 border border-accent/30 space-y-2.5 animate-in fade-in duration-200">
-                      <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <div className="p-3 rounded-2xl bg-white border border-rose-200 space-y-2.5 shadow-md animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between border-b border-rose-100 pb-2">
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => setAddContactMode('single')}
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                               addContactMode === 'single'
-                                ? 'bg-accent text-black'
-                                : 'text-zinc-400 hover:text-white'
+                                ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white'
+                                : 'text-[#7a3b5a] hover:text-[#46253a]'
                             }`}
                           >
                             ➕ Un Contacto
@@ -3604,8 +3612,8 @@ function StudioMobileHubPage() {
                             onClick={() => setAddContactMode('bulk')}
                             className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
                               addContactMode === 'bulk'
-                                ? 'bg-accent text-black'
-                                : 'text-zinc-400 hover:text-white'
+                                ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white'
+                                : 'text-[#7a3b5a] hover:text-[#46253a]'
                             }`}
                           >
                             📝 Pegar Lista WA
@@ -3614,7 +3622,7 @@ function StudioMobileHubPage() {
                         <button
                           type="button"
                           onClick={() => setShowAddContactForm(false)}
-                          className="text-zinc-500 hover:text-white text-xs px-1 cursor-pointer"
+                          className="text-[#9a7585] hover:text-rose-600 text-xs px-1 cursor-pointer"
                         >
                           ✕
                         </button>
@@ -3627,26 +3635,26 @@ function StudioMobileHubPage() {
                             placeholder="Nombre de la clienta (ej. Marta WhatsApp)"
                             value={newContactName}
                             onChange={(e) => setNewContactName(e.target.value)}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                            className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                           />
                           <input
                             type="tel"
                             placeholder="Teléfono móvil (ej. 612 34 56 78)"
                             value={newContactPhone}
                             onChange={(e) => setNewContactPhone(e.target.value)}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono"
+                            className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 font-mono shadow-xs"
                           />
                           <button
                             type="button"
                             onClick={handleAddManualContact}
-                            className="w-full py-2 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                            className="w-full py-2 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                           >
                             💾 Guardar en Agenda y Seleccionar
                           </button>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <p className="text-[10px] text-zinc-400 leading-snug">
+                          <p className="text-[10px] text-[#7a3b5a] leading-snug">
                             Pega aquí mensajes, notas o chats copiados de WhatsApp que contengan nombres y teléfonos:
                           </p>
                           <textarea
@@ -3654,12 +3662,12 @@ function StudioMobileHubPage() {
                             placeholder="Ejemplo:&#10;María López 612345678&#10;Lucía +34 654 987 321"
                             value={pasteListText}
                             onChange={(e) => setPasteListText(e.target.value)}
-                            className="w-full bg-black/60 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent font-mono resize-none"
+                            className="w-full bg-white border border-rose-200 rounded-xl p-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 font-mono resize-none shadow-xs"
                           />
                           <button
                             type="button"
                             onClick={handleImportPastedList}
-                            className="w-full py-2 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                            className="w-full py-2 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                           >
                             ✨ Extraer e Importar Contactos
                           </button>
@@ -3669,7 +3677,7 @@ function StudioMobileHubPage() {
                   )}
 
                   {nativeContactNotice && (
-                    <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed">
+                    <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
                       ℹ️ {nativeContactNotice}
                     </div>
                   )}
@@ -3682,47 +3690,47 @@ function StudioMobileHubPage() {
                     placeholder={`🔍 Buscar entre tus ${phoneContacts.length} contactos...`}
                     value={contactPickerSearch}
                     onChange={(e) => setContactPickerSearch(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                   />
                 </div>
 
                 {/* Lista de Contactos del Móvil con Scroll */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
                   {phoneContacts.length === 0 ? (
-                    <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-2.5 text-center my-2">
-                      <div className="w-12 h-12 rounded-2xl bg-accent/15 border border-accent/30 text-accent flex items-center justify-center text-2xl mx-auto">
+                    <div className="p-4 rounded-2xl bg-white border border-rose-200/80 space-y-2.5 text-center my-2 shadow-xs">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-700 flex items-center justify-center text-2xl mx-auto">
                         📱
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-xs font-bold text-white">Ten todos tus contactos aquí en 10 segundos</h4>
-                        <p className="text-[11px] text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                        <h4 className="text-xs font-bold text-[#46253a]">Ten todos tus contactos aquí en 10 segundos</h4>
+                        <p className="text-[11px] text-[#7a3b5a] leading-relaxed max-w-xs mx-auto">
                           Importa tu agenda de iPhone o los contactos de WhatsApp una sola vez y estarán disponibles para seleccionar siempre:
                         </p>
                       </div>
-                      <div className="text-left p-3 rounded-xl bg-white/5 border border-white/5 space-y-1.5 text-[11px] text-zinc-300">
+                      <div className="text-left p-3 rounded-xl bg-rose-50/60 border border-rose-100 space-y-1.5 text-[11px] text-[#7a3b5a]">
                         <div className="flex items-start gap-2">
-                          <span className="font-bold text-accent">1.</span>
+                          <span className="font-bold text-rose-600">1.</span>
                           <span>En tu iPhone abre <strong>Contactos</strong> ➔ pulsa <strong>Listas</strong> (arriba a la izquierda).</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="font-bold text-accent">2.</span>
+                          <span className="font-bold text-rose-600">2.</span>
                           <span>Mantén pulsado <strong>"Todos los contactos"</strong> ➔ toca <strong>Exportar</strong> ➔ Guardar en Archivos.</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="font-bold text-accent">3.</span>
+                          <span className="font-bold text-rose-600">3.</span>
                           <span>O en <strong>WhatsApp</strong>: abre el chat de tu clienta ➔ toca su nombre ➔ <strong>Compartir contacto</strong> ➔ Guardar en Archivos.</span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => openFileInput(vcfInputRef.current)}
-                        className="w-full py-2.5 rounded-xl bg-accent text-black font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                        className="w-full py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
                       >
                         📥 Toca aquí para elegir el archivo (.vcf)
                       </button>
                     </div>
                   ) : filteredPhoneContacts.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
+                    <div className="text-center py-8 text-xs text-[#9a7585] space-y-1">
                       <p>No se encontraron contactos con "{contactPickerSearch}".</p>
                     </div>
                   ) : (
@@ -3730,30 +3738,30 @@ function StudioMobileHubPage() {
                       <div
                         key={c.phone || c.name}
                         onClick={() => handleSelectPhoneContact(c)}
-                        className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
+                        className="p-3 rounded-2xl bg-white/90 border border-rose-200/70 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer flex items-center justify-between gap-3 transition-all group shadow-2xs"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div className="w-8 h-8 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
+                          <div className="w-8 h-8 rounded-full bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
                             {c.name.charAt(0) || '👤'}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
+                            <span className="text-xs font-semibold text-[#46253a] block truncate group-hover:text-rose-600 transition-colors">
                               {c.name}
                             </span>
-                            <span className="text-[11px] text-zinc-400 font-mono block">
+                            <span className="text-[11px] text-[#7a3b5a] font-mono block">
                               📞 {c.phone}
                             </span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold">
                             Elegir ➔
                           </span>
                           <button
                             type="button"
                             onClick={(e) => handleDeletePhoneContact(c, e)}
-                            className="w-6 h-6 rounded-lg bg-white/5 hover:bg-rose-500/20 text-zinc-500 hover:text-rose-400 text-xs flex items-center justify-center cursor-pointer transition-colors"
+                            className="w-6 h-6 rounded-lg bg-rose-50 hover:bg-red-100 text-[#9a7585] hover:text-red-600 text-xs flex items-center justify-center cursor-pointer transition-colors"
                             title="Eliminar de contactos importados"
                           >
                             ✕
@@ -3776,14 +3784,14 @@ function StudioMobileHubPage() {
                     placeholder={`🔍 Buscar entre ${allStudioClients.length} clientas del estudio...`}
                     value={contactPickerSearch}
                     onChange={(e) => setContactPickerSearch(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-3.5 py-2.5 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                   />
                 </div>
 
                 {/* Lista con scroll de clientas */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 no-scrollbar min-h-40">
                   {filteredClientsForPicker.length === 0 ? (
-                    <div className="text-center py-8 text-xs text-zinc-500 space-y-1">
+                    <div className="text-center py-8 text-xs text-[#9a7585] space-y-1">
                       <p>No se encontraron clientas con "{contactPickerSearch}".</p>
                     </div>
                   ) : (
@@ -3791,28 +3799,28 @@ function StudioMobileHubPage() {
                       <div
                         key={client.phone || client.name}
                         onClick={() => handleSelectStudioClient(client)}
-                        className="p-3 rounded-2xl bg-black/30 border border-white/5 hover:border-accent/40 hover:bg-accent/10 cursor-pointer flex items-center justify-between gap-3 transition-all group"
+                        className="p-3 rounded-2xl bg-white/90 border border-rose-200/70 hover:border-rose-300 hover:bg-rose-50/50 cursor-pointer flex items-center justify-between gap-3 transition-all group shadow-2xs"
                       >
                         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 text-accent font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
+                          <div className="w-8 h-8 rounded-full bg-rose-100 border border-rose-200 text-rose-700 font-bold text-xs flex items-center justify-center shrink-0 uppercase font-mono">
                             {client.name.charAt(0)}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="text-xs font-semibold text-white block truncate group-hover:text-accent transition-colors">
+                            <span className="text-xs font-semibold text-[#46253a] block truncate group-hover:text-rose-600 transition-colors">
                               {client.name}
                             </span>
-                            <span className="text-[11px] text-zinc-400 font-mono block">
+                            <span className="text-[11px] text-[#7a3b5a] font-mono block">
                               📞 {client.phone}
                             </span>
                           </div>
                         </div>
 
                         <div className="text-right shrink-0">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent font-semibold block mb-0.5">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold block mb-0.5">
                             {client.totalVisits} {client.totalVisits === 1 ? 'cita' : 'citas'}
                           </span>
                           {client.preferredCurl && (
-                            <span className="text-[9px] text-zinc-500 block">
+                            <span className="text-[9px] text-[#9a7585] block">
                               Curva {client.preferredCurl}
                             </span>
                           )}
@@ -3825,11 +3833,11 @@ function StudioMobileHubPage() {
             )}
 
             {/* Pie de modal */}
-            <div className="shrink-0 pt-2 border-t border-white/10 flex justify-end">
+            <div className="shrink-0 pt-2 border-t border-rose-100 flex justify-end">
               <button
                 type="button"
                 onClick={() => setContactPickerOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 text-xs font-medium cursor-pointer shadow-xs"
               >
                 Cerrar
               </button>
@@ -3842,86 +3850,86 @@ function StudioMobileHubPage() {
       {/* MODAL FICHA COMPLETA DE CLIENTA */}
       {/* ========================================================================= */}
       {selectedClientModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-accent/30 rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#fffaf4] border-t sm:border border-rose-200/80 rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] text-accent uppercase tracking-widest font-mono font-semibold">
+                <span className="text-[10px] text-rose-600 uppercase tracking-widest font-mono font-semibold">
                   Ficha de la Clienta
                 </span>
-                <h3 className="text-xl font-bold text-white font-serif mt-0.5">
+                <h3 className="text-xl font-bold text-[#46253a] font-serif mt-0.5">
                   {selectedClientModal.name}
                 </h3>
-                <p className="text-xs text-zinc-400 font-mono mt-0.5">
+                <p className="text-xs text-[#7a3b5a] font-mono mt-0.5">
                   📞 {selectedClientModal.phone}
                 </p>
               </div>
 
               <button
                 onClick={() => setSelectedClientModal(null)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm"
+                className="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 text-[#7a3b5a] flex items-center justify-center text-sm transition-colors"
               >
                 ✕
               </button>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-2xl bg-black/40 border border-white/5 space-y-0.5">
-                <span className="text-[10px] text-zinc-400 uppercase">Citas Acumuladas</span>
-                <div className="text-lg font-bold text-white font-mono">
+              <div className="p-3 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-0.5">
+                <span className="text-[10px] text-[#7a3b5a] uppercase font-semibold">Citas Acumuladas</span>
+                <div className="text-lg font-bold text-[#46253a] font-mono">
                   {selectedClientModal.totalVisits}
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-black/40 border border-accent/20 space-y-0.5">
-                <span className="text-[10px] text-accent uppercase">Gasto Total</span>
-                <div className="text-lg font-bold text-accent font-mono">
+              <div className="p-3 rounded-2xl bg-rose-50/70 border border-rose-200 space-y-0.5">
+                <span className="text-[10px] text-rose-600 uppercase font-semibold">Gasto Total</span>
+                <div className="text-lg font-bold text-rose-600 font-mono">
                   {selectedClientModal.totalSpent} €
                 </div>
               </div>
             </div>
 
             {selectedClientModal.preferredCurl && (
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs flex justify-between">
-                <span className="text-zinc-400">Curvatura habitual:</span>
-                <span className="font-bold text-[#f3e5ab]">Curva {selectedClientModal.preferredCurl}</span>
+              <div className="p-3 rounded-xl bg-white border border-rose-200/80 text-xs flex justify-between items-center shadow-xs">
+                <span className="text-[#7a3b5a]">Curvatura habitual:</span>
+                <span className="font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[11px]">Curva {selectedClientModal.preferredCurl}</span>
               </div>
             )}
 
             {selectedClientModal.notes && (
-              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-xs space-y-1">
-                <span className="text-[10px] text-zinc-400 uppercase font-semibold">Observaciones / Alergias</span>
-                <p className="text-zinc-300 italic">{selectedClientModal.notes}</p>
+              <div className="p-3 rounded-xl bg-white border border-rose-200/80 text-xs space-y-1 shadow-xs">
+                <span className="text-[10px] text-[#7a3b5a] uppercase font-semibold">Observaciones / Alergias</span>
+                <p className="text-[#46253a] italic">{selectedClientModal.notes}</p>
               </div>
             )}
 
             <div className="space-y-2">
-              <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+              <h4 className="text-xs font-semibold text-[#46253a] uppercase tracking-wider">
                 Historial de Sesiones ({selectedClientModal.appointmentsHistory.length})
               </h4>
               <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 no-scrollbar">
                 {selectedClientModal.appointmentsHistory.map((hApt) => (
-                  <div key={hApt.id} className="p-2 rounded-xl bg-black/30 border border-white/5 text-xs flex items-center justify-between">
+                  <div key={hApt.id} className="p-2 rounded-xl bg-white border border-rose-100 text-xs flex items-center justify-between shadow-2xs">
                     <div>
-                      <span className="text-zinc-200 font-medium block">{hApt.serviceName}</span>
-                      <span className="text-[10px] text-zinc-500">{hApt.date} · {hApt.time}</span>
+                      <span className="text-[#46253a] font-medium block">{hApt.serviceName}</span>
+                      <span className="text-[10px] text-[#9a7585]">{hApt.date} · {hApt.time}</span>
                     </div>
                     <div className="text-right">
-                      <span className="font-bold text-accent font-mono">{hApt.price} €</span>
-                      <span className="block text-[8px] uppercase tracking-wider text-zinc-400">{hApt.status}</span>
+                      <span className="font-bold text-rose-600 font-mono">{hApt.price} €</span>
+                      <span className="block text-[8px] uppercase tracking-wider text-[#9a7585]">{hApt.status}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-white/10">
+            <div className="space-y-2 pt-2 border-t border-rose-100">
               <div className="grid grid-cols-2 gap-2">
                 <a
                   href={`https://wa.me/${cleanPhoneForWhatsApp(selectedClientModal.phone)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 text-xs font-semibold flex items-center justify-center gap-1.5"
+                  className="py-2.5 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs"
                 >
                   <span>💬 WhatsApp</span>
                 </a>
@@ -3934,7 +3942,7 @@ function StudioMobileHubPage() {
                     setSelectedClientModal(null)
                     setCurrentTab('crear')
                   }}
-                  className="py-2.5 px-3 rounded-xl bg-accent text-black font-bold text-xs flex items-center justify-center gap-1.5"
+                  className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-rose-500/20 active:scale-95 transition-all"
                 >
                   <span>➕ Agendar Cita</span>
                 </button>
@@ -3943,7 +3951,7 @@ function StudioMobileHubPage() {
               <button
                 onClick={() => handleDeleteClient(selectedClientModal)}
                 disabled={isDeletingClient}
-                className="w-full py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
+                className="w-full py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50 shadow-xs"
               >
                 <span>{isDeletingClient ? 'Eliminando...' : '🗑️ Eliminar Clienta de la Base de Datos'}</span>
               </button>
@@ -3956,21 +3964,21 @@ function StudioMobileHubPage() {
       {/* MODAL CREAR / EDITAR SERVICIO */}
       {/* ========================================================================= */}
       {serviceModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-[#121218] border-t sm:border border-accent/30 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-[#fffaf4] border-t sm:border border-rose-200/80 rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-[10px] text-accent uppercase tracking-widest font-mono font-semibold">
+                <span className="text-[10px] text-rose-600 uppercase tracking-widest font-mono font-semibold">
                   {editingServiceId ? 'Editar Tratamiento' : 'Nuevo Tratamiento'}
                 </span>
-                <h3 className="text-lg font-bold text-white font-serif mt-0.5">
+                <h3 className="text-lg font-bold text-[#46253a] font-serif mt-0.5">
                   {editingServiceId ? 'Modificar Datos del Servicio' : 'Añadir Servicio al Catálogo'}
                 </h3>
               </div>
 
               <button
                 onClick={() => setServiceModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-zinc-300 flex items-center justify-center text-sm"
+                className="w-8 h-8 rounded-full bg-rose-100 hover:bg-rose-200 text-[#7a3b5a] flex items-center justify-center text-sm transition-colors"
               >
                 ✕
               </button>
@@ -3978,14 +3986,14 @@ function StudioMobileHubPage() {
 
             <form onSubmit={handleSaveService} className="space-y-3">
               <div>
-                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Nombre del Servicio *</label>
+                <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider block mb-1">Nombre del Servicio *</label>
                 <input
                   type="text"
                   required
                   placeholder="Ej. Efecto Sirena / Wet Look"
                   value={serviceFormName}
                   onChange={(e) => setServiceFormName(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                  className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                 />
               </div>
 
@@ -3993,13 +4001,13 @@ function StudioMobileHubPage() {
                 {/* Precio (€) con Selector Rápido o Custom */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider">
                       Precio (€) *
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsCustomPrice(!isCustomPrice)}
-                      className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                      className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
                     >
                       {isCustomPrice ? '← Rápido' : '✏️ Otro'}
                     </button>
@@ -4013,7 +4021,7 @@ function StudioMobileHubPage() {
                       placeholder="Ej. 28"
                       value={serviceFormPrice}
                       onChange={(e) => setServiceFormPrice(e.target.value)}
-                      className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs text-rose-600 font-mono font-bold focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   ) : (
                     <select
@@ -4025,14 +4033,14 @@ function StudioMobileHubPage() {
                           setServiceFormPrice(e.target.value)
                         }
                       }}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white font-mono focus:outline-none focus:border-accent cursor-pointer"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] font-mono focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
                     >
                       {PRICE_PRESETS.map((p) => (
                         <option key={p} value={String(p)}>
                           {p} €
                         </option>
                       ))}
-                      <option value="__custom__" className="text-accent font-semibold">
+                      <option value="__custom__" className="text-rose-600 font-semibold">
                         ✏️ Otro precio (manual)...
                       </option>
                     </select>
@@ -4042,13 +4050,13 @@ function StudioMobileHubPage() {
                 {/* Duración estimada con Selector Rápido o Custom */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                    <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider">
                       Duración *
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsCustomDuration(!isCustomDuration)}
-                      className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                      className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
                     >
                       {isCustomDuration ? '← Rápida' : '✏️ Otra'}
                     </button>
@@ -4061,7 +4069,7 @@ function StudioMobileHubPage() {
                       placeholder="Ej. 1 h 20 min"
                       value={serviceFormDuration}
                       onChange={(e) => setServiceFormDuration(e.target.value)}
-                      className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                      className="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 shadow-xs"
                     />
                   ) : (
                     <select
@@ -4073,14 +4081,14 @@ function StudioMobileHubPage() {
                           setServiceFormDuration(e.target.value)
                         }
                       }}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                      className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
                     >
                       {DURATION_PRESETS.map((dur) => (
                         <option key={dur} value={dur}>
                           {dur}
                         </option>
                       ))}
-                      <option value="__custom__" className="text-accent font-semibold">
+                      <option value="__custom__" className="text-rose-600 font-semibold">
                         ✏️ Otra duración (manual)...
                       </option>
                     </select>
@@ -4091,7 +4099,7 @@ function StudioMobileHubPage() {
               {/* Categoría (con creación dinámica como en Mac) */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                  <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider">
                     Categoría *
                   </label>
                   <button
@@ -4100,7 +4108,7 @@ function StudioMobileHubPage() {
                       setIsCreatingCategory(!isCreatingCategory)
                       setCustomCatInput('')
                     }}
-                    className="text-[11px] text-accent hover:underline font-semibold transition-colors cursor-pointer"
+                    className="text-[11px] text-rose-600 hover:underline font-semibold transition-colors cursor-pointer"
                   >
                     {isCreatingCategory ? '← Elegir existente' : '+ Crear nueva categoría'}
                   </button>
@@ -4115,9 +4123,9 @@ function StudioMobileHubPage() {
                       placeholder="Ej. Cejas & Microblading, Masajes..."
                       value={customCatInput}
                       onChange={(e) => setCustomCatInput(e.target.value)}
-                      className="w-full bg-black/50 border border-accent/60 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent placeholder-zinc-500 shadow-inner"
+                      className="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 placeholder:text-rose-300 shadow-xs"
                     />
-                    <p className="text-[10px] text-zinc-400 leading-snug">
+                    <p className="text-[10px] text-[#7a3b5a] leading-snug">
                       Se guardará como categoría independiente en los filtros y listas.
                     </p>
                   </div>
@@ -4134,14 +4142,14 @@ function StudioMobileHubPage() {
                         setServiceFormCategory(found?.name || e.target.value)
                       }
                     }}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
                   >
                     {allServiceCategories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>
                     ))}
-                    <option value="__new__" className="text-accent font-semibold">
+                    <option value="__new__" className="text-rose-600 font-semibold">
                       + Crear nueva categoría...
                     </option>
                   </select>
@@ -4151,13 +4159,13 @@ function StudioMobileHubPage() {
               {/* Badge / Etiqueta con Selector Rápido o Custom */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                  <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider">
                     Badge / Etiqueta
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsCustomBadge(!isCustomBadge)}
-                    className="text-[10px] text-accent hover:underline font-semibold cursor-pointer"
+                    className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
                   >
                     {isCustomBadge ? '← Rápida' : '✏️ Personalizada'}
                   </button>
@@ -4170,7 +4178,7 @@ function StudioMobileHubPage() {
                     placeholder="Ej. Edición Limitada, Verano..."
                     value={serviceFormBadge}
                     onChange={(e) => setServiceFormBadge(e.target.value)}
-                    className="w-full bg-black/40 border border-accent/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-white border border-rose-300 rounded-xl px-3 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 shadow-xs"
                   />
                 ) : (
                   <select
@@ -4182,14 +4190,14 @@ function StudioMobileHubPage() {
                         setServiceFormBadge(e.target.value)
                       }
                     }}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-accent cursor-pointer"
+                    className="w-full bg-white border border-rose-200 rounded-xl px-2.5 py-2 text-xs text-[#46253a] focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
                   >
                     {BADGE_PRESETS.map((b) => (
                       <option key={b.value} value={b.value}>
                         {b.label}
                       </option>
                     ))}
-                    <option value="__custom__" className="text-accent font-semibold">
+                    <option value="__custom__" className="text-rose-600 font-semibold">
                       ✏️ Escribir etiqueta personalizada...
                     </option>
                   </select>
@@ -4199,11 +4207,11 @@ function StudioMobileHubPage() {
               {/* Selector de Imagen del Servicio — Subida desde Android/iPhone + Catálogo */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] text-zinc-400 uppercase font-bold tracking-wider">
+                  <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider">
                     Imagen del Servicio
                   </label>
                   {typeof serviceFormImage === 'string' && serviceFormImage.startsWith('data:image/') && (
-                    <span className="text-[10px] text-emerald-400 font-semibold flex items-center gap-1">
+                    <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
                       <span>✓</span> Foto del dispositivo activa
                     </span>
                   )}
@@ -4220,17 +4228,17 @@ function StudioMobileHubPage() {
                 />
 
                 {/* Botón táctil para subir foto desde el móvil o PC */}
-                <div className="p-3 rounded-2xl bg-gradient-to-r from-accent/15 via-black/60 to-purple-500/15 border border-accent/40 space-y-2">
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50 border border-rose-200/80 space-y-2 shadow-xs">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-8 h-8 rounded-xl bg-accent/20 border border-accent/40 text-accent flex items-center justify-center text-base shrink-0">
+                      <span className="w-8 h-8 rounded-xl bg-rose-100 border border-rose-200 text-rose-600 flex items-center justify-center text-base shrink-0">
                         📱
                       </span>
                       <div className="min-w-0">
-                        <span className="block text-xs font-bold text-white truncate">
+                        <span className="block text-xs font-bold text-[#46253a] truncate">
                           Subir foto desde este dispositivo
                         </span>
-                        <span className="block text-[10px] text-zinc-400 truncate">
+                        <span className="block text-[10px] text-[#7a3b5a] truncate">
                           iPhone, Android o Galería (optimizado automático)
                         </span>
                       </div>
@@ -4240,7 +4248,7 @@ function StudioMobileHubPage() {
                       type="button"
                       disabled={isProcessingImage}
                       onClick={() => openFileInput(deviceImageInputRef.current)}
-                      className="px-3 py-1.5 rounded-xl bg-accent hover:bg-accent/90 text-black font-bold text-xs flex items-center gap-1 shrink-0 shadow-sm shadow-accent/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs flex items-center gap-1 shrink-0 shadow-sm shadow-rose-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                     >
                       <span>{isProcessingImage ? '⏳' : '📷'}</span>
                       <span>
@@ -4253,18 +4261,18 @@ function StudioMobileHubPage() {
 
                   {/* Previsualización si la imagen fue seleccionada desde el dispositivo */}
                   {typeof serviceFormImage === 'string' && serviceFormImage.startsWith('data:image/') && (
-                    <div className="p-2 rounded-xl bg-black/70 border border-accent/50 flex items-center justify-between gap-2 animate-in fade-in">
+                    <div className="p-2 rounded-xl bg-white border border-rose-200 flex items-center justify-between gap-2 shadow-xs animate-in fade-in">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <img
                           src={serviceFormImage}
                           alt="Foto subida del dispositivo"
-                          className="w-12 h-12 object-cover rounded-lg border border-white/20 shrink-0"
+                          className="w-12 h-12 object-cover rounded-lg border border-rose-200 shrink-0"
                         />
                         <div className="min-w-0">
-                          <span className="block text-[11px] font-semibold text-accent truncate">
+                          <span className="block text-[11px] font-semibold text-rose-600 truncate">
                             Foto propia cargada
                           </span>
-                          <span className="block text-[9px] text-zinc-400 truncate">
+                          <span className="block text-[9px] text-[#7a3b5a] truncate">
                             Formato comprimido listo para guardar
                           </span>
                         </div>
@@ -4273,7 +4281,7 @@ function StudioMobileHubPage() {
                       <button
                         type="button"
                         onClick={() => setServiceFormImage('/galeria/pieza-01.jpg')}
-                        className="px-2 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 text-[10px] font-semibold border border-rose-500/30 shrink-0 transition-colors cursor-pointer"
+                        className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-[10px] font-semibold border border-red-200 shrink-0 transition-colors cursor-pointer"
                       >
                         Quitar
                       </button>
@@ -4283,7 +4291,7 @@ function StudioMobileHubPage() {
 
                 {/* Galería de presets predeterminados del salón */}
                 <div className="space-y-1 pt-1">
-                  <span className="text-[10px] text-zinc-500 block">O elige una foto del catálogo predeterminado:</span>
+                  <span className="text-[10px] text-[#7a3b5a] block">O elige una foto del catálogo predeterminado:</span>
                   <div className="grid grid-cols-3 gap-1.5">
                     {GALLERY_PRESETS.map((preset) => {
                       const isSelected = serviceFormImage === preset.path
@@ -4293,12 +4301,12 @@ function StudioMobileHubPage() {
                           onClick={() => setServiceFormImage(preset.path)}
                           className={`p-1 rounded-xl cursor-pointer border relative overflow-hidden transition-all ${
                             isSelected
-                              ? 'border-accent ring-1 ring-accent bg-accent/10'
-                              : 'border-white/10 opacity-70 hover:opacity-100 bg-black/30'
+                              ? 'border-rose-400 ring-1 ring-rose-400 bg-rose-50'
+                              : 'border-rose-200/70 bg-white/80 opacity-80 hover:opacity-100'
                           }`}
                         >
                           <img src={preset.path} alt={preset.label} className="w-full h-12 object-cover rounded-lg" />
-                          <span className="block text-[8px] text-center text-zinc-300 mt-1 truncate">
+                          <span className="block text-[8px] text-center text-[#7a3b5a] mt-1 truncate">
                             {preset.label.split(' ')[0]}
                           </span>
                         </div>
@@ -4312,34 +4320,34 @@ function StudioMobileHubPage() {
                   placeholder="O introduce una URL de imagen personalizada"
                   value={serviceFormImage}
                   onChange={(e) => setServiceFormImage(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-zinc-300 placeholder-zinc-500 font-mono mt-1 focus:outline-none focus:border-accent"
+                  className="w-full bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-xs text-[#46253a] placeholder:text-rose-300 font-mono mt-1 focus:outline-none focus:border-rose-400 shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Descripción</label>
+                <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider block mb-1">Descripción</label>
                 <textarea
                   rows={2}
                   placeholder="Detalles sobre el acabado, grosor o estilo..."
                   value={serviceFormDescription}
                   onChange={(e) => setServiceFormDescription(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                  className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                 />
               </div>
 
               <div>
-                <label className="text-[10px] text-zinc-400 uppercase block mb-1">Qué incluye (1 punto por línea)</label>
+                <label className="text-[10px] text-[#7a3b5a] uppercase font-bold tracking-wider block mb-1">Qué incluye (1 punto por línea)</label>
                 <textarea
                   rows={2}
                   placeholder="Diseño anatómico personalizado&#10;Fibras de seda ligeras&#10;Sellado profesional"
                   value={serviceFormIncludes}
                   onChange={(e) => setServiceFormIncludes(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                  className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs text-[#46253a] placeholder:text-rose-300 focus:outline-none focus:border-rose-400 shadow-xs"
                 />
               </div>
 
               {serviceActionError && (
-                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
                   ⚠️ {serviceActionError}
                 </div>
               )}
@@ -4355,7 +4363,7 @@ function StudioMobileHubPage() {
                         handleDeleteService(currentServ)
                       }
                     }}
-                    className="w-full py-2 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                    className="w-full py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-xs"
                   >
                     <span>🗑️</span>
                     <span>Eliminar este servicio de la base de datos</span>
@@ -4367,14 +4375,14 @@ function StudioMobileHubPage() {
                 <button
                   type="button"
                   onClick={() => setServiceModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-300 text-xs font-medium"
+                  className="flex-1 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-[#7a3b5a] border border-rose-200/80 text-xs font-medium shadow-xs"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSavingService}
-                  className="flex-1 py-2.5 rounded-xl bg-accent text-black font-bold text-xs hover:opacity-90 active:scale-95 shadow-lg shadow-accent/20 disabled:opacity-50"
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-xs hover:opacity-95 active:scale-95 shadow-md shadow-rose-500/20 disabled:opacity-50"
                 >
                   {isSavingService ? 'Guardando en la nube...' : 'Guardar Servicio'}
                 </button>
@@ -4385,12 +4393,12 @@ function StudioMobileHubPage() {
       )}
 
       {/* BARRA INFERIOR FLOTANTE (DOCK) — 6 Botones */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#0c0c10]/95 backdrop-blur-md border-t border-white/10 px-2 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#fffaf4]/95 backdrop-blur-xl border-t border-rose-200/60 shadow-lg px-2 py-2">
         <div className="max-w-md mx-auto grid grid-cols-6 gap-0.5 text-center">
           <button
             onClick={() => setCurrentTab('citas')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'citas' ? 'text-accent font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'citas' ? 'text-rose-600 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">📅</span>
@@ -4400,7 +4408,7 @@ function StudioMobileHubPage() {
           <button
             onClick={() => setCurrentTab('crear')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'crear' ? 'text-accent font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'crear' ? 'text-rose-600 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">➕</span>
@@ -4410,7 +4418,7 @@ function StudioMobileHubPage() {
           <button
             onClick={() => setCurrentTab('facturacion')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'facturacion' ? 'text-accent font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'facturacion' ? 'text-rose-600 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">💶</span>
@@ -4420,7 +4428,7 @@ function StudioMobileHubPage() {
           <button
             onClick={() => setCurrentTab('clientas')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'clientas' ? 'text-accent font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'clientas' ? 'text-rose-600 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">👥</span>
@@ -4430,7 +4438,7 @@ function StudioMobileHubPage() {
           <button
             onClick={() => setCurrentTab('servicios')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'servicios' ? 'text-accent font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'servicios' ? 'text-rose-600 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">🌸</span>
@@ -4440,7 +4448,7 @@ function StudioMobileHubPage() {
           <button
             onClick={() => setCurrentTab('promo')}
             className={`py-1 rounded-xl flex flex-col items-center gap-0.5 transition-all ${
-              currentTab === 'promo' ? 'text-amber-400 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+              currentTab === 'promo' ? 'text-amber-500 font-bold scale-105' : 'text-[#7a3b5a] hover:text-[#46253a]'
             }`}
           >
             <span className="text-sm">🔥</span>

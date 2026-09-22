@@ -10,6 +10,7 @@ import { GalleryManager } from './components/GalleryManager'
 import { Billing } from './components/Billing'
 import { WebsitePreview } from './components/WebsitePreview'
 import { Settings } from './components/Settings'
+import { LockScreen } from './components/LockScreen'
 import { announceNewAppointmentVoice, playNotificationChime } from './services/voiceAssistant'
 import { useUpdaterContext } from './context/UpdaterContext'
 
@@ -56,6 +57,55 @@ import {
 } from './services/storage'
 
 export const App: React.FC = () => {
+  // Estado de autenticación para el Lock Page exclusivo de Windows y macOS
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      return (
+        typeof window !== 'undefined' &&
+        sessionStorage.getItem('gb_admin_auth') === 'true' &&
+        document.visibilityState !== 'hidden'
+      )
+    } catch {
+      return false
+    }
+  })
+
+  // Auto-bloqueo inmediato al minimizar la app en Windows/macOS o cambiar a segundo plano
+  useEffect(() => {
+    const handleLock = () => {
+      try {
+        sessionStorage.removeItem('gb_admin_auth')
+      } catch {}
+      setIsAuthenticated(false)
+    }
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        handleLock()
+      }
+    }
+
+    // Listener IPC de Electron para evento de minimizar nativo
+    const unsubscribeElectronLock = window.electronAPI?.onAppLock?.(handleLock)
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pagehide', handleLock)
+    }
+
+    return () => {
+      if (unsubscribeElectronLock) unsubscribeElectronLock()
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pagehide', handleLock)
+      }
+    }
+  }, [])
+
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [clients, setClients] = useState<Client[]>([])
@@ -740,6 +790,10 @@ export const App: React.FC = () => {
   }
 
   const headerAction = getHeaderAction()
+
+  if (!isAuthenticated) {
+    return <LockScreen onUnlock={() => setIsAuthenticated(true)} />
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-ink-950 text-gray-200">
