@@ -51,7 +51,7 @@ export const Route = createFileRoute('/api/auth')({
             return Response.json(
               {
                 ok: false,
-                error: 'No hay usuarios autorizados registrados. Registra tu ID, Token y PIN en el Panel de Administración de Mac.',
+                error: 'No hay usuarios autorizados registrados en el sistema.',
               },
               { status: 403, headers: CORS_HEADERS }
             )
@@ -101,7 +101,9 @@ export const Route = createFileRoute('/api/auth')({
           return Response.json(
             {
               ok: false,
-              error: 'Credenciales no autorizadas. Verifica tu ID de Telegram y PIN.',
+              error: enteredTelegramId
+                ? 'Credenciales no autorizadas. Verifica tu ID de Telegram o PIN de acceso.'
+                : 'PIN incorrecto. Introduce el PIN de acceso del estudio.',
             },
             { status: 401, headers: CORS_HEADERS }
           )

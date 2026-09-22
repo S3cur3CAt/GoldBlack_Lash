@@ -49,7 +49,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
       }
 
       // 2. Fallback offline con credenciales en configuración local
-      if (!verified && !errorMsg) {
+      if (!verified) {
         const localCfg = getStudioConfig()
         const matchUser = localCfg.telegramAllowedCredentials?.find(
           (u) => u.active !== false && String(u.pin || '').trim() === clean
@@ -59,6 +59,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         if (matchUser || matchLegacy) {
           verified = true
           if (matchUser?.name) userName = matchUser.name
+          setErrorMsg(null)
         }
       }
 
@@ -82,7 +83,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     } finally {
       setIsVerifying(false)
     }
-  }, [pin, onUnlock, errorMsg])
+  }, [pin, onUnlock])
 
   // Soporte para teclado físico (0-9, Backspace, Enter)
   useEffect(() => {
@@ -91,8 +92,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
         setPin((prev) => {
           if (prev.length < 8) {
             const next = prev + e.key
-            if (next.length === 4 || next.length === 6) {
-              setTimeout(() => handleVerify(next), 40)
+            // Auto-verificar al completar los 6 dígitos estándar del estudio
+            if (next.length === 6) {
+              setTimeout(() => handleVerify(next), 50)
             }
             return next
           }
@@ -115,8 +117,9 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
     setPin((prev) => {
       if (prev.length < 8) {
         const next = prev + digit
-        if (next.length === 4 || next.length === 6) {
-          setTimeout(() => handleVerify(next), 40)
+        // Auto-verificar al completar los 6 dígitos estándar del estudio
+        if (next.length === 6) {
+          setTimeout(() => handleVerify(next), 50)
         }
         return next
       }
@@ -220,7 +223,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({ onUnlock }) => {
 
         {/* Indicadores de PIN (Dots) */}
         <div className={`flex items-center justify-center gap-3 mb-6 transition-transform ${shake ? 'animate-bounce' : ''}`}>
-          {[0, 1, 2, 3, 4, 5].map((idx) => {
+          {Array.from({ length: Math.max(6, Math.min(8, pin.length)) }).map((_, idx) => {
             const hasValue = idx < pin.length
             return (
               <div
